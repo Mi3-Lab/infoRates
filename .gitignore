@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Data and models
+UCF101_data/UCF-101/
+UCF101_data/UCF101_50f/
+UCF101_data/manifests/*.csv
+UCF101_data/results/*.csv
+models/*.pt
+models/*.pth
+models/timesformer_ucf101_ddp/
+
+# WandB
+wandb/
+*.wandb
+
+# HPC job outputs
+slurm*.out
+slurm*.err
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+.cache/
+.pytest_cache/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Large files
+*.tar.gz
+*.zip
+*.rar
+
+# Configuration overrides (local)
+config.local.yaml
+
+# Test outputs
+htmlcov/
+.coverage
+.hypothesis/

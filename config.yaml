@@ -1,0 +1,37 @@
+# Training Configuration for InfoRates UCF-101
+
+# Model settings
+model_id: "facebook/timesformer-base-finetuned-k400"
+num_frames: 50
+size: 224
+
+# Training settings
+train_epochs: 5
+train_batch_size: 24  # Batch size per GPU (total = batch_size * num_gpus)
+train_learning_rate: 5e-5
+train_video_root: "UCF101_data/UCF-101"
+train_save_path: "models/timesformer_ucf101_ddp"
+train_num_workers: 16
+train_pin_memory: true
+train_use_ddp: true
+train_num_gpus: 2
+train_wandb_project: "inforates-ucf101"
+train_wandb_run_name: "fine-tuning-5epochs"
+train_disable_wandb: false
+
+# Evaluation settings (organized under manifests/ and results/)
+manifest_dir: "UCF101_data/manifests"
+results_dir: "UCF101_data/results"
+eval_manifest: "UCF101_data/manifests/ucf101_50f.csv"   # Auto-built if missing
+eval_out: "UCF101_data/results/ucf101_50f_finetuned.csv"
+eval_coverages: [10, 25, 50, 75, 100]
+eval_strides: [1, 2, 4, 8, 16]
+eval_sample_size: 0
+eval_batch_size: 16
+eval_workers: 16
+eval_wandb_run_name: "eval-finetuned-timesformer-ddp"
+build_manifest_if_missing: true
+fixed_frames: 50
+fixed_out_dir: "UCF101_data/UCF101_50f"
+use_dev_split: true
+split_file: "UCF101_data/ucfTrainTestlist/testlist01.txt"

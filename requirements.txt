@@ -1,0 +1,12 @@
+torch
+transformers>=4.44.0
+decord
+av
+opencv-python
+tqdm
+pandas
+numpy
+seaborn
+matplotlib
+wandb
+pyyaml
