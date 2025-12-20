@@ -48,13 +48,23 @@ python scripts/build_manifest_from_clips.py \
     --out UCF101_data/manifests/ucf101_50f_dev.csv
 ```
 
-### 5) Training (DDP on 2 GPUs)
-Edit `config.yaml` with your hyperparameters, then:
+### 5) Training (DDP on 2+ GPUs)
+
+Edit `config.yaml` with your hyperparameters, then run:
 ```bash
-salloc --partition=gpu --nodes=1 --gres=gpu:2 --constraint=a100 --time=8:00:00 --pty bash
-cd /path/to/repo
 source .venv/bin/activate
 bash scripts/train_ddp.sh
+```
+
+By default, the script uses `torchrun --nproc_per_node=2` for 2 GPUs. To match your setup:
+```bash
+# For 1 GPU:
+export NPROC_PER_NODE=1 && bash scripts/train_ddp.sh
+
+# For 4 GPUs:
+export NPROC_PER_NODE=4 && bash scripts/train_ddp.sh
+
+# Or edit config.yaml: train_num_gpus: N
 ```
 
 ### 6) Evaluation (DDP)
