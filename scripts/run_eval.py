@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import yaml
 import pandas as pd
@@ -21,6 +22,31 @@ except ImportError:
     PLOTTING_AVAILABLE = False
 
 
+def wilson_ci(correct: int, total: int, z: float = 1.96) -> tuple[float, float]:
+    if total <= 0:
+        return 0.0, 0.0
+    p = correct / total
+    denom = 1 + z**2 / total
+    centre = p + z**2 / (2 * total)
+    margin = z * math.sqrt((p * (1 - p) + z**2 / (4 * total)) / total)
+    low = max(0.0, (centre - margin) / denom)
+    high = min(1.0, (centre + margin) / denom)
+    return low, high
+
+
+def compute_pareto(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract Pareto-optimal (accuracy, latency) frontier."""
+    df_sorted = df.sort_values("avg_time")
+    frontier = []
+    best_acc = -1.0
+    for _, row in df_sorted.iterrows():
+        acc = row["accuracy"]
+        if acc >= best_acc:
+            frontier.append(row)
+            best_acc = acc
+    return pd.DataFrame(frontier)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Evaluate temporal sampling effects on fixed-length clips.")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
@@ -38,6 +64,7 @@ def main():
     parser.add_argument("--ddp", action="store_true", help="Enable Distributed Data Parallel evaluation")
     parser.add_argument("--per-class", action="store_true", help="Compute per-class metrics as well")
     parser.add_argument("--per-class-out", type=str, help="Path to save per-class CSV")
+    parser.add_argument("--jitter-coverage-pct", type=float, help="Randomly jitter coverage ±pct during eval for robustness checks")
     args = parser.parse_args()
 
     # Load config and apply defaults
@@ -61,6 +88,7 @@ def main():
     do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
     per_class_out = args.per_class_out or cfg.get("eval_per_class_out", "UCF101_data/results/ucf101_50f_per_class.csv")
     per_class_sample_size = int(cfg.get("eval_per_class_sample_size", -1))  # -1 means full
+    jitter_coverage_pct = args.jitter_coverage_pct if args.jitter_coverage_pct is not None else float(cfg.get("eval_jitter_coverage_pct", 0.0))
 
     # Setup DDP if requested
     rank = 0
@@ -90,6 +118,7 @@ def main():
                 "workers": workers,
                 "ddp": ddp,
                 "world_size": world_size,
+                "jitter_coverage_pct": jitter_coverage_pct,
             }
         )
 
@@ -115,6 +144,7 @@ def main():
             sample_size=len(my_subset),
             batch_size=batch_size,
             num_workers=workers,
+            jitter_coverage_pct=jitter_coverage_pct,
         )
 
         # Aggregate counts across ranks
@@ -138,6 +168,8 @@ def main():
                 "stride": st,
                 "accuracy": acc,
                 "avg_time": avg_time,
+                "correct": correct_sum,
+                "total": total_sum,
             })
 
         df_results = pd.DataFrame(agg_rows)
@@ -151,6 +183,7 @@ def main():
             sample_size=sample_size,
             batch_size=batch_size,
             num_workers=workers,
+            jitter_coverage_pct=jitter_coverage_pct,
         )
 
     # Save and log only rank 0
@@ -162,6 +195,11 @@ def main():
     # Log results to WandB (only rank 0 when DDP)
     if not args.no_wandb and (not ddp or rank == 0):
         wandb.log({"results_table": wandb.Table(dataframe=df_results)})
+        
+        # Log Pareto frontier
+        frontier = compute_pareto(df_results)
+        if not frontier.empty:
+            wandb.log({"pareto_frontier": wandb.Table(dataframe=frontier)})
         
         # Log summary metrics
         best_acc = df_results["accuracy"].max()
@@ -204,6 +242,7 @@ def main():
             )
             wandb.log({"per_class_best": wandb.Table(dataframe=best_per_class)})
 
+            # Aliasing sensitivity: drop from 100% to 25%
             pivot_drop = (
                 df_per_class[df_per_class["coverage"].isin([25, 100])]
                 .groupby(["class", "coverage"], as_index=False)["accuracy"].mean()

@@ -9,7 +9,17 @@ from tqdm import tqdm
 from ..sampling.temporal import extract_and_prepare, norm_label
 
 
-def evaluate_fixed_parallel(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8) -> pd.DataFrame:
+def evaluate_fixed_parallel(
+    df: pd.DataFrame,
+    processor,
+    model,
+    coverages: List[int] = [10, 25, 50, 75, 100],
+    strides: List[int] = [1, 2, 4, 8, 16],
+    sample_size: int = 200,
+    batch_size: int = 8,
+    num_workers: int = 8,
+    jitter_coverage_pct: float = 0.0,
+) -> pd.DataFrame:
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -18,13 +28,30 @@ def evaluate_fixed_parallel(df: pd.DataFrame, processor, model, coverages: List[
     results = []
     device = next(model.parameters()).device
 
+    rng = np.random.default_rng(42)
+
     for stride in strides:
         for cov in coverages:
             correct = total = 0
             t0 = time.time()
 
             with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride) for _, row in subset.iterrows()]
+                futures = []
+                for _, row in subset.iterrows():
+                    cov_use = cov
+                    if jitter_coverage_pct > 0:
+                        delta = cov * (jitter_coverage_pct / 100.0)
+                        low = max(1, cov - delta)
+                        high = min(100, cov + delta)
+                        cov_use = int(np.clip(rng.uniform(low, high), 1, 100))
+                    futures.append(
+                        ex.submit(
+                            extract_and_prepare,
+                            row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
+                            cov_use,
+                            stride,
+                        )
+                    )
 
                 batch_frames, batch_labels = [], []
                 for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
@@ -60,7 +87,9 @@ def evaluate_fixed_parallel(df: pd.DataFrame, processor, model, coverages: List[
                 "coverage": cov,
                 "stride": stride,
                 "accuracy": acc,
-                "avg_time": (time.time() - t0) / max(1, total)
+                "avg_time": (time.time() - t0) / max(1, total),
+                "correct": correct,
+                "total": total,
             })
 
     return pd.DataFrame(results)
@@ -75,6 +104,7 @@ def evaluate_fixed_parallel_counts(
     sample_size: int = 200,
     batch_size: int = 8,
     num_workers: int = 8,
+    jitter_coverage_pct: float = 0.0,
 ):
     """
     Like evaluate_fixed_parallel but returns raw counts and total_time for aggregation.
@@ -89,18 +119,30 @@ def evaluate_fixed_parallel_counts(
     results = []
     device = next(model.parameters()).device
 
+    rng = np.random.default_rng(42)
+
     for stride in strides:
         for cov in coverages:
             correct = total = 0
             t0 = time.time()
 
             with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                futures = [
-                    ex.submit(
-                        extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride
+                futures = []
+                for _, row in subset.iterrows():
+                    cov_use = cov
+                    if jitter_coverage_pct > 0:
+                        delta = cov * (jitter_coverage_pct / 100.0)
+                        low = max(1, cov - delta)
+                        high = min(100, cov + delta)
+                        cov_use = int(np.clip(rng.uniform(low, high), 1, 100))
+                    futures.append(
+                        ex.submit(
+                            extract_and_prepare,
+                            row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
+                            cov_use,
+                            stride,
+                        )
                     )
-                    for _, row in subset.iterrows()
-                ]
 
                 batch_frames, batch_labels = [], []
                 for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%"):
