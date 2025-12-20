@@ -1,4 +1,4 @@
-# TemporalProbe: Temporal Sampling for Action Recognition
+# InfoRates: Temporal Sampling for Action Recognition
 
 This repository investigates how temporal sampling (frame coverage and stride) affects action recognition performance in modern video models, providing a practical framework to optimize spatiotemporal resolution and computational efficiency.
 
