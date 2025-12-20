@@ -4,7 +4,7 @@ setup(
     name="info_rates",
     version="0.1.0",
     description="Temporal sampling analysis for human action recognition",
-    author="Wesley Ferreira Maia",
+    author="Wesley Maia",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     python_requires=">=3.8",

@@ -30,10 +30,11 @@ PY
 }
 
 NUM_GPUS=$(python - <<PY
-import yaml
+import yaml, os
 with open("$CONFIG","r") as f:
     cfg=yaml.safe_load(f)
-print(int(cfg.get("num_gpus", 2)))
+# Allow NPROC_PER_NODE env var to override config
+print(int(os.getenv("NPROC_PER_NODE", cfg.get("num_gpus", 2))))
 PY
 )
 

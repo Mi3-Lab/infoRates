@@ -7,7 +7,11 @@ import torch.distributed as dist
 import wandb
 from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
-from info_rates.analysis.evaluate import evaluate_fixed_parallel, evaluate_fixed_parallel_counts
+from info_rates.analysis.evaluate import (
+    evaluate_fixed_parallel,
+    evaluate_fixed_parallel_counts,
+    per_class_analysis_fast,
+)
 
 # Optional: plotting (requires matplotlib, seaborn)
 try:
@@ -32,6 +36,8 @@ def main():
     parser.add_argument("--wandb-run-name", default=None, help="WandB run name")
     parser.add_argument("--no-wandb", action="store_true", help="Disable WandB logging")
     parser.add_argument("--ddp", action="store_true", help="Enable Distributed Data Parallel evaluation")
+    parser.add_argument("--per-class", action="store_true", help="Compute per-class metrics as well")
+    parser.add_argument("--per-class-out", type=str, help="Path to save per-class CSV")
     args = parser.parse_args()
 
     # Load config and apply defaults
@@ -52,6 +58,9 @@ def main():
     wandb_project = args.wandb_project or cfg.get("wandb_project", "inforates-ucf101")
     wandb_run_name = args.wandb_run_name or cfg.get("eval_wandb_run_name")
     ddp = args.ddp or bool(cfg.get("use_ddp", False))
+    do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
+    per_class_out = args.per_class_out or cfg.get("eval_per_class_out", "UCF101_data/results/ucf101_50f_per_class.csv")
+    per_class_sample_size = int(cfg.get("eval_per_class_sample_size", -1))  # -1 means full
 
     # Setup DDP if requested
     rank = 0
@@ -167,6 +176,44 @@ def main():
             plot_heatmap(df_results)
         else:
             print("Plotting skipped (matplotlib/seaborn not installed)")
+
+    # Optional per-class analysis (rank 0 only)
+    if do_per_class and (not ddp or rank == 0):
+        subset_size = len(df) if per_class_sample_size <= 0 else min(per_class_sample_size, len(df))
+        df_per_class = per_class_analysis_fast(
+            df=df,
+            processor=processor,
+            model=model,
+            coverages=coverages,
+            strides=strides,
+            sample_size=subset_size,
+            batch_size=batch_size,
+            num_workers=workers,
+        )
+        os.makedirs(os.path.dirname(per_class_out), exist_ok=True)
+        df_per_class.to_csv(per_class_out, index=False)
+
+        if not args.no_wandb:
+            wandb.log({"per_class_table": wandb.Table(dataframe=df_per_class)})
+
+            # Summaries: best per class and top aliasing drop (100% vs 25% coverage mean across strides)
+            best_per_class = (
+                df_per_class.sort_values(["class", "accuracy"], ascending=[True, False])
+                .groupby("class", as_index=False)
+                .first()[["class", "coverage", "stride", "accuracy", "n_samples"]]
+            )
+            wandb.log({"per_class_best": wandb.Table(dataframe=best_per_class)})
+
+            pivot_drop = (
+                df_per_class[df_per_class["coverage"].isin([25, 100])]
+                .groupby(["class", "coverage"], as_index=False)["accuracy"].mean()
+                .pivot(index="class", columns="coverage", values="accuracy")
+            )
+            if 25 in pivot_drop.columns and 100 in pivot_drop.columns:
+                drop_df = pivot_drop.reset_index().rename(columns={100: "acc_100", 25: "acc_25"})
+                drop_df["drop_100_minus_25"] = drop_df["acc_100"] - drop_df["acc_25"]
+                drop_df = drop_df.sort_values("drop_100_minus_25", ascending=False).head(20)
+                wandb.log({"per_class_aliasing_drop": wandb.Table(dataframe=drop_df)})
     
     if not args.no_wandb and (not ddp or rank == 0):
         wandb.finish()
