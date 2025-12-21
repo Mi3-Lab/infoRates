@@ -6,6 +6,8 @@ import pandas as pd
 import torch
 import torch.distributed as dist
 import wandb
+import random
+import numpy as np
 from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
 from info_rates.analysis.evaluate import (
@@ -106,6 +108,16 @@ def main():
     )  # -1 means full
     jitter_coverage_pct = args.jitter_coverage_pct if args.jitter_coverage_pct is not None else float(cfg.get("eval_jitter_coverage_pct", 0.0))
 
+    # Set random seeds for reproducibility
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
     # Setup DDP if requested
     rank = 0
     world_size = 1
@@ -143,72 +155,154 @@ def main():
 
     df = pd.read_csv(manifest)
 
+    # Check for existing results to enable resume/checkpoint
+    completed_configs = set()
+    if os.path.exists(out_path):
+        try:
+            existing_df = pd.read_csv(out_path)
+            if not existing_df.empty and all(c in existing_df.columns for c in ["coverage", "stride", "total"]):
+                # Only mark as completed if evaluated on full dataset
+                expected_total = len(df) if (sample_size is None or sample_size <= 0) else min(sample_size, len(df))
+                for _, row in existing_df.iterrows():
+                    # Check if this row represents a full evaluation (allow 5% tolerance for DDP sharding)
+                    if row['total'] >= expected_total * 0.95:
+                        completed_configs.add((int(row['coverage']), int(row['stride'])))
+                
+                if not ddp or rank == 0:
+                    print(f"Found existing results with {len(existing_df)} rows.")
+                    print(f"Dataset size: {len(df)}, Expected per config: {expected_total}")
+                    if completed_configs:
+                        print(f"Marking {len(completed_configs)} configs as completed (full dataset).")
+                        print(f"Skipping: {sorted(completed_configs)}")
+                    else:
+                        print("All existing results are partial - will re-evaluate all configs.")
+                        existing_df = None  # Don't merge partial results
+        except Exception as e:
+            if not ddp or rank == 0:
+                print(f"Warning: Could not load existing results from {out_path}: {e}")
+
+    # Filter out already-completed configs
+    pending_configs = [(c, s) for c in coverages for s in strides if (c, s) not in completed_configs]
+    if not pending_configs:
+        if not ddp or rank == 0:
+            print("All configurations already completed. Nothing to evaluate.")
+        if not args.no_wandb and (not ddp or rank == 0):
+            wandb.finish()
+        if ddp:
+            dist.destroy_process_group()
+        return
+
+    # Extract only pending coverages and strides
+    pending_coverages = sorted(set(c for c, s in pending_configs))
+    pending_strides = sorted(set(s for c, s in pending_configs))
+    
+    if not ddp or rank == 0:
+        print(f"Evaluating {len(pending_configs)} pending configurations...")
+        print(f"Coverages: {pending_coverages}")
+        print(f"Strides: {pending_strides}")
+
+    # Prepare data subset
+    if sample_size is not None and sample_size > 0 and sample_size < len(df):
+        subset = df.sample(sample_size, random_state=42)
+    else:
+        subset = df
+
+    # Evaluate one config at a time with incremental saving
     if ddp and world_size > 1:
-        # Ensure same subset across ranks; sample_size<=0 means full dataset
-        if sample_size is not None and sample_size > 0 and sample_size < len(df):
-            subset = df.sample(sample_size, random_state=42)
-        else:
-            subset = df
         # Shard rows across ranks
         my_subset = subset.iloc[rank::world_size]
-        local_counts = evaluate_fixed_parallel_counts(
-            df=my_subset,
-            processor=processor,
-            model=model,
-            coverages=coverages,
-            strides=strides,
-            sample_size=len(my_subset),
-            batch_size=batch_size,
-            num_workers=workers,
-            jitter_coverage_pct=jitter_coverage_pct,
-            rank=rank,
-            num_frames=None,  # Auto-detect from model config
-        )
-
-        # Aggregate counts across ranks
-        # Build a stable ordering of (coverage, stride)
-        combos = [(cov, st) for st in strides for cov in coverages]
-        agg_rows = []
-        for cov, st in combos:
-            # Find local row
-            row = next((r for r in local_counts if r["coverage"] == cov and r["stride"] == st), {
-                "coverage": cov, "stride": st, "correct": 0, "total": 0, "total_time": 0.0
-            })
-            tensor = torch.tensor([row["correct"], row["total"], row["total_time"]], dtype=torch.float32, device=device)
-            dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-            correct_sum = int(tensor[0].item())
-            total_sum = int(tensor[1].item())
-            total_time_sum = float(tensor[2].item())
-            acc = (correct_sum / total_sum) if total_sum > 0 else 0.0
-            avg_time = (total_time_sum / total_sum) if total_sum > 0 else 0.0
-            agg_rows.append({
-                "coverage": cov,
-                "stride": st,
-                "accuracy": acc,
-                "avg_time": avg_time,
-                "correct": correct_sum,
-                "total": total_sum,
-            })
-
-        df_results = pd.DataFrame(agg_rows)
+        
+        # Process each configuration individually
+        for stride in pending_strides:
+            for coverage in pending_coverages:
+                if (coverage, stride) in completed_configs:
+                    continue
+                    
+                # Evaluate single config
+                local_counts = evaluate_fixed_parallel_counts(
+                    df=my_subset,
+                    processor=processor,
+                    model=model,
+                    coverages=[coverage],
+                    strides=[stride],
+                    sample_size=len(my_subset),
+                    batch_size=batch_size,
+                    num_workers=workers,
+                    jitter_coverage_pct=jitter_coverage_pct,
+                    rank=rank,
+                    num_frames=None,
+                )
+                
+                # Aggregate across ranks
+                row = local_counts[0] if local_counts else {
+                    "coverage": coverage, "stride": stride, "correct": 0, "total": 0, "total_time": 0.0
+                }
+                tensor = torch.tensor([row["correct"], row["total"], row["total_time"]], 
+                                     dtype=torch.float32, device=device)
+                dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                
+                correct_sum = int(tensor[0].item())
+                total_sum = int(tensor[1].item())
+                total_time_sum = float(tensor[2].item())
+                acc = (correct_sum / total_sum) if total_sum > 0 else 0.0
+                avg_time = (total_time_sum / total_sum) if total_sum > 0 else 0.0
+                
+                new_row = pd.DataFrame([{
+                    "coverage": coverage,
+                    "stride": stride,
+                    "accuracy": acc,
+                    "avg_time": avg_time,
+                    "correct": correct_sum,
+                    "total": total_sum,
+                }])
+                
+                # Append to existing results and save immediately (rank 0 only)
+                if rank == 0:
+                    if existing_df is not None:
+                        existing_df = pd.concat([existing_df, new_row], ignore_index=True)
+                    else:
+                        existing_df = new_row
+                    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                    existing_df.to_csv(out_path, index=False)
+                    print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={acc:.4f}")
+        
+        df_results = existing_df if existing_df is not None else pd.DataFrame()
     else:
-        df_results = evaluate_fixed_parallel(
-            df=df,
-            processor=processor,
-            model=model,
-            coverages=coverages,
-            strides=strides,
-            sample_size=sample_size,
-            batch_size=batch_size,
-            num_workers=workers,
-            jitter_coverage_pct=jitter_coverage_pct,
-            rank=rank,
-            num_frames=None,  # Auto-detect from model config
-        )
+        # Non-DDP: evaluate one config at a time
+        all_rows = []
+        for stride in pending_strides:
+            for coverage in pending_coverages:
+                if (coverage, stride) in completed_configs:
+                    continue
+                    
+                result = evaluate_fixed_parallel(
+                    df=subset,
+                    processor=processor,
+                    model=model,
+                    coverages=[coverage],
+                    strides=[stride],
+                    sample_size=sample_size,
+                    batch_size=batch_size,
+                    num_workers=workers,
+                    jitter_coverage_pct=jitter_coverage_pct,
+                    rank=rank,
+                    num_frames=None,
+                )
+                
+                # Append and save immediately
+                all_rows.append(result.iloc[0])
+                if existing_df is not None:
+                    existing_df = pd.concat([existing_df, result], ignore_index=True)
+                else:
+                    existing_df = result
+                os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                existing_df.to_csv(out_path, index=False)
+                print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={result.iloc[0]['accuracy']:.4f}")
+        
+        df_results = existing_df if existing_df is not None else pd.DataFrame()
 
-    # Save and log only rank 0
+    # Final save (redundant but safe)
     if not ddp or rank == 0:
-        # Ensure parent directory exists before saving
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         df_results.to_csv(out_path, index=False)
 

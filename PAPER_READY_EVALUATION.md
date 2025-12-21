@@ -10,7 +10,7 @@ We investigate the effect of temporal sampling density on action recognition acc
 
 ### 1.1 Experimental Setup
 
-**Dataset**: UCF-101 test split comprising 12,227 video clips distributed across 101 action classes.  
+**Dataset**: UCF-101 test split comprising 43,659 fixed-length 50-frame video segments derived from the original 12,227 test videos and segmented for consistent temporal sampling evaluation.  
 **Model Architecture**: TimeSformer-base (Bertasius et al., 2021) pre-trained on Kinetics-400 and fine-tuned on UCF-101 training split.  
 **Input Configuration**: 50 frames per clip at 224×224 spatial resolution.  
 **Evaluation Protocol**: Systematic exploration of 25 sampling configurations combining 5 temporal coverage levels (10%, 25%, 50%, 75%, 100%) with 5 stride values (1, 2, 4, 8, 16 frames).  
@@ -265,7 +265,5 @@ python scripts/plot_results.py --wandb
 ```
 
 ---
-
-**Status**: All results publication-ready. Figures optimized at 160 DPI for journal submission. Statistical tests follow APA guidelines with Bonferroni-corrected multiple comparisons.
    
 
