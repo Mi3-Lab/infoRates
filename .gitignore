@@ -48,6 +48,8 @@ UCF101_data/UCF101_fixed_50f/
 UCF101_data/manifests/
 UCF101_data/ucfTrainTestlist/
 UCF101_data/ucf101_fixedlen_*.csv
+HMDB51_data/
+Kinetics400_data/
 # Ignore large numeric outputs
 UCF101_data/results/*.csv
 UCF101_data/results/*.json

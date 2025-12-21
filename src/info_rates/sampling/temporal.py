@@ -43,6 +43,11 @@ def extract_and_prepare(row: Dict[str, str], cov: int, stride: int, resize: int 
     """
     Decode, subsample, and select `num_select` frames for a single video specified by manifest row.
     Row must contain keys: "video_path" and "label".
+    
+    Note: num_select should match the model's frame requirement:
+    - TimeSformer: 8 frames
+    - VideoMAE: 16 frames
+    - ViViT: 32 frames
     """
     try:
         vr = VideoReader(row["video_path"], ctx=cpu(0))
@@ -50,6 +55,10 @@ def extract_and_prepare(row: Dict[str, str], cov: int, stride: int, resize: int 
         n_total = len(frames)
         n_keep = max(1, int(n_total * cov / 100))
         frames = frames[:n_keep:stride]
+        # Ensure we have at least num_select frames to sample from
+        if len(frames) < num_select:
+            # Pad or repeat frames if needed
+            frames = np.repeat(frames, (num_select // len(frames)) + 1, axis=0)[:num_select]
         idx = np.linspace(0, len(frames) - 1, num_select).astype(int)
         selected = [cv2.resize(frames[j], (resize, resize)) for j in idx]
         return selected, row["label"]

@@ -162,6 +162,7 @@ def main():
             num_workers=workers,
             jitter_coverage_pct=jitter_coverage_pct,
             rank=rank,
+            num_frames=None,  # Auto-detect from model config
         )
 
         # Aggregate counts across ranks
@@ -202,6 +203,7 @@ def main():
             num_workers=workers,
             jitter_coverage_pct=jitter_coverage_pct,
             rank=rank,
+            num_frames=None,  # Auto-detect from model config
         )
 
     # Save and log only rank 0
@@ -228,8 +230,10 @@ def main():
 
     if not ddp or rank == 0:
         if PLOTTING_AVAILABLE:
-            plot_accuracy_curves(df_results)
-            plot_heatmap(df_results)
+            # Get model-specific results directory
+            model_results_dir = os.path.dirname(out_path)
+            plot_accuracy_curves(df_results, output_dir=model_results_dir)
+            plot_heatmap(df_results, output_dir=model_results_dir)
         else:
             print("Plotting skipped (matplotlib/seaborn not installed)")
 

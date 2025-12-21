@@ -29,7 +29,24 @@ def evaluate_fixed_parallel(
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
     rank: int = 0,
+    num_frames: int = None,
 ) -> pd.DataFrame:
+    # Auto-detect model's frame requirement if not provided
+    if num_frames is None:
+        model_config = getattr(model, 'config', None)
+        if model_config is None:
+            num_frames = 8  # Default fallback
+        elif hasattr(model_config, 'num_frames'):
+            num_frames = model_config.num_frames
+        else:
+            model_type = getattr(model_config, 'model_type', '').lower()
+            if 'vivit' in model_type:
+                num_frames = 32
+            elif 'videomae' in model_type:
+                num_frames = 16
+            else:  # TimeSformer or unknown
+                num_frames = 8
+    
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -60,6 +77,7 @@ def evaluate_fixed_parallel(
                             row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
                             cov_use,
                             stride,
+                            num_select=num_frames,
                         )
                     )
 
@@ -124,12 +142,29 @@ def evaluate_fixed_parallel_counts(
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
     rank: int = 0,
+    num_frames: int = None,
 ):
     """
     Like evaluate_fixed_parallel but returns raw counts and total_time for aggregation.
 
     Returns a list of dicts with keys: coverage, stride, correct, total, total_time
     """
+    # Auto-detect model's frame requirement if not provided
+    if num_frames is None:
+        model_config = getattr(model, 'config', None)
+        if model_config is None:
+            num_frames = 8  # Default fallback
+        elif hasattr(model_config, 'num_frames'):
+            num_frames = model_config.num_frames
+        else:
+            model_type = getattr(model_config, 'model_type', '').lower()
+            if 'vivit' in model_type:
+                num_frames = 32
+            elif 'videomae' in model_type:
+                num_frames = 16
+            else:  # TimeSformer or unknown
+                num_frames = 8
+    
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -160,6 +195,7 @@ def evaluate_fixed_parallel_counts(
                             row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
                             cov_use,
                             stride,
+                            num_select=num_frames,
                         )
                     )
 
@@ -212,7 +248,7 @@ def evaluate_fixed_parallel_counts(
     return results
 
 
-def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8, rank: int = 0) -> pd.DataFrame:
+def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[int] = [10, 25, 50, 75, 100], strides: List[int] = [1, 2, 4, 8, 16], sample_size: int = 200, batch_size: int = 8, num_workers: int = 8, rank: int = 0, num_frames: int = 8) -> pd.DataFrame:
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -232,7 +268,7 @@ def per_class_analysis_fast(df: pd.DataFrame, processor, model, coverages: List[
             t0 = time.time()
 
             with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride) for _, row in subset.iterrows()]
+                futures = [ex.submit(extract_and_prepare, row._asdict() if hasattr(row, "_asdict") else row.to_dict(), cov, stride, num_select=8) for _, row in subset.iterrows()]
 
                 batch_frames, batch_labels = [], []
                 for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
