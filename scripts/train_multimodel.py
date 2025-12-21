@@ -150,8 +150,7 @@ def fine_tune_model(
         )
     
     # Use mixed precision for memory efficiency
-    # Use new torch.amp API to avoid deprecation warnings
-    scaler = torch.amp.GradScaler(device_type="cuda")
+    scaler = torch.cuda.amp.GradScaler()
     
     # Optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -192,7 +191,7 @@ def fine_tune_model(
             batch = {k: v.to(device) for k, v in batch.items()}
             
             # Forward pass with mixed precision
-            with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.cuda.amp.autocast():
                 outputs = model(**batch)
                 loss = outputs.loss
                 loss = loss / gradient_accumulation_steps  # Scale loss
@@ -248,7 +247,7 @@ def fine_tune_model(
                 batch = {k: v.to(device) for k, v in batch.items()}
                 
                 # Forward pass with mixed precision
-                with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
+                with torch.cuda.amp.autocast():
                     outputs = model(**batch)
                     logits = outputs.logits
                     val_loss += outputs.loss.item()

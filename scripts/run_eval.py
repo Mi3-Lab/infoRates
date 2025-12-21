@@ -86,14 +86,20 @@ def main():
     # Derive per-model default output paths when not explicitly provided
     default_results_dir = cfg.get("eval_results_dir", "UCF101_data/results")
     model_tag = os.path.basename(os.path.normpath(model_path))
-    default_out = os.path.join(default_results_dir, f"{model_tag}_temporal_sampling.csv")
+    # Extract model name (timesformer, videomae, vivit) from model_tag
+    model_name = "timesformer" if "timesformer" in model_tag.lower() else \
+                 "videomae" if "videomae" in model_tag.lower() else \
+                 "vivit" if "vivit" in model_tag.lower() else "other"
+    model_results_dir = os.path.join(default_results_dir, model_name)
+    os.makedirs(model_results_dir, exist_ok=True)
+    default_out = os.path.join(model_results_dir, f"{model_tag}_temporal_sampling.csv")
     out_path = args.out or cfg.get("eval_out", default_out)
 
     wandb_project = args.wandb_project or cfg.get("wandb_project", "inforates-ucf101")
     wandb_run_name = args.wandb_run_name or cfg.get("eval_wandb_run_name")
     ddp = args.ddp or bool(cfg.get("use_ddp", False))
     do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
-    default_per_class_out = os.path.join(default_results_dir, f"{model_tag}_per_class.csv")
+    default_per_class_out = os.path.join(model_results_dir, f"{model_tag}_per_class.csv")
     per_class_out = args.per_class_out or cfg.get("eval_per_class_out", default_per_class_out)
     per_class_sample_size = (
         args.per_class_sample_size if args.per_class_sample_size is not None else int(cfg.get("eval_per_class_sample_size", -1))

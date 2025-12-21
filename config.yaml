@@ -7,7 +7,7 @@ model_name: "timesformer"
 
 # ===== TRAINING HYPERPARAMETERS =====
 train_epochs: 5
-train_batch_size: 60                           # Batch size per GPU
+train_batch_size: 15                         # Batch size per GPU
 train_learning_rate: 1e-5
 train_gradient_accumulation_steps: 1          # Use >1 for memory efficiency
 train_cleanup_interval: 0                     # Clean memory every N steps (0 = only at epoch boundaries)
