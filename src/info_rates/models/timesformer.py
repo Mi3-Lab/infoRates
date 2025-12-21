@@ -49,18 +49,62 @@ def load_pretrained_timesformer(model_id: str = "facebook/timesformer-base-finet
     return processor, model
 
 
-def build_dataloaders(train_files: List[str], val_files: List[str], class_names: List[str], processor, batch_size: int = 4, num_frames: int = 8, size: int = 224, use_ddp: bool = False, num_workers: int = 4, pin_memory: bool = True):
+def build_dataloaders(
+    train_files: List[str],
+    val_files: List[str],
+    class_names: List[str],
+    processor,
+    batch_size: int = 4,
+    num_frames: int = 8,
+    size: int = 224,
+    use_ddp: bool = False,
+    num_workers: int = 4,
+    pin_memory: bool = True,
+    persistent_workers: bool = True,
+    prefetch_factor: int = 2,
+):
     train_ds = UCFDataset(train_files, processor, num_frames=num_frames, size=size, class_names=class_names)
     val_ds = UCFDataset(val_files, processor, num_frames=num_frames, size=size, class_names=class_names)
     
     if use_ddp:
         train_sampler = DistributedSampler(train_ds, shuffle=True)
         val_sampler = DistributedSampler(val_ds, shuffle=False)
-        train_dl = DataLoader(train_ds, batch_size=batch_size, sampler=train_sampler, num_workers=num_workers, pin_memory=pin_memory)
-        val_dl = DataLoader(val_ds, batch_size=batch_size, sampler=val_sampler, num_workers=num_workers, pin_memory=pin_memory)
+        train_dl = DataLoader(
+            train_ds,
+            batch_size=batch_size,
+            sampler=train_sampler,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers if num_workers > 0 else False,
+            prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        )
+        val_dl = DataLoader(
+            val_ds,
+            batch_size=batch_size,
+            sampler=val_sampler,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers if num_workers > 0 else False,
+            prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        )
     else:
-        train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-        val_dl = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers, pin_memory=pin_memory)
+        train_dl = DataLoader(
+            train_ds,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers if num_workers > 0 else False,
+            prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        )
+        val_dl = DataLoader(
+            val_ds,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers if num_workers > 0 else False,
+            prefetch_factor=prefetch_factor if num_workers > 0 else None,
+        )
     
     return train_dl, val_dl
 

@@ -68,7 +68,11 @@ class ModelFactory:
     def load_processor(model_name, **kwargs):
         """Load image processor for a specific model."""
         info = ModelFactory.get_model_info(model_name)
-        processor = AutoImageProcessor.from_pretrained(info["model_id"])
+        # Prefer fast processors when available (quiet the "slow processor" warning for VideoMAE)
+        if model_name == "videomae":
+            processor = AutoImageProcessor.from_pretrained(info["model_id"], use_fast=True, **kwargs)
+        else:
+            processor = AutoImageProcessor.from_pretrained(info["model_id"], **kwargs)
         return processor
     
     @staticmethod

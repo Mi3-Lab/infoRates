@@ -41,11 +41,8 @@ wheels/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data and models
-UCF101_data/UCF-101/
-UCF101_data/UCF101_50f/
-UCF101_data/manifests/*.csv
-UCF101_data/results/*.csv
+# Data and models (ignore full dataset and generated outputs)
+UCF101_data/
 models/*.pt
 models/*.pth
 models/timesformer_ucf101_ddp/

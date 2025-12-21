@@ -1,40 +1,49 @@
 # Training Configuration for InfoRates UCF-101
+# Updated: December 20, 2025 - Multi-Model Support
 
-# Model settings
-model_id: "facebook/timesformer-base-finetuned-k400"
-model_name: "timesformer"  # NEW: Model selection (timesformer | videomae | vivit)
+# ===== MODEL SELECTION =====
+# Choose model: timesformer | videomae | vivit
+model_name: "timesformer"
+
+# ===== TRAINING HYPERPARAMETERS =====
 train_epochs: 5
-train_batch_size: 24  # Batch size per GPU (total = batch_size * num_gpus)
-train_learning_rate: 5e-5
+train_batch_size: 60                           # Batch size per GPU
+train_learning_rate: 1e-5
+train_gradient_accumulation_steps: 1          # Use >1 for memory efficiency
+train_cleanup_interval: 0                     # Clean memory every N steps (0 = only at epoch boundaries)
 train_video_root: "UCF101_data/UCF-101"
-train_save_path: "models/timesformer_ucf101_ddp"
-train_num_workers: 16
+train_save_path: "fine_tuned_models"
+train_num_workers: 4
 train_pin_memory: true
-train_use_ddp: true
-train_num_gpus: 2
+train_use_ddp: false                          # Set to true for multi-GPU
+train_num_gpus: 1
+train_device: "cuda"
+
+# ===== W&B LOGGING =====
 train_wandb_project: "inforates-ucf101"
-train_wandb_run_name: "fine-tuning-5epochs"
+train_wandb_run_name: "fine-tuning-multimodel"
 train_disable_wandb: false
 
-# Evaluation settings (organized under manifests/ and results/)
-manifest_dir: "UCF101_data/manifests"
-results_dir: "UCF101_data/results"
-eval_manifest: "UCF101_data/manifests/ucf101_50f.csv"   # Auto-built if missing
-eval_out: "UCF101_data/results/ucf101_50f_finetuned.csv"
+# ===== EVALUATION SETTINGS =====
+eval_results_dir: "UCF101_data/results"
+eval_batch_size: 16
+eval_sample_size: 0                           # 0 = full dataset, N = limit to N samples
+eval_device: "cuda"
+eval_wandb: false                             # Optional W&B logging
+
+# ===== TEMPORAL SAMPLING =====
+# Configurations to test: coverage (%) × stride
 eval_coverages: [10, 25, 50, 75, 100]
 eval_strides: [1, 2, 4, 8, 16]
-eval_sample_size: 0
-eval_batch_size: 35
-eval_workers: 16
-eval_wandb_run_name: "eval-finetuned-timesformer-ddp"
-build_manifest_if_missing: true
-fixed_frames: 50
-fixed_out_dir: "UCF101_data/UCF101_50f"
-use_dev_split: true
-split_file: "UCF101_data/ucfTrainTestlist/testlist01.txt"
 
-# Per-class evaluation defaults (ensure per-class CSV + plots)
-eval_per_class: true
-eval_per_class_out: "UCF101_data/results/ucf101_50f_per_class.csv"
-# 0 uses full dataset; set to a positive number to speed up
-eval_per_class_sample_size: 0
+# ===== MODEL-SPECIFIC DEFAULTS =====
+# Frame counts per model (auto-handled by scripts, but documented here):
+# - TimeSformer:  8 frames (divided space-time attention)
+# - VideoMAE:    16 frames (masked autoencoder pretraining)
+# - ViViT:       32 frames (pure vision transformer)
+#
+# Models are automatically loaded from Hugging Face:
+# - TimeSformer: facebook/timesformer-base-finetuned-k400
+# - VideoMAE:    MCG-NJU/videomae-base-finetuned-kinetics
+# - ViViT:       google/vivit-b-16x2
+

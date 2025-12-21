@@ -126,6 +126,30 @@ PY
   fi
 fi
 
+# Derive model path and tag for unique outputs per model
+MODEL_PATH=$(python - <<PY
+import yaml
+with open("$CONFIG","r") as f:
+  cfg=yaml.safe_load(f)
+print(cfg.get("save_path","models/timesformer_ucf101_ddp"))
+PY
+)
+MODEL_TAG="$(basename "$MODEL_PATH")"
+
+# Results directory
+RESULTS_DIR=$(python - <<PY
+import yaml
+with open("$CONFIG","r") as f:
+  cfg=yaml.safe_load(f)
+print(cfg.get("eval_results_dir","UCF101_data/results"))
+PY
+)
+mkdir -p "$RESULTS_DIR"
+
+# Compose unique output paths per model
+RESULTS_CSV="$RESULTS_DIR/${MODEL_TAG}_temporal_sampling.csv"
+PER_CLASS_OUT="$RESULTS_DIR/${MODEL_TAG}_per_class.csv"
+
 # Launch DDP evaluation via torchrun using config
 echo "Starting DDP evaluation with $NUM_GPUS GPUs using $CONFIG..."
 
@@ -141,31 +165,16 @@ if [[ "$NUM_GPUS" -gt 0 && "$GPU_AVAIL" -eq 0 ]]; then
 fi
 
 torchrun --standalone --nproc_per_node="$NUM_GPUS" scripts/run_eval.py --config "$CONFIG" --ddp \
-  --model-path "$(python - <<PY
-import yaml
-print(yaml.safe_load(open("$CONFIG")).get("save_path","models/timesformer_ucf101_ddp"))
-PY
-)" \
+  --model-path "$MODEL_PATH" \
   --manifest "$MANIFEST" \
   --wandb-run-name "$EVAL_RUN_NAME" \
+  --out "$RESULTS_CSV" \
   --per-class \
   --per-class-out "$PER_CLASS_OUT" \
   --per-class-sample-size "$PER_CLASS_SAMPLE_SIZE"
 
 # After evaluation, generate plots and summary automatically
-RESULTS_CSV=$(python - <<PY
-import yaml
-cfg=yaml.safe_load(open("$CONFIG"))
-print(cfg.get("eval_out","UCF101_data/results/ucf101_50f_finetuned.csv"))
-PY
-)
-
-PER_CLASS_CSV=$(python - <<PY
-import yaml
-cfg=yaml.safe_load(open("$CONFIG"))
-print(cfg.get("eval_per_class_out","UCF101_data/results/ucf101_50f_per_class.csv"))
-PY
-)
+PER_CLASS_CSV="$PER_CLASS_OUT"
 
 if [[ -f "$RESULTS_CSV" ]]; then
   echo "Generating plots and summary from $RESULTS_CSV ..."

@@ -82,12 +82,19 @@ def main():
     sample_size = args.sample_size if args.sample_size is not None else int(cfg.get("eval_sample_size", 200))
     batch_size = args.batch_size if args.batch_size is not None else int(cfg.get("eval_batch_size", 8))
     workers = args.workers if args.workers is not None else int(cfg.get("eval_workers", 8))
-    out_path = args.out or cfg.get("eval_out", "UCF101_data/results/ucf101_50f_finetuned.csv")
+
+    # Derive per-model default output paths when not explicitly provided
+    default_results_dir = cfg.get("eval_results_dir", "UCF101_data/results")
+    model_tag = os.path.basename(os.path.normpath(model_path))
+    default_out = os.path.join(default_results_dir, f"{model_tag}_temporal_sampling.csv")
+    out_path = args.out or cfg.get("eval_out", default_out)
+
     wandb_project = args.wandb_project or cfg.get("wandb_project", "inforates-ucf101")
     wandb_run_name = args.wandb_run_name or cfg.get("eval_wandb_run_name")
     ddp = args.ddp or bool(cfg.get("use_ddp", False))
     do_per_class = args.per_class or bool(cfg.get("eval_per_class", False))
-    per_class_out = args.per_class_out or cfg.get("eval_per_class_out", "UCF101_data/results/ucf101_50f_per_class.csv")
+    default_per_class_out = os.path.join(default_results_dir, f"{model_tag}_per_class.csv")
+    per_class_out = args.per_class_out or cfg.get("eval_per_class_out", default_per_class_out)
     per_class_sample_size = (
         args.per_class_sample_size if args.per_class_sample_size is not None else int(cfg.get("eval_per_class_sample_size", -1))
     )  # -1 means full

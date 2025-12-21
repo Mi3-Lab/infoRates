@@ -19,12 +19,20 @@ Usage:
     torchrun --nproc_per_node=2 scripts/train_multimodel.py --model vivit --ddp --epochs 5
 """
 
+# Ensure project root and src/ are on sys.path for direct script execution
+import os
+import sys
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SRC_ROOT = os.path.join(_PROJECT_ROOT, "src")
+for _p in (_PROJECT_ROOT, _SRC_ROOT):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import argparse
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
 import wandb
-import os
 import yaml
 import gc
 from typing import List, Tuple, Dict, Any
@@ -78,6 +86,7 @@ def fine_tune_model(
     local_rank: int = 0,
     gradient_accumulation_steps: int = 1,
     max_grad_norm: float = 1.0,
+    cleanup_interval: int = 0,
 ) -> torch.nn.Module:
     """
     Fine-tune a video classification model with DDP support and memory optimization.
@@ -141,7 +150,8 @@ def fine_tune_model(
         )
     
     # Use mixed precision for memory efficiency
-    scaler = torch.cuda.amp.GradScaler()
+    # Use new torch.amp API to avoid deprecation warnings
+    scaler = torch.amp.GradScaler(device_type="cuda")
     
     # Optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -182,7 +192,7 @@ def fine_tune_model(
             batch = {k: v.to(device) for k, v in batch.items()}
             
             # Forward pass with mixed precision
-            with torch.cuda.amp.autocast(dtype=torch.float16):
+            with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
                 outputs = model(**batch)
                 loss = outputs.loss
                 loss = loss / gradient_accumulation_steps  # Scale loss
@@ -199,7 +209,9 @@ def fine_tune_model(
                 scaler.update()
                 scheduler.step()
                 optimizer.zero_grad()
-                clear_memory()
+                # Optional periodic memory cleanup (can be costly if too frequent)
+                if cleanup_interval > 0 and ((batch_idx + 1) % cleanup_interval == 0):
+                    clear_memory()
             
             # Update progress bar
             if show_progress:
@@ -236,7 +248,7 @@ def fine_tune_model(
                 batch = {k: v.to(device) for k, v in batch.items()}
                 
                 # Forward pass with mixed precision
-                with torch.cuda.amp.autocast(dtype=torch.float16):
+                with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
                     outputs = model(**batch)
                     logits = outputs.logits
                     val_loss += outputs.loss.item()
@@ -252,8 +264,11 @@ def fine_tune_model(
                     current_acc = correct / max(1, total)
                     val_pbar.set_postfix({"acc": f"{current_acc:.3f}"})
                 
-                clear_memory()
+                # Avoid per-batch cleanup in validation; defer to end of phase
         
+        # Single cleanup at end of validation phase
+        clear_memory()
+
         val_acc = correct / max(1, total)
         avg_val_loss = val_loss / max(1, len(val_dl))
         
@@ -384,25 +399,40 @@ Examples:
         choices=["cuda", "cpu"],
         help="Device to use"
     )
+    parser.add_argument(
+        "--cleanup-interval",
+        type=int,
+        help="Clean CUDA/CPU memory every N steps (0 disables per-step cleanup)"
+    )
     
     args = parser.parse_args()
     
     # Load config
     config = load_config(args.config)
     
+    # Helper to fetch either new train_* keys or legacy keys
+    def _cfg(name, legacy=None, default=None, cast=lambda x: x):
+        if name in config:
+            return cast(config[name])
+        if legacy and legacy in config:
+            return cast(config[legacy])
+        return default
+    
     # Merge CLI args with config (CLI takes precedence)
-    video_root = args.video_root or config.get("video_root", "UCF101_data/UCF-101")
-    epochs = args.epochs if args.epochs is not None else int(config.get("epochs", 2))
-    batch_size = args.batch_size if args.batch_size is not None else int(config.get("batch_size", 4))
-    lr = args.lr if args.lr is not None else float(config.get("learning_rate", 1e-5))
-    save_path = args.save_path or config.get("save_path", "fine_tuned_models")
-    wandb_project = args.wandb_project or config.get("wandb_project", "inforates-ucf101")
-    disable_wandb = args.no_wandb or config.get("disable_wandb", False)
-    use_ddp = args.ddp or config.get("use_ddp", False)
-    num_workers = int(config.get("num_workers", 4))
-    pin_memory = config.get("pin_memory", True)
-    gradient_accumulation_steps = args.gradient_accumulation_steps
-    device = args.device
+    video_root = args.video_root or _cfg("train_video_root", "video_root", "UCF101_data/UCF-101")
+    epochs = args.epochs if args.epochs is not None else int(_cfg("train_epochs", "epochs", 2, int))
+    batch_size = args.batch_size if args.batch_size is not None else int(_cfg("train_batch_size", "batch_size", 4, int))
+    lr = args.lr if args.lr is not None else float(_cfg("train_learning_rate", "learning_rate", 1e-5, float))
+    save_path = args.save_path or _cfg("train_save_path", "save_path", "fine_tuned_models")
+    wandb_project = args.wandb_project or _cfg("train_wandb_project", "wandb_project", "inforates-ucf101")
+    disable_wandb = args.no_wandb or bool(_cfg("train_disable_wandb", "disable_wandb", False, bool))
+    use_ddp = args.ddp or bool(_cfg("train_use_ddp", "use_ddp", False, bool))
+    num_workers = int(_cfg("train_num_workers", "num_workers", 4, int))
+    pin_memory = bool(_cfg("train_pin_memory", "pin_memory", True, bool))
+    gradient_accumulation_steps = args.gradient_accumulation_steps or int(_cfg("train_gradient_accumulation_steps", None, 1, int))
+    device = args.device or _cfg("train_device", None, "cuda")
+    cleanup_interval = (args.cleanup_interval if args.cleanup_interval is not None
+                        else int(_cfg("train_cleanup_interval", None, 0, int)))
     
     # Setup DDP if requested
     local_rank = 0
@@ -481,6 +511,7 @@ Examples:
                 use_ddp=use_ddp,
                 local_rank=local_rank,
                 gradient_accumulation_steps=gradient_accumulation_steps,
+                cleanup_interval=cleanup_interval,
             )
             
             # Save model (only on main process)
