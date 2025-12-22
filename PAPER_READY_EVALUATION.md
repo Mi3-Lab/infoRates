@@ -236,7 +236,7 @@ Additional visualizations supporting the main findings:
 **Model**: TimeSformer-base fine-tuned on UCF-101 (50 frames @ 224×224 spatial resolution)  
 **Environment**: Python 3.12.8, PyTorch 2.9.1, transformers 4.57.3  
 **Random Seed**: 42 (deterministic evaluation ensuring full reproducibility)  
-**Outputs**: All CSV data, statistical test results, and figures available in `data/UCF101_data/results/timesformer/`
+**Outputs**: All CSV data, statistical test results, and figures available in `data/UCF101_data/results/timesformer/`. 
 
 ### 6.1 Data Files
 
