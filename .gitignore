@@ -1,20 +1,16 @@
 # =========================
-# Python
+# Python & Virtual Envs
 # =========================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-
-# Virtual environments
 .venv/
 .env
 env/
 venv/
 ENV/
-
-# Packaging
 build/
 develop-eggs/
 dist/
@@ -31,18 +27,16 @@ wheels/
 .installed.cfg
 *.egg
 
-# Testing, caches, coverage
+# =========================
+# Testing, Caches, IDEs, OS
+# =========================
 .pytest_cache/
 .cache/
 htmlcov/
 .coverage
 .hypothesis/
-
-# Jupyter
 .ipynb_checkpoints/
 *.ipynb
-
-# IDE, OS
 .vscode/
 .idea/
 *.swp
@@ -53,65 +47,45 @@ Thumbs.db
 *.sublime-workspace
 *.sublime-project
 
-# Logs, HPC outputs
+# =========================
+# HPC & Logs
+# =========================
 wandb/
 *.wandb
 slurm*.out
 slurm*.err
 *.log
 
-# Archives, large binaries
+# =========================
+# Model Artifacts
+# =========================
+fine_tuned_models/
+models/timesformer_ucf101_ddp/
+*.pt
+*.pth
+# Ignore model folder contents generally
+models/*.pt
+models/*.pth
+
+# =========================
+# Archives & Config
+# =========================
 *.tar.gz
 *.zip
 *.rar
 *.bin
-
-# Local config overrides
 config.local.yaml
 
 # =========================
-# Data (ignore raw datasets)
+# DATASET MANAGEMENT
 # =========================
-data/UCF101_data/
-data/HMDB51_data/
-data/Kinetics400_data/
-data/SSv2_data/
 
-# =========================
-# Keep small metadata/manifests tracked
-# =========================
-!data/UCF101_data/manifests/**
-!data/HMDB51_data/splits/**
-!data/Kinetics400_data/*.txt
-!data/Kinetics400_data/k400_50/**
-
-# =========================
-# Track results inside UCF101_data/results
-# =========================
-!data/UCF101_data/results/
-!data/UCF101_data/results/**
-
-!data/UCF101_data/results/**/*.csv
-!data/UCF101_data/results/**/*.json
-!data/UCF101_data/results/**/*.tsv
-!data/UCF101_data/results/**/*.png
-!data/UCF101_data/results/**/*.jpg
-!data/UCF101_data/results/**/*.jpeg
-!data/UCF101_data/results/**/*.svg
-!data/UCF101_data/results/**/*.pdf
-!data/UCF101_data/results/**/*.md
-
-# =========================
-# Model artifacts
-# =========================
-fine_tuned_models/
-models/*.pt
-models/*.pth
-models/timesformer_ucf101_ddp/
-*.pt
-*.pth
-
-# =========================
-# Other datasets by name
-# =========================
+# 1. Ignore EVERYTHING inside these dataset folders
+data/UCF101_data/*
+data/HMDB51_data/*
+data/Kinetics400_data/*
+data/SSv2_data/*
 20bn-something-something-v2-*
+
+# 2. EXCEPTION: Strictly allow ONLY the results folder
+!data/UCF101_data/results/
