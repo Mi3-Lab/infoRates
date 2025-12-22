@@ -1,43 +1,20 @@
+# =========================
 # Python
-__pycache__/
-*.pyc
-.venv/
-
-# Notebooks
-.ipynb_checkpoints/
-
-# Data (large datasets)
-data/UCF101_data/
-data/HMDB51_data/
-data/Kinetics400_data/
-data/SSv2_data/
-
-# Keep small metadata/manifests tracked
-!data/UCF101_data/manifests/**
-!data/HMDB51_data/splits/**
-!data/Kinetics400_data/*.txt
-!data/Kinetics400_data/k400_50/**
-
-# Model artifacts
-fine_tuned_models/
-*.pt
-*.pth
-
-# WandB logs
-wandb/
-
-# OS/editor
-.DS_Store
-.vscode/
-# Python
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Virtual environments
+.venv/
+.env
 env/
 venv/
 ENV/
+
+# Packaging
 build/
 develop-eggs/
 dist/
@@ -54,84 +31,87 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
-.venv/
-.env
+# Testing, caches, coverage
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+.hypothesis/
 
-# IDE and editor files
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE, OS
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
 *.sublime-workspace
 *.sublime-project
 
-# Jupyter Notebook
-.ipynb_checkpoints/
-*.ipynb
-
-# Data and models (ignore raw datasets and heavy generated artifacts, keep results/plots)
-UCF101_data/UCF-101/
-UCF101_data/UCF101_50f/
-UCF101_data/UCF101_fixed_50f/
-UCF101_data/manifests/
-UCF101_data/ucfTrainTestlist/
-UCF101_data/ucf101_fixedlen_*.csv
-HMDB51_data/
-Kinetics400_data/
-# Ignore large numeric outputs
-UCF101_data/results/*.csv
-UCF101_data/results/*.json
-UCF101_data/results/*.tsv
-models/*.pt
-models/*.pth
-models/timesformer_ucf101_ddp/
-
-# WandB
+# Logs, HPC outputs
 wandb/
 *.wandb
-
-# HPC job outputs
 slurm*.out
 slurm*.err
 *.log
 
-# Temporary files
-*.tmp
-*.bak
-.cache/
-.pytest_cache/
-
-# OS-specific
-.DS_Store
-Thumbs.db
-
-# Large files
+# Archives, large binaries
 *.tar.gz
 *.zip
 *.rar
-
-# Configuration overrides (local)
-config.local.yaml
-
-# Test outputs
-htmlcov/
-.coverage
-.hypothesis/
-fine_tuned_models/
-
-# Ignore large binary files (20bin and similar)
 *.bin
 
-# Ignore 20bn dataset files
-20bn-something-something-v2-*
+# Local config overrides
+config.local.yaml
 
-# Allow results inside UCF101_data/results to be tracked
-!data/UCF101_data/results/*.csv
-!data/UCF101_data/results/*.png
-!data/UCF101_data/results/*.pdf
-!data/UCF101_data/results/*.jpg
-!results/*.csv
-!results/*.png
+# =========================
+# Data (ignore raw datasets)
+# =========================
+data/UCF101_data/
+data/HMDB51_data/
+data/Kinetics400_data/
+data/SSv2_data/
+
+# =========================
+# Keep small metadata/manifests tracked
+# =========================
+!data/UCF101_data/manifests/**
+!data/HMDB51_data/splits/**
+!data/Kinetics400_data/*.txt
+!data/Kinetics400_data/k400_50/**
+
+# =========================
+# Track results inside UCF101_data/results
+# =========================
+!data/UCF101_data/results/
+!data/UCF101_data/results/**
+
+!data/UCF101_data/results/**/*.csv
+!data/UCF101_data/results/**/*.json
+!data/UCF101_data/results/**/*.tsv
+!data/UCF101_data/results/**/*.png
+!data/UCF101_data/results/**/*.jpg
+!data/UCF101_data/results/**/*.jpeg
+!data/UCF101_data/results/**/*.svg
+!data/UCF101_data/results/**/*.pdf
+!data/UCF101_data/results/**/*.md
+
+# =========================
+# Model artifacts
+# =========================
+fine_tuned_models/
+models/*.pt
+models/*.pth
+models/timesformer_ucf101_ddp/
+*.pt
+*.pth
+
+# =========================
+# Other datasets by name
+# =========================
+20bn-something-something-v2-*
