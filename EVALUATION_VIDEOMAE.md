@@ -207,4 +207,3 @@ python scripts/plot_results.py --model videomae --out-dir data/UCF101_data/resul
 - [Per-Class Accuracy Distribution by Coverage (Boxplot & Violin)](data/UCF101_data/results/videomae/per_class_distribution_by_coverage.png)
 
 ---
-*This report was automatically generated for VideoMAE using the same methodology as for TimeSformer.*

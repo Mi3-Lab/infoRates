@@ -248,7 +248,7 @@ Additional visualizations supporting the main findings:
 **Statistical Analysis Outputs**:
 - `statistical_results.json` – Hypothesis test statistics: ANOVA F-statistics, p-values, effect sizes (η², Cohen's d), variance homogeneity metrics
 - `pairwise_coverage_comparisons.csv` – Bonferroni-corrected pairwise t-tests across coverage levels (10 comparisons)
-- `summary_statistics_by_coverage.csv` – Descriptive statistics by coverage level (mean, std, min, max, 95% CI)
+- `summary_statistics_by_coverage.csv` – Descriptive statistics by coverage level (mean, std, min, max, 95% CI).
 
 ### 6.2 Execution
 
