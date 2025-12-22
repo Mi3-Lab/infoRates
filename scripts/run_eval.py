@@ -85,6 +85,7 @@ def main():
     batch_size = args.batch_size if args.batch_size is not None else int(cfg.get("eval_batch_size", 8))
     workers = args.workers if args.workers is not None else int(cfg.get("eval_workers", 8))
 
+
     # Derive per-model default output paths when not explicitly provided
     default_results_dir = cfg.get("eval_results_dir", "data/UCF101_data/results")
     model_tag = os.path.basename(os.path.normpath(model_path))
@@ -96,6 +97,14 @@ def main():
     os.makedirs(model_results_dir, exist_ok=True)
     default_out = os.path.join(model_results_dir, f"{model_tag}_temporal_sampling.csv")
     out_path = args.out or cfg.get("eval_out", default_out)
+
+    # Set model-specific frame count for ViViT (32), VideoMAE (16), TimeSformer (8)
+    if model_name == "vivit":
+        eval_num_frames = 32
+    elif model_name == "videomae":
+        eval_num_frames = 16
+    else:
+        eval_num_frames = 8
 
     wandb_project = args.wandb_project or cfg.get("wandb_project", "inforates-ucf101")
     wandb_run_name = args.wandb_run_name or cfg.get("eval_wandb_run_name")
@@ -234,13 +243,12 @@ def main():
     if pending_configs and ddp and world_size > 1:
         # Shard rows across ranks
         my_subset = subset.iloc[rank::world_size]
-        
         # Process each configuration individually
         for stride in pending_strides:
             for coverage in pending_coverages:
                 if (coverage, stride) in completed_configs:
                     continue
-                # Evaluate single config
+                # Evaluate single config (do NOT pass num_frames to evaluate_fixed_parallel_counts)
                 local_counts = evaluate_fixed_parallel_counts(
                     df=my_subset,
                     processor=processor,
@@ -252,7 +260,6 @@ def main():
                     num_workers=workers,
                     jitter_coverage_pct=jitter_coverage_pct,
                 )
-                
                 # Aggregate across ranks
                 if not local_counts.empty:
                     correct_sum = int((local_counts["accuracy"] * local_counts["n_samples"]).sum())
@@ -277,7 +284,6 @@ def main():
                     "correct": correct_sum,
                     "total": total_sum,
                 }])
-                
                 # Append to existing results and save immediately (rank 0 only)
                 if rank == 0:
                     if existing_df is not None:
@@ -287,7 +293,6 @@ def main():
                     os.makedirs(os.path.dirname(out_path), exist_ok=True)
                     existing_df.to_csv(out_path, index=False)
                     print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={acc:.4f}")
-        
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     elif pending_configs:
         # Non-DDP: evaluate one config at a time
@@ -296,7 +301,6 @@ def main():
             for coverage in pending_coverages:
                 if (coverage, stride) in completed_configs:
                     continue
-                    
                 result = evaluate_fixed_parallel(
                     df=subset,
                     processor=processor,
@@ -308,9 +312,8 @@ def main():
                     num_workers=workers,
                     jitter_coverage_pct=jitter_coverage_pct,
                     rank=rank,
-                    num_frames=None,
+                    num_frames=eval_num_frames,
                 )
-                
                 # Append and save immediately
                 all_rows.append(result.iloc[0])
                 if existing_df is not None:
@@ -320,7 +323,6 @@ def main():
                 os.makedirs(os.path.dirname(out_path), exist_ok=True)
                 existing_df.to_csv(out_path, index=False)
                 print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={result.iloc[0]['accuracy']:.4f}")
-        
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     else:
         # No evaluation needed, use loaded results for per-class
