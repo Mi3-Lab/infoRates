@@ -6,18 +6,30 @@ Performs comprehensive statistical hypothesis testing and effect size computatio
 to validate key findings regarding temporal aliasing in action recognition.
 """
 
+
 import pandas as pd
 import numpy as np
 from scipy import stats
 from pathlib import Path
 import json
+import argparse
 
 # ============================================================
-# LOAD DATA
+# ARGUMENT PARSING
 # ============================================================
-results_dir = Path("data/UCF101_data/results")
-df_agg = pd.read_csv(results_dir / "ucf101_50f_finetuned.csv")
-df_per_class = pd.read_csv(results_dir / "ucf101_50f_per_class.csv")
+parser = argparse.ArgumentParser(description="Statistical analysis for temporal sampling results (supports all models)")
+parser.add_argument('--csv', type=str, required=True, help='Path to main results CSV (temporal_sampling)')
+parser.add_argument('--per-class-csv', type=str, required=True, help='Path to per-class results CSV')
+parser.add_argument('--out-dir', type=str, default=None, help='Directory to save outputs (default: CSV parent)')
+args = parser.parse_args()
+
+main_csv = Path(args.csv)
+per_class_csv = Path(args.per_class_csv)
+out_dir = Path(args.out_dir) if args.out_dir else main_csv.parent
+out_dir.mkdir(parents=True, exist_ok=True)
+
+df_agg = pd.read_csv(main_csv)
+df_per_class = pd.read_csv(per_class_csv)
 
 print("="*70)
 print("STATISTICAL ANALYSIS: TEMPORAL SAMPLING EFFECTS ON ACTION RECOGNITION")
@@ -267,19 +279,20 @@ stats_output = {
     }
 }
 
-with open(results_dir / "statistical_results.json", "w") as f:
+with open(out_dir / "statistical_results.json", "w") as f:
     json.dump(stats_output, f, indent=2)
 
+
 # Save pairwise comparison results
-df_pairwise.to_csv(results_dir / "pairwise_coverage_comparisons.csv", index=False)
+df_pairwise.to_csv(out_dir / "pairwise_coverage_comparisons.csv", index=False)
 
 # Save summary statistics
-df_summary.to_csv(results_dir / "summary_statistics_by_coverage.csv", index=False)
+df_summary.to_csv(out_dir / "summary_statistics_by_coverage.csv", index=False)
 
 print("\n✅ Saved:")
-print(f"  • {results_dir}/statistical_results.json")
-print(f"  • {results_dir}/pairwise_coverage_comparisons.csv")
-print(f"  • {results_dir}/summary_statistics_by_coverage.csv")
+print(f"  • {out_dir}/statistical_results.json")
+print(f"  • {out_dir}/pairwise_coverage_comparisons.csv")
+print(f"  • {out_dir}/summary_statistics_by_coverage.csv")
 
 print("\n" + "="*70)
 print("ANALYSIS COMPLETE")

@@ -44,7 +44,7 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path) -> Path:
+def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Line plot: accuracy vs coverage for each stride."""
     plt.figure(figsize=(8, 5))
     for stride in sorted(df["stride"].unique()):
@@ -52,7 +52,8 @@ def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path) -> Path:
         plt.plot(subset["coverage"], subset["accuracy"], marker="o", label=f"stride={stride}")
     plt.xlabel("Coverage (%)")
     plt.ylabel("Accuracy")
-    plt.title("Accuracy vs Coverage by Stride")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Accuracy vs Coverage by Stride")
     plt.legend()
     plt.grid(True, alpha=0.3)
     out_path = out_dir / "accuracy_vs_coverage.png"
@@ -61,7 +62,7 @@ def plot_accuracy_vs_coverage(df: pd.DataFrame, out_dir: Path) -> Path:
     return out_path
 
 
-def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path) -> Path:
+def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Heatmap of accuracy by stride x coverage."""
     pivot = df.pivot(index="stride", columns="coverage", values="accuracy")
     plt.figure(figsize=(8, 6))
@@ -80,7 +81,8 @@ def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path) -> Path:
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
                 ax.text(j, i, f"{data[i, j]:.2f}", ha="center", va="center", color="black")
-    plt.title("Accuracy Heatmap (Stride vs Coverage)")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Accuracy Heatmap (Stride vs Coverage)")
     plt.ylabel("Stride")
     plt.xlabel("Coverage (%)")
     out_path = out_dir / "accuracy_heatmap.png"
@@ -89,7 +91,7 @@ def plot_accuracy_heatmap(df: pd.DataFrame, out_dir: Path) -> Path:
     return out_path
 
 
-def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path) -> Path:
+def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Efficiency plot: accuracy per second vs coverage (per stride)."""
     # Avoid division by zero
     df_eff = df.copy()
@@ -100,7 +102,8 @@ def plot_accuracy_per_time(df: pd.DataFrame, out_dir: Path) -> Path:
         plt.plot(subset["coverage"], subset["acc_per_sec"], marker="o", label=f"stride={stride}")
     plt.xlabel("Coverage (%)")
     plt.ylabel("Accuracy per second")
-    plt.title("Efficiency: Accuracy/Time vs Coverage")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Efficiency: Accuracy/Time vs Coverage")
     plt.legend()
     plt.grid(True, alpha=0.3)
     out_path = out_dir / "accuracy_per_second.png"
@@ -124,7 +127,7 @@ def compute_pareto_frontier(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(frontier)
 
 
-def plot_pareto_frontier(df: pd.DataFrame, out_dir: Path) -> Path:
+def plot_pareto_frontier(df: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path:
     """Plot Pareto frontier: accuracy vs latency."""
     frontier = compute_pareto_frontier(df)
     plt.figure(figsize=(10, 6))
@@ -142,7 +145,8 @@ def plot_pareto_frontier(df: pd.DataFrame, out_dir: Path) -> Path:
         )
     plt.xlabel("Avg Time per Sample (s)")
     plt.ylabel("Accuracy")
-    plt.title("Pareto-Optimal Frontier: Accuracy vs Latency")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Pareto-Optimal Frontier: Accuracy vs Latency")
     plt.legend()
     plt.grid(True, alpha=0.3)
     out_path = out_dir / "pareto_frontier.png"
@@ -172,7 +176,7 @@ def compute_per_class_aliasing_summary(df_per_class: pd.DataFrame) -> pd.DataFra
     return result.sort_values("aliasing_drop", ascending=False)
 
 
-def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path | None:
     """Plot top-15 most aliasing-sensitive classes (100% → 25% drop)."""
     alias_summary = compute_per_class_aliasing_summary(df_per_class)
     if alias_summary.empty:
@@ -180,7 +184,8 @@ def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path) -> Pa
     top = alias_summary.head(15).set_index("class")
     plt.figure(figsize=(10, 6))
     top["aliasing_drop"].plot(kind="bar", color="tomato")
-    plt.title("Top 15 Aliasing-Sensitive Classes (Accuracy Drop 100% → 25%)")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Top 15 Aliasing-Sensitive Classes (Accuracy Drop 100% → 25%)")
     plt.ylabel("Accuracy Drop")
     plt.xlabel("Class")
     plt.xticks(rotation=45, ha="right")
@@ -192,7 +197,7 @@ def plot_per_class_aliasing_bar(df_per_class: pd.DataFrame, out_dir: Path) -> Pa
     return out_path
 
 
-def plot_per_class_stride_heatmap(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+def plot_per_class_stride_heatmap(df_per_class: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path | None:
     """Heatmap of mean accuracy per class × stride."""
     if "class" not in df_per_class.columns or "stride" not in df_per_class.columns:
         return None
@@ -206,7 +211,8 @@ def plot_per_class_stride_heatmap(df_per_class: pd.DataFrame, out_dir: Path) -> 
         plt.colorbar(im, label="Accuracy")
         plt.xticks(range(len(pivot.columns)), [str(c) for c in pivot.columns])
         plt.yticks(range(len(pivot.index)), [str(s) for s in pivot.index])
-    plt.title("Mean Accuracy per Class and Stride")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Mean Accuracy per Class and Stride")
     plt.xlabel("Stride")
     plt.ylabel("Class")
     out_path = out_dir / "per_class_stride_heatmap.png"
@@ -216,7 +222,7 @@ def plot_per_class_stride_heatmap(df_per_class: pd.DataFrame, out_dir: Path) -> 
     return out_path
 
 
-def plot_per_class_accuracy_boxplot(df_per_class: pd.DataFrame, out_dir: Path) -> Path | None:
+def plot_per_class_accuracy_boxplot(df_per_class: pd.DataFrame, out_dir: Path, model_name: str = "") -> Path | None:
     """Boxplot of accuracy distribution across sampling configs per class (top-N classes by samples)."""
     if "class" not in df_per_class.columns or "accuracy" not in df_per_class.columns:
         return None
@@ -232,7 +238,8 @@ def plot_per_class_accuracy_boxplot(df_per_class: pd.DataFrame, out_dir: Path) -
         data = [df_top[df_top["class"] == c]["accuracy"].values for c in top_classes]
         plt.boxplot(data)
         plt.xticks(range(1, len(top_classes) + 1), top_classes)
-    plt.title("Accuracy Distribution Across Sampling Configurations (Top-30 Classes)")
+    title_prefix = f"{model_name} " if model_name else ""
+    plt.title(f"{title_prefix}Accuracy Distribution Across Sampling Configurations (Top-30 Classes)")
     plt.xticks(rotation=90)
     plt.xlabel("Class")
     plt.ylabel("Accuracy")
@@ -340,19 +347,22 @@ def main():
     df, source_csv = load_results(config_path, csv_path)
 
     # Output directory from config or CSV parent
-    results_dir = None
-    if config_path and config_path.exists():
-        cfg = yaml.safe_load(config_path.read_text())
-        results_dir = Path(cfg.get("results_dir", "data/UCF101_data/results"))
-    if results_dir is None:
-        results_dir = source_csv.parent
 
+    # Always use the parent directory of the main CSV as the output directory
+    results_dir = source_csv.parent
     ensure_dir(results_dir)
 
-    acc_cov = plot_accuracy_vs_coverage(df, results_dir)
-    heatmap = plot_accuracy_heatmap(df, results_dir)
-    eff_plot = plot_accuracy_per_time(df, results_dir)
-    pareto_plot = plot_pareto_frontier(df, results_dir)
+    # Determine model name for plot titles
+    model_name = ""
+    if "videomae" in str(source_csv).lower():
+        model_name = "VideoMAE"
+    elif "timesformer" in str(source_csv).lower():
+        model_name = "TimeSformer"
+
+    acc_cov = plot_accuracy_vs_coverage(df, results_dir, model_name)
+    heatmap = plot_accuracy_heatmap(df, results_dir, model_name)
+    eff_plot = plot_accuracy_per_time(df, results_dir, model_name)
+    pareto_plot = plot_pareto_frontier(df, results_dir, model_name)
 
     summary = summarize(df)
     summary_md = write_summary_md(summary, results_dir, source_csv)
@@ -368,9 +378,9 @@ def main():
             per_class_alias_csv_path = results_dir / "per_class_aliasing_drop.csv"
             alias_summary.to_csv(per_class_alias_csv_path, index=False)
         # Generate per-class charts
-        per_class_alias_png = plot_per_class_aliasing_bar(df_per_class, results_dir)
-        per_class_heatmap_png = plot_per_class_stride_heatmap(df_per_class, results_dir)
-        per_class_box_png = plot_per_class_accuracy_boxplot(df_per_class, results_dir)
+        per_class_alias_png = plot_per_class_aliasing_bar(df_per_class, results_dir, model_name)
+        per_class_heatmap_png = plot_per_class_stride_heatmap(df_per_class, results_dir, model_name)
+        per_class_box_png = plot_per_class_accuracy_boxplot(df_per_class, results_dir, model_name)
 
     print("Saved:")
     print(f"- {acc_cov}")
