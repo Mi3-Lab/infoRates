@@ -52,7 +52,7 @@ Table 2 quantifies the systematic degradation in mean accuracy as temporal cover
 | 25%      | 91.16%        | -7.07%             | 4.91%              | Severe aliasing onset |
 | 10%      | 86.66%        | -11.57%            | 5.78%              | Critical undersampling |
 
-The transition from 50% to 25% coverage marks a critical inflection point, where accuracy drops by 5.74 percentage points—more than four times the cumulative degradation observed from 100% to 50% coverage (1.33%). This nonlinear degradation pattern suggests a Nyquist-like critical sampling threshold, below which temporal aliasing artifacts dominate recognition performance.
+The transition from 50% to 25% coverage marks a critical inflection point, where accuracy drops by 5.74 percentage points, more than four times the cumulative degradation observed from 100% to 50% coverage (1.33%). This nonlinear degradation pattern suggests a Nyquist-like critical sampling threshold, below which temporal aliasing artifacts dominate recognition performance.
 
 ---
 
@@ -70,7 +70,7 @@ We identified Pareto-optimal configurations where no alternative achieves superi
 | 100%     | 2      | 98.29%   | 0.0171      | 2           | Near-optimal |
 | 100%     | 8      | 98.43%   | 0.0174      | 1 (optimal) | Maximum accuracy |
 
-Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution—concentrated at 10% (minimal resource) and 100% (maximal accuracy) suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
+Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution concentrated at 10% (minimal resource) and 100% (maximal accuracy) suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
 
 ![Figure 2: Pareto Frontier](data/UCF101_data/results/timesformer/lagacy/pareto_frontier.png)
 
