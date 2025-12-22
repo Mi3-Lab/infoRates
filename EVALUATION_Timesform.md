@@ -32,7 +32,7 @@ The optimal configuration achieved 98.43% accuracy at 100% temporal coverage wit
 | Aliasing-Induced Drop (100%→10%) | 11.57% | Effect size: Cohen's $d=1.13$ |
 | Inference Latency | ~0.017s | Invariant across configurations |
 
-Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. At full temporal coverage (100%), larger strides yield superior accuracy, with stride-8 achieving peak performance. However, this advantage reverses dramatically at reduced coverage: dense sampling (stride-1) exhibits greater robustness to undersampling, maintaining 92.28% accuracy at 10% coverage, whereas sparse sampling (stride-8) degrades to 79.50%—a 12.78 percentage point deficit.
+Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. At full temporal coverage (100%), larger strides yield superior accuracy, with stride-8 achieving peak performance. However, this advantage reverses dramatically at reduced coverage: dense sampling (stride-1) exhibits greater robustness to undersampling, maintaining 92.28% accuracy at 10% coverage, whereas sparse sampling (stride-8) degrades to 79.50% a 12.78 percentage point deficit.
 
 ![Figure 1: Accuracy vs Coverage](data/UCF101_data/results/timesformer/lagacy/accuracy_vs_coverage.png)
 
