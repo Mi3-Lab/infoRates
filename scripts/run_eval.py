@@ -1,4 +1,3 @@
-
 import argparse
 import math
 import os
@@ -6,7 +5,10 @@ import yaml
 import pandas as pd
 import torch
 import torch.distributed as dist
-import wandb
+try:
+    import wandb
+except ImportError:
+    wandb = None
 import random
 import numpy as np
 from transformers import AutoImageProcessor, AutoModelForVideoClassification
@@ -143,7 +145,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Initialize WandB (only rank 0 when DDP)
-    if not args.no_wandb and (not ddp or rank == 0):
+    if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
         wandb.init(
             project=wandb_project,
             name=wandb_run_name,
@@ -200,7 +202,7 @@ def main():
     if not pending_configs and not args.per_class:
         if not ddp or rank == 0:
             print("All configurations already completed. Nothing to evaluate.")
-        if not args.no_wandb and (not ddp or rank == 0):
+        if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
             wandb.finish()
         if ddp:
             dist.destroy_process_group()
@@ -222,7 +224,7 @@ def main():
         else:
             if not ddp or rank == 0:
                 print("Error: No existing results to use for per-class analysis.")
-            if not args.no_wandb and (not ddp or rank == 0):
+            if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
                 wandb.finish()
             if ddp:
                 dist.destroy_process_group()
@@ -248,8 +250,9 @@ def main():
         for stride in pending_strides:
             for coverage in pending_coverages:
                 if (coverage, stride) in completed_configs:
+                    # print(f"[DEBUG] Skipping completed stride={stride} cov={coverage}%", flush=True)
                     continue
-                # Evaluate single config (do NOT pass num_frames to evaluate_fixed_parallel_counts)
+                # print(f"[DEBUG] Rank {rank} START stride={stride} cov={coverage}% (calling evaluate_fixed_parallel_counts)", flush=True)
                 local_counts = evaluate_fixed_parallel_counts(
                     df=my_subset,
                     processor=processor,
@@ -262,6 +265,8 @@ def main():
                     jitter_coverage_pct=jitter_coverage_pct,
                     num_frames=eval_num_frames,
                 )
+                # print(f"[DEBUG] Rank {rank} END stride={stride} cov={coverage}% (returned from evaluate_fixed_parallel_counts)", flush=True)
+                # print(f"[DEBUG] local_counts head:\n{local_counts.head() if hasattr(local_counts, 'head') else local_counts}", flush=True)
                 # Aggregate across ranks
                 if not local_counts.empty:
                     correct_sum = int((local_counts["accuracy"] * local_counts["n_samples"]).sum())
@@ -294,37 +299,68 @@ def main():
                         existing_df = new_row
                     os.makedirs(os.path.dirname(out_path), exist_ok=True)
                     existing_df.to_csv(out_path, index=False)
-                    print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={acc:.4f}")
+                    print(f"[RESULT] stride={stride} cov={coverage}% -> acc={acc:.4f}", flush=True)
+                # print(f"[DEBUG] Rank {rank} COMPLETE stride={stride} cov={coverage}%", flush=True)
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     elif pending_configs:
         # Non-DDP: evaluate one config at a time
         all_rows = []
+        processed_configs = set(completed_configs)
+        failed_configs = set()
         for stride in pending_strides:
             for coverage in pending_coverages:
-                if (coverage, stride) in completed_configs:
+                if (coverage, stride) in processed_configs:
+                    # print(f"[DEBUG] Skipping already processed stride={stride} cov={coverage}%", flush=True)
                     continue
-                result = evaluate_fixed_parallel(
-                    df=subset,
-                    processor=processor,
-                    model=model,
-                    coverages=[coverage],
-                    strides=[stride],
-                    sample_size=sample_size,
-                    batch_size=batch_size,
-                    num_workers=workers,
-                    jitter_coverage_pct=jitter_coverage_pct,
-                    rank=rank,
-                    num_frames=eval_num_frames,
-                )
-                # Append and save immediately
-                all_rows.append(result.iloc[0])
-                if existing_df is not None:
-                    existing_df = pd.concat([existing_df, result], ignore_index=True)
-                else:
-                    existing_df = result
-                os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                existing_df.to_csv(out_path, index=False)
-                print(f"✓ Saved: stride={stride} cov={coverage}% -> acc={result.iloc[0]['accuracy']:.4f}")
+                # print(f"[DEBUG] Processing stride={stride} cov={coverage}%", flush=True)
+                try:
+                    result = evaluate_fixed_parallel(
+                        df=subset,
+                        processor=processor,
+                        model=model,
+                        coverages=[coverage],
+                        strides=[stride],
+                        sample_size=sample_size,
+                        batch_size=batch_size,
+                        num_workers=workers,
+                        jitter_coverage_pct=jitter_coverage_pct,
+                        rank=rank,
+                        num_frames=eval_num_frames,
+                    )
+                    # print(f"[DEBUG] Type of result: {type(result)}", flush=True)
+                    # print(f"[DEBUG] Content of result: {result}", flush=True)
+                    # Handle both DataFrame and list return types
+                    valid = False
+                    if hasattr(result, 'iloc') and 'accuracy' in result.columns:
+                        all_rows.append(result.iloc[0])
+                        acc_val = result.iloc[0]['accuracy']
+                        result_df = result
+                        valid = True
+                    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'accuracy' in result[0]:
+                        all_rows.append(result[0])
+                        acc_val = result[0]['accuracy']
+                        result_df = pd.DataFrame(result)
+                        valid = True
+                    else:
+                        print(f"[WARNING] Invalid or empty result for stride={stride} cov={coverage}%, skipping save.", flush=True)
+                        acc_val = 'N/A'
+                        result_df = None
+                    if valid:
+                        if existing_df is not None:
+                            existing_df = pd.concat([existing_df, result_df], ignore_index=True)
+                        else:
+                            existing_df = result_df
+                        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                        existing_df.to_csv(out_path, index=False)
+                        # print(f"[DEBUG] Saved stride={stride} cov={coverage}% -> acc={acc_val}", flush=True)
+                    processed_configs.add((coverage, stride))
+                except Exception as e:
+                    print(f"[ERROR] Exception for stride={stride} cov={coverage}%: {e}", flush=True)
+                    failed_configs.add((coverage, stride))
+                # print(f"[DEBUG] Processed configs so far: {processed_configs}", flush=True)
+                # print(f"[DEBUG] Failed configs so far: {failed_configs}", flush=True)
+        print(f"[SUMMARY] All processed configs: {processed_configs}", flush=True)
+        print(f"[SUMMARY] All failed configs: {failed_configs}", flush=True)
         df_results = existing_df if existing_df is not None else pd.DataFrame()
     else:
         # No evaluation needed, use loaded results for per-class
@@ -343,7 +379,7 @@ def main():
         dist.all_gather_object(gathered_results, pickle.dumps(df_results))
         if rank == 0:
             df_results = pd.concat([pickle.loads(x) for x in gathered_results], ignore_index=True)
-    if not args.no_wandb and (not ddp or rank == 0):
+    if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
         wandb.log({"results_table": wandb.Table(dataframe=df_results)})
         # Log Pareto frontier
         frontier = compute_pareto(df_results)
@@ -421,7 +457,7 @@ def main():
             df_per_class.to_csv(per_class_out, index=False)
             print(f"✅ Saved per-class results: {len(df_per_class)} rows")
 
-        if not args.no_wandb and (not ddp or rank == 0):
+        if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
             wandb.log({"per_class_table": wandb.Table(dataframe=df_per_class)})
 
             # Summaries: best per class and top aliasing drop (100% vs 25% coverage mean across strides)
@@ -444,7 +480,7 @@ def main():
                 drop_df = drop_df.sort_values("drop_100_minus_25", ascending=False).head(20)
                 wandb.log({"per_class_aliasing_drop": wandb.Table(dataframe=drop_df)})
     
-    if not args.no_wandb and (not ddp or rank == 0):
+    if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
         wandb.finish()
 
     # Cleanup DDP

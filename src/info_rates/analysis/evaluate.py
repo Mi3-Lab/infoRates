@@ -179,9 +179,11 @@ def evaluate_fixed_parallel(
                                         torch.cuda.empty_cache()
 
                                     total_time = (time.time() - t0)
+                                    acc = (correct / total) if total > 0 else 0.0
                                     results.append({
                                         "coverage": cov,
                                         "stride": stride,
+                                        "accuracy": acc,
                                         "correct": correct,
                                         "total": total,
                                         "total_time": total_time,
@@ -262,9 +264,11 @@ def evaluate_fixed_parallel(
                 torch.cuda.empty_cache()
 
             total_time = (time.time() - t0)
+            acc = (correct / total) if total > 0 else 0.0
             results.append({
                 "coverage": cov,
                 "stride": stride,
+                "accuracy": acc,
                 "correct": correct,
                 "total": total,
                 "total_time": total_time,
