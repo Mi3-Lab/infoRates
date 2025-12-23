@@ -1,4 +1,3 @@
-
 import argparse
 import math
 import os
@@ -342,6 +341,7 @@ def main():
         gathered_results = [None for _ in range(world_size)]
         dist.all_gather_object(gathered_results, pickle.dumps(df_results))
         if rank == 0:
+            import pandas as pd
             df_results = pd.concat([pickle.loads(x) for x in gathered_results], ignore_index=True)
     if not args.no_wandb and (not ddp or rank == 0):
         wandb.log({"results_table": wandb.Table(dataframe=df_results)})
