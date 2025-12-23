@@ -65,10 +65,10 @@ def evaluate_fixed_parallel(
                 completed.add((row.coverage, row.stride))
             results = prev.to_dict(orient="records")
             if rank == 0:
-                print(f"[aggregate] Resuming, loaded {len(results)} rows from checkpoint.")
+                pass
         except Exception as e:
             if rank == 0:
-                print(f"[aggregate] Failed to load checkpoint: {e}")
+                pass
     device = next(model.parameters()).device
 
     rng = np.random.default_rng(42)
@@ -77,7 +77,7 @@ def evaluate_fixed_parallel(
         for cov in coverages:
             if (cov, stride) in completed:
                 if rank == 0:
-                    print(f"[per-class] Skipping completed: stride={stride} cov={cov}%")
+                    pass
                 continue
             correct = total = 0
             t0 = time.time()
@@ -117,7 +117,7 @@ def evaluate_fixed_parallel(
                                 for cov in coverages:
                                     if (cov, stride) in completed:
                                         if rank == 0:
-                                            print(f"[aggregate] Skipping completed: stride={stride} cov={cov}%")
+                                            pass
                                         continue
                                     correct = total = 0
                                     t0 = time.time()
@@ -305,10 +305,10 @@ def per_class_analysis_fast(
                 completed.add((row.coverage, row.stride))
             results = prev.to_dict(orient="records")
             if rank == 0:
-                print(f"[per-class] Resuming, loaded {len(results)} rows from checkpoint.")
+                pass
         except Exception as e:
             if rank == 0:
-                print(f"[per-class] Failed to load checkpoint: {e}")
+                pass
     device = next(model.parameters()).device
 
     id2label = model.config.id2label
@@ -319,7 +319,7 @@ def per_class_analysis_fast(
         for cov in coverages:
             if (cov, stride) in completed:
                 if rank == 0:
-                    print(f"[per-class] Skipping completed: stride={stride} cov={cov}%")
+                    pass
                 continue
             correct_per_class = np.zeros(n_classes, dtype=np.int32)
             total_per_class = np.zeros(n_classes, dtype=np.int32)
@@ -386,7 +386,7 @@ def per_class_analysis_fast(
             avg_time = (time.time() - t0) / np.maximum(1, total_per_class.sum())
             mean_acc = accs[total_per_class > 0].mean() if (total_per_class > 0).any() else 0.0
             if rank == 0:
-                print(f"✅ stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame | mean per-class acc: {mean_acc:.4f}")
+                pass
 
             # Save checkpoint after each config
             if checkpoint_path is not None and rank == 0:
@@ -472,7 +472,7 @@ def per_class_analysis_fast(
             avg_time = (time.time() - t0) / np.maximum(1, total_per_class.sum())
             mean_acc = accs[total_per_class > 0].mean() if (total_per_class > 0).any() else 0.0
             if rank == 0:
-                print(f"✅ stride={stride} cov={cov}% | mean time: {avg_time:.3f}s/frame | mean per-class acc: {mean_acc:.4f}")
+                pass
 
             # Save checkpoint after each config
             if checkpoint_path is not None and rank == 0:

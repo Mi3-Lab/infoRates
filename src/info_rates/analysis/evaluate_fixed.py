@@ -31,9 +31,9 @@ def evaluate_fixed_parallel(
     rng = np.random.default_rng(42)
 
     # Debug: print manifest label sample and model label mapping
-    print("[DEBUG] Manifest label sample:", subset['label'].unique()[:10], flush=True)
-    print("[DEBUG] model.config.id2label:", getattr(model.config, 'id2label', None), flush=True)
-    print("[DEBUG] model.config.label2id:", getattr(model.config, 'label2id', None), flush=True)
+    # print("[DEBUG] Manifest label sample:", subset['label'].unique()[:10], flush=True)
+    # print("[DEBUG] model.config.id2label:", getattr(model.config, 'id2label', None), flush=True)
+    # print("[DEBUG] model.config.label2id:", getattr(model.config, 'label2id', None), flush=True)
 
     for stride in strides:
         for cov in coverages:
@@ -58,7 +58,7 @@ def evaluate_fixed_parallel(
                         )
                     )
                     if idx % 50 == 0:
-                        print(f"[DEBUG] Submitted {idx+1}/{len(subset)} jobs for stride={stride} cov={cov}%", flush=True)
+                        pass
 
                 batch_frames, batch_labels = [], []
                 fut_count = 0
@@ -70,7 +70,7 @@ def evaluate_fixed_parallel(
                     batch_labels.append(label)
                     fut_count += 1
                     if fut_count % 50 == 0:
-                        print(f"[DEBUG] Processed {fut_count}/{len(futures)} batches for stride={stride} cov={cov}%", flush=True)
+                        pass
 
                     if len(batch_frames) == batch_size:
                         with torch.amp.autocast(device.type, dtype=torch.float16):
@@ -87,9 +87,9 @@ def evaluate_fixed_parallel(
                         if device.type == "cuda":
                             torch.cuda.empty_cache()
 
-                print(f"[DEBUG] Finished processing futures for stride={stride} cov={cov}%", flush=True)
+                # print(f"[DEBUG] Finished processing futures for stride={stride} cov={cov}%", flush=True)
                 if batch_frames:
-                    print(f"[DEBUG] Processing remaining batch of size {len(batch_frames)} for stride={stride} cov={cov}%", flush=True)
+                    # print(f"[DEBUG] Processing remaining batch of size {len(batch_frames)} for stride={stride} cov={cov}%", flush=True)
                     with torch.amp.autocast(device.type, dtype=torch.float16):
                         inputs = processor(batch_frames, return_tensors="pt").to(device)
                         logits = model(**inputs).logits
@@ -102,10 +102,10 @@ def evaluate_fixed_parallel(
                     del inputs, logits
                     if device.type == "cuda":
                         torch.cuda.empty_cache()
-                print(f"[DEBUG] Finished processing remaining batch for stride={stride} cov={cov}%", flush=True)
+                # print(f"[DEBUG] Finished processing remaining batch for stride={stride} cov={cov}%", flush=True)
 
             acc = correct / max(1, total)
-            print(f"[DEBUG] stride={stride} cov={cov}%: correct={correct}, total={total}, acc={acc}", flush=True)
+            print(f"[RESULT] stride={stride} cov={cov}%: acc={acc:.4f}", flush=True)
             results.append({
                 "coverage": cov,
                 "stride": stride,
@@ -115,7 +115,7 @@ def evaluate_fixed_parallel(
                 "total": total,
             })
 
-    print(f"[DEBUG] Returning results with {len(results)} entries", flush=True)
+    # print(f"[DEBUG] Returning results with {len(results)} entries", flush=True)
     return pd.DataFrame(results)
 
 
@@ -148,13 +148,13 @@ def evaluate_fixed_parallel_counts(
     id2label = getattr(model.config, 'id2label', None)
     label2id = getattr(model.config, 'label2id', None)
     n_classes = len(id2label) if id2label is not None else 0
-    print("[DEBUG] id2label:", id2label, flush=True)
-    print("[DEBUG] label2id:", label2id, flush=True)
-    print("[DEBUG] n_classes:", n_classes, flush=True)
+    # print("[DEBUG] id2label:", id2label, flush=True)
+    # print("[DEBUG] label2id:", label2id, flush=True)
+    # print("[DEBUG] n_classes:", n_classes, flush=True)
     if not id2label or not label2id:
         print("[ERROR] Model config is missing id2label or label2id! Check model checkpoint.", flush=True)
     # Print a sample of manifest labels
-    print("[DEBUG] Sample manifest labels:", subset['label'].unique()[:10], flush=True)
+    # print("[DEBUG] Sample manifest labels:", subset['label'].unique()[:10], flush=True)
 
     # Print progress inside batch loop
     batch_print_interval = max(1, len(subset) // 10)
@@ -181,7 +181,7 @@ def evaluate_fixed_parallel_counts(
 
                     fut_count += 1
                     if fut_count % batch_print_interval == 0:
-                        print(f"[DEBUG] stride={stride} cov={cov}% processed {fut_count}/{len(futures)} batches", flush=True)
+                        pass
 
                     if len(batch_frames) == batch_size:
                         with torch.amp.autocast(device.type, dtype=torch.float16):
