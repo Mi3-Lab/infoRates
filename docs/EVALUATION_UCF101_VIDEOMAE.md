@@ -30,7 +30,7 @@ The optimal configuration achieved 86.90% accuracy at 100% temporal coverage wit
 
 Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. At full temporal coverage (100%), smaller strides yield superior accuracy, with stride-1 achieving peak performance. However, this advantage reverses dramatically at reduced coverage: dense sampling (stride-1) exhibits greater robustness to undersampling, maintaining 49.5% accuracy at 10% coverage, whereas sparse sampling (stride-16) degrades to much lower accuracy.
 
-![Figure 1: Accuracy vs Coverage](data/UCF101_data/results/videomae/accuracy_vs_coverage.png)
+![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/videomae/accuracy_vs_coverage.png)
 **Figure 1.** Accuracy degradation under temporal undersampling. Each line represents a different stride value. Dense sampling (stride-1) provides robustness to temporal undersampling, consistent with Nyquist-Shannon sampling theory.
 
 ### 1.3 Temporal Coverage Effects
@@ -98,7 +98,7 @@ We quantify per-class aliasing sensitivity as the accuracy drop from 100% to 25%
 | 14 | BoxingSpeedBag | 17.18% | 56.78% | **39.60** | Rapid repetitive punching motion |
 | 15 | FloorGymnastics | 32.13% | 71.69% | **39.55** | Complex acrobatic tumbling sequences |
 
-![Figure 3: Per-Class Aliasing Sensitivity](data/UCF101_data/results/videomae/per_class_aliasing_drop.png)
+![Figure 3: Per-Class Aliasing Sensitivity](../evaluations/ucf101/videomae/per_class_aliasing_drop.png)
 
 **Figure 3.** Top-15 classes with highest temporal aliasing sensitivity. Actions involving ballistic trajectories (ThrowDiscus, CliffDiving), rapid periodic motion (BodyWeightSquats, Lunges), and high-frequency oscillations (YoYo, SoccerJuggling) exhibit accuracy drops exceeding 40-64 percentage points when temporal coverage decreases from 100% to 25%. These patterns empirically validate Nyquist-Shannon sampling theory: high-frequency motions require denser temporal sampling to avoid aliasing artifacts.
 
@@ -125,7 +125,7 @@ These results demonstrate that actions with brief, controlled, or stationary mot
 
 Figure 4 contrasts the five most aliasing-sensitive classes (dashed lines) against the five most consistent classes (solid lines) across coverage levels at stride-1.
 
-![Figure 4: Representative Classes](data/UCF101_data/results/videomae/per_class_representative.png)
+![Figure 4: Representative Classes](../evaluations/ucf101/videomae/per_class_representative.png)
 
 **Figure 4.** Comparative aliasing sensitivity between high-vulnerability (dashed) and low-vulnerability (solid) action classes at stride-1. High-frequency actions such as ThrowDiscus and CliffDiving exhibit catastrophic degradation below 50% coverage, collapsing to near-chance accuracy at 10% sampling. In contrast, low-frequency actions like Typing and Billiards maintain >90% accuracy even at 10% temporal coverage, demonstrating fundamental differences in temporal information requirements across action categories.
 
@@ -177,7 +177,7 @@ $$F(4, 496) = 26.37, \quad p < 0.001$$
 
 Specifically, variance increases systematically as coverage decreases, indicating that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
 
-![Figure 4: Variance Analysis](data/UCF101_data/results/videomae/per_class_distribution_by_coverage.png)
+![Figure 4: Variance Analysis](../evaluations/ucf101/videomae/per_class_distribution_by_coverage.png)
 
 **Figure 4.** Distribution of per-class accuracies at stride-8 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing the increasing spread as coverage decreases. Variance explosion at reduced coverage validates heterogeneous temporal information requirements across action categories.
 
@@ -195,7 +195,7 @@ Based on empirical aliasing sensitivity, we propose a three-tier motion-frequenc
 
 Figure 5 visualizes mean accuracy trajectories for each tier with error bands.
 
-![Figure 5: Sensitivity Tiers](data/UCF101_data/results/videomae/per_class_sensitivity_tiers.png)
+![Figure 5: Sensitivity Tiers](../evaluations/ucf101/videomae/per_class_sensitivity_tiers.png)
 
 **Figure 5.** Action classes grouped by aliasing sensitivity tier. High-sensitivity tier (12 classes, $\Delta > 40\%$) exhibits catastrophic collapse below 50% coverage, reaching near-chance accuracy at 10% sampling. Moderate-sensitivity tier (33 classes) degrades predictably with coverage reduction. Low-sensitivity tier (56 classes) maintains >70% accuracy even at 10% coverage, demonstrating robustness to aggressive temporal undersampling. Error bands represent ±1 standard deviation within each tier, s...
 
@@ -241,19 +241,19 @@ python scripts/plot_results.py --csv data/UCF101_data/results/videomae/fine_tune
 
 Additional visualizations supporting the main findings:
 
-![Accuracy Heatmap](data/UCF101_data/results/videomae/accuracy_heatmap.png)
+![Accuracy Heatmap](../evaluations/ucf101/videomae/accuracy_heatmap.png)
 
 **Figure S1.** Complete coverage-stride accuracy heatmap. Optimal accuracy (86.90%) achieved at coverage=100%, stride=1 (top-left corner). Diagonal gradient confirms coverage dominance over stride.
 
-![Per-Class Aggregate Analysis](data/UCF101_data/results/videomae/per_class_aggregate_analysis.png)
+![Per-Class Aggregate Analysis](../evaluations/ucf101/videomae/per_class_aggregate_analysis.png)
 
 **Figure S2.** Cross-class aggregate performance with variance analysis. Left: Mean accuracy across all 101 classes with error bands, showing consistent temporal aliasing effects across strides. Right: Inter-class variability increases exponentially at low coverage, demonstrating extreme heterogeneity in temporal information requirements.
 
-![Per-Class Stride Heatmap](data/UCF101_data/results/videomae/per_class_stride_heatmap.png)
+![Per-Class Stride Heatmap](../evaluations/ucf101/videomae/per_class_stride_heatmap.png)
 
 **Figure S3.** Per-class accuracy at full coverage across strides. Most classes exhibit stride sensitivity, unlike TimeSformer which showed stride invariance at full coverage.
 
-![Accuracy per Second](data/UCF101_data/results/videomae/accuracy_per_second.png)
+![Accuracy per Second](../evaluations/ucf101/videomae/accuracy_per_second.png)
 
 **Figure S4.** Accuracy per second efficiency metric across strides and coverages. This metric combines recognition accuracy with inference latency to quantify overall system efficiency. Configurations with high accuracy at full coverage achieve superior efficiency scores.
 

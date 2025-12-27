@@ -70,7 +70,7 @@ The optimal configuration achieved 85.49% accuracy at 100% temporal coverage wit
 
 Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. ViViT exhibits a distinctive pattern where stride-1 consistently outperforms other stride values across all coverage levels, achieving 70.58% accuracy even at minimal 10% coverage. In contrast, larger strides show severe degradation at reduced coverage, with stride-16 dropping to 56.29% at both 10% and 25% coverage levels.
 
-![Figure 1: Accuracy vs Coverage](data/UCF101_data/results/vivit/accuracy_vs_coverage.png)
+![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/vivit/accuracy_vs_coverage.png)
 
 **Figure 1.** Accuracy degradation under temporal undersampling for ViViT. Unlike attention-based architectures, ViViT shows that dense sampling (stride-1) provides robust performance across all coverage levels, while sparse sampling (stride-16) suffers catastrophic failure at low coverage, suggesting fundamental differences in how convolutional and attentional architectures process temporal information.
 
@@ -110,7 +110,7 @@ We identified Pareto-optimal configurations where no alternative achieves superi
 
 The Pareto frontier reveals a clear hierarchy favoring dense sampling strategies. Notably, stride-1 appears in multiple optimal configurations, suggesting that ViViT benefits from temporal continuity rather than sparse sampling approaches.
 
-![Figure 2: Pareto Frontier](data/UCF101_data/results/vivit/pareto_frontier.png)
+![Figure 2: Pareto Frontier](../evaluations/ucf101/vivit/pareto_frontier.png)
 
 **Figure 2.** Pareto frontier analysis for ViViT reveals that dense temporal sampling dominates the efficiency frontier. The 75% coverage with stride-1 configuration provides an excellent balance between accuracy (84.83%) and computational efficiency, making it attractive for resource-constrained applications.
 
@@ -159,7 +159,7 @@ This paradoxical improvement suggests that temporal aliasing can sometimes enhan
 
 Figure 3 contrasts the five most aliasing-sensitive classes (dashed lines) against the five most robust classes (solid lines) across coverage levels at stride-1, ViViT's optimal configuration.
 
-![Figure 3: Representative Classes](data/UCF101_data/results/vivit/per_class_representative.png)
+![Figure 3: Representative Classes](../evaluations/ucf101/vivit/per_class_representative.png)
 
 **Figure 3.** Comparative aliasing sensitivity between high-vulnerability (dashed) and low-vulnerability (solid) action classes at stride-1. High-frequency actions such as YoYo and PizzaTossing exhibit catastrophic degradation below 50% coverage, collapsing to near-chance accuracy (<30%) at 25% sampling. In contrast, structured actions like BenchPress and PlayingGuitar maintain high accuracy even at reduced coverage, with some classes (Shotput) showing paradoxical improvements. This pattern reveals fundamental differences in temporal information requirements, with ViViT's convolutional architecture showing distinct sensitivity compared to attention-based models.
 
@@ -211,7 +211,7 @@ $$F(4, 196) = 18.46, \quad p < 0.001$$
 
 Variance increases systematically as coverage decreases from $\text{Var} = 0.019$ at 100% coverage to $\text{Var} = 0.032$ at 10% coverage, a 1.7-fold increase. This heteroscedasticity indicates that class-level factors modulate aliasing effects, with some actions benefiting from temporal reduction while others suffer severe degradation.
 
-![Figure 4: Variance Analysis](data/UCF101_data/results/vivit/per_class_distribution_by_coverage.png)
+![Figure 4: Variance Analysis](../evaluations/ucf101/vivit/per_class_distribution_by_coverage.png)
 
 **Figure 4.** Distribution of per-class accuracies at stride-1 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing trimodal structure at low coverage - one mode near perfect accuracy (aliasing-robust classes), another at 50-70% (typical degradation), and a third showing paradoxical improvements. Variance increase at reduced coverage validates heterogeneous temporal information requirements, with ViViT showing more complex aliasing patterns than attention-based architectures.
 

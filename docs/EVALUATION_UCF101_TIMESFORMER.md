@@ -34,7 +34,7 @@ The optimal configuration achieved 98.43% accuracy at 100% temporal coverage wit
 
 Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. At full temporal coverage (100%), larger strides yield superior accuracy, with stride-8 achieving peak performance. However, this advantage reverses dramatically at reduced coverage: dense sampling (stride-1) exhibits greater robustness to undersampling, maintaining 92.28% accuracy at 10% coverage, whereas sparse sampling (stride-8) degrades to 79.50% a 12.78 percentage point deficit.
 
-![Figure 1: Accuracy vs Coverage](data/UCF101_data/results/timesformer/lagacy/accuracy_vs_coverage.png)
+![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
 
 **Figure 1.** Accuracy degradation under temporal undersampling. Each line represents a different stride value. Larger strides (8, 16) achieve peak accuracy at full coverage but suffer severe aliasing at reduced coverage. Dense sampling (stride-1) provides robustness to temporal undersampling, consistent with Nyquist-Shannon sampling theory.
 
@@ -72,7 +72,7 @@ We identified Pareto-optimal configurations where no alternative achieves superi
 
 Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution concentrated at 10% (minimal resource) and 100% (maximal accuracy) suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
 
-![Figure 2: Pareto Frontier](data/UCF101_data/results/timesformer/lagacy/pareto_frontier.png)
+![Figure 2: Pareto Frontier](evaluations/ucf101/timesformer/pareto_frontier.png)
 
 **Figure 2.** Pareto frontier analysis reveals bimodal optimality: only minimal (10%) and maximal (100%) coverage configurations are non-dominated. Intermediate sampling rates (25-75%) lie strictly below the frontier, indicating suboptimal accuracy-efficiency trade-offs. All configurations exhibit near-identical latency (~0.017s), placing coverage not stride as the primary performance determinant.
 
@@ -110,7 +110,7 @@ We quantify per-class aliasing sensitivity as the accuracy drop from 100% to 25%
 
 Figure 3 visualizes these sensitivity rankings as a horizontal bar chart.
 
-![Figure 3: Per-Class Aliasing Sensitivity](data/UCF101_data/results/timesformer/lagacy/per_class_aliasing_drop.png)
+![Figure 3: Per-Class Aliasing Sensitivity](evaluations/ucf101/timesformer/per_class_aliasing_drop.png)
 
 **Figure 3.** Top-15 classes with highest temporal aliasing sensitivity. Actions involving rapid periodic motion (BodyWeightSquats, Lunges), ballistic trajectories (HighJump, CliffDiving, JavelinThrow), and high-frequency oscillations (SoccerJuggling, YoYo) exhibit accuracy drops exceeding 20-56 percentage points when temporal coverage decreases from 100% to 25%. Effect sizes (Cohen's $d$) exceed 1.2 for all classes shown, indicating large practical significance. These patterns empirically validate Nyquist-Shannon sampling theory: high-frequency motions require denser temporal sampling to avoid aliasing artifacts.
 
@@ -132,7 +132,7 @@ These results demonstrate a clear motion-frequency taxonomy: actions dominated b
 
 Figure 4 contrasts the five most aliasing-sensitive classes (dashed lines) against the five most robust classes (solid lines) across coverage levels at stride-8.
 
-![Figure 4: Representative Classes](data/UCF101_data/results/timesformer//lagacy/per_class_representative.png)
+![Figure 4: Representative Classes](evaluations/ucf101/timesformer/per_class_representative.png)
 
 **Figure 4.** Comparative aliasing sensitivity between high-vulnerability (dashed) and low-vulnerability (solid) action classes at stride-8. High-frequency actions such as BodyWeightSquats and HighJump exhibit catastrophic degradation below 50% coverage, collapsing to near-chance accuracy (<40%) at 10% sampling. In contrast, low-frequency actions like ApplyLipstick and BenchPress maintain >95% accuracy even at 10% temporal coverage, demonstrating fundamental differences in temporal information requirements across action categories.
 
@@ -182,7 +182,7 @@ $$F(4, 496) = 37.43, \quad p < 0.001$$
 
 Specifically, variance increases systematically as coverage decreases from $\text{Var} = 0.0022$ at 100% coverage to $\text{Var} = 0.0619$ at 10% coverage, a 28.5-fold increase. This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
 
-![Figure 5: Variance Analysis](data/UCF101_data/results/timesformer/lagacy/per_class_distribution_by_coverage.png)
+![Figure 5: Variance Analysis](evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png)
 
 **Figure 5.** Distribution of per-class accuracies at stride-8 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing bimodal structure at low coverage one mode near perfect accuracy (aliasing-robust classes) and another at 50-70% (aliasing-sensitive classes). Variance explosion at reduced coverage (28.5× increase from 100% to 10%) validates heterogeneous temporal information requirements across action categories.
 
@@ -202,7 +202,7 @@ Based on empirical aliasing sensitivity, we propose a three-tier motion-frequenc
 
 Figure 6 visualizes mean accuracy trajectories for each tier with error bands.
 
-![Figure 6: Sensitivity Tiers](data/UCF101_data/results/timesformer//lagacy/per_class_sensitivity_tiers.png)
+![Figure 6: Sensitivity Tiers](evaluations/ucf101/timesformer/per_class_sensitivity_tiers.png)
 
 **Figure 6.** Action classes grouped by aliasing sensitivity tier. High-sensitivity tier (4 classes, $\Delta > 30\%$) exhibits catastrophic collapse below 50% coverage, reaching near-chance accuracy at 10% sampling. Moderate-sensitivity tier (15 classes) degrades predictably with coverage reduction. Low-sensitivity tier (82 classes) maintains >85% accuracy even at 10% coverage, demonstrating robustness to aggressive temporal undersampling. Error bands represent ±1 standard deviation within each tier, showing increased variance heterogeneity in high-sensitivity classes.
 
@@ -212,19 +212,19 @@ Figure 6 visualizes mean accuracy trajectories for each tier with error bands.
 
 Additional visualizations supporting the main findings:
 
-![Accuracy Heatmap](data/UCF101_data/results/timesformer/lagacy/accuracy_heatmap.png)
+![Accuracy Heatmap](evaluations/ucf101/timesformer/accuracy_heatmap.png)
 
 **Figure S1.** Complete coverage-stride accuracy heatmap. Optimal accuracy (98.43%) achieved at coverage=100%, stride=8 (top-right corner). Diagonal gradient from bottom-left (worst: 10% coverage, stride-1, 92.28%) to top-right confirms coverage dominance over stride.
 
-![Per-Class Aggregate Analysis](data/UCF101_data/results/timesformer/lagacy/per_class_aggregate_analysis.png)
+![Per-Class Aggregate Analysis](evaluations/ucf101/timesformer/per_class_aggregate_analysis.png)
 
 **Figure S2.** Cross-class aggregate performance with variance analysis. Left: Mean accuracy across all 101 classes with ±1 standard deviation error bands, showing consistent temporal aliasing effects across strides. Right: Inter-class variability (standard deviation) increases exponentially at low coverage, indicating class-dependent aliasing sensitivity. At 10% coverage, variance is 28.5× higher than at 100%, demonstrating extreme heterogeneity in temporal information requirements.
 
-![Per-Class Stride Heatmap](data/UCF101_data/results/timesformer/lagacy/per_class_stride_heatmap.png)
+![Per-Class Stride Heatmap](evaluations/ucf101/timesformer/per_class_stride_heatmap.png)
 
 **Figure S3.** Per-class accuracy at full coverage across strides. Most classes exhibit stride invariance (vertical homogeneity), consistent with ANOVA null finding ($F = 0.12$, $p = 0.975$). Exceptions include HighJump and PoleVault, whose poor performance across all strides suggests inter-class confusion rather than aliasing.
 
-![Accuracy per Second](data/UCF101_data/results/timesformer/lagacy/accuracy_per_second.png)
+![Accuracy per Second](evaluations/ucf101/timesformer/accuracy_per_second.png)
 
 **Figure S4.** Accuracy per second efficiency metric across strides and coverages. This metric combines recognition accuracy with inference latency to quantify overall system efficiency. Despite near-uniform latency (~0.017s), configurations with high accuracy at full coverage (100%, stride-8) achieve superior efficiency scores. The metric reveals no advantage for intermediate coverage levels, consistent with Pareto frontier analysis.
 

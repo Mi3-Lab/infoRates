@@ -2,7 +2,7 @@
 
 This repository explores how temporal sampling (coverage and stride) affects action recognition across modern video models.
 
-Quick start: see START_HERE.txt for commands, or the full UNIFIED_GUIDE.md for end‑to‑end docs.
+Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md for end‑to‑end docs.
 
 Key entry points
 - Training (multi-model, DDP-ready): scripts/data_processing/train_ddp.sh → launches scripts/data_processing/train_multimodel.py
@@ -19,13 +19,13 @@ pip install -r requirements.txt
 Examples
 ```bash
 # 2 GPUs, fine-tune VideoMAE
-bash scripts/train_ddp.sh --model videomae --gpus 2 --epochs 5
+bash scripts/data_processing/train_ddp.sh --model videomae --gpus 2 --epochs 5
 
 # Evaluate all models with temporal sampling
-python scripts/run_eval_multimodel.py --model all --batch-size 16
+python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16
 ```
 
-More details: UNIFIED_GUIDE.md
+More details: docs/UNIFIED_GUIDE.md
 
 ## Repository Structure
 

@@ -26,7 +26,7 @@
 **Purpose**: Verify everything works before committing to full training.
 
 ```bash
-python scripts/train_multimodel.py \
+python scripts/data_processing/train_multimodel.py \
   --model videomae \
   --epochs 1 \
   --batch-size 4 \
@@ -48,7 +48,7 @@ python scripts/train_multimodel.py \
 **Purpose**: Fine-tune all 3 models one at a time on a single GPU.
 
 ```bash
-python scripts/train_multimodel.py --model all --epochs 5 --no-wandb
+python scripts/data_processing/train_multimodel.py --model all --epochs 5 --no-wandb
 ```
 
 **Timeline**:
@@ -59,12 +59,12 @@ python scripts/train_multimodel.py --model all --epochs 5 --no-wandb
 
 **Then evaluate** (6-8 hours):
 ```bash
-python scripts/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
+python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
 ```
 
 **Then compare** (10 min):
 ```bash
-python scripts/compare_models.py
+python scripts/data_processing/compare_models.py
 ```
 
 ---
@@ -74,7 +74,7 @@ python scripts/compare_models.py
 **Purpose**: Fine-tune all 3 models in parallel on 2+ GPUs (2.7× faster).
 
 ```bash
-torchrun --nproc_per_node=2 scripts/train_multimodel.py \
+torchrun --nproc_per_node=2 scripts/data_processing/train_multimodel.py \
   --model all \
   --epochs 5 \
   --ddp \
@@ -89,12 +89,12 @@ torchrun --nproc_per_node=2 scripts/train_multimodel.py \
 
 **Then evaluate**:
 ```bash
-python scripts/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
+python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16 --no-wandb
 ```
 
 **Then compare**:
 ```bash
-python scripts/compare_models.py
+python scripts/data_processing/compare_models.py
 ```
 
 ---
@@ -142,7 +142,7 @@ python scripts/compare_models.py
 
 ## Scripts Reference
 
-### 1. `scripts/train_multimodel.py` (600 lines)
+### 1. `scripts/data_processing/train_multimodel.py` (600 lines)
 
 **What it does**: Fine-tune video models with memory optimization and DDP support.
 
@@ -156,10 +156,10 @@ python scripts/compare_models.py
 **Basic Usage**:
 ```bash
 # Default settings
-python scripts/train_multimodel.py --model videomae --epochs 5
+python scripts/data_processing/train_multimodel.py --model videomae --epochs 5
 
 # Custom hyperparameters
-python scripts/train_multimodel.py \
+python scripts/data_processing/train_multimodel.py \
   --model vivit \
   --epochs 10 \
   --batch-size 16 \
@@ -167,16 +167,16 @@ python scripts/train_multimodel.py \
   --gradient-accumulation-steps 2
 
 # With DDP (2 GPUs)
-torchrun --nproc_per_node=2 scripts/train_multimodel.py \
+torchrun --nproc_per_node=2 scripts/data_processing/train_multimodel.py \
   --model all \
   --epochs 5 \
   --ddp
 
 # Without W&B logging
-python scripts/train_multimodel.py --model all --no-wandb
+python scripts/data_processing/train_multimodel.py --model all --no-wandb
 
 # Custom W&B project
-python scripts/train_multimodel.py \
+python scripts/data_processing/train_multimodel.py \
   --model videomae \
   --wandb-project "my-models" \
   --wandb-run-name "videomae-v1"
@@ -213,7 +213,7 @@ fine_tuned_models/
 
 ---
 
-### 2. `scripts/model_factory.py` (150 lines)
+### 2. `scripts/data_processing/model_factory.py` (150 lines)
 
 **What it does**: Unified interface for loading all 3 models.
 
@@ -232,20 +232,20 @@ fine_tuned_models/
 
 ---
 
-### 3. `scripts/run_eval_multimodel.py` (300+ lines)
+### 3. `scripts/evaluation/run_eval_multimodel.py` (300+ lines)
 
 **What it does**: Evaluate models on temporal sampling configurations.
 
 **Basic Usage**:
 ```bash
 # Evaluate all models (full dataset, ~6-8 hours)
-python scripts/run_eval_multimodel.py --model all --batch-size 16
+python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16
 
 # Quick test (1000 samples, ~1 hour)
-python scripts/run_eval_multimodel.py --model videomae --sample-size 1000 --batch-size 16
+python scripts/evaluation/run_eval_multimodel.py --model videomae --sample-size 1000 --batch-size 16
 
 # With W&B logging
-python scripts/run_eval_multimodel.py --model all --wandb
+python scripts/evaluation/run_eval_multimodel.py --model all --wandb
 ```
 
 **Configurations Tested**:
@@ -268,17 +268,17 @@ CSV Columns: model, coverage, stride, accuracy, n_samples, elapsed_time
 
 ---
 
-### 4. `scripts/compare_models.py` (250+ lines)
+### 4. `scripts/data_processing/compare_models.py` (250+ lines)
 
 **What it does**: Cross-model statistical comparison.
 
 **Basic Usage**:
 ```bash
 # Generate comparison analysis
-python scripts/compare_models.py
+python scripts/data_processing/compare_models.py
 
 # Custom results directory
-python scripts/compare_models.py --results-dir UCF101_data/results
+python scripts/data_processing/compare_models.py --results-dir evaluations/ucf101
 ```
 
 **Outputs**:

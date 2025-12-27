@@ -76,7 +76,7 @@ The optimal configuration achieved 85.09% accuracy at 100% temporal coverage wit
 
 Figure 1 illustrates how recognition accuracy degrades under temporal undersampling. TimeSformer exhibits a characteristic pattern where performance remains relatively stable until approximately 25% coverage, beyond which aliasing effects become pronounced.
 
-![Figure 1: Accuracy vs Coverage](data/UCF101_data/results/timesformer/accuracy_vs_coverage.png)
+![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
 
 **Figure 1.** TimeSformer accuracy degradation under temporal undersampling. The transition from 25% to 10% coverage marks a critical aliasing threshold, suggesting that many human actions require at least quarter their temporal duration for reliable recognition.
 
@@ -147,7 +147,7 @@ Intriguingly, certain structured actions improve under temporal reduction, sugge
 
 Figure 3 contrasts the five most aliasing-sensitive classes (dashed lines) against the five most robust classes (solid lines) across coverage levels at stride-8, TimeSformer's optimal configuration for comparative analysis.
 
-![Figure 3: Representative Classes](data/UCF101_data/results/timesformer/lagacy/per_class_representative.png)
+![Figure 3: Representative Classes](../evaluations/ucf101/timesformer/per_class_representative.png)
 
 **Figure 3.** Comparative aliasing sensitivity between high-vulnerability (dashed) and low-vulnerability (solid) action classes at stride-8. High-frequency actions such as SalsaSpin and JumpingJack exhibit catastrophic degradation below 50% coverage, collapsing to near-chance accuracy (<30%) at 10% sampling. In contrast, structured actions like WallPushups maintain or improve performance under temporal reduction, demonstrating fundamental differences in temporal information requirements across action categories.
 
@@ -197,7 +197,7 @@ $$F(4, 496) = 37.43, \quad p < 0.001$$
 
 Specifically, variance increases systematically as coverage decreases from $\text{Var} = 0.0014$ at 100% coverage to $\text{Var} = 0.0154$ at 10% coverage, a 11-fold increase. This heteroscedasticity indicates that class-level factors (e.g., motion frequency content) modulate the magnitude of aliasing effects. Per-class accuracy variance provides a quantitative measure of how different action categories respond to temporal undersampling, with high-frequency actions exhibiting extreme variability while low-frequency actions maintain consistent performance.
 
-![Figure 4: Variance Analysis](data/UCF101_data/results/timesformer/lagacy/per_class_distribution_by_coverage.png)
+![Figure 4: Variance Analysis](../evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png)
 
 **Figure 4.** Distribution of per-class accuracies at stride-8 across coverage levels. Left: Boxplot showing median, quartiles, and outliers. Right: Violin plot revealing bimodal structure at low coverage - one mode near perfect accuracy (aliasing-robust classes) and another at 50-70% (aliasing-sensitive classes). Variance explosion at reduced coverage (11× increase from 100% to 10%) validates heterogeneous temporal information requirements across action categories.
 
