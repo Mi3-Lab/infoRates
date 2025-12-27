@@ -121,13 +121,13 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     plt.close()
     print(f"✅ Saved: {output_path} and {output_path_hi}")
 
-def compute_shared_classes(models_dirs, n_sensitive=4, n_robust=4, max_total=8):
+def compute_shared_classes(models_dirs, n_sensitive=3, n_robust=3, max_total=6):
     """Compute a shared set of representative classes across multiple model per-class CSVs.
 
     For each model, we pick the top `n_sensitive` classes (largest 100→25 drop) and the top
     `n_robust` classes (smallest variance across coverages). Then we take the union across
-    models and limit to `max_total` classes (4 sensitive + 4 robust) so each representative
-    plot displays exactly 8 classes for clear comparison across models within a dataset.
+    models and limit to `max_total` classes (3 sensitive + 3 robust) so each representative
+    plot displays exactly 6 classes for clear comparison across models within a dataset.
     """
     shared = []
     for mdir in models_dirs:
@@ -367,7 +367,7 @@ def generate_representative_composite(evaluations_base_dir, output_dir):
     for i, dataset in enumerate(datasets):
         # Compute shared classes for this dataset
         model_dirs = [Path(evaluations_base_dir) / dataset / m for m in models]
-        shared = compute_shared_classes(model_dirs, n_sensitive=4, n_robust=4, max_total=8)
+        shared = compute_shared_classes(model_dirs, n_sensitive=3, n_robust=3, max_total=6)
 
         for j, model in enumerate(models):
             ax = axes[i, j]
@@ -622,7 +622,7 @@ def main():
 
     # After all models for this dataset are processed, compute shared classes across models and regenerate representative plots to use the same classes
     models_dirs = [evaluations_dir / m for m in models]
-    shared = compute_shared_classes(models_dirs, n_sensitive=4, n_robust=4, max_total=8)
+    shared = compute_shared_classes(models_dirs, n_sensitive=3, n_robust=3, max_total=6)
     for model in models:
         model_dir = evaluations_dir / model
         matches = list(model_dir.glob("*per_class*.csv"))
