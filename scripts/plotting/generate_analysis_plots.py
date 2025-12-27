@@ -121,13 +121,13 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     plt.close()
     print(f"✅ Saved: {output_path} and {output_path_hi}")
 
-def compute_shared_classes(models_dirs, n_sensitive=5, n_robust=5, max_total=12):
+def compute_shared_classes(models_dirs, n_sensitive=4, n_robust=4, max_total=8):
     """Compute a shared set of representative classes across multiple model per-class CSVs.
 
     For each model, we pick the top `n_sensitive` classes (largest 100→25 drop) and the top
     `n_robust` classes (smallest variance across coverages). Then we take the union across
-    models and limit to `max_total` classes to keep plots legible. This ensures all models
-    within the same dataset plot the same class set for direct comparison.
+    models and limit to `max_total` classes (4 sensitive + 4 robust) so each representative
+    plot displays exactly 8 classes for clear comparison across models within a dataset.
     """
     shared = []
     for mdir in models_dirs:
@@ -562,7 +562,7 @@ def main():
 
     # After all models for this dataset are processed, compute shared classes across models and regenerate representative plots to use the same classes
     models_dirs = [evaluations_dir / m for m in models]
-    shared = compute_shared_classes(models_dirs, n_sensitive=5, n_robust=5, max_total=12)
+    shared = compute_shared_classes(models_dirs, n_sensitive=4, n_robust=4, max_total=8)
     for model in models:
         model_dir = evaluations_dir / model
         matches = list(model_dir.glob("*per_class*.csv"))
