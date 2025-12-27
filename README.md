@@ -48,3 +48,18 @@ More details: docs/UNIFIED_GUIDE.md
 - `docs/`: Documentation and evaluation reports
 - `fine_tuned_models/`: Saved model checkpoints
 - `models/`: Pre-trained models
+
+## Datasets
+
+The repository supports multiple video action recognition datasets:
+
+- **UCF101**: Main dataset for temporal sampling analysis
+- **Kinetics400**: Additional evaluation dataset  
+- **HMDB51**: Additional evaluation dataset
+- **Something-Something V2**: Planned for future analysis
+
+To download datasets:
+- UCF101: See `data/UCF101_data/README.md`
+- HMDB51: `scripts/data_processing/download_hmdb51.sh`
+- Kinetics400 subsets: `scripts/data_processing/download_kinetics_mini.sh` or `download_kinetics50_subset.sh`
+- Something-Something V2: `scripts/data_processing/download_ssv2.sh` (Note: Large dataset ~100GB)
