@@ -1,0 +1,401 @@
+class,aliasing_drop
+abseiling,0.06000000000000005
+air drumming,-0.02040900000000001
+answering questions,0.060000000000000026
+applauding,-0.02040900000000001
+applying cream,0.040000000000000036
+archery,0.12
+arm wrestling,0.163265
+arranging flowers,0.019999999999999907
+assembling computer,0.040000000000000036
+auctioning,0.18000000000000005
+baby waking up,0.0
+baking cookies,0.08163299999999996
+balloon blowing,0.061224999999999974
+bandaging,0.07999999999999996
+barbequing,0.12
+bartending,0.019999999999999907
+beatboxing,0.14285699999999996
+bee keeping,0.09999999999999998
+belly dancing,0.0
+bench pressing,0.02040799999999998
+bending back,0.229167
+bending metal,0.25999999999999995
+biking through snow,0.08000000000000007
+blasting sand,0.07999999999999996
+blowing glass,0.12
+blowing leaves,0.183674
+blowing nose,0.26
+blowing out candles,0.02040799999999998
+bobsledding,0.08000000000000007
+bookbinding,0.039999999999999925
+bouncing on trampoline,0.0
+bowling,0.0
+braiding hair,0.08163200000000004
+breading or breadcrumbing,0.163265
+breakdancing,0.27999999999999997
+brush painting,0.04166599999999998
+brushing hair,0.18
+brushing teeth,0.09999999999999998
+building cabinet,0.183674
+building shed,0.07999999999999996
+bungee jumping,0.14
+busking,0.039999999999999925
+canoeing or kayaking,0.040000000000000036
+capoeira,0.06000000000000005
+carrying baby,0.125
+cartwheeling,0.24000000000000005
+carving pumpkin,0.0625
+catching fish,0.1875
+catching or throwing baseball,0.0
+catching or throwing frisbee,0.05999999999999994
+catching or throwing softball,0.040000000000000036
+celebrating,0.13999999999999996
+changing oil,0.10000000000000009
+changing wheel,0.040000000000000036
+checking tires,0.16000000000000003
+cheerleading,0.10204100000000005
+chopping wood,0.0
+clapping,-0.02083299999999999
+clay pottery making,0.0
+clean and jerk,0.285714
+cleaning floor,0.16326500000000005
+cleaning gutters,0.12
+cleaning pool,0.040000000000000036
+cleaning shoes,0.16326600000000002
+cleaning toilet,0.07999999999999996
+cleaning windows,0.06000000000000005
+climbing a rope,0.14
+climbing ladder,0.05999999999999994
+climbing tree,0.06000000000000005
+contact juggling,0.07999999999999996
+cooking chicken,0.06000000000000005
+cooking egg,0.18367299999999998
+cooking on campfire,0.08333299999999999
+cooking sausages,0.11999999999999994
+counting money,0.040816000000000074
+country line dancing,0.07999999999999996
+cracking neck,0.208333
+crawling baby,0.09999999999999998
+crossing river,0.05999999999999994
+crying,0.06122500000000003
+curling hair,0.061223999999999945
+cutting nails,0.06382999999999994
+cutting pineapple,0.07999999999999996
+cutting watermelon,0.12766
+dancing ballet,0.040000000000000036
+dancing charleston,0.12244899999999992
+dancing gangnam style,0.02083299999999999
+dancing macarena,0.08163300000000001
+deadlifting,0.142857
+decorating the christmas tree,0.12244900000000003
+digging,0.09999999999999998
+dining,0.14
+disc golfing,0.05999999999999994
+diving cliff,0.326531
+dodgeball,0.1399999999999999
+doing aerobics,-0.05999999999999994
+doing laundry,0.1399999999999999
+doing nails,0.125
+drawing,0.08333299999999999
+dribbling basketball,0.020000000000000018
+drinking,0.142858
+drinking beer,0.03999999999999998
+drinking shots,0.20408199999999999
+driving car,0.125
+driving tractor,0.12244900000000003
+drop kicking,0.276596
+drumming fingers,-0.040816000000000074
+dunking basketball,0.270833
+dying hair,0.08695699999999995
+eating burger,0.183674
+eating cake,0.040000000000000036
+eating carrots,0.10416599999999998
+eating chips,0.18000000000000005
+eating doughnuts,0.10204099999999999
+eating hotdog,0.06
+eating ice cream,0.020000000000000018
+eating spaghetti,0.10416599999999998
+eating watermelon,0.07999999999999996
+egg hunting,0.21999999999999997
+exercising arm,0.0
+exercising with an exercise ball,0.0
+extinguishing fire,0.061224000000000056
+faceplanting,0.02083299999999999
+feeding birds,0.040000000000000036
+feeding fish,-0.04081599999999996
+feeding goats,0.0
+filling eyebrows,0.10204100000000005
+finger snapping,0.0
+fixing hair,0.10204099999999999
+flipping pancake,0.04081599999999996
+flying kite,0.28
+folding clothes,0.285714
+folding napkins,0.142857
+folding paper,0.20408199999999999
+front raises,0.0
+frying vegetables,0.10000000000000009
+garbage collecting,0.145833
+gargling,0.20408199999999999
+getting a haircut,0.02040799999999998
+getting a tattoo,0.020408000000000093
+giving or receiving award,0.20000000000000007
+golf chipping,0.040000000000000036
+golf driving,0.15999999999999992
+golf putting,0.0625
+grinding meat,-0.040000000000000036
+grooming dog,0.14
+grooming horse,0.10204099999999994
+gymnastics tumbling,0.12244899999999992
+hammer throw,0.05999999999999994
+headbanging,-0.02040799999999998
+headbutting,0.14
+high jump,0.12
+high kick,0.09999999999999998
+hitting baseball,0.07999999999999996
+hockey stop,0.16000000000000003
+holding snake,0.09999999999999998
+hopscotch,0.0
+hoverboarding,0.125
+hugging,0.22449000000000002
+hula hooping,0.04081599999999996
+hurdling,0.019999999999999907
+hurling (sport),0.05999999999999994
+ice climbing,0.10000000000000009
+ice fishing,-0.02083299999999999
+ice skating,-0.040000000000000036
+ironing,0.16666599999999998
+javelin throw,0.17999999999999994
+jetskiing,0.16000000000000003
+jogging,0.18
+juggling balls,0.08163299999999996
+juggling fire,0.0
+juggling soccer ball,0.040000000000000036
+jumping into pool,0.10000000000000009
+jumpstyle dancing,0.12244900000000003
+kicking field goal,0.16000000000000003
+kicking soccer ball,0.09999999999999998
+kissing,0.23913099999999998
+kitesurfing,0.22000000000000008
+knitting,0.0
+krumping,0.061223999999999945
+laughing,0.0
+laying bricks,0.12244900000000003
+long jump,0.16000000000000003
+lunge,0.0
+making a cake,0.04081600000000002
+making a sandwich,0.14000000000000007
+making bed,0.12
+making jewelry,0.08163299999999996
+making pizza,0.09999999999999998
+making snowman,0.040000000000000036
+making sushi,0.14
+making tea,0.21999999999999997
+marching,0.039999999999999925
+massaging back,-0.02040799999999998
+massaging feet,0.04081699999999999
+massaging legs,0.12244900000000003
+massaging person's head,-0.08000000000000007
+milking cow,0.0
+mopping floor,0.19999999999999996
+motorcycling,0.12244900000000003
+moving furniture,0.09999999999999998
+mowing lawn,0.16000000000000003
+news anchoring,0.21999999999999997
+opening bottle,0.05999999999999994
+opening present,0.142857
+paragliding,0.06000000000000005
+parasailing,0.20000000000000007
+parkour,0.22916599999999998
+passing American football (in game),0.020000000000000018
+passing American football (not in game),0.10203999999999996
+peeling apples,0.08000000000000007
+peeling potatoes,0.039999999999999925
+petting animal (not cat),0.16326500000000005
+petting cat,0.10204000000000002
+picking fruit,0.12244900000000003
+planting trees,0.183674
+plastering,0.14
+playing accordion,0.02040799999999998
+playing badminton,0.020000000000000018
+playing bagpipes,0.019999999999999907
+playing basketball,0.09999999999999998
+playing bass guitar,0.05999999999999994
+playing cards,0.09999999999999998
+playing cello,0.040000000000000036
+playing chess,0.12
+playing clarinet,-0.020000000000000018
+playing controller,0.15999999999999992
+playing cricket,0.1428569999999999
+playing cymbals,0.0
+playing didgeridoo,0.039999999999999925
+playing drums,-0.04081599999999996
+playing flute,0.09999999999999998
+playing guitar,0.05999999999999994
+playing harmonica,0.2040820000000001
+playing harp,0.020000000000000018
+playing ice hockey,0.08333400000000002
+playing keyboard,0.0625
+playing kickball,0.09999999999999998
+playing monopoly,0.12
+playing organ,0.05999999999999994
+playing paintball,0.040000000000000036
+playing piano,-0.020000000000000018
+playing poker,0.08333299999999999
+playing recorder,0.1399999999999999
+playing saxophone,0.039999999999999925
+playing squash or racquetball,0.0
+playing tennis,0.0408170000000001
+playing trombone,0.10204099999999994
+playing trumpet,0.08163200000000004
+playing ukulele,0.040000000000000036
+playing violin,0.10000000000000009
+playing volleyball,0.166667
+playing xylophone,0.07999999999999996
+pole vault,0.28
+presenting weather forecast,0.039999999999999925
+pull ups,0.14
+pumping fist,0.14
+pumping gas,0.145833
+punching bag,0.039999999999999925
+punching person (boxing),0.12244900000000003
+push up,0.04166599999999998
+pushing car,0.17999999999999994
+pushing cart,0.12
+pushing wheelchair,0.17999999999999994
+reading book,0.07999999999999996
+reading newspaper,0.07999999999999996
+recording music,0.020000000000000018
+riding a bike,0.125
+riding camel,0.17999999999999994
+riding elephant,0.15999999999999992
+riding mechanical bull,0.02040799999999998
+riding mountain bike,0.14583400000000002
+riding mule,0.183674
+riding or walking with horse,0.166667
+riding scooter,0.18000000000000005
+riding unicycle,0.24
+ripping paper,0.18000000000000005
+robot dancing,-0.06
+rock climbing,0.16000000000000003
+rock scissors paper,0.040000000000000036
+roller skating,0.10000000000000009
+running on treadmill,0.0625
+sailing,0.0
+salsa dancing,0.12244899999999992
+sanding floor,0.12
+scrambling eggs,0.14
+scuba diving,0.0408170000000001
+setting table,0.08163299999999996
+shaking hands,0.0
+shaking head,0.06
+sharpening knives,0.07999999999999996
+sharpening pencil,0.06000000000000005
+shaving head,0.21999999999999997
+shaving legs,0.07999999999999996
+shearing sheep,0.0
+shining shoes,0.06000000000000005
+shooting basketball,0.15999999999999998
+shooting goal (soccer),0.08333299999999999
+shot put,-0.07999999999999996
+shoveling snow,0.07999999999999996
+shredding paper,0.15999999999999992
+shuffling cards,0.12244900000000003
+side kick,0.09999999999999998
+sign language interpreting,0.10416700000000001
+singing,-0.03999999999999998
+situp,0.020000000000000018
+skateboarding,0.18000000000000005
+ski jumping,0.07999999999999996
+skiing (not slalom or crosscountry),0.04081600000000002
+skiing crosscountry,0.040000000000000036
+skiing slalom,0.12
+skipping rope,0.14
+skydiving,0.14
+slacklining,0.10204099999999994
+slapping,0.020407999999999996
+sled dog racing,0.05999999999999994
+smoking,0.061224999999999974
+smoking hookah,0.26530700000000007
+snatch weight lifting,0.16326600000000002
+sneezing,-0.03999999999999998
+sniffing,0.08333299999999999
+snorkeling,0.16000000000000003
+snowboarding,0.17021299999999995
+snowkiting,0.07999999999999996
+snowmobiling,0.26530599999999993
+somersaulting,0.12
+spinning poi,0.08163299999999996
+spray painting,0.061224000000000056
+spraying,-0.020000000000000018
+springboard diving,0.0625
+squat,0.040000000000000036
+sticking tongue out,0.02040799999999998
+stomping grapes,0.07999999999999996
+stretching arm,-0.020000000000000018
+stretching leg,0.020000000000000018
+strumming guitar,0.05999999999999994
+surfing crowd,0.125
+surfing water,0.1875
+sweeping floor,0.06000000000000005
+swimming backstroke,0.061223999999999945
+swimming breast stroke,0.0
+swimming butterfly stroke,0.08000000000000007
+swing dancing,0.14
+swinging legs,-0.07999999999999996
+swinging on something,0.12244899999999997
+sword fighting,0.10204099999999999
+tai chi,0.08000000000000007
+taking a shower,0.12244900000000003
+tango dancing,0.06000000000000005
+tap dancing,0.061224000000000056
+tapping guitar,0.09999999999999998
+tapping pen,0.02083299999999999
+tasting beer,0.040000000000000036
+tasting food,0.18
+testifying,0.061223999999999945
+texting,0.270834
+throwing axe,0.06000000000000005
+throwing ball,0.020000000000000018
+throwing discus,0.020000000000000018
+tickling,0.09999999999999998
+tobogganing,0.07999999999999996
+tossing coin,0.20000000000000007
+tossing salad,0.17999999999999994
+training dog,0.16000000000000003
+trapezing,0.039999999999999925
+trimming or shaving beard,0.09999999999999998
+trimming trees,0.020408000000000093
+triple jump,0.142857
+tying bow tie,0.07999999999999996
+tying knot (not on a tie),0.0
+tying tie,0.07999999999999996
+unboxing,0.20408199999999999
+unloading truck,0.07999999999999996
+using computer,0.14285800000000004
+using remote controller (not gaming),0.04081599999999996
+using segway,0.20408199999999999
+vault,0.28
+waiting in line,0.18000000000000005
+walking the dog,0.142857
+washing dishes,0.0
+washing feet,0.0
+washing hair,0.0625
+washing hands,0.17999999999999994
+water skiing,0.04081699999999999
+water sliding,0.09999999999999998
+watering plants,0.05999999999999994
+waxing back,0.17999999999999994
+waxing chest,0.17999999999999994
+waxing eyebrows,0.2799999999999999
+waxing legs,0.12
+weaving basket,0.07999999999999996
+welding,0.040000000000000036
+whistling,0.0
+windsurfing,0.14
+wrapping present,0.08163300000000007
+wrestling,0.07999999999999996
+writing,0.0
+yawning,0.18367299999999998
+yoga,0.14285800000000004
+zumba,0.155555

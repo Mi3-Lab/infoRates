@@ -5,9 +5,9 @@ This repository explores how temporal sampling (coverage and stride) affects act
 Quick start: see START_HERE.txt for commands, or the full UNIFIED_GUIDE.md for end‑to‑end docs.
 
 Key entry points
-- Training (multi-model, DDP-ready): scripts/train_ddp.sh → launches scripts/train_multimodel.py
-- Evaluation (multi-model): scripts/run_eval_multimodel.py
-- Legacy DDP eval of a saved model: scripts/run_eval.py and scripts/pipeline_eval.sh
+- Training (multi-model, DDP-ready): scripts/data_processing/train_ddp.sh → launches scripts/data_processing/train_multimodel.py
+- Evaluation (multi-model): scripts/evaluation/run_eval_multimodel.py
+- Legacy DDP eval of a saved model: scripts/evaluation/run_eval.py and scripts/data_processing/pipeline_eval.sh
 
 Setup
 ```bash
@@ -26,3 +26,18 @@ python scripts/run_eval_multimodel.py --model all --batch-size 16
 ```
 
 More details: UNIFIED_GUIDE.md
+
+## Repository Structure
+
+- `data/`: Raw datasets (UCF101, Kinetics400, HMDB51)
+- `evaluations/`: Model evaluation results and plots
+  - `kinetics400/`: Kinetics400 results by model
+  - `ucf101/`: UCF101 results by model
+- `scripts/`: Utility scripts
+  - `data_processing/`: Data preparation, training scripts
+  - `evaluation/`: Evaluation and testing scripts
+  - `plotting/`: Plotting and statistical analysis scripts
+- `src/`: Source code (models, analysis modules)
+- `docs/`: Documentation and evaluation reports
+- `fine_tuned_models/`: Saved model checkpoints
+- `models/`: Pre-trained models

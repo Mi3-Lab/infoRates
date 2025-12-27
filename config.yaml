@@ -41,17 +41,17 @@ eval_wandb: false                            # Enable W&B logging for evaluation
 # These will be auto-configured based on dataset selection above
 # UCF-101 settings
 ucf101_video_root: "data/UCF101_data/UCF-101"
-ucf101_results_dir: "data/UCF101_data/results"
+ucf101_results_dir: "evaluations/ucf101"
 ucf101_wandb_project: "inforates-ucf101"
 
 # Kinetics400 settings
 kinetics400_video_root: "data/Kinetics400_data/k4testset/videos_val"
 kinetics400_val_list: "data/Kinetics400_data/k4testset/kinetics400_val_list_videos.txt"
-kinetics400_results_dir: "data/Kinetics400_data/results"
+kinetics400_results_dir: "evaluations/kinetics400"
 kinetics400_wandb_project: "inforates-kinetics400"
 
 # HMDB51 settings
 hmdb51_video_root: "data/HMDB51_data/videos"
-hmdb51_results_dir: "data/HMDB51_data/results"
+hmdb51_results_dir: "evaluations/hmdb51"
 hmdb51_wandb_project: "inforates-hmdb51"
 

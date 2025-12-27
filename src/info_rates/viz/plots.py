@@ -7,17 +7,19 @@ import os
 def plot_accuracy_curves(df_results: pd.DataFrame, output_dir: str = "UCF101_data/results"):
     """Plot accuracy curves and save to file."""
     os.makedirs(output_dir, exist_ok=True)
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 6))
     for s in sorted(df_results["stride"].unique()):
-        sub = df_results[df_results["stride"] == s]
-        plt.plot(sub["coverage"], sub["accuracy"], marker="o", label=f"stride={s}")
-    plt.xlabel("Frame Coverage (%)")
-    plt.ylabel("Accuracy")
-    plt.title("Temporal Sampling Effects")
-    plt.legend()
-    plt.grid(True)
+        sub = df_results[df_results["stride"] == s].sort_values("coverage")
+        plt.plot(sub["coverage"], sub["accuracy"], marker="o", linewidth=2, markersize=6, label=f"stride={s}")
+    plt.xlabel("Frame Coverage (%)", fontsize=14)
+    plt.ylabel("Accuracy", fontsize=14)
+    plt.title("Temporal Sampling Effects", fontsize=16)
+    plt.legend(loc='lower right')
+    plt.grid(True, alpha=0.5)
+    plt.ylim(0.5, 0.75)
+    plt.xticks([10, 25, 50, 75, 100])
     out_path = os.path.join(output_dir, "accuracy_vs_coverage.png")
-    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"✅ Saved: {out_path}")
 
