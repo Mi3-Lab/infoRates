@@ -3,7 +3,7 @@
 ## Abstract
 
 
-This comprehensive study quantifies how temporal sampling—coverage and stride—affects human action recognition accuracy across three state-of-the-art video architectures (TimeSformer, VideoMAE, ViViT) and two large-scale datasets (UCF-101, Kinetics-400; 31,023 videos). We show that reducing temporal coverage leads to monotonic accuracy degradation, but the rate and severity of this decline are highly architecture- and dataset-dependent. For example, VideoMAE on UCF-101 suffers the largest mean drop (−17.2% from 100% to 25% coverage), while TimeSformer is relatively robust (−6.9%). Stride effects are generally minor at full coverage but can amplify aliasing at low coverage, especially for VideoMAE.
+This comprehensive study quantifies how temporal sampling—coverage and stride—affects human action recognition accuracy across three state-of-the-art video architectures (TimeSformer, VideoMAE, ViViT) and two large-scale datasets (UCF-101, Kinetics-400; 31,023 videos). We show that reducing temporal coverage leads to monotonic accuracy degradation, but the rate and severity of this decline are highly architecture- and dataset-dependent. For example, VideoMAE on UCF-101 suffers the largest mean drop (−17.2% from 100% to 25% coverage), while TimeSformer is relatively robust (−6.9%). Stride effects are significant overall and can amplify aliasing at low coverage, especially for VideoMAE.
 
 Our results reveal pronounced per-class heterogeneity: some action classes (e.g., YoYo, diving cliff) are extremely sensitive to undersampling, while others (e.g., Billiards, shearing sheep) remain robust even at aggressive reductions. The spread of per-class accuracy widens dramatically as coverage decreases, with variance increasing sharply (Levene p < 0.001 for most models). We provide a reproducible taxonomy of action classes by aliasing sensitivity, and demonstrate that mean accuracy alone is insufficient for robust system design.
 
@@ -142,14 +142,14 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 | Dataset | Arch | Coverage F (df) | Coverage p-value | Coverage η² | Stride F (df) | Stride p-value | Stride η² | Mean Δ (100→25) ± σ | Levene p | Cohen's d (aliasing) | Cohen's d (stride) |
 |---------|------|-----------------|------------------:|------------:|---------------|---------------:|----------:|---------------------:|---------:|---------------------:|--------------------:|
-| UCF-101 | TimeSformer | F(4,500)=8.138 | 2.31e-06 | 0.0611 | F(4,2520)=6.307 | 4.77e-05 | 0.0099 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
-| UCF-101 | VideoMAE | F(4,500)=32.455 | 4.56e-24 | 0.2061 | F(4,2520)=60.213 | 1.25e-48 | 0.0872 | 0.1822 ± 0.1861 | 3.61e-10 | 1.377 | 0.761 |
-| UCF-101 | ViViT | F(4,500)=20.940 | 5.63e-16 | 0.1435 | F(4,2520)=19.681 | 5.75e-16 | 0.0303 | 0.1302 ± 0.1521 | 3.64e-07 | 1.048 | 0.223 |
-| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | 4.10e-62 | 0.1364 | F(4,9995)=4.724 | 8.29e-04 | 0.0019 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
-| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | 1.75e-52 | 0.1168 | F(4,9995)=58.786 | 3.93e-49 | 0.0230 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
-| Kinetics-400 | ViViT | F(4,1995)=38.816 | 2.49e-31 | 0.0722 | F(4,9995)=9.194 | 2.07e-07 | 0.0037 | 0.0824 ± 0.0637 | 2.94e-02 | 0.782 | 0.036 |
+| UCF-101 | TimeSformer | F(4,500)=8.138 | < 0.001 | 0.0611 | F(4,2520)=6.307 | < 0.001 | 0.0099 | 0.0699 ± 0.1112 | 1.99e-03 | 0.628 | 0.134 |
+| UCF-101 | VideoMAE | F(4,500)=32.455 | < 0.001 | 0.2061 | F(4,2520)=60.213 | < 0.001 | 0.0872 | 0.1822 ± 0.1861 | < 0.001 | 1.377 | 0.761 |
+| UCF-101 | ViViT | F(4,500)=20.940 | < 0.001 | 0.1435 | F(4,2520)=19.681 | < 0.001 | 0.0303 | 0.1302 ± 0.1521 | < 0.001 | 1.048 | 0.223 |
+| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | < 0.001 | 0.1364 | F(4,9995)=4.724 | < 0.001 | 0.0019 | 0.1059 ± 0.0741 | 1.09e-02 | 1.043 | 0.006 |
+| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | < 0.001 | 0.1168 | F(4,9995)=58.786 | < 0.001 | 0.0230 | 0.0715 ± 0.0701 | 1.04e-03 | 0.827 | 0.037 |
+| Kinetics-400 | ViViT | F(4,1995)=38.816 | < 0.001 | 0.0722 | F(4,9995)=9.194 | < 0.001 | 0.0037 | 0.0824 ± 0.0637 | 2.94e-02 | 0.782 | 0.036 |
 
-> Note: "Coverage p-value" and "Coverage η²" report the ANOVA p-value and partial eta-squared for the effect of **coverage** (across 10, 25, 50, 75, 100%), while "Stride p-value" and "Stride η²" report the analogous statistics for the effect of **stride**. Exact p-values are shown (scientific notation for very small values) with a parenthetical significance threshold marker where appropriate (e.g., <0.001). Levene p is from Levene's test for homogeneity of variances across coverage levels.
+> Note: "Coverage p-value" and "Coverage η²" report the ANOVA p-value and partial eta-squared for the effect of **coverage** (across 10, 25, 50, 75, 100%), while "Stride p-value" and "Stride η²" report the analogous statistics for the effect of **stride**. p-values are reported as < 0.001 when p < 0.001 to indicate rejection of the null hypothesis. Levene p is from Levene's test for homogeneity of variances across coverage levels.
 
 
 > Note: Mean Δ is the average drop in accuracy from 100% to 25% coverage across classes; Levene p reports the test for variance homogeneity across coverage levels.
