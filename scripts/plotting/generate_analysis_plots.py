@@ -121,18 +121,56 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     plt.close()
     print(f"✅ Saved: {output_path} and {output_path_hi}")
 
-def generate_representative_plot(per_class_csv, output_dir, model_name):
-    """Generate representative classes sensitivity analysis."""
+def compute_shared_classes(models_dirs, n_sensitive=5, n_robust=5, max_total=12):
+    """Compute a shared set of representative classes across multiple model per-class CSVs.
+
+    For each model, we pick the top `n_sensitive` classes (largest 100→25 drop) and the top
+    `n_robust` classes (smallest variance across coverages). Then we take the union across
+    models and limit to `max_total` classes to keep plots legible. This ensures all models
+    within the same dataset plot the same class set for direct comparison.
+    """
+    shared = []
+    for mdir in models_dirs:
+        matches = list(Path(mdir).glob("*per_class*.csv"))
+        if not matches:
+            continue
+        df = pd.read_csv(matches[0])
+        # Use stride=8 for stability (consistent with other plots)
+        df8 = df[df['stride'] == 8]
+        pivot = df8.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean().pivot(index='class', columns='coverage', values='accuracy')
+        if 100 not in pivot.columns or 25 not in pivot.columns:
+            continue
+        drop_100_to_25 = (pivot[100] - pivot[25]).sort_values(ascending=False)
+        sensitive = drop_100_to_25.head(n_sensitive).index.tolist()
+        variance = pivot.var(axis=1).sort_values()
+        robust = variance.head(n_robust).index.tolist()
+        shared.extend(sensitive + robust)
+    # Preserve order, unique, and limit total
+    unique_shared = []
+    for c in shared:
+        if c not in unique_shared:
+            unique_shared.append(c)
+        if len(unique_shared) >= max_total:
+            break
+    return unique_shared
+
+
+def generate_representative_plot(per_class_csv, output_dir, model_name, dataset_name=None, shared_classes=None):
+    """Generate representative classes sensitivity analysis.
+
+    If `shared_classes` is provided, use that list (same classes across models in dataset);
+    otherwise, pick the top sensitive/robust classes for this model.
+    """
     print("🎯 Generating representative classes plot...")
 
     df = pd.read_csv(per_class_csv)
 
-    # Find best stride
+    # Find best stride for the model (used previously to choose representative selection baseline)
     stride_performance = df.groupby('stride')['accuracy'].mean()
     best_stride = stride_performance.idxmax()
     print(f"Best stride: {best_stride} (mean accuracy: {stride_performance[best_stride]:.4f})")
 
-    # Use best stride
+    # Use best stride for computing per-class patterns
     df = df[df['stride'] == best_stride]
 
     # Aggregate
@@ -141,30 +179,46 @@ def generate_representative_plot(per_class_csv, output_dir, model_name):
 
     coverages = sorted(df['coverage'].unique())
 
-    # Compute sensitive/robust classes
-    drop_100_to_25 = pivot[100] - pivot[25]
-    sensitive_classes = drop_100_to_25.sort_values(ascending=False).head(5).index.tolist()
-    variance = pivot.var(axis=1)
-    robust_classes = variance.sort_values().head(5).index.tolist()
-
-    print(f"Most sensitive classes: {sensitive_classes}")
-    print(f"Most robust classes: {robust_classes}")
+    # If shared_classes provided, use it; else compute top-5 sensitive and top-5 robust (fallback)
+    if shared_classes is not None and len(shared_classes) > 0:
+        classes = shared_classes
+        print(f"Using shared classes for dataset {dataset_name}: {classes}")
+    else:
+        # Compute sensitive/robust classes for this model
+        drop_100_to_25 = (pivot[100] - pivot[25]).sort_values(ascending=False)
+        sensitive_classes = drop_100_to_25.head(5).index.tolist()
+        variance = pivot.var(axis=1)
+        robust_classes = variance.sort_values().head(5).index.tolist()
+        classes = sensitive_classes + robust_classes
+        print(f"Most sensitive classes: {sensitive_classes}")
+        print(f"Most robust classes: {robust_classes}")
 
     # Create plot
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Distinct palette and styles for clarity
-    pal = sns.color_palette("tab10", n_colors=10)
+    pal = sns.color_palette("tab10", n_colors=max(10, len(classes)))
 
-    classes = sensitive_classes + robust_classes
     for i, cls in enumerate(classes):
-        label = f"{cls} (sensitive)" if cls in sensitive_classes else f"{cls} (robust)"
+        # Some classes may be missing for some models — skip gracefully
+        if cls not in pivot.index:
+            print(f"Warning: class {cls} not present in {per_class_csv}")
+            continue
+
+        # Decide label type based on whether this class is sensitive relative to 100->25 drop
+        drop_val = (pivot.loc[cls, 100] - pivot.loc[cls, 25]) if 100 in pivot.columns and 25 in pivot.columns else 0
+        is_sensitive = drop_val > 0
+        label = f"{cls} ({'sensitive' if is_sensitive else 'robust'})"
         color = pal[i % len(pal)]
-        style = '--' if cls in sensitive_classes else '-'
+        style = '--' if is_sensitive else '-'
 
         # Convert to percentage for plotting
         accuracies = [pivot.loc[cls, cov] * 100.0 for cov in coverages]
         ax.plot(coverages, accuracies, label=label, color=color, linestyle=style, linewidth=2.2, marker='o', markersize=6)
+
+    # Include dataset in title
+    dataset_label = f" — {dataset_name.upper()}" if dataset_name else ""
+    ax.set_title(f'Representative Classes: Sensitivity Analysis ({model_name.capitalize()}{dataset_label})', fontsize=16, fontweight='bold')
 
     ax.set_xlabel('Frame Coverage (%)', fontsize=14)
     ax.set_ylabel('Accuracy (%)', fontsize=14)
@@ -172,13 +226,12 @@ def generate_representative_plot(per_class_csv, output_dir, model_name):
     import matplotlib.ticker as mtick
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f%%'))
 
-    ax.set_title(f'Representative Classes: Sensitivity Analysis ({model_name.capitalize()})', fontsize=16, fontweight='bold')
     ax.set_xticks(coverages)
     ax.set_xticklabels([f"{int(c)}%" for c in coverages])
     ax.grid(True, alpha=0.25)
 
     # Place legend below as a compact multi-column legend to avoid overlapping the plot
-    ax.legend(ncol=5, bbox_to_anchor=(0.5, -0.18), loc='upper center', fontsize=9)
+    ax.legend(ncol=3, bbox_to_anchor=(0.5, -0.18), loc='upper center', fontsize=9)
 
     # No per-point annotations (clean lines as requested)
 
@@ -492,18 +545,32 @@ def main():
 
         # Generate all plots
         try:
+            # For the dataset-level shared class selection, we'll delay computing until we have seen all models
             generate_distribution_plot(per_class_csv, model_dir, model, args.stride)
-            generate_representative_plot(per_class_csv, model_dir, model)
+            # Representative plot will be generated later once we compute shared classes for the dataset
+            # For now, create the heatmap and accuracy curves and run stats
             generate_heatmap_plot(temporal_csv, model_dir, model)
             generate_accuracy_curves(temporal_csv, model_dir, model, args.dataset)
 
             # Run statistical analysis
             run_statistical_analysis(str(temporal_csv), str(per_class_csv), model_dir)
 
-            print(f"✅ All plots generated for {model}")
+            print(f"✅ Basic plots generated for {model}")
 
         except Exception as e:
             print(f"❌ Error generating plots for {model}: {e}")
+
+    # After all models for this dataset are processed, compute shared classes across models and regenerate representative plots to use the same classes
+    models_dirs = [evaluations_dir / m for m in models]
+    shared = compute_shared_classes(models_dirs, n_sensitive=5, n_robust=5, max_total=12)
+    for model in models:
+        model_dir = evaluations_dir / model
+        matches = list(model_dir.glob("*per_class*.csv"))
+        if not matches:
+            continue
+        generate_representative_plot(matches[0], model_dir, model, dataset_name=args.dataset, shared_classes=shared)
+
+    print(f"✅ All plots generated for {args.dataset.upper()}")
 
     # When running all models for a dataset, generate the comparative 2×3 composite
     if args.model == 'all':
