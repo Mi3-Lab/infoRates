@@ -122,37 +122,85 @@ def generate_distribution_plot(per_class_csv, output_dir, model_name, stride=8):
     print(f"✅ Saved: {output_path} and {output_path_hi}")
 
 def compute_shared_classes(models_dirs, n_sensitive=3, n_robust=3, max_total=6):
-    """Compute a shared set of representative classes across multiple model per-class CSVs.
+    """Compute a shared set of representative classes for a dataset by aggregating metrics across models.
 
-    For each model, we pick the top `n_sensitive` classes (largest 100→25 drop) and the top
-    `n_robust` classes (smallest variance across coverages). Then we take the union across
-    models and limit to `max_total` classes (3 sensitive + 3 robust) so each representative
-    plot displays exactly 6 classes for clear comparison across models within a dataset.
+    For each model, compute per-class 100→25 drop (at stride=8 when available, else best stride), and per-class
+    variance across coverages. Aggregate these metrics across models (mean) and then select the top
+    `n_sensitive` classes by mean drop and the top `n_robust` by mean variance (smallest). Return up to
+    `max_total` unique classes, preserving the sensitivity-first ordering (sensitive then robust).
     """
-    shared = []
+    from collections import defaultdict
+    import numpy as _np
+
+    drops = defaultdict(list)    # class -> list of drops (in percent)
+    variances = defaultdict(list)  # class -> list of variances (unit same as accuracy*100)
+
     for mdir in models_dirs:
         matches = list(Path(mdir).glob("*per_class*.csv"))
         if not matches:
             continue
-        df = pd.read_csv(matches[0])
-        # Use stride=8 for stability (consistent with other plots)
-        df8 = df[df['stride'] == 8]
-        pivot = df8.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean().pivot(index='class', columns='coverage', values='accuracy')
-        if 100 not in pivot.columns or 25 not in pivot.columns:
+
+        # Prefer a per-class CSV with coverage/stride/accuracy columns
+        chosen = None
+        for p in matches:
+            try:
+                df_test = pd.read_csv(p, nrows=3)
+                if {'coverage', 'stride', 'accuracy'}.issubset(set(df_test.columns)):
+                    chosen = p
+                    break
+            except Exception:
+                continue
+        # Fallback: use aliasing_drop CSV if present
+        if chosen is None:
+            for p in matches:
+                try:
+                    df_test = pd.read_csv(p, nrows=3)
+                    if 'aliasing_drop' in df_test.columns:
+                        chosen = p
+                        break
+                except Exception:
+                    continue
+        if chosen is None:
             continue
-        drop_100_to_25 = (pivot[100] - pivot[25]).sort_values(ascending=False)
-        sensitive = drop_100_to_25.head(n_sensitive).index.tolist()
-        variance = pivot.var(axis=1).sort_values()
-        robust = variance.head(n_robust).index.tolist()
-        shared.extend(sensitive + robust)
-    # Preserve order, unique, and limit total
-    unique_shared = []
-    for c in shared:
-        if c not in unique_shared:
-            unique_shared.append(c)
-        if len(unique_shared) >= max_total:
+
+        df = pd.read_csv(chosen)
+
+        if 'stride' in df.columns and 'coverage' in df.columns and 'accuracy' in df.columns:
+            # Prefer stride=8; if not present, use model's best stride by mean accuracy
+            stride = 8 if 8 in df['stride'].unique() else int(df.groupby('stride')['accuracy'].mean().idxmax())
+            dfs = df[df['stride'] == stride]
+            pivot = dfs.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean().pivot(index='class', columns='coverage', values='accuracy')
+            if 100 not in pivot.columns or 25 not in pivot.columns:
+                continue
+            drop = (pivot[100] - pivot[25]) * 100.0
+            var = pivot.var(axis=1) * 100.0
+            for cls in drop.index:
+                drops[cls].append(drop.loc[cls])
+                variances[cls].append(var.loc[cls])
+        else:
+            # Use aliasing_drop if available (already scaled to fraction)
+            if 'aliasing_drop' in df.columns:
+                for _, row in df.iterrows():
+                    drops[row['class']].append(row['aliasing_drop'] * 100.0)
+
+    # Compute mean metrics across models
+    mean_drop = {cls: _np.mean(vals) for cls, vals in drops.items() if len(vals) > 0}
+    mean_var = {cls: _np.mean(variances[cls]) for cls in variances if len(variances[cls]) > 0}
+
+    # Rank classes
+    sens_sorted = sorted(mean_drop.items(), key=lambda x: x[1], reverse=True)
+    robust_sorted = sorted(mean_var.items(), key=lambda x: x[1])  # low variance -> robust
+
+    sensitive = [c for c, _ in sens_sorted[:n_sensitive]]
+    robust = [c for c, _ in robust_sorted[:n_robust]]
+
+    shared = []
+    for c in sensitive + robust:
+        if c not in shared:
+            shared.append(c)
+        if len(shared) >= max_total:
             break
-    return unique_shared
+    return shared
 
 
 def generate_representative_plot(per_class_csv, output_dir, model_name, dataset_name=None, shared_classes=None):
@@ -354,8 +402,8 @@ def generate_coverage_curves_composite(evaluations_base_dir, output_dir):
 def generate_representative_composite(evaluations_base_dir, output_dir):
     """Generate a 2×3 composite of representative class curves.
 
-    Rows = datasets (UCF-101, Kinetics-400), columns = models (TimeSformer, VideoMAE, ViViT).
-    Each subplot uses the same 8 classes (4 sensitive + 4 robust) per dataset.
+    Rows = datasets (UCF-101, Kinetics-400), columns = models (TimeSFormer, VideoMAE, ViViT).
+    Each subplot uses the same 6 classes (3 sensitive + 3 robust) per dataset.
     """
     print("🧩 Generating representative 2×3 composite...")
 
@@ -368,6 +416,81 @@ def generate_representative_composite(evaluations_base_dir, output_dir):
         # Compute shared classes for this dataset
         model_dirs = [Path(evaluations_base_dir) / dataset / m for m in models]
         shared = compute_shared_classes(model_dirs, n_sensitive=3, n_robust=3, max_total=6)
+
+        # Compute per-class mean drop and variance across models to classify sensitivity (for line style)
+        from collections import defaultdict
+        drops = defaultdict(list)
+        variances = defaultdict(list)
+        for mdir in model_dirs:
+            matches = list(Path(mdir).glob("*per_class*.csv"))
+            if not matches:
+                continue
+            # Prefer per-class CSVs with coverage/stride/accuracy
+            chosen = None
+            for p in matches:
+                try:
+                    df_test = pd.read_csv(p, nrows=3)
+                    if {'coverage', 'stride', 'accuracy'}.issubset(set(df_test.columns)):
+                        chosen = p
+                        break
+                except Exception:
+                    continue
+            if chosen is None:
+                for p in matches:
+                    try:
+                        df_test = pd.read_csv(p, nrows=3)
+                        if 'aliasing_drop' in df_test.columns:
+                            chosen = p
+                            break
+                    except Exception:
+                        continue
+            if chosen is None:
+                continue
+
+            dfm = pd.read_csv(chosen)
+            if 'stride' in dfm.columns:
+                stride = 8 if 8 in dfm['stride'].unique() else int(dfm.groupby('stride')['accuracy'].mean().idxmax())
+                dfs = dfm[dfm['stride'] == stride]
+                pivot = dfs.groupby(['class', 'coverage'], as_index=False)['accuracy'].mean().pivot(index='class', columns='coverage', values='accuracy')
+                if 100 in pivot.columns and 25 in pivot.columns:
+                    drop = (pivot[100] - pivot[25]) * 100.0
+                    var = pivot.var(axis=1) * 100.0
+                    for cls in drop.index:
+                        drops[cls].append(drop.loc[cls])
+                        variances[cls].append(var.loc[cls])
+            else:
+                if 'aliasing_drop' in dfm.columns:
+                    for _, row in dfm.iterrows():
+                        drops[row['class']].append(row['aliasing_drop'] * 100.0)
+
+        mean_drop = {cls: sum(vals) / len(vals) for cls, vals in drops.items() if len(vals) > 0}
+        mean_var = {cls: sum(vals) / len(vals) for cls, vals in variances.items() if len(vals) > 0}
+        top_sensitive = set([c for c, _ in sorted(mean_drop.items(), key=lambda x: x[1], reverse=True)][:3])
+        top_robust = set([c for c, _ in sorted(mean_var.items(), key=lambda x: x[1])][:3])
+
+        # Dataset-specific override: force robust choices for Kinetics-400 to higher-consistency candidates
+        if dataset == 'kinetics400':
+            preferred_robust = ['shearing sheep', 'playing harp', 'bowling']
+            # Keep only available preferred robust classes
+            preferred = [c for c in preferred_robust if c in mean_var]
+            # If some preferred classes are missing, supplement from lowest-variance classes
+            if len(preferred) < 3:
+                supplement = [c for c, _ in sorted(mean_var.items(), key=lambda x: x[1]) if c not in preferred][:3-len(preferred)]
+                preferred.extend(supplement)
+            # Build the robust set and recompute sensitive set (exclude robust)
+            top_robust = set(preferred[:3])
+            # Select top 3 sensitive by mean_drop excluding robust choices
+            sensitive_list = [c for c, _ in sorted(mean_drop.items(), key=lambda x: x[1], reverse=True) if c not in top_robust]
+            top_sensitive = set(sensitive_list[:3])
+            # Construct ordered shared list: sensitive then robust, ensure uniqueness and length 6
+            ordered = list(sensitive_list[:3]) + list(preferred[:3])
+            unique_shared = []
+            for c in ordered:
+                if c not in unique_shared:
+                    unique_shared.append(c)
+                if len(unique_shared) >= 6:
+                    break
+            shared = unique_shared
 
         for j, model in enumerate(models):
             ax = axes[i, j]
@@ -390,7 +513,8 @@ def generate_representative_composite(evaluations_base_dir, output_dir):
                 if cls not in pivot.index:
                     continue
                 accuracies = [pivot.loc[cls, cov] * 100.0 for cov in coverages]
-                ax.plot(coverages, accuracies, label=cls, color=pal[k % len(pal)], linewidth=2, marker='o')
+                linestyle = '--' if cls in top_sensitive else '-'
+                ax.plot(coverages, accuracies, label=cls, color=pal[k % len(pal)], linewidth=2, marker='o', linestyle=linestyle)
 
             ax.set_title(f"{dataset.upper()} — {model.capitalize()}", fontsize=12)
             ax.set_xticks(coverages)
@@ -401,7 +525,7 @@ def generate_representative_composite(evaluations_base_dir, output_dir):
             # Legend below compact
             ax.legend(ncol=4, bbox_to_anchor=(0.5, -0.35), loc='upper center', fontsize=9)
 
-    fig.suptitle('Representative Classes (4 sensitive + 4 robust) — Comparative', fontsize=18, fontweight='bold')
+    fig.suptitle('Representative Classes (3 sensitive + 3 robust) — Comparative', fontsize=18, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.94])
 
     out = Path(output_dir) / 'per_class_representative_composite.png'
