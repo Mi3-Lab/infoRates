@@ -163,6 +163,8 @@ All training and distributed evaluation experiments were executed on the host `m
 
 ![Coverage-Stride Interactions](../evaluations/comparative/coverage_stride_interactions.png)
 
+**Figure X: Coverage–Stride Interactions.** Mean accuracy (color) across coverage (rows) and stride (columns) for each dataset × model (UCF-101, Kinetics-400 × TimeSformer, VideoMAE, ViViT). Each cell displays mean accuracy for that configuration; white text indicates poorer performance while darker colors indicate higher accuracy.
+
 **Key Patterns**:
 - At full coverage: Architecture-specific optimal strides (TimeSformer: stride-8, VideoMAE/ViViT: stride-1)
 - At reduced coverage: Dense sampling (stride-1) provides robustness across architectures
