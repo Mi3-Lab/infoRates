@@ -313,6 +313,83 @@ def generate_distribution_composite(evaluations_base_dir, output_dir):
     plt.close()
     print(f"✅ Saved composite: {out}")
 
+
+def generate_coverage_stride_composite(evaluations_base_dir, output_dir, cmap='viridis'):
+    """Generate a 2x3 composite of coverage×stride heatmaps (rows=datasets, cols=models).
+
+    Each cell displays mean accuracy (percent). Annotation color is chosen so white text highlights poorer performance (user preference), darker colors indicate higher accuracy.
+    """
+    print("🧭 Generating coverage×stride 2×3 composite...")
+
+    datasets = ['ucf101', 'kinetics400']
+    models = ['timesformer', 'videomae', 'vivit']
+
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10), sharey=False)
+
+    import matplotlib.ticker as mtick
+
+    for i, dataset in enumerate(datasets):
+        for j, model in enumerate(models):
+            ax = axes[i, j]
+            model_dir = Path(evaluations_base_dir) / dataset / model
+            # Find temporal CSV
+            matches = list(model_dir.glob("*temporal_sampling*.csv"))
+            if not matches:
+                ax.text(0.5, 0.5, 'No data', ha='center', va='center', fontsize=12)
+                ax.set_axis_off()
+                continue
+
+            temporal_csv = matches[0]
+            df = pd.read_csv(temporal_csv)
+
+            # Pivot to create heatmap; ensure coverage rows are sorted descending (100 at top)
+            heatmap_data = df.pivot_table(values='accuracy', index='coverage', columns='stride', aggfunc='mean') * 100.0
+            heatmap_data = heatmap_data.sort_index(ascending=False)
+            heatmap_data = heatmap_data.reindex(sorted(heatmap_data.columns), axis=1)
+
+            vmin = float(np.nanmin(heatmap_data.values))
+            vmax = float(np.nanmax(heatmap_data.values))
+            midpoint = (vmin + vmax) / 2.0
+
+            sns.heatmap(heatmap_data, ax=ax, annot=False, fmt='.1f', cmap=cmap, cbar=False,
+                        linewidths=0.3, linecolor='white', vmin=vmin, vmax=vmax)
+
+            # Annotate each cell with percentage and user-preferred color mapping
+            for y in range(heatmap_data.shape[0]):
+                for x in range(heatmap_data.shape[1]):
+                    val = heatmap_data.iloc[y, x]
+                    if np.isnan(val):
+                        txt = '—'
+                    else:
+                        txt = f"{val:.1f}%"
+                    # Per user: use white text to indicate poorer performance (val < midpoint)
+                    text_color = 'white' if (not np.isnan(val) and val < midpoint) else 'black'
+                    ax.text(x + 0.5, y + 0.5, txt, ha='center', va='center', color=text_color, fontsize=9, fontweight='semibold')
+
+            ax.set_title(f"{dataset.upper()} — {model.capitalize()}", fontsize=12)
+            ax.set_xlabel('Stride', fontsize=11)
+            ax.set_ylabel('Coverage (%)' if j == 0 else '', fontsize=11)
+            ax.set_xticklabels([str(int(c)) for c in heatmap_data.columns], rotation=0)
+            ax.set_yticklabels([str(int(c)) for c in heatmap_data.index], rotation=0)
+            ax.grid(False)
+
+    # Add a single colorbar on the right
+    cbar_ax = fig.add_axes([0.93, 0.25, 0.02, 0.5])
+    norm = plt.Normalize(vmin=vmin, vmax=vmax)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.set_label('Mean Accuracy (%)', fontsize=12)
+
+    fig.suptitle('Coverage × Stride: Mean Accuracy (per dataset × model)', fontsize=18, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 0.92, 0.96])
+
+    out = Path(output_dir) / 'coverage_stride_interactions.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ Saved coverage×stride composite: {out}")
+
 def main():
     parser = argparse.ArgumentParser(description="Generate all analysis plots for a model and dataset")
     parser.add_argument('--model', required=True, help='Model name (videomae, vivit, timesformer, or all)')
@@ -385,6 +462,8 @@ def main():
         comp_out = base_dir / 'evaluations' / 'comparative'
         comp_out.mkdir(parents=True, exist_ok=True)
         generate_distribution_composite(base_dir / 'evaluations', comp_out)
+        # Also generate the coverage×stride composite heatmap
+        generate_coverage_stride_composite(base_dir / 'evaluations', comp_out, cmap='viridis')
 
     print(f"\n🎉 Plot generation complete!")
 
