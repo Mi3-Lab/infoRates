@@ -250,6 +250,62 @@ def generate_accuracy_curves(temporal_csv, output_dir, model_name, dataset_name=
     print(f"✅ Saved: {output_path}")
 
 
+def generate_coverage_curves_composite(evaluations_base_dir, output_dir):
+    """Generate a 2×3 composite of accuracy vs coverage curves (rows=datasets, cols=models).
+
+    Each subplot shows coverage (x-axis) vs accuracy (%) curves for all strides, with a compact legend.
+    """
+    print("🖼️ Generating coverage-degradation 2×3 composite...")
+
+    datasets = ['ucf101', 'kinetics400']
+    models = ['timesformer', 'videomae', 'vivit']
+
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10), sharey='row')
+
+    for i, dataset in enumerate(datasets):
+        for j, model in enumerate(models):
+            ax = axes[i, j]
+            model_dir = Path(evaluations_base_dir) / dataset / model
+            matches = list(model_dir.glob("*temporal_sampling*.csv"))
+            if not matches:
+                ax.text(0.5, 0.5, 'No data', ha='center', va='center', fontsize=12)
+                ax.set_axis_off()
+                continue
+
+            temporal_csv = matches[0]
+            df = pd.read_csv(temporal_csv)
+
+            coverages = sorted(df['coverage'].unique())
+            strides = sorted(df['stride'].unique())
+
+            colors = plt.cm.viridis(np.linspace(0, 1, len(strides)))
+
+            for k, stride in enumerate(strides):
+                stride_data = df[df['stride'] == stride].sort_values('coverage')
+                ax.plot(stride_data['coverage'], stride_data['accuracy'] * 100.0,
+                        label=f'Stride {stride}', color=colors[k], linewidth=2, marker='o')
+
+            ax.set_xlabel('Coverage (%)', fontsize=12)
+            ax.set_title(f"{dataset.upper()} — {model.capitalize()}", fontsize=13)
+            ax.set_xticks(coverages)
+            ax.set_xticklabels([f"{int(c)}%" for c in coverages])
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.1f}%"))
+            ax.grid(True, alpha=0.25)
+
+            # Only show legend on bottom row center subplot to avoid clutter
+            if i == 1 and j == 1:
+                ax.legend(ncol=len(strides), bbox_to_anchor=(0.5, -0.35), loc='upper center', fontsize=10)
+
+    fig.suptitle('Coverage Degradation Patterns Across Datasets and Architectures', fontsize=18, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.94])
+
+    out = Path(output_dir) / 'coverage_degradation_composite.png'
+    out.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ Saved coverage-degradation composite: {out}")
+
+
 def generate_distribution_composite(evaluations_base_dir, output_dir):
     """Generate a 2x3 composite figure: rows=datasets (UCF-101, Kinetics-400), cols=models (TimeSformer, VideoMAE, ViViT).
 
@@ -464,6 +520,8 @@ def main():
         generate_distribution_composite(base_dir / 'evaluations', comp_out)
         # Also generate the coverage×stride composite heatmap
         generate_coverage_stride_composite(base_dir / 'evaluations', comp_out, cmap='viridis')
+        # And generate the coverage-degradation curves composite (6 panels)
+        generate_coverage_curves_composite(base_dir / 'evaluations', comp_out)
 
     print(f"\n🎉 Plot generation complete!")
 
