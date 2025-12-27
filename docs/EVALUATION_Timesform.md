@@ -2,7 +2,7 @@
 
 ## Abstract
 
-We investigate the effect of temporal sampling density on action recognition accuracy using TimeSformer fine-tuned on UCF-101. A systematic evaluation across 25 coverage-stride configurations reveals that reducing temporal frame coverage from 100% to 25% results in a statistically significant accuracy reduction of 7.0% ($\pm 11.1\%$) on average, with individual action classes experiencing degradation ranging from -14.39% to 38.28%. Hypothesis testing confirms that coverage has a significant main effect on accuracy ($F(4,1005)=16.357$, $p<0.001$, $\eta^2=0.061$), whereas stride effects are negligible at full coverage ($p>0.05$). Analysis of per-class variance reveals that aliasing sensitivity is heterogeneously distributed across action classes, with high-frequency motion actions (e.g., BodyWeightSquats, HighJump) exhibiting extreme vulnerability to temporal undersampling. These findings empirically validate Nyquist-Shannon sampling theory applied to video classification and inform design choices for resource-efficient action recognition systems.
+We investigate the effect of temporal sampling density on action recognition accuracy using TimeSformer fine-tuned on UCF-101. A systematic evaluation across 25 coverage-stride configurations reveals that reducing temporal frame coverage from 100% to 25% results in a statistically significant accuracy reduction of 7.0% ($\pm 11.1\%$) on average, with individual action classes experiencing degradation ranging from -14.39% to 38.28%. Hypothesis testing confirms that coverage has a significant main effect on accuracy ($F(4,500)=8.138$, $p<0.001$, $\eta^2=0.061$), whereas stride effects are negligible at full coverage ($p>0.05$). Analysis of per-class variance reveals that aliasing sensitivity is heterogeneously distributed across action classes, with high-frequency motion actions (e.g., BodyWeightSquats, HighJump) exhibiting extreme vulnerability to temporal undersampling. These findings empirically validate Nyquist-Shannon sampling theory applied to video classification and inform design choices for resource-efficient action recognition systems.
 
 ---
 
@@ -34,7 +34,7 @@ The optimal configuration achieved 98.43% accuracy at 100% temporal coverage wit
 
 Figure 1 illustrates the accuracy degradation pattern as a function of temporal coverage across different stride values. At full temporal coverage (100%), larger strides yield superior accuracy, with stride-8 achieving peak performance. However, this advantage reverses dramatically at reduced coverage: dense sampling (stride-1) exhibits greater robustness to undersampling, maintaining 92.28% accuracy at 10% coverage, whereas sparse sampling (stride-8) degrades to 79.50% a 12.78 percentage point deficit.
 
-![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/timesformer/lagacy/accuracy_vs_coverage.png)
+![Figure 1: Accuracy vs Coverage](../evaluations/ucf101/timesformer/accuracy_vs_coverage.png)
 
 **Figure 1.** Accuracy degradation under temporal undersampling. Each line represents a different stride value. Larger strides (8, 16) achieve peak accuracy at full coverage but suffer severe aliasing at reduced coverage. Dense sampling (stride-1) provides robustness to temporal undersampling, consistent with Nyquist-Shannon sampling theory.
 
@@ -169,7 +169,7 @@ These results indicate that the most dramatic degradation occurs when coverage d
 
 Despite the pronounced accuracy variability across stride values at low coverage levels, when the full temporal content is available (100% coverage), stride does not significantly influence accuracy. The ANOVA conducted on per-class accuracies across stride levels at 100% coverage yielded:
 
-$$F(4, 1005) = 0.958, \\quad p = 0.4298, \\quad \\eta^2 = 0.0038$$
+$$F(4, 500) = 0.477, \\quad p = 0.7530, \\quad \\eta^2 = 0.0038$$
 
 The negligible effect size ($\\eta^2 = 0.0038$, below the threshold for small effects) suggests that at full coverage, TimeSformer can effectively integrate temporal information regardless of the inter-frame sampling interval. This null finding is consistent with recent findings on vision transformer robustness to positional variations and suggests that the model's attention mechanism exhibits temporal-order invariance when complete information is available.
 

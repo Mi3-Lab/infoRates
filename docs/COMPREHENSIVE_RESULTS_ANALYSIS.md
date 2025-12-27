@@ -122,16 +122,8 @@ All training and distributed evaluation experiments were executed on the host `m
 
 ### 2.2 Statistical Analysis of Temporal Effects
 
-**Table 2: Comprehensive Statistical Results**
+This section summarizes the inferential statistics for coverage and stride across datasets and architectures — the full ANOVA tables, pairwise coverage comparisons, and variance analyses are detailed in Section 2.4 (Statistical Hypothesis Testing) and Table 2.
 
-| Dataset | Architecture | Coverage F-test | Coverage p-value | Coverage η² | Stride F-test | Stride p-value | Stride η² | Variance Ratio (100% vs 10%) |
-|---------|--------------|----------------|------------------|-------------|---------------|----------------|-----------|-----------------------------|
-| UCF-101 | TimeSformer | F(4,1005)=16.357 | p<0.001 | 0.061 | F(4,1005)=0.958 | p=0.4298 | 0.0038 | 11.2x |
-| UCF-101 | VideoMAE | F(4,1005)=65.234 | p<0.001 | 0.206 | F(4,1005)=26.140 | p<0.001 | 0.094 | 8.7x |
-| UCF-101 | ViViT | F(4,1005)=42.090 | p<0.001 | 0.143 | F(4,1005)=1.591 | p=0.1745 | 0.0063 | 9.3x |
-| Kinetics-400 | TimeSformer | F(4,1995)=78.770 | p<0.001 | 0.136 | F(4,1995)=0.028 | p=0.9985 | 0.00006 | 7.8x |
-| Kinetics-400 | VideoMAE | F(4,1995)=65.984 | p<0.001 | 0.117 | F(4,1995)=0.085 | p=0.9871 | 0.00017 | 8.9x |
-| Kinetics-400 | ViViT | F(4,1995)=38.816 | p<0.001 | 0.072 | F(4,1995)=0.089 | p=0.9859 | 0.00018 | 8.1x |
 
 ### 2.3 Per-Class Heterogeneity Analysis
 
@@ -154,12 +146,9 @@ All training and distributed evaluation experiments were executed on the host `m
 
 **Figure 4: Per-Class Distribution by Coverage**
 
-![UCF-101 TimeSformer Distribution](../evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png)
-![UCF-101 VideoMAE Distribution](../evaluations/ucf101/videomae/per_class_distribution_by_coverage.png)
-![UCF-101 ViViT Distribution](../evaluations/ucf101/vivit/per_class_distribution_by_coverage.png)
-![Kinetics-400 TimeSformer Distribution](../evaluations/kinetics400/timesformer/per_class_distribution_by_coverage.png)
-![Kinetics-400 VideoMAE Distribution](../evaluations/kinetics400/videomae/per_class_distribution_by_coverage.png)
-![Kinetics-400 ViViT Distribution](../evaluations/kinetics400/vivit/per_class_distribution_by_coverage.png)
+![Per-Class Distributions (Composite)](../evaluations/comparative/per_class_distribution_composite.png)
+
+**Figure X (Composite):** Per-class accuracy distributions at stride=8 across coverage levels, arranged as a 2×3 panel (rows: UCF-101, Kinetics-400; columns: TimeSformer, VideoMAE, ViViT). Medians are annotated above each box for clarity; individual point labels have been removed for readability. If you prefer separate per-model panels, high-resolution per-model images are available in each model directory (e.g., `evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png`).
 
 ![Coverage-Stride Interactions](../evaluations/comparative/coverage_stride_interactions.png)
 
@@ -189,7 +178,7 @@ All reported inferential statistics below are computed from per-class accuracy v
 
 > Note: Mean Δ is the average drop in accuracy from 100% to 25% coverage across classes; Levene p reports the test for variance homogeneity across coverage levels.
 
-**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally negligible at full coverage (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 26.14, p < 0.001), which shows a meaningful stride dependence.
+**Interpretation**: Coverage has a highly significant main effect on accuracy across all architectures and datasets (all p < 0.001). Effect sizes (η²) vary across dataset–architecture pairs: the largest coverage effects occur for UCF-101 VideoMAE (η² = 0.206) and UCF-101 ViViT (η² = 0.143), while UCF-101 TimeSformer shows a modest coverage effect (η² = 0.061). Stride effects are generally negligible at full coverage (small η² and non-significant p-values) except for **UCF-101 VideoMAE** (F = 13.005, p < 0.001), which shows a meaningful stride dependence.
 
 ### 2.4.3 Pairwise Coverage Comparisons (Welch's t-tests)
 We computed pairwise Welch's t-tests for all coverage transitions using per-class accuracies (stride = 1). Representative results for **UCF-101 TimeSformer** (n = 101 classes) are:
