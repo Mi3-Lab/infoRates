@@ -12,10 +12,10 @@ set -euo pipefail
 # Defaults are read from config.yaml but can be overridden by flags.
 
 HERE_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$(cd "$HERE_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$HERE_DIR/../.." && pwd)"
 cd "$ROOT_DIR"
 
-CONFIG="config.yaml"
+CONFIG="$ROOT_DIR/config.yaml"
 MODEL=""
 GPUS=""
 EPOCHS=""
@@ -26,6 +26,7 @@ RUN_NAME=""
 NO_WANDB="false"
 VIDEO_ROOT=""
 SAVE_PATH=""
+DATASET=""
 DRY_RUN="false"
 
 print_usage() {
@@ -35,12 +36,14 @@ Multi-model DDP Training Launcher
 Flags:
   --config <path>          Path to config file (default: config.yaml)
   --model <name>           Model to train: timesformer | videomae | vivit | all
+  --dataset <name>         Dataset to train on: ucf101 | something (default: ucf101)
   --gpus <N>               Number of GPUs (overrides env NPROC_PER_NODE)
   --epochs <N>             Number of epochs (overrides config)
   --batch-size <N>         Batch size per GPU (overrides config)
   --lr <float>             Learning rate (overrides config)
   --grad-accum <N>         Gradient accumulation steps (overrides config)
   --run-name <str>         WandB run name
+  --wandb-run-name <str>  WandB run name (alias for --run-name)
   --no-wandb               Disable Weights & Biases logging
   --video-root <path>      UCF101 root (overrides config)
   --save-path <path>       Model save directory (overrides config)
@@ -53,6 +56,7 @@ Environment:
 Examples:
   bash scripts/train_ddp.sh --model videomae --gpus 2 --epochs 5
   bash scripts/train_ddp.sh --model all --gpus 4 --grad-accum 2 --no-wandb
+  bash scripts/train_ddp.sh --model timesformer --dataset something --gpus 2 --wandb-run-name "MyExperiment"
 USAGE
 }
 
@@ -60,12 +64,14 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --config) CONFIG="$2"; shift 2;;
     --model) MODEL="$2"; shift 2;;
+    --dataset) DATASET="$2"; shift 2;;
     --gpus) GPUS="$2"; shift 2;;
     --epochs) EPOCHS="$2"; shift 2;;
     --batch-size) BATCH_SIZE="$2"; shift 2;;
     --lr) LR="$2"; shift 2;;
     --grad-accum) GRAD_ACCUM="$2"; shift 2;;
     --run-name) RUN_NAME="$2"; shift 2;;
+    --wandb-run-name) RUN_NAME="$2"; shift 2;;
     --no-wandb) NO_WANDB="true"; shift 1;;
     --video-root) VIDEO_ROOT="$2"; shift 2;;
     --save-path) SAVE_PATH="$2"; shift 2;;
@@ -85,6 +91,13 @@ fi
 if ! command -v torchrun >/dev/null 2>&1; then
   echo "Error: torchrun not found in PATH. Activate your environment or install PyTorch." >&2
   exit 1
+fi
+
+# Bridge deprecation: map PYTORCH_CUDA_ALLOC_CONF -> PYTORCH_ALLOC_CONF if needed
+if [[ -n "${PYTORCH_CUDA_ALLOC_CONF:-}" && -z "${PYTORCH_ALLOC_CONF:-}" ]]; then
+  export PYTORCH_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF}"
+  unset PYTORCH_CUDA_ALLOC_CONF
+  echo "⚠️ Adjusted PYTORCH_ALLOC_CONF from PYTORCH_CUDA_ALLOC_CONF"
 fi
 
 # Helper: read YAML key via Python (no yq dependency)
@@ -177,6 +190,7 @@ OVERRIDES=(
   --model "$CFG_MODEL"
   --ddp
 )
+[[ -n "$DATASET" ]] && OVERRIDES+=(--dataset "$DATASET")
 [[ -n "$CFG_EPOCHS" ]] && OVERRIDES+=(--epochs "$CFG_EPOCHS")
 [[ -n "$CFG_BATCH" ]] && OVERRIDES+=(--batch-size "$CFG_BATCH")
 [[ -n "$CFG_LR" ]] && OVERRIDES+=(--lr "$CFG_LR")
@@ -185,7 +199,7 @@ OVERRIDES=(
 [[ -n "$CFG_SAVE_PATH" ]] && OVERRIDES+=(--save-path "$CFG_SAVE_PATH")
 
 set -x
-CMD=(torchrun --standalone --nproc_per_node="$CFG_GPUS" scripts/train_multimodel.py "${OVERRIDES[@]}" "${WANDB_FLAG[@]}")
+CMD=(torchrun --standalone --nproc_per_node="$CFG_GPUS" scripts/data_processing/train_multimodel.py "${OVERRIDES[@]}" "${WANDB_FLAG[@]}")
 set +x
 
 echo "Launching: ${CMD[*]}"

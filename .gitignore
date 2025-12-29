@@ -81,6 +81,7 @@ config.local.yaml
 # =========================
 
 # 1. Ignore EVERYTHING inside these dataset folders
+data/*
 data/UCF101_data/*
 data/HMDB51_data/*
 data/Kinetics400_data/*

@@ -130,6 +130,9 @@ def evaluate_fixed_parallel_counts(
     num_workers: int = 8,
     jitter_coverage_pct: float = 0.0,
     num_frames: int = None,
+    label_map: dict = None,
+    topk: int = 1,
+    fuzzy_threshold: float = 0.5,
 ):
     """
     Like evaluate_fixed_parallel but returns raw counts and total_time for aggregation.
@@ -153,6 +156,12 @@ def evaluate_fixed_parallel_counts(
     sample_labels = subset['label'].unique()[:10]
     labels_are_integers = all(str(l).isdigit() for l in sample_labels)
 
+    # Build textual->id mapping if provided
+    txt_to_id = {}
+    if label_map:
+        for k, v in label_map.items():
+            txt_to_id[k] = v if isinstance(v, (list, tuple)) else int(v)
+
     if labels_are_integers:
         # For integer labels (Kinetics400), create direct mapping
         print(f"[INFO] Detected integer labels, using direct integer mapping for {n_classes} classes")
@@ -161,10 +170,31 @@ def evaluate_fixed_parallel_counts(
         def get_class_name(class_id):
             return id2label[class_id] if id2label and class_id < len(id2label) else f"class_{class_id}"
     else:
-        # For string labels (UCF101), use model's label2id mapping
-        print(f"[INFO] Detected string labels, using model label2id mapping")
+        # For string labels, try label_map first, then model's label2id mapping
+        print(f"[INFO] Detected string labels, using label_map and model label2id mapping")
         def get_class_id(label):
-            return label2id.get(norm_label(label), -1)
+            if label is None:
+                return -1
+            try:
+                return int(label)
+            except Exception:
+                pass
+            ln = norm_label(label) if isinstance(label, str) else str(label)
+            if ln in txt_to_id:
+                v = txt_to_id[ln]
+                return int(v) if not isinstance(v, (list, tuple)) else int(v[0])
+            # Try pattern-based template match if provided
+            if label_map and '__patterns' in label_map:
+                import re
+                for pat, t_id, sth in label_map['__patterns']:
+                    try:
+                        if pat.search(str(label)):
+                            return int(t_id)
+                    except Exception:
+                        continue
+            if label2id:
+                return label2id.get(ln, -1)
+            return -1
         def get_class_name(class_id):
             return id2label[class_id] if id2label and class_id < len(id2label) else f"class_{class_id}"
 

@@ -44,6 +44,16 @@ class DatasetHandler:
             "video_root": "data/HMDB51_data/videos",
             "classes": 51,
             "wandb_project": "inforates-hmdb51"
+        },
+        "something": {
+            "name": "Something-Something-v2",
+            "data_dir": "data/Something_data",
+            "manifest_dir": "data/Something_data/manifests",
+            "results_dir": "data/Something_data/results",
+            "video_root": "data/Something_data/videos",
+            "labels_dir": "data/Something_data/labels",
+            "classes": 174,  # Ajuste conforme o número real de classes
+            "wandb_project": "inforates-something"
         }
     }
 

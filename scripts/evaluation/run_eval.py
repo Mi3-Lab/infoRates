@@ -1,7 +1,8 @@
 # Ensure project root and src/ are on sys.path for direct script execution
 import os
 import sys
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# __file__ is scripts/evaluation/run_eval.py; we want the repository root (parent of scripts)
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _SRC_ROOT = os.path.join(_PROJECT_ROOT, "src")
 for _p in (_PROJECT_ROOT, _SRC_ROOT):
     if _p not in sys.path:
@@ -27,7 +28,8 @@ from info_rates.analysis.evaluate import (
     per_class_analysis_fast,
 )
 from info_rates.analysis.evaluate_fixed import evaluate_fixed_parallel_counts
-from scripts.dataset_handler import DatasetHandler
+from info_rates.sampling.temporal import norm_label
+from scripts.data_processing.dataset_handler import DatasetHandler
 
 # Optional: plotting (requires matplotlib, seaborn)
 try:
@@ -65,7 +67,7 @@ def compute_pareto(df: pd.DataFrame) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser(description="Evaluate temporal sampling effects on fixed-length clips.")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
-    parser.add_argument("--dataset", type=str, choices=["ucf101", "kinetics400", "hmdb51"], help="Dataset to evaluate on (overrides config.yaml)")
+    parser.add_argument("--dataset", type=str, choices=["ucf101", "kinetics400", "hmdb51", "something"], help="Dataset to evaluate on (overrides config.yaml)")
     parser.add_argument("--model-path", type=str, help="Path to saved model directory")
     parser.add_argument("--manifest", type=str, help="CSV manifest with columns: video_path,label")
     parser.add_argument("--coverages", nargs="*", type=int)
@@ -82,6 +84,9 @@ def main():
     parser.add_argument("--per-class-out", type=str, help="Path to save per-class CSV")
     parser.add_argument("--per-class-sample-size", type=int, help="Limit per-class eval to N samples for speed")
     parser.add_argument("--jitter-coverage-pct", type=float, help="Randomly jitter coverage ±pct during eval for robustness checks")
+    parser.add_argument("--label-map", type=str, help="CSV file mapping textual label -> integer model id (text,id)")
+    parser.add_argument("--topk", type=int, default=1, help="Consider top-k predictions when matching textual labels")
+    parser.add_argument("--fuzzy-threshold", type=float, default=0.5, help="Token overlap threshold for fuzzy textual matching (0-1)")
     args = parser.parse_args()
 
     # Load config and apply defaults
@@ -188,9 +193,68 @@ def main():
         processor = AutoImageProcessor.from_pretrained(model_path, use_fast=True)
         model = AutoModelForVideoClassification.from_pretrained(model_path).to(device).eval()
 
-    # Load or build manifest for the dataset
-    df, manifest_path = DatasetHandler.load_or_build_manifest(dataset_name)
-    print(f"Loaded dataset: {dataset_name} with {len(df)} samples")
+    # Load manifest: prefer explicit --manifest if provided, otherwise load or build default
+    if args.manifest:
+        manifest_path = args.manifest
+        if os.path.exists(manifest_path):
+            # Support manifests with or without header; attempt best-effort parsing
+            try:
+                df = pd.read_csv(manifest_path, header=None, names=["video_path","label"], dtype={0:str,1:object})
+            except Exception:
+                df = pd.read_csv(manifest_path)
+        else:
+            raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+    else:
+        df, manifest_path = DatasetHandler.load_or_build_manifest(dataset_name)
+    print(f"Loaded dataset: {dataset_name} with {len(df)} samples (manifest: {manifest_path})")
+
+    # Load optional label map (textual_label -> integer id)
+    label_map = None
+    if args.label_map:
+        if os.path.exists(args.label_map):
+            try:
+                # Try reading CSV with header first to detect common column names
+                df_map = pd.read_csv(args.label_map)
+                if 'k400_id' in df_map.columns and 'sth_text' in df_map.columns:
+                    label_map = {}
+                    # Build template-token mapping for fuzzy matching with templates like 'something'
+                    templates = []
+                    patterns = []
+                    import re
+                    for _, r in df_map.iterrows():
+                        try:
+                            if pd.isna(r.get('k400_id')):
+                                continue
+                            sth = str(r['sth_text'])
+                            kid = int(r['k400_id'])
+                            label_map[norm_label(sth)] = kid
+                            toks = set(re.findall(r"\w+", sth.lower()))
+                            toks -= {"a","the","an","something"}
+                            templates.append((toks, kid))
+                            # build a regex pattern where 'something' matches any token sequence
+                            pat = re.escape(sth.lower())
+                            pat = pat.replace(re.escape('something'), '(.+?)')
+                            patterns.append((re.compile(pat, flags=re.I), kid, sth))
+                        except Exception:
+                            continue
+                    label_map['__templates'] = templates
+                    label_map['__patterns'] = patterns
+                elif 'text' in df_map.columns and 'id' in df_map.columns:
+                    label_map = {norm_label(str(r['text'])): int(r['id']) for _, r in df_map.iterrows()}
+                else:
+                    # Fallback: assume two-column CSV text,id
+                    try:
+                        df_map = pd.read_csv(args.label_map, header=None, names=["text","id"])
+                        label_map = {norm_label(str(r['text'])): int(r['id']) for _, r in df_map.iterrows()}
+                    except Exception:
+                        raise RuntimeError("Unrecognized label map format. Expected columns like (sth_text,k400_id) or (text,id)")
+                print(f"Loaded label map: {len(label_map)} entries from {args.label_map}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to parse label map {args.label_map}: {e}")
+        else:
+            raise FileNotFoundError(f"Label map file not found: {args.label_map}")
+    topk = args.topk
+    fuzzy_threshold = args.fuzzy_threshold
 
     # Initialize WandB (only rank 0 when DDP) - after manifest is loaded
     if wandb is not None and not args.no_wandb and (not ddp or rank == 0):
@@ -315,6 +379,9 @@ def main():
                     num_workers=workers,
                     jitter_coverage_pct=jitter_coverage_pct,
                     num_frames=eval_num_frames,
+                    label_map=label_map,
+                    topk=topk,
+                    fuzzy_threshold=fuzzy_threshold,
                 )
                 # print(f"[DEBUG] Rank {rank} END stride={stride} cov={coverage}% (returned from evaluate_fixed_parallel_counts)", flush=True)
                 # print(f"[DEBUG] local_counts head:\n{local_counts.head() if hasattr(local_counts, 'head') else local_counts}", flush=True)
@@ -378,6 +445,9 @@ def main():
                         jitter_coverage_pct=jitter_coverage_pct,
                         rank=rank,
                         num_frames=eval_num_frames,
+                        label_map=label_map,
+                        topk=topk,
+                        fuzzy_threshold=fuzzy_threshold,
                     )
                     # print(f"[DEBUG] Type of result: {type(result)}", flush=True)
                     # print(f"[DEBUG] Content of result: {result}", flush=True)
@@ -460,6 +530,9 @@ def main():
                         jitter_coverage_pct=jitter_coverage_pct,
                         rank=rank,
                         num_frames=eval_num_frames,
+                        label_map=label_map,
+                        topk=topk,
+                        fuzzy_threshold=fuzzy_threshold,
                     )
                     # print(f"[DEBUG] Type of result: {type(result)}", flush=True)
                     # print(f"[DEBUG] Content of result: {result}", flush=True)
@@ -617,6 +690,9 @@ def main():
             rank=rank,
             num_frames=model_num_frames,  # Pass correct frame count
             checkpoint_path=per_class_out,
+            label_map=label_map,
+            topk=topk,
+            fuzzy_threshold=fuzzy_threshold,
         )
         
         # Gather results from all ranks

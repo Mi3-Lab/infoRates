@@ -32,6 +32,9 @@ def evaluate_fixed_parallel(
     rank: int = 0,
     num_frames: int = None,
     checkpoint_path: str = None,
+    label_map: dict = None,
+    topk: int = 1,
+    fuzzy_threshold: float = 0.5,
 ) -> pd.DataFrame:
     # Auto-detect model's frame requirement if not provided
     if num_frames is None:
@@ -72,126 +75,6 @@ def evaluate_fixed_parallel(
     device = next(model.parameters()).device
 
     rng = np.random.default_rng(42)
-
-    for stride in strides:
-        for cov in coverages:
-            if (cov, stride) in completed:
-                if rank == 0:
-                    pass
-                continue
-            correct = total = 0
-            t0 = time.time()
-
-            with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                futures = []
-                for _, row in subset.iterrows():
-                    cov_use = cov
-                    if jitter_coverage_pct > 0:
-                        delta = cov * (jitter_coverage_pct / 100.0)
-                        low = max(1, cov - delta)
-                        high = min(100, cov + delta)
-                        cov_use = int(np.clip(rng.uniform(low, high), 1, 100))
-                    futures.append(
-                        ex.submit(
-                            extract_and_prepare,
-                            row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
-                            cov_use,
-                            stride,
-                            num_select=num_frames,
-                        )
-                    )
-
-                batch_frames, batch_labels = [], []
-                for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
-                    frames, label = fut.result()
-                    if frames is None:
-                        continue
-                    batch_frames.append(frames)
-                    batch_labels.append(label)
-
-                    if len(batch_frames) == batch_size:
-                        with torch.amp.autocast(device.type, dtype=torch.float16):
-                            inputs = processor(batch_frames, return_tensors="pt").to(device)
-
-                            for stride in strides:
-                                for cov in coverages:
-                                    if (cov, stride) in completed:
-                                        if rank == 0:
-                                            pass
-                                        continue
-                                    correct = total = 0
-                                    t0 = time.time()
-
-                                    with ThreadPoolExecutor(max_workers=num_workers) as ex:
-                                        futures = []
-                                        for _, row in subset.iterrows():
-                                            cov_use = cov
-                                            if jitter_coverage_pct > 0:
-                                                delta = cov * (jitter_coverage_pct / 100.0)
-                                                low = max(1, cov - delta)
-                                                high = min(100, cov + delta)
-                                                cov_use = int(np.clip(rng.uniform(low, high), 1, 100))
-                                            futures.append(
-                                                ex.submit(
-                                                    extract_and_prepare,
-                                                    row._asdict() if hasattr(row, "_asdict") else row.to_dict(),
-                                                    cov_use,
-                                                    stride,
-                                                    num_select=num_frames,
-                                                )
-                                            )
-
-                                        batch_frames, batch_labels = [], []
-                                        for fut in tqdm(as_completed(futures), total=len(futures), desc=f"stride={stride} cov={cov}%", disable=(rank != 0)):
-                                            frames, label = fut.result()
-                                            if frames is None:
-                                                continue
-                                            batch_frames.append(frames)
-                                            batch_labels.append(label)
-
-                                            if len(batch_frames) == batch_size:
-                                                with torch.amp.autocast(device.type, dtype=torch.float16):
-                                                    inputs = processor(batch_frames, return_tensors="pt").to(device)
-                                                    logits = model(**inputs).logits
-                                                preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
-                                                for p, l in zip(preds, batch_labels):
-                                                    if int(p) == int(l):  # Compare integers directly
-                                                        correct += 1
-                                                total += len(batch_labels)
-                                                batch_frames, batch_labels = [], []
-                                                # Release tensor references to prevent memory leak
-                                                del inputs, logits
-
-                                        if batch_frames:
-                                            with torch.amp.autocast(device.type, dtype=torch.float16):
-                                                inputs = processor(batch_frames, return_tensors="pt").to(device)
-                                                logits = model(**inputs).logits
-                                            preds = logits.argmax(-1).cpu().numpy()  # Keep as integers
-                                            for p, l in zip(preds, batch_labels):
-                                                if int(p) == int(l):  # Compare integers directly
-                                                    correct += 1
-                                            total += len(batch_labels)
-                                            # Release tensor references to prevent memory leak
-                                            del inputs, logits
-
-                                    # Clear GPU cache between coverage/stride combinations
-                                    if device.type == "cuda":
-                                        torch.cuda.empty_cache()
-
-                                    total_time = (time.time() - t0)
-                                    acc = (correct / total) if total > 0 else 0.0
-                                    results.append({
-                                        "coverage": cov,
-                                        "stride": stride,
-                                        "accuracy": acc,
-                                        "correct": correct,
-                                        "total": total,
-                                        "total_time": total_time,
-                                    })
-
-                                    # Save checkpoint after each config
-                                    if checkpoint_path is not None and rank == 0:
-                                        pd.DataFrame(results).to_csv(checkpoint_path, index=False, float_format='%.6f')
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
         subset = df.sample(sample_size, random_state=42)
@@ -238,9 +121,77 @@ def evaluate_fixed_parallel(
                         with torch.amp.autocast(device.type, dtype=torch.float16):
                             inputs = processor(batch_frames, return_tensors="pt").to(device)
                             logits = model(**inputs).logits
-                        preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
-                        for p, l in zip(preds, batch_labels):
-                            if norm_label(p) == norm_label(l):
+                        # Support top-k matching for textual labels
+                        topk_vals = logits.topk(topk, dim=-1).indices.cpu().numpy()
+                        for pred_row, l in zip(topk_vals, batch_labels):
+                            matched = False
+                            # Try integer comparison first
+                            try:
+                                if any(int(p) == int(l) for p in pred_row):
+                                    correct += 1
+                                    continue
+                            except Exception:
+                                pass
+
+                            # Try explicit mapping from textual label -> id(s)
+                            if label_map and isinstance(l, str):
+                                mapped = label_map.get(norm_label(l))
+                                if mapped is not None:
+                                    mapped_ids = mapped if isinstance(mapped, (list, tuple)) else [int(mapped)]
+                                    if any(int(p) in mapped_ids for p in pred_row):
+                                        correct += 1
+                                        continue
+                                # Try pattern-based template match (e.g., template 'lifting something with something' matches 'lifting chair toy with car toy on it')
+                                if '__patterns' in label_map:
+                                    for pat, t_id, sth in label_map['__patterns']:
+                                        try:
+                                            if pat.search(str(l)):
+                                                if any(int(p) == int(t_id) for p in pred_row):
+                                                    correct += 1
+                                                    mapped = t_id
+                                                    break
+                                        except Exception:
+                                            continue
+                                    if mapped is not None:
+                                        continue
+                                # Try template-token fuzzy match against mapping templates (if provided)
+                                if '__templates' in label_map:
+                                    import re
+                                    def _tokens(x: str):
+                                        toks = set(re.findall(r"\w+", x.lower()))
+                                        toks -= {"a", "the", "an", "something"}
+                                        return toks
+                                    gt_toks = _tokens(l)
+                                    for t_toks, t_id in label_map['__templates']:
+                                        overlap = len(gt_toks & t_toks) / max(1, min(len(gt_toks), len(t_toks)))
+                                        if overlap >= fuzzy_threshold:
+                                            if any(int(p) == int(t_id) for p in pred_row):
+                                                correct += 1
+                                                mapped = t_id
+                                                break
+                                    if mapped is not None:
+                                        continue
+
+                            # Fallback: compare predicted label text to ground-truth text
+                            for p in pred_row:
+                                p_label = model.config.id2label[int(p)]
+                                if norm_label(p_label) == norm_label(l):
+                                    matched = True
+                                    break
+                                # token overlap fuzzy match (use word tokens, ignore stopwords and the placeholder 'something')
+                                import re
+                                def _tokens(x: str):
+                                    toks = set(re.findall(r"\w+", x.lower()))
+                                    toks -= {"a", "the", "an", "something"}
+                                    return toks
+                                gt_tokens = _tokens(l)
+                                p_tokens = _tokens(p_label)
+                                if gt_tokens and p_tokens:
+                                    overlap = len(gt_tokens & p_tokens) / max(1, min(len(gt_tokens), len(p_tokens)))
+                                    if overlap >= fuzzy_threshold:
+                                        matched = True
+                                        break
+                            if matched:
                                 correct += 1
                         total += len(batch_labels)
                         batch_frames, batch_labels = [], []
@@ -251,14 +202,57 @@ def evaluate_fixed_parallel(
                     with torch.amp.autocast(device.type, dtype=torch.float16):
                         inputs = processor(batch_frames, return_tensors="pt").to(device)
                         logits = model(**inputs).logits
-                    preds = [model.config.id2label[i] for i in logits.argmax(-1).cpu().numpy()]
-                    for p, l in zip(preds, batch_labels):
-                        if norm_label(p) == norm_label(l):
-                            correct += 1
-                    total += len(batch_labels)
-                    # Release tensor references to prevent memory leak
-                    del inputs, logits
+                        topk_vals = logits.topk(topk, dim=-1).indices.cpu().numpy()
+                        for pred_row, l in zip(topk_vals, batch_labels):
+                            matched = False
+                            try:
+                                if any(int(p) == int(l) for p in pred_row):
+                                    correct += 1
+                                    continue
+                            except Exception:
+                                pass
 
+                            if label_map and isinstance(l, str):
+                                mapped = label_map.get(norm_label(l))
+                                if mapped is not None:
+                                    mapped_ids = mapped if isinstance(mapped, (list, tuple)) else [int(mapped)]
+                                    if any(int(p) in mapped_ids for p in pred_row):
+                                        correct += 1
+                                        continue
+                                # Pattern-based template match
+                                if '__patterns' in label_map:
+                                    for pat, t_id, sth in label_map['__patterns']:
+                                        try:
+                                            if pat.search(str(l)):
+                                                if any(int(p) == int(t_id) for p in pred_row):
+                                                    correct += 1
+                                                    mapped = t_id
+                                                    break
+                                        except Exception:
+                                            continue
+                                    if mapped is not None:
+                                        continue
+
+                            for p in pred_row:
+                                p_label = model.config.id2label[int(p)]
+                                if norm_label(p_label) == norm_label(l):
+                                    matched = True
+                                    break
+                                # token overlap fuzzy match (use word tokens, ignore stopwords and the placeholder 'something')
+                                import re
+                                def _tokens(x: str):
+                                    toks = set(re.findall(r"\w+", x.lower()))
+                                    toks -= {"a", "the", "an", "something"}
+                                    return toks
+                                gt_tokens = _tokens(l)
+                                p_tokens = _tokens(p_label)
+                                if gt_tokens and p_tokens:
+                                    overlap = len(gt_tokens & p_tokens) / max(1, min(len(gt_tokens), len(p_tokens)))
+                                    if overlap >= fuzzy_threshold:
+                                        matched = True
+                                        break
+                            if matched:
+                                correct += 1
             # Clear GPU cache between coverage/stride combinations
             if device.type == "cuda":
                 torch.cuda.empty_cache()
@@ -290,6 +284,9 @@ def per_class_analysis_fast(
     rank: int = 0,
     num_frames: int = 8,
     checkpoint_path: str = None,
+    label_map: dict = None,
+    topk: int = 1,
+    fuzzy_threshold: float = 0.5,
 ) -> pd.DataFrame:
     # sample_size <= 0 means use full dataset
     if sample_size is not None and sample_size > 0 and sample_size < len(df):
@@ -329,6 +326,40 @@ def per_class_analysis_fast(
     label2id = model.config.label2id
     n_classes = len(id2label)
 
+    # Build textual -> id mapping when ground-truth labels are textual.
+    txt_to_id = {}
+    if label_map:
+        for k, v in label_map.items():
+            txt_to_id[k] = v if isinstance(v, (list, tuple)) else int(v)
+    else:
+        # Try to derive mapping from model's label2id (normalized keys)
+        if label2id:
+            for k, v in label2id.items():
+                txt_to_id[norm_label(k)] = v
+
+    def map_label(label):
+        """Map a ground-truth label (int or string) to an integer class id, or return -1 if unmapped."""
+        if label is None:
+            return -1
+        # If already an integer
+        try:
+            return int(label)
+        except Exception:
+            pass
+        if isinstance(label, str):
+            ln = norm_label(label)
+            if label_map and ln in label_map:
+                v = label_map.get(ln)
+                if isinstance(v, (list, tuple)):
+                    return int(v[0]) if v else -1
+                return int(v)
+            if ln in txt_to_id:
+                v = txt_to_id.get(ln)
+                return int(v) if not isinstance(v, (list, tuple)) else int(v[0])
+            if label2id and ln in label2id:
+                return int(label2id[ln])
+        return -1
+
     for stride in strides:
         for cov in coverages:
             if (cov, stride) in completed:
@@ -357,9 +388,23 @@ def per_class_analysis_fast(
                             logits = model(**inputs).logits
                         preds = logits.argmax(-1).cpu().numpy()
                         for p, l in zip(preds, batch_labels):
-                            if l not in id2label:
+                            # Support textual ground-truth labels via txt_to_id or label2id
+                            true_id = None
+                            if isinstance(l, str):
+                                l_norm = norm_label(l)
+                                if l_norm in txt_to_id:
+                                    mapped = txt_to_id[l_norm]
+                                    true_id = mapped if isinstance(mapped, int) else (mapped[0] if mapped else None)
+                                elif l in label2id:
+                                    true_id = label2id[l]
+                                else:
+                                    # Skip samples we cannot map
+                                    continue
+                            else:
+                                true_id = int(l)
+
+                            if true_id is None:
                                 continue
-                            true_id = l
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1
@@ -446,9 +491,9 @@ def per_class_analysis_fast(
                             logits = model(**inputs).logits
                         preds = logits.argmax(-1).cpu().numpy()
                         for p, l in zip(preds, batch_labels):
-                            if l not in id2label:
+                            true_id = map_label(l)
+                            if true_id == -1 or true_id is None:
                                 continue
-                            true_id = l
                             total_per_class[true_id] += 1
                             if p == true_id:
                                 correct_per_class[true_id] += 1

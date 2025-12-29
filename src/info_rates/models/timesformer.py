@@ -14,26 +14,42 @@ from torch.optim import AdamW
 
 
 class UCFDataset(Dataset):
-    def __init__(self, files: List[str], processor, num_frames: int = 8, size: int = 224, class_names: List[str] = None):
+    def __init__(self, files, processor, num_frames: int = 8, size: int = 224, class_names: List[str] = None):
         self.files = files
         self.processor = processor
         self.num_frames = num_frames
         self.size = size
         self.class_names = class_names or []
         self.label2id = {l: i for i, l in enumerate(self.class_names)} if self.class_names else None
+        
+        # Check if files is a list of tuples (path, label) or just paths
+        self.has_labels = isinstance(self.files[0], tuple) if self.files else False
 
     def __len__(self):
         return len(self.files)
 
     def __getitem__(self, idx):
-        path = self.files[idx]
-        label_name = os.path.basename(os.path.dirname(path))
-        label = self.label2id[label_name] if self.label2id else 0
+        if self.has_labels:
+            path, label = self.files[idx]
+        else:
+            path = self.files[idx]
+            label_name = os.path.basename(os.path.dirname(path))
+            label = self.label2id[label_name] if self.label2id else 0
 
-        vr = VideoReader(path, ctx=cpu(0))
-        total = len(vr)
-        idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
-        frames = vr.get_batch(idxs).asnumpy()
+        if not os.path.exists(path):
+            # File was deleted or missing, raise error to skip sample
+            raise FileNotFoundError(f"Video file not found: {path}")
+        else:
+            try:
+                vr = VideoReader(path, ctx=cpu(0))
+                total = len(vr)
+                idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
+                frames = vr.get_batch(idxs).asnumpy()
+            except Exception as e:
+                # If video is corrupted or unreadable, delete it from the folder and raise error
+                os.remove(path)
+                raise RuntimeError(f"Corrupted video removed: {path} ({e})")
+
         frames = [cv2.resize(f, (self.size, self.size)) for f in frames]
 
         inputs = self.processor(frames, return_tensors="pt")

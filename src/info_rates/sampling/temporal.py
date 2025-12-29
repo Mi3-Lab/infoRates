@@ -51,14 +51,34 @@ def extract_and_prepare(row: Dict[str, str], cov: int, stride: int, resize: int 
     """
     try:
         vr = VideoReader(row["video_path"], ctx=cpu(0))
-        frames = vr.get_batch(np.arange(len(vr))).asnumpy()
-        n_total = len(frames)
-        n_keep = max(1, int(n_total * cov / 100))
+        total_frames = len(vr)
+        if total_frames <= 0:
+            return None, None
+
+        # Sample a modest number of frames uniformly to avoid decoding entire video (more robust)
+        base_n = min(total_frames, max(num_select * 4, num_select))
+        idx_base = np.linspace(0, max(total_frames - 1, 0), base_n).astype(int)
+        # Read frames individually to avoid bulk decoding errors on some files
+        frames_list = []
+        for i in idx_base:
+            try:
+                f = vr.get_batch([int(i)]).asnumpy()[0]
+                frames_list.append(f)
+            except Exception:
+                continue
+        if len(frames_list) == 0:
+            return None, None
+        import numpy as _np
+        frames = _np.stack(frames_list, axis=0)
+
+        # Apply coverage and stride on the sampled base frames
+        n_keep = max(1, int(len(frames) * cov / 100))
         frames = frames[:n_keep:stride]
+
         # Ensure we have at least num_select frames to sample from
         if len(frames) < num_select:
-            # Pad or repeat frames if needed
             frames = np.repeat(frames, (num_select // len(frames)) + 1, axis=0)[:num_select]
+
         idx = np.linspace(0, len(frames) - 1, num_select).astype(int)
         selected = [cv2.resize(frames[j], (resize, resize)) for j in idx]
         return selected, row["label"]

@@ -55,3 +55,8 @@ hmdb51_video_root: "data/HMDB51_data/videos"
 hmdb51_results_dir: "evaluations/hmdb51"
 hmdb51_wandb_project: "inforates-hmdb51"
 
+# Something-Something V2 settings
+something_video_root: "data/Something_data"
+something_results_dir: "evaluations/something"
+something_wandb_project: "inforates-something"
+
