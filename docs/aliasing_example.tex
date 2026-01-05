@@ -1,0 +1,26 @@
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{ccc}
+t=0 & t=1 & t=2 \\
+\includegraphics[width=0.3\linewidth]{figures/frame_0_stride_1.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_1_stride_1.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_2_stride_1.jpg} \\
+\end{tabular}
+\caption{Dense sampling (stride=1): Smooth motion sequence}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{ccc}
+t=0 & t=16 & t=32 \\
+\includegraphics[width=0.3\linewidth]{figures/frame_0_stride_16.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_1_stride_16.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_2_stride_16.jpg} \\
+\end{tabular}
+\caption{Sparse sampling (stride=16): Aliased motion with strobing}
+\end{minipage}
+\caption{Example of temporal aliasing in YoYo action: Dense sampling captures smooth temporal progression, while sparse sampling creates discontinuous, distorted motion due to aliasing.}
+\label{fig:aliasing_example}
+\end{figure}

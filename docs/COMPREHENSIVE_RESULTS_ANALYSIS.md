@@ -2,7 +2,6 @@
 
 ## Abstract
 
-
 This comprehensive study quantifies how temporal sampling—coverage and stride—affects human action recognition accuracy across three state-of-the-art video architectures (TimeSformer, VideoMAE, ViViT) and two large-scale datasets (UCF-101, Kinetics-400; 31,023 videos). We show that reducing temporal coverage leads to monotonic accuracy degradation, but the rate and severity of this decline are highly architecture- and dataset-dependent. For example, VideoMAE on UCF-101 suffers the largest mean drop (−17.2% from 100% to 25% coverage), while TimeSformer is relatively robust (−6.9%). Stride effects are significant overall and can amplify aliasing at low coverage, especially for VideoMAE.
 
 Our results reveal pronounced per-class heterogeneity: some action classes (e.g., YoYo, diving cliff) are extremely sensitive to undersampling, while others (e.g., Billiards, shearing sheep) remain robust even at aggressive reductions. The spread of per-class accuracy widens dramatically as coverage decreases, with variance increasing sharply (Levene p < 0.001 for most models). We provide a reproducible taxonomy of action classes by aliasing sensitivity, and demonstrate that mean accuracy alone is insufficient for robust system design.
@@ -15,7 +14,141 @@ These findings empirically validate the Nyquist-Shannon principle in video recog
 
 ## 1. Methodology
 
-### 1.1 Datasets
+### 1.1 Conceptual Overview of Temporal Aliasing
+
+\begin{figure}[t]
+\centering
+
+% ---------------- LEFT PANEL (a) ----------------
+\begin{minipage}[t]{0.5\textwidth}
+\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[font=\small]
+\tikzset{
+  act/.style      ={draw, trapezium, trapezium left angle=70, trapezium right angle=110,
+                    align=center, minimum height=1.05cm, text width=3.4cm,
+                    fill=blue!7, draw=blue!55},
+  samp/.style     ={draw, rounded corners=2pt, align=center,
+                    minimum height=1.05cm, text width=3.4cm,
+                    fill=orange!9, draw=orange!60},
+  obs/.style      ={draw, rounded corners=2pt, align=center,
+                    minimum height=1.05cm, text width=3.4cm,
+                    fill=gray!6, draw=gray!65},
+  arrow/.style    ={-{Stealth[length=2.2mm]}, thick, draw=gray!80}
+}
+
+\node (hf) [act] {\textbf{High-Frequency Action}\\Explosive / non-repetitive\\(e.g., jump, dive)\\Rapid state transitions};
+\node (lf) [act, below=8mm of hf] {\textbf{Low-Frequency Action}\\Rhythmic / redundant\\(e.g., typing)\\Stable state sequences};
+
+\node (dense) [samp, right=10mm of hf] {\textbf{Dense Sampling}\\Above Nyquist\\Low stride};
+\node (nyq)   [samp, below=8mm of dense] {\textbf{Borderline Sampling}\\Near Nyquist\\Mid stride};
+\node (alias) [samp, below=8mm of nyq] {\textbf{Aliasing Regime}\\Below Nyquist\\High stride};
+
+\node (o1) [obs, right=10mm of dense] {\textbf{Stable cues}\\Keyframes preserved};
+\node (o2) [obs, below=8mm of o1] {\textbf{Ambiguous cues}\\Some events missed};
+\node (o3) [obs, below=8mm of o2] {\textbf{Distorted cues}\\Strobing / aliasing};
+
+% Clarified arrows with labels
+\node[above=1mm of hf, anchor=south] (req1) {Requires};
+\draw[arrow] (req1.south) -- (dense.north);
+\node[above=1mm of lf, anchor=south] (tol) {Tolerates};
+\draw[arrow] (tol.south) -- (alias.north);
+
+\draw[arrow] (dense.east) -- (o1.west);
+\draw[arrow] (nyq.east)   -- (o2.west);
+\draw[arrow] (alias.east) -- (o3.west);
+
+\node[draw=blue!65, dashed, rounded corners, fit=(hf)(lf),
+      inner sep=6pt, label={[blue!80]west:\small \textbf{Action Dynamics}}] {};
+\node[draw=orange!70, dashed, rounded corners, fit=(dense)(nyq)(alias),
+      inner sep=6pt, label={[orange!80]north:\small \textbf{Sampling Regime}}] {};
+\node[draw=gray!70, dashed, rounded corners, fit=(o1)(o2)(o3),
+      inner sep=6pt, label={[gray!80]east:\small \textbf{Observed Evidence}}] {};
+
+\end{tikzpicture}
+\end{adjustbox}
+
+(a) Temporal sampling as signal processing: High-frequency actions with rapid state transitions require dense sampling above the Nyquist rate to preserve motion evidence, while low-frequency actions with stable state sequences can tolerate aliasing regimes.
+\end{minipage}
+\hfill
+
+% ---------------- RIGHT PANEL (b) ----------------
+\begin{minipage}[t]{0.36\textwidth}
+\centering
+\begin{adjustbox}{max width=\linewidth}
+\begin{tikzpicture}[font=\small]
+\tikzset{
+  box/.style      ={draw, rounded corners=2pt, align=left,
+                    fill=gray!6, draw=gray!65, inner sep=5pt}
+}
+
+\node[align=center] (t) {\textbf{Coverage $\times$ Stride}\\\small (25 configs)};
+\def\cell{6.0mm}
+
+\node[anchor=west] at ($(t.south west)+(0mm,-4mm)$) {\small \textbf{Stride}};
+\node[anchor=west, rotate=90] at ($(t.south west)+(-14mm,-30mm)$) {\small \textbf{Coverage}};
+
+\node[anchor=west] at ($(t.south west)+(0mm,-10mm)$)
+{\small 1\hspace{5.2mm}2\hspace{5.2mm}4\hspace{5.2mm}8\hspace{4.6mm}16};
+
+\begin{scope}[shift={($(t.south west)+(0mm,-14mm)$)}]
+  \foreach \i in {0,...,4} {
+    \foreach \j in {0,...,4} {
+      \draw[gray!70] (\j*\cell, -\i*\cell) rectangle ++(\cell, -\cell);
+    }
+  }
+
+  \fill[blue!14] (0,0) rectangle ++(2*\cell, -2*\cell);
+  \draw[blue!70, thick] (0,0) rectangle ++(2*\cell, -2*\cell);
+
+  \fill[orange!25] (3*\cell, -3*\cell) rectangle ++(2*\cell, -2*\cell);
+  \draw[orange!85!black, thick] (3*\cell, -3*\cell) rectangle ++(2*\cell, -2*\cell);
+
+  \node[anchor=east] at (-1.2mm, -0.5*\cell) {\small 100\%};
+  \node[anchor=east] at (-1.2mm, -1.5*\cell) {\small 75\%};
+  \node[anchor=east] at (-1.2mm, -2.5*\cell) {\small 50\%};
+  \node[anchor=east] at (-1.2mm, -3.5*\cell) {\small 25\%};
+  \node[anchor=east] at (-1.2mm, -4.5*\cell) {\small 10\%};
+\end{scope}
+
+\end{tikzpicture}
+\end{adjustbox}
+
+(b) Experimental sweep: The low-coverage, high-stride region constitutes a high-risk operating regime.
+\end{minipage}
+
+\caption{Conceptual overview of temporal aliasing and the coverage $\times$ stride stress test. (a) Actions exhibit intrinsic temporal frequencies and state dynamics; undersampling below the critical rate distorts motion evidence. (b) The experimental design evaluates 25 coverage–stride combinations, with highlighted regions showing safe (blue) and risky (orange) configurations.}
+\label{fig:aliasing_concept_grid}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{ccc}
+t=0 & t=1 & t=2 \\
+\includegraphics[width=0.3\linewidth]{figures/frame_0_stride_1.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_1_stride_1.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_2_stride_1.jpg} \\
+\end{tabular}
+\caption{Dense sampling (stride=1): Smooth motion sequence}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tabular}{ccc}
+t=0 & t=16 & t=32 \\
+\includegraphics[width=0.3\linewidth]{figures/frame_0_stride_16.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_1_stride_16.jpg} &
+\includegraphics[width=0.3\linewidth]{figures/frame_2_stride_16.jpg} \\
+\end{tabular}
+\caption{Sparse sampling (stride=16): Aliased motion with strobing}
+\end{minipage}
+\caption{Example of temporal aliasing in YoYo action: Dense sampling captures smooth temporal progression, while sparse sampling creates discontinuous, distorted motion due to aliasing.}
+\label{fig:aliasing_example}
+\end{figure}
+
+### 1.2 Datasets
 
 We evaluate temporal sampling effects across two benchmark datasets representing diverse action recognition scenarios:
 

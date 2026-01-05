@@ -72,7 +72,7 @@ We identified Pareto-optimal configurations where no alternative achieves superi
 
 Notably, no intermediate coverage levels (25%, 50%, 75%) appear on the Pareto frontier. The bimodal distribution concentrated at 10% (minimal resource) and 100% (maximal accuracy) suggests that intermediate sampling strategies incur computational cost without commensurate accuracy gains. Figure 2 visualizes this frontier in accuracy-latency space.
 
-![Figure 2: Pareto Frontier](../evaluations/ucf101/timesformer/lagacy/lagacypareto_frontier.png)
+![Figure 2: Pareto Frontier](../evaluations/ucf101/timesformer/lagacy/pareto_frontier.png)
 
 **Figure 2.** Pareto frontier analysis reveals bimodal optimality: only minimal (10%) and maximal (100%) coverage configurations are non-dominated. Intermediate sampling rates (25-75%) lie strictly below the frontier, indicating suboptimal accuracy-efficiency trade-offs. All configurations exhibit near-identical latency (~0.017s), placing coverage not stride as the primary performance determinant.
 

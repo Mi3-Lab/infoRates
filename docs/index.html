@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfoRates: Temporal Sampling Benchmark for Action Recognition</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { color: #333; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        img { max-width: 100%; height: auto; }
+        .section { margin-bottom: 40px; }
+        .recommendation { background-color: #e7f3ff; padding: 10px; border-left: 5px solid #007acc; }
+    </style>
+</head>
+<body>
+    <h1>InfoRates: Temporal Sampling Benchmark for Action Recognition</h1>
+    <p>This interactive dashboard provides a comprehensive reference for optimal temporal sampling configurations in video action recognition. Explore results across models, datasets, and activity types to find the best coverage-stride combinations for your use case.</p>
+
+    <div class="section">
+        <h2>Quick Recommendations by Activity Type</h2>
+        <div class="recommendation">
+            <p><strong>High-Frequency Actions</strong> (e.g., YoYo, JumpingJack): Use TimeSformer with 100% coverage and stride 1-2 for capturing rapid motions.</p>
+            <p><strong>Moderate-Frequency Actions</strong> (e.g., Sports): ViViT with 75-100% coverage and stride 2-4 offers balanced efficiency.</p>
+            <p><strong>Low-Frequency Actions</strong> (e.g., Typing): VideoMAE with 50-75% coverage and stride 4-8 is robust and efficient.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Experimental Results Summary</h2>
+        <table>
+            <tr>
+                <th>Dataset</th>
+                <th>Model</th>
+                <th>Peak Accuracy</th>
+                <th>Best Config</th>
+                <th>Mean Drop (100%→25%)</th>
+                <th>Notes</th>
+            </tr>
+            <tr>
+                <td>UCF-101</td>
+                <td>TimeSformer</td>
+                <td>85.09%</td>
+                <td>100%-stride2</td>
+                <td>6.86%</td>
+                <td>Most robust to stride changes; F(4,2520)=6.307, η²=0.0099</td>
+            </tr>
+            <tr>
+                <td>UCF-101</td>
+                <td>VideoMAE</td>
+                <td>86.90%</td>
+                <td>100%-stride1</td>
+                <td>17.18%</td>
+                <td>Highest sensitivity to coverage; F(4,2520)=60.213, η²=0.0872</td>
+            </tr>
+            <tr>
+                <td>UCF-101</td>
+                <td>ViViT</td>
+                <td>85.49%</td>
+                <td>100%-stride1</td>
+                <td>13.18%</td>
+                <td>Balanced performance; F(4,2520)=19.681, η²=0.0303</td>
+            </tr>
+            <tr>
+                <td>Kinetics-400</td>
+                <td>TimeSformer</td>
+                <td>74.19%</td>
+                <td>100%-stride4</td>
+                <td>10.60%</td>
+                <td>Consistent across configs; F(4,9995)=4.724, η²=0.0019</td>
+            </tr>
+            <tr>
+                <td>Kinetics-400</td>
+                <td>VideoMAE</td>
+                <td>76.52%</td>
+                <td>50%-stride2</td>
+                <td>7.16%</td>
+                <td>Benefits from subsampling; F(4,9995)=58.786, η²=0.0230</td>
+            </tr>
+            <tr>
+                <td>Kinetics-400</td>
+                <td>ViViT</td>
+                <td>76.19%</td>
+                <td>100%-stride1</td>
+                <td>8.23%</td>
+                <td>Stable at high coverage; F(4,9995)=9.194, η²=0.0037</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Coverage-Stride Interaction Analysis</h2>
+        <p>These plots show how accuracy varies with different coverage and stride combinations across models and datasets.</p>
+        <img src="evaluations/comparative/coverage_stride_interactions.png" alt="Coverage-Stride Interactions">
+    </div>
+
+    <div class="section">
+        <h2>Coverage Degradation Patterns</h2>
+        <p>Accuracy degradation as temporal coverage decreases, revealing model-specific sensitivities.</p>
+        <img src="evaluations/comparative/coverage_degradation_composite.png" alt="Coverage Degradation Composite">
+    </div>
+
+    <div class="section">
+        <h2>Statistical Analysis</h2>
+        <p>One-way ANOVA results showing significance of coverage and stride effects:</p>
+        <ul>
+            <li><strong>Coverage Effect</strong>: Highly significant across all models (p < 0.001), with effect sizes ranging from η²=0.061 (TimeSformer UCF) to η²=0.206 (VideoMAE UCF)</li>
+            <li><strong>Stride Effect</strong>: Significant but smaller, with VideoMAE showing strongest dependence (η²=0.087)</li>
+            <li><strong>Variance Heterogeneity</strong>: Levene's test shows increasing inter-class variance as coverage decreases (p < 0.001 for most)</li>
+        </ul>
+        <p>Pairwise comparisons confirm monotonic degradation, with Bonferroni-corrected significance for severe reductions.</p>
+    </div>
+
+    <div class="section">
+        <h2>Detailed Model Performance Heatmaps</h2>
+        <p>Accuracy heatmaps showing performance across all coverage-stride combinations.</p>
+        <h3>UCF-101 TimeSformer</h3>
+        <img src="evaluations/ucf101/timesformer/accuracy_heatmap.png" alt="UCF-101 TimeSformer Heatmap">
+        <h3>UCF-101 VideoMAE</h3>
+        <img src="evaluations/ucf101/videomae/accuracy_heatmap.png" alt="UCF-101 VideoMAE Heatmap">
+        <h3>UCF-101 ViViT</h3>
+        <img src="evaluations/ucf101/vivit/accuracy_heatmap.png" alt="UCF-101 ViViT Heatmap">
+        <h3>Kinetics-400 TimeSformer</h3>
+        <img src="evaluations/kinetics400/timesformer/accuracy_heatmap.png" alt="Kinetics-400 TimeSformer Heatmap">
+        <h3>Kinetics-400 VideoMAE</h3>
+        <img src="evaluations/kinetics400/videomae/accuracy_heatmap.png" alt="Kinetics-400 VideoMAE Heatmap">
+        <h3>Kinetics-400 ViViT</h3>
+        <img src="evaluations/kinetics400/vivit/accuracy_heatmap.png" alt="Kinetics-400 ViViT Heatmap">
+    </div>
+
+    <div class="section">
+        <h2>Per-Class Analysis</h2>
+        <p>Distribution of per-class accuracies highlighting heterogeneity in temporal requirements.</p>
+        <h3>UCF-101 TimeSformer</h3>
+        <img src="evaluations/ucf101/timesformer/per_class_distribution_by_coverage.png" alt="UCF-101 TimeSformer Per-Class">
+        <h3>Kinetics-400 TimeSformer</h3>
+        <img src="evaluations/kinetics400/timesformer/per_class_distribution_by_coverage.png" alt="Kinetics-400 TimeSformer Per-Class">
+    </div>
+
+    <div class="section">
+        <h2>Example of Temporal Aliasing</h2>
+        <p>Real frames from YoYo action demonstrating the difference between dense and sparse sampling.</p>
+        <table>
+            <tr>
+                <td><img src="figures/frame_0_stride_1.jpg" alt="Dense t=0"></td>
+                <td><img src="figures/frame_1_stride_1.jpg" alt="Dense t=1"></td>
+                <td><img src="figures/frame_2_stride_1.jpg" alt="Dense t=2"></td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Dense Sampling (stride=1): Smooth motion</strong></td>
+            </tr>
+            <tr>
+                <td><img src="figures/frame_0_stride_16.jpg" alt="Sparse t=0"></td>
+                <td><img src="figures/frame_1_stride_16.jpg" alt="Sparse t=16"></td>
+                <td><img src="figures/frame_2_stride_16.jpg" alt="Sparse t=32"></td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Sparse Sampling (stride=16): Aliased motion with strobing</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Contributing New Results</h2>
+        <p>This benchmark is extensible! To add new experiments:</p>
+        <ol>
+            <li>Run your evaluation using the provided scripts</li>
+            <li>Add results to the evaluations/ directory</li>
+            <li>Submit a pull request with updated tables and plots</li>
+            <li>Or email maintainers with your CSV data</li>
+        </ol>
+        <p>Supported extensions: New models, datasets (including sign language), activity categories.</p>
+    </div>
+
+    <div class="section">
+        <h2>Technical Details</h2>
+        <p>All experiments conducted on UCF-101 and Kinetics-400 datasets with TimeSformer, VideoMAE, and ViViT models. Evaluations cover 25 coverage-stride combinations. Full analysis in <a href="COMPREHENSIVE_RESULTS_ANALYSIS.md">comprehensive report</a>.</p>
+    </div>
+</body>
+</html>

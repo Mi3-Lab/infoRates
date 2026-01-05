@@ -2,6 +2,8 @@
 
 This repository explores how temporal sampling (coverage and stride) affects action recognition across modern video models.
 
+**Interactive Dashboard**: Visit our [GitHub Pages dashboard](https://wesleyferreiramaia.github.io/infoRates/) for an interactive reference tool with results tables, plots, and recommendations.
+
 Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md for end‑to‑end docs.
 
 Key entry points
@@ -104,3 +106,36 @@ Generate publication-ready reports with graphs and tables:
 # Generate complete research report
 python scripts/analysis/generate_research_report.py --results-dir evaluations --output-dir docs/research_report
 ```
+
+## Paper and Figures
+
+The comprehensive results analysis is documented in `docs/COMPREHENSIVE_RESULTS_ANALYSIS.md`, including all figures and LaTeX code for the paper.
+
+Example figures demonstrating temporal aliasing are available in `docs/figures/` (YoYo action frames at different sampling rates).
+
+## Benchmark Results and Recommendations
+
+This repository serves as a reference for optimal temporal sampling configurations across different action recognition models and datasets. The table below summarizes key findings from our experiments, providing recommendations for coverage and stride based on activity type.
+
+### Recommended Configurations by Activity Type
+
+| Activity Type | Characteristics | Recommended Model | Coverage | Stride | Rationale |
+|---------------|-----------------|-------------------|----------|--------|-----------|
+| High-Frequency Actions (e.g., YoYo, JumpingJack, SalsaSpin) | Explosive, non-repetitive motions | TimeSformer | 100% | 1-2 | Requires dense sampling to capture rapid state changes |
+| Moderate-Frequency Actions (e.g., Sports, tool use) | Dynamic controlled motions | ViViT | 75-100% | 2-4 | Balanced performance with some stride tolerance |
+| Low-Frequency Actions (e.g., Billiards, Typing, locomotion) | Gentle, rhythmic motions | VideoMAE | 50-75% | 4-8 | Robust to subsampling, efficient for resource-constrained scenarios |
+
+### Full Experimental Results Summary
+
+| Dataset | Model | Peak Accuracy | Best Coverage-Stride | Mean Drop (100%→25%) | Latency (ms) | Notes |
+|---------|-------|---------------|----------------------|----------------------|-------------|-------|
+| UCF-101 | TimeSformer | 85.09% | 100%-stride2 | 6.86% | 0.000 | Most robust to stride changes |
+| UCF-101 | VideoMAE | 86.90% | 100%-stride1 | 17.18% | 0.000 | Highest sensitivity to coverage reduction |
+| UCF-101 | ViViT | 85.49% | 100%-stride1 | 13.18% | 0.000 | Good balance, occasional paradoxical improvements |
+| Kinetics-400 | TimeSformer | 74.19% | 100%-stride4 | 10.60% | 0.000 | Consistent performance across configurations |
+| Kinetics-400 | VideoMAE | 76.52% | 50%-stride2 | 7.16% | 0.000 | Benefits from moderate subsampling |
+| Kinetics-400 | ViViT | 76.19% | 100%-stride1 | 8.23% | 0.000 | Stable at high coverage |
+
+**Extensibility**: This benchmark is designed to be extensible. If you conduct additional experiments (e.g., new models, datasets, or activity types), please contribute by submitting a pull request with updated results. Include the evaluation CSV, statistical analysis, and a brief description of the setup. For questions or contributions, open an issue or email the maintainers.
+
+**Note on Sign Language Recognition**: Sign language datasets (e.g., WLASL, MS-ASL) were not included in the current evaluation due to focus on general human activities. However, the temporal aliasing principles apply similarly, and we encourage extensions to include sign language recognition for fine-grained temporal analysis.
