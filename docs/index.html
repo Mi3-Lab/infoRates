@@ -44,48 +44,48 @@
                 <td>TimeSformer</td>
                 <td>85.09%</td>
                 <td>100%-stride2</td>
-                <td>6.86%</td>
-                <td>Most robust to stride changes; F(4,2520)=6.307, η²=0.0099</td>
+                <td>6.99%</td>
+                <td>Most robust to stride changes; F(4,500)=8.14, η²=0.061</td>
             </tr>
             <tr>
                 <td>UCF-101</td>
                 <td>VideoMAE</td>
                 <td>86.90%</td>
                 <td>100%-stride1</td>
-                <td>17.18%</td>
-                <td>Highest sensitivity to coverage; F(4,2520)=60.213, η²=0.0872</td>
+                <td>18.22%</td>
+                <td>Highest sensitivity to coverage; F(4,500)=32.45, η²=0.206</td>
             </tr>
             <tr>
                 <td>UCF-101</td>
                 <td>ViViT</td>
                 <td>85.49%</td>
                 <td>100%-stride1</td>
-                <td>13.18%</td>
-                <td>Balanced performance; F(4,2520)=19.681, η²=0.0303</td>
+                <td>13.02%</td>
+                <td>Balanced performance; F(4,500)=20.94, η²=0.143</td>
             </tr>
             <tr>
                 <td>Kinetics-400</td>
                 <td>TimeSformer</td>
                 <td>74.19%</td>
                 <td>100%-stride4</td>
-                <td>10.60%</td>
-                <td>Consistent across configs; F(4,9995)=4.724, η²=0.0019</td>
+                <td>10.59%</td>
+                <td>Consistent across configs; F(4,1995)=78.77, η²=0.136</td>
             </tr>
             <tr>
                 <td>Kinetics-400</td>
                 <td>VideoMAE</td>
                 <td>76.52%</td>
                 <td>50%-stride2</td>
-                <td>7.16%</td>
-                <td>Benefits from subsampling; F(4,9995)=58.786, η²=0.0230</td>
+                <td>7.15%</td>
+                <td>Benefits from subsampling; F(4,1995)=65.98, η²=0.117</td>
             </tr>
             <tr>
                 <td>Kinetics-400</td>
                 <td>ViViT</td>
                 <td>76.19%</td>
                 <td>100%-stride1</td>
-                <td>8.23%</td>
-                <td>Stable at high coverage; F(4,9995)=9.194, η²=0.0037</td>
+                <td>8.24%</td>
+                <td>Stable at high coverage; F(4,1995)=38.82, η²=0.072</td>
             </tr>
         </table>
     </div>
@@ -106,11 +106,21 @@
         <h2>Statistical Analysis</h2>
         <p>One-way ANOVA results showing significance of coverage and stride effects:</p>
         <ul>
-            <li><strong>Coverage Effect</strong>: Highly significant across all models (p < 0.001), with effect sizes ranging from η²=0.061 (TimeSformer UCF) to η²=0.206 (VideoMAE UCF)</li>
-            <li><strong>Stride Effect</strong>: Significant but smaller, with VideoMAE showing strongest dependence (η²=0.087)</li>
-            <li><strong>Variance Heterogeneity</strong>: Levene's test shows increasing inter-class variance as coverage decreases (p < 0.001 for most)</li>
+            <li><strong>Coverage Effect</strong>: Highly significant across all models (p < 0.001), with effect sizes:
+                <ul>
+                    <li>TimeSformer UCF-101: F(4,500)=8.14, η²=0.061</li>
+                    <li>VideoMAE UCF-101: F(4,500)=32.45, η²=0.206</li>
+                    <li>ViViT UCF-101: F(4,500)=20.94, η²=0.143</li>
+                    <li>TimeSformer Kinetics-400: F(4,1995)=78.77, η²=0.136</li>
+                    <li>VideoMAE Kinetics-400: F(4,1995)=65.98, η²=0.117</li>
+                    <li>ViViT Kinetics-400: F(4,1995)=38.82, η²=0.072</li>
+                </ul>
+            </li>
+            <li><strong>Stride Effect</strong>: Varies by model, with VideoMAE showing strongest dependence (η²=0.094 on UCF-101)</li>
+            <li><strong>Variance Heterogeneity</strong>: Levene's test shows increasing inter-class variance as coverage decreases (p < 0.01 for most)</li>
+            <li><strong>Effect Sizes</strong>: Cohen's d for aliasing ranges from 0.78 (ViViT Kinetics) to 1.38 (VideoMAE UCF)</li>
         </ul>
-        <p>Pairwise comparisons confirm monotonic degradation, with Bonferroni-corrected significance for severe reductions.</p>
+        <p>Pairwise Welch's t-tests confirm monotonic degradation, with Bonferroni-corrected significance for severe reductions (e.g., 10% vs 50% for TimeSformer UCF).</p>
     </div>
 
     <div class="section">
