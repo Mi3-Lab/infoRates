@@ -1,0 +1,7 @@
+Class,Mean Drop (%),Dominant Freq (Hz),Spectral Centroid (Hz),Low-Freq Energy Ratio,Spectral Flatness
+YoYo,51.4,6.5,5.8,0.35,0.42
+JumpingJack,47.0,5.8,5.2,0.4,0.45
+SalsaSpin,43.5,5.2,4.8,0.45,0.48
+Bowling,0.4,1.5,1.8,0.82,0.62
+Typing,-0.4,2.0,2.2,0.78,0.6
+Billiards,-0.7,1.2,1.5,0.85,0.65

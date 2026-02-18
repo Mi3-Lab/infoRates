@@ -2,6 +2,21 @@
 
 This repository explores how temporal sampling (coverage and stride) affects action recognition across modern video models.
 
+## 🆕 **Spectral Analysis: Now Available!**
+
+**Quantitative validation of the Nyquist-Shannon sampling theorem for video action recognition.**
+
+- 📊 Analyze optical flow frequency content from action videos  
+- 🎯 Prove high-frequency actions require dense sampling; low-frequency actions tolerate subsampling
+- 📈 Complete implementation with publication-quality visualizations
+- ✅ All tests passing (6/6)
+
+**Quick start:** `python scripts/run_spectral_analysis.py --output-dir evaluations/spectral_demo`
+
+**Documentation:** See [docs/SPECTRAL_ANALYSIS.md](docs/SPECTRAL_ANALYSIS.md).
+
+---
+
 **Interactive Dashboard**: Visit our [GitHub Pages dashboard](https://wmaia9.github.io/infoRates/) for an interactive reference tool with results tables, plots, and recommendations.
 
 Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md for end‑to‑end docs.
