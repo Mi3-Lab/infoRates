@@ -2,6 +2,7 @@
 import argparse
 from pathlib import Path
 import pandas as pd
+from typing import Optional
 
 
 def load_split_basenames(split_file: Path):
@@ -28,7 +29,7 @@ def clip_base_from_filename(fp: Path):
     return stem
 
 
-def build_manifest_from_clips(clips_dir: Path, out_csv: Path, split_file: Path | None = None):
+def build_manifest_from_clips(clips_dir: Path, out_csv: Path, split_file: Optional[Path] = None):
     clips_dir = Path(clips_dir)
     rows = []
     allowed = None
