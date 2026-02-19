@@ -17,7 +17,7 @@ This repository explores how temporal sampling (coverage and stride) affects act
 
 ---
 
-**Interactive Dashboard**: Visit our [GitHub Pages dashboard](https://wmaia9.github.io/infoRates/) for an interactive reference tool with results tables, plots, and recommendations.
+**Interactive Dashboard**: Visit our [GitHub Pages dashboard](https://mi3-lab.github.io/infoRates/) for an interactive reference tool with results tables, plots, and recommendations.
 
 Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md for end‑to‑end docs.
 
