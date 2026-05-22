@@ -23,7 +23,7 @@ from typing import Dict, List, Tuple, Optional
 import json
 from dataclasses import dataclass
 from scipy.fft import fft, fftfreq
-from scipy.signal import welch
+from scipy.signal import welch, detrend
 from decord import VideoReader, cpu
 import warnings
 
@@ -74,16 +74,16 @@ class OpticalFlowExtractor:
         if method == "farneback":
             for i in range(len(gray_frames) - 1):
                 flow = cv2.calcOpticalFlowFarneback(
-                    gray_frames[i], 
-                    gray_frames[i+1],
+                    gray_frames[i],
+                    gray_frames[i + 1],
                     None,
-                    pyr_scale=0.5,
-                    levels=3,
-                    winsize=15,
-                    iterations=3,
-                    n8=False,
-                    poly_n=5,
-                    poly_sigma=1.1
+                    0.5,
+                    3,
+                    15,
+                    3,
+                    5,
+                    1.1,
+                    0,
                 )
                 magnitude = np.sqrt(flow[..., 0]**2 + flow[..., 1]**2)
                 flow_magnitudes.append(magnitude)
@@ -101,10 +101,11 @@ class OpticalFlowExtractor:
                     flow_magnitudes.append(np.zeros_like(gray_frames[i], dtype=np.float32))
                     continue
                     
-                p1, status, err = cv2.calcOpticalFlowLK(
+                p1, status, err = cv2.calcOpticalFlowPyrLK(
                     gray_frames[i], 
                     gray_frames[i+1], 
                     p0, 
+                    None,
                     winSize=(15, 15)
                 )
                 
@@ -165,8 +166,11 @@ class TemporalFFT:
         if len(time_series) < 2:
             return np.array([]), np.array([])
         
+        # Remove mean and linear trend before spectral analysis
+        time_series = detrend(time_series - np.mean(time_series))
+
         if method == "fft":
-            fft_vals = fft(time_series - np.mean(time_series))
+            fft_vals = fft(time_series)
             power = np.abs(fft_vals) ** 2
             freqs = fftfreq(len(time_series), 1 / fps)
             # Keep only positive frequencies
@@ -175,8 +179,8 @@ class TemporalFFT:
         
         elif method == "welch":
             # Welch's method provides smoother spectral estimate
-            segment_length = min(len(time_series) // 2, 256)
-            freqs, power = welch(time_series, fps=fps, nperseg=segment_length)
+            segment_length = min(len(time_series), 128)
+            freqs, power = welch(time_series, fs=fps, nperseg=segment_length)
             return freqs, power
     
     @staticmethod
@@ -215,8 +219,8 @@ class SpectralAnalyzer:
     def analyze_video(video_path: str, label: str, 
                      optical_flow_method: str = "farneback",
                      fft_method: str = "welch",
-                     fps: float = 30.0,
-                     subsample: int = 2) -> Optional[SpectralMetrics]:
+                     fps: float = 0.0,
+                     subsample: int = 1) -> Optional[SpectralMetrics]:
         """
         Full pipeline: optical flow → FFT → spectral metrics.
         
@@ -225,13 +229,21 @@ class SpectralAnalyzer:
             label: Action class label
             optical_flow_method: "farneback" or "lk"
             fft_method: "fft" or "welch"
-            fps: Sampling rate (frames per second)
+            fps: Sampling rate; 0 = auto-detect from video metadata
             subsample: Sample every Nth frame for speed
             
         Returns:
             SpectralMetrics object with full spectral characterization
         """
         try:
+            # Auto-detect FPS from video if not provided
+            if fps <= 0:
+                cap = cv2.VideoCapture(video_path)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                cap.release()
+                if fps <= 0:
+                    fps = 25.0  # UCF101 default
+
             # Step 1: Extract optical flow
             flow_mag = OpticalFlowExtractor.extract_from_video(
                 video_path, 
@@ -269,25 +281,34 @@ class SpectralAnalyzer:
                         n_frames: int, fps: float) -> SpectralMetrics:
         """Extract statistically meaningful metrics from power spectrum."""
         
-        # Dominant frequency (peak)
-        dominant_bin = np.argmax(power_spectrum)
-        dominant_freq = frequencies[dominant_bin]
-        peak_power = power_spectrum[dominant_bin]
+        # Exclude near-DC bins (< 0.5 Hz) — these capture drift, not action dynamics
+        action_mask = frequencies >= 0.5
+        if action_mask.sum() == 0:
+            action_mask = np.ones(len(frequencies), dtype=bool)
+        
+        action_freqs = frequencies[action_mask]
+        action_power = power_spectrum[action_mask]
+        
+        # Dominant frequency (peak in action band)
+        dominant_bin_action = np.argmax(action_power)
+        dominant_freq = action_freqs[dominant_bin_action]
+        dominant_bin = np.where(frequencies == dominant_freq)[0][0] if dominant_freq in frequencies else dominant_bin_action
+        peak_power = action_power[dominant_bin_action]
         
         # Spectral energy ratio: How much power is in "low-frequency" band [1-5Hz]
         # (typical for human actions)
-        low_freq_mask = (frequencies >= 1.0) & (frequencies <= 5.0)
-        energy_low = power_spectrum[low_freq_mask].sum() if low_freq_mask.sum() > 0 else 0
-        energy_total = power_spectrum.sum()
+        low_freq_mask = (action_freqs >= 1.0) & (action_freqs <= 5.0)
+        energy_low = action_power[low_freq_mask].sum() if low_freq_mask.sum() > 0 else 0
+        energy_total = action_power.sum()
         spectral_energy_ratio = energy_low / (energy_total + 1e-10)
         
-        # Spectral centroid (weighted mean frequency)
-        spectral_centroid = np.sum(frequencies * power_spectrum) / (np.sum(power_spectrum) + 1e-10)
+        # Spectral centroid (weighted mean frequency, action band only)
+        spectral_centroid = np.sum(action_freqs * action_power) / (np.sum(action_power) + 1e-10)
         
         # Spectral flatness (Wiener entropy)
         # High value = flat (noise-like), Low value = tonal (periodic)
-        p_normalized = power_spectrum / (power_spectrum.sum() + 1e-10)
-        spectral_flatness = -np.sum(p_normalized * np.log(p_normalized + 1e-10)) / np.log(len(power_spectrum))
+        p_normalized = action_power / (action_power.sum() + 1e-10)
+        spectral_flatness = -np.sum(p_normalized * np.log(p_normalized + 1e-10)) / np.log(len(action_power) + 1)
         
         return SpectralMetrics(
             video_path=str(video_path),

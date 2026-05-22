@@ -58,13 +58,30 @@ def load_per_class_sensitivity(eval_csv: Path) -> Dict[str, Dict[str, float]]:
     
     for _, row in df.iterrows():
         class_name = row['class']
-        mean_drop = row.get('accuracy_100', 0) - row.get('accuracy_25', 0)
+
+        # Support both schemas:
+        # 1) accuracy_100/accuracy_25 (+ optional mean_drop_pct)
+        # 2) acc_100pct/acc_25pct/aliasing_drop
+        if 'mean_drop_pct' in df.columns:
+            mean_drop_pct = float(row.get('mean_drop_pct', 0.0))
+            acc_100 = float(row.get('accuracy_100', 0.0))
+            acc_25 = float(row.get('accuracy_25', 0.0))
+        elif 'aliasing_drop' in df.columns:
+            raw_drop = float(row.get('aliasing_drop', 0.0))
+            mean_drop_pct = raw_drop * 100.0 if abs(raw_drop) <= 1.0 else raw_drop
+            acc_100 = float(row.get('acc_100pct', 0.0))
+            acc_25 = float(row.get('acc_25pct', 0.0))
+        else:
+            # Fallback to old behavior if columns are different
+            acc_100 = float(row.get('accuracy_100', 0.0))
+            acc_25 = float(row.get('accuracy_25', 0.0))
+            mean_drop_pct = (acc_100 - acc_25) * 100.0
         
         sensitivity[class_name] = {
-            'mean_drop_pct': float(mean_drop) * 100,
+            'mean_drop_pct': float(mean_drop_pct),
             'n_samples': int(row.get('n_samples', 0)),
-            'accuracy_100': float(row.get('accuracy_100', 0)),
-            'accuracy_25': float(row.get('accuracy_25', 0)),
+            'accuracy_100': acc_100,
+            'accuracy_25': acc_25,
             'variance': float(row.get('variance', 0))
         }
     
@@ -411,7 +428,7 @@ def main(args):
                     class_metrics.append(metrics)
             
             if class_metrics:
-                all_metrics.update({class_name: [metrics]})
+                all_metrics[class_name] = class_metrics
         
         spectral_summaries = aggregate_spectral_metrics(all_metrics)
         print(f"✓ Computed spectral profiles for {len(spectral_summaries)} classes")
@@ -501,9 +518,9 @@ if __name__ == "__main__":
     parser.add_argument("--fft-method", type=str, default="welch",
                        choices=["fft", "welch"],
                        help="FFT method (welch = smoother)")
-    parser.add_argument("--fps", type=float, default=30.0,
-                       help="Video frame rate (Hz)")
-    parser.add_argument("--subsample", type=int, default=2,
+    parser.add_argument("--fps", type=float, default=0.0,
+                       help="Video frame rate (Hz); 0 = auto-detect from video")
+    parser.add_argument("--subsample", type=int, default=1,
                        help="Subsample frames for speed (every Nth frame)")
     
     args = parser.parse_args()

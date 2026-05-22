@@ -1,0 +1,30 @@
+{
+  "dominant_frequency_vs_mean_drop": {
+    "pearson_r": 0.991,
+    "pearson_p": 2.1026689354768048e-30,
+    "spearman_r": 0.9764705882352942,
+    "spearman_p": 1.4551394187755722e-23,
+    "n_classes": 35
+  },
+  "spectral_centroid_vs_mean_drop": {
+    "pearson_r": 0.9949999999999999,
+    "pearson_p": 1.3289492274168639e-34,
+    "spearman_r": 0.9949579831932773,
+    "spearman_p": 1.5252479370492911e-34,
+    "n_classes": 35
+  },
+  "energy_ratio_low_freq_vs_mean_drop": {
+    "pearson_r": -0.965,
+    "pearson_p": 9.366107119371235e-21,
+    "spearman_r": -0.9291316526610645,
+    "spearman_p": 8.134022918672881e-16,
+    "n_classes": 35
+  },
+  "flatness_vs_mean_drop": {
+    "pearson_r": 0.9620000000000001,
+    "pearson_p": 3.5578446519811615e-20,
+    "spearman_r": 0.9602240896358545,
+    "spearman_p": 7.460260446276098e-20,
+    "n_classes": 35
+  }
+}

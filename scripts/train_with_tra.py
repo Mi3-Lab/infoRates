@@ -85,11 +85,11 @@ def load_ucf101_split(split: str = "train") -> Tuple[List[str], List[int], List[
     """
     import pandas as pd
     
-    # Map split name to CSV file - USE 50f DATASETS (padronizados com 50 frames)
+    # Map split name to CSV file - USE ORIGINAL UCF101 (variable length for aliasing study)
     csv_files = {
-        "train": "data/UCF101_data/manifests/ucf101_50f_trainlist01.csv",  # Treino (split oficial)
-        "val": "data/UCF101_data/manifests/ucf101_50f_testlist01.csv",  # Teste (split oficial)
-        "test": "data/UCF101_data/manifests/ucf101_50f_testlist01.csv",  # Mesmo dataset para eval robustez
+        "train": "data/UCF101_data/manifests/ucf101_trainlist01.csv",  # Treino (split oficial, videos originais)
+        "val": "data/UCF101_data/manifests/ucf101_testlist01.csv",  # Teste (split oficial, videos originais)
+        "test": "data/UCF101_data/manifests/ucf101_testlist01.csv",  # Mesmo dataset para eval robustez
     }
     
     manifest_path = csv_files.get(split)
@@ -114,10 +114,70 @@ def load_ucf101_split(split: str = "train") -> Tuple[List[str], List[int], List[
     labels = [class_to_idx[label] for label in df['label'].tolist()]
     
     print(f"✅ Loaded {len(video_paths)} videos from {split} split ({manifest_path})")
-    print(f"   Dataset: {'UCF101_50f' if '50f.csv' in manifest_path else 'UCF101_50f_testset'}")
+    print(f"   Dataset: {'UCF101 (original, variable length)' if '50f' not in manifest_path else 'UCF101_50f (normalized)'}")
     print(f"   Classes: {len(class_names)}")
     
     return video_paths, labels, class_names
+
+
+def load_kinetics400_split(split: str = "train", train_ratio: float = 0.8, seed: int = 42) -> Tuple[List[str], List[int], int]:
+    """
+    Load Kinetics-400 validation set and split into train/val.
+    
+    Since we only have the validation set (~19.8k videos), we split it:
+    - 80% for training
+    - 20% for validation/robustness evaluation
+    
+    Args:
+        split: "train", "val", or "test" (val and test use the same 20% split)
+        train_ratio: Fraction for training (default 0.8)
+        seed: Random seed for reproducible split
+    
+    Returns:
+        Tuple of (video_paths, labels, num_classes)
+    """
+    import pandas as pd
+    import numpy as np
+    
+    manifest_path = "data/Kinetics400_data/manifests/kinetics400_val.csv"
+    
+    if not os.path.exists(manifest_path):
+        raise FileNotFoundError(f"Kinetics-400 manifest not found: {manifest_path}")
+    
+    # Load CSV
+    df = pd.read_csv(manifest_path)
+    
+    # Filter only existing videos
+    df = df[df['video_path'].apply(os.path.exists)].copy()
+    
+    # Kinetics-400 has 400 classes (labels are 0-399)
+    num_classes = 400
+    
+    # Stratified train/val split (preserve class distribution)
+    np.random.seed(seed)
+    df['split'] = 'val'
+    
+    for label in df['label'].unique():
+        label_indices = df[df['label'] == label].index
+        n_train = int(len(label_indices) * train_ratio)
+        train_indices = np.random.choice(label_indices, n_train, replace=False)
+        df.loc[train_indices, 'split'] = 'train'
+    
+    # Select split
+    if split == "train":
+        df_split = df[df['split'] == 'train']
+    else:  # val or test use same split
+        df_split = df[df['split'] == 'val']
+    
+    # Extract paths and labels
+    video_paths = df_split['video_path'].tolist()
+    labels = df_split['label'].tolist()
+    
+    print(f"✅ Loaded {len(video_paths)} videos from Kinetics-400 {split} split")
+    print(f"   Dataset: Kinetics-400 validation set (stratified split: {train_ratio:.0%} train / {1-train_ratio:.0%} val)")
+    print(f"   Classes: {num_classes}")
+    
+    return video_paths, labels, num_classes
 
 
 def train_one_epoch(
@@ -225,7 +285,7 @@ def evaluate_robustness(
     Returns:
         Dictionary mapping (coverage, stride) -> accuracy
     """
-    coverage_values = coverage_values or [25, 50, 75, 100]
+    coverage_values = coverage_values or [10, 25, 50, 75, 100]
     stride_values = stride_values or [1, 2, 4, 8, 16]
     
     results = {}
@@ -289,6 +349,7 @@ def main():
     # Model settings
     parser.add_argument("--model", type=str, default="timesformer", choices=["timesformer", "videomae", "vivit"])
     parser.add_argument("--model-id", type=str, default=None, help="Hugging Face model ID (optional)")
+    parser.add_argument("--dataset", type=str, default="ucf101", choices=["ucf101", "kinetics400"], help="Dataset to use")
     
     # Training settings
     parser.add_argument("--epochs", type=int, default=5)
@@ -300,7 +361,7 @@ def main():
     # TRA settings
     parser.add_argument("--tra-mode", type=str, default="tra", choices=["baseline", "tra"])
     parser.add_argument("--p-augment", type=float, default=0.5, help="TRA augmentation probability")
-    parser.add_argument("--coverage-range", type=int, nargs="+", default=[25, 50, 75, 100])
+    parser.add_argument("--coverage-range", type=int, nargs="+", default=[10, 25, 50, 75, 100])
     parser.add_argument("--stride-range", type=int, nargs="+", default=[1, 2, 4, 8, 16])
     
     # Data settings
@@ -347,6 +408,7 @@ def main():
         print(f"\n{'='*70}")
         print(f"Fine-tuning {args.model.upper()} with TRA")
         print(f"{'='*70}")
+        print(f"Dataset: {args.dataset.upper()}")
         print(f"Model ID: {model_id}")
         print(f"TRA Mode: {args.tra_mode}")
         if args.tra_mode == "tra":
@@ -359,30 +421,43 @@ def main():
         print(f"Device: {device}")
         print(f"{'='*70}\n")
     
-    # Load data
+    # Load data based on dataset choice
     if is_main_process:
-        print("Loading UCF101 data (50f preprocessed datasets)...")
+        print(f"Loading {args.dataset.upper()} data...")
     
-    train_paths, train_labels, class_names = load_ucf101_split("train")
-    val_paths, val_labels, _ = load_ucf101_split("val")
-    num_classes = len(class_names)
+    if args.dataset == "ucf101":
+        train_paths, train_labels, class_names = load_ucf101_split("train")
+        val_paths, val_labels, _ = load_ucf101_split("val")
+        num_classes = len(class_names)
 
-    # Guard against train/val leakage due to overlapping clips
-    train_bases = {Path(p).name for p in train_paths}
-    val_bases = {Path(p).name for p in val_paths}
-    overlap = train_bases.intersection(val_bases)
-    if overlap:
-        raise RuntimeError(
-            f"Train/val overlap detected: {len(overlap)} clips share the same filename. "
-            "Check that your 50f manifests were built with the official split lists."
-        )
+        # Guard against train/val leakage due to overlapping clips
+        train_bases = {Path(p).name for p in train_paths}
+        val_bases = {Path(p).name for p in val_paths}
+        overlap = train_bases.intersection(val_bases)
+        if overlap:
+            raise RuntimeError(
+                f"Train/val overlap detected: {len(overlap)} clips share the same filename. "
+                "Check that your manifests were built with the official split lists."
+            )
+        
+        dataset_info = "UCF101 (original, variable length ~150-400 frames)"
+        
+    elif args.dataset == "kinetics400":
+        train_paths, train_labels, num_classes = load_kinetics400_split("train", seed=args.seed)
+        val_paths, val_labels, _ = load_kinetics400_split("val", seed=args.seed)
+        
+        dataset_info = "Kinetics-400 validation set (stratified split)"
+    
+    else:
+        raise ValueError(f"Unknown dataset: {args.dataset}")
     
     if is_main_process:
         print(f"\n📊 Dataset Summary:")
-        print(f"   Training: {len(train_paths)} videos (UCF101_50f - 50 frames each)")
-        print(f"   Validation: {len(val_paths)} videos (UCF101_50f_testset - 50 frames each)")
+        print(f"   Dataset: {dataset_info}")
+        print(f"   Training: {len(train_paths)} videos")
+        print(f"   Validation: {len(val_paths)} videos")
         print(f"   Classes: {num_classes}")
-        print(f"   ⚠️  Robustness eval will use SAME testset (independent from training)\n")
+        print(f"   ⚠️  Robustness eval will use validation set\n")
     
     # Load processor and model
     if is_main_process:
