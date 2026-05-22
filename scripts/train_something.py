@@ -20,6 +20,7 @@ import os
 import sys
 import yaml
 from pathlib import Path
+from typing import Optional
 
 # Ensure project, scripts and src on path (like train_multimodel)
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +56,9 @@ def parse_args():
     p.add_argument("--ddp", action="store_true", help="Use DDP (launch with torchrun)")
     p.add_argument("--device", choices=["cuda", "cpu"], default="cuda")
     p.add_argument("--no-wandb", action="store_true")
+    p.add_argument("--wandb-project", default="inforates-accv2026")
+    p.add_argument("--wandb-run-name", default=None)
+    p.add_argument("--wandb-tags", nargs="*", default=None)
     p.add_argument("--gradient-accumulation-steps", type=int, default=1)
     p.add_argument("--cleanup-interval", type=int, default=0)
     p.add_argument("--max-train-samples", type=int, default=None)
@@ -62,6 +66,44 @@ def parse_args():
     p.add_argument("--use-dummy-model", action="store_true", help="Use tiny dummy model for smoke tests")
     p.add_argument("--smoke-test", action="store_true", help="Run a smoke test without real videos (small dummy dataset)")
     return p.parse_args()
+
+
+def init_wandb(args, class_count: int, train_count: int, val_count: int) -> Optional[object]:
+    if args.no_wandb or int(os.environ.get("LOCAL_RANK", "0")) != 0:
+        return None
+
+    try:
+        import wandb
+    except ImportError:
+        print("[WARN] wandb is not installed; continuing without W&B logging.")
+        return None
+
+    run_name = args.wandb_run_name or f"ssv2-{args.model}-{Path(args.save_path).name}"
+    return wandb.init(
+        project=args.wandb_project,
+        name=run_name,
+        tags=args.wandb_tags,
+        config={
+            "dataset": "something-something-v2",
+            "model": args.model,
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "learning_rate": args.lr,
+            "num_workers": args.num_workers,
+            "gradient_accumulation_steps": args.gradient_accumulation_steps,
+            "max_train_samples": args.max_train_samples,
+            "max_val_samples": args.max_val_samples,
+            "class_count": class_count,
+            "train_count": train_count,
+            "val_count": val_count,
+            "save_path": args.save_path,
+            "ddp": args.ddp,
+            "phase": "train",
+            "slurm_job_id": os.environ.get("SLURM_JOB_ID") or os.environ.get("ACCV_JOB_ID"),
+            "local_rank": int(os.environ.get("LOCAL_RANK", "0")),
+            "world_size": int(os.environ.get("WORLD_SIZE", "1")),
+        },
+    )
 
 
 def prepare_data(data_root: str, max_train: int = None, max_val: int = None):
@@ -145,6 +187,7 @@ def main():
 
         train_dl = DataLoader(DummyDataset(8, num_frames=min(4, num_frames), processor=processor), batch_size=args.batch_size, shuffle=True)
         val_dl = DataLoader(DummyDataset(4, num_frames=min(4, num_frames), processor=processor), batch_size=args.batch_size, shuffle=False)
+        wandb_run = init_wandb(args, len(class_names), len(train_dl.dataset), len(val_dl.dataset))
 
     else:
         print(f"[INFO] Preparing Something-Something V2 data from {args.data_root}")
@@ -155,6 +198,7 @@ def main():
             return
 
         print(f"[INFO] Classes: {len(class_names)} | Train samples: {len(train_files)} | Val samples: {len(val_files)}")
+        wandb_run = init_wandb(args, len(class_names), len(train_files), len(val_files))
 
         # Get model info and processor
         model_info = ModelFactory.get_model_info(args.model)
@@ -199,12 +243,20 @@ def main():
         try:
             save_model(args.save_path, model.module if hasattr(model, "module") else model, processor, class_names)
             print(f"[INFO] Saved fine-tuned model to: {args.save_path}")
+            if wandb_run is not None:
+                import wandb
+
+                wandb.summary["checkpoint_path"] = args.save_path
+                wandb.save(str(Path(args.save_path) / "config.json"), policy="now")
         except Exception as e:
             print(f"[WARN] Failed to call save_model: {e}")
 
     # Cleanup DDP if initialized
     if args.ddp:
         cleanup_ddp()
+
+    if wandb_run is not None:
+        wandb_run.finish()
 
 
 if __name__ == "__main__":

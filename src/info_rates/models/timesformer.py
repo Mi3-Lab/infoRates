@@ -14,13 +14,27 @@ from torch.optim import AdamW
 
 
 class UCFDataset(Dataset):
-    def __init__(self, files, processor, num_frames: int = 8, size: int = 224, class_names: List[str] = None):
+    def __init__(
+        self,
+        files,
+        processor,
+        num_frames: int = 8,
+        size: int = 224,
+        class_names: List[str] = None,
+        max_decode_retries: int = None,
+    ):
         self.files = files
         self.processor = processor
         self.num_frames = num_frames
         self.size = size
         self.class_names = class_names or []
         self.label2id = {l: i for i, l in enumerate(self.class_names)} if self.class_names else None
+        self.max_decode_retries = max_decode_retries or int(os.environ.get("INFORATES_MAX_DECODE_RETRIES", "8"))
+        self.bad_video_log = os.environ.get(
+            "INFORATES_BAD_VIDEO_LOG",
+            "evaluations/accv2026/logs/bad_videos.tsv",
+        )
+        self._reported_bad_paths = set()
         
         # Check if files is a list of tuples (path, label) or just paths
         self.has_labels = isinstance(self.files[0], tuple) if self.files else False
@@ -28,27 +42,77 @@ class UCFDataset(Dataset):
     def __len__(self):
         return len(self.files)
 
-    def __getitem__(self, idx):
+    def _resolve_item(self, idx):
         if self.has_labels:
             path, label = self.files[idx]
         else:
             path = self.files[idx]
             label_name = os.path.basename(os.path.dirname(path))
             label = self.label2id[label_name] if self.label2id else 0
+        return path, label
 
+    def _log_bad_video(self, path, error):
+        if path not in self._reported_bad_paths:
+            print(f"[WARN] Skipping unreadable video: {path} ({error})", flush=True)
+            self._reported_bad_paths.add(path)
+        try:
+            os.makedirs(os.path.dirname(self.bad_video_log), exist_ok=True)
+            with open(self.bad_video_log, "a", encoding="utf-8") as f:
+                f.write(f"{path}\t{type(error).__name__}\t{str(error).splitlines()[0]}\n")
+        except Exception:
+            pass
+
+    def _decode_frames(self, path):
         if not os.path.exists(path):
-            # File was deleted or missing, raise error to skip sample
             raise FileNotFoundError(f"Video file not found: {path}")
-        else:
+        try:
+            vr = VideoReader(path, ctx=cpu(0))
+            total = len(vr)
+            idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
+            return vr.get_batch(idxs).asnumpy()
+        except Exception as decord_error:
+            frames = self._decode_frames_cv2(path)
+            if frames is None:
+                raise decord_error
+            return frames
+
+    def _decode_frames_cv2(self, path):
+        cap = cv2.VideoCapture(path)
+        if not cap.isOpened():
+            cap.release()
+            return None
+
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total <= 0:
+            cap.release()
+            return None
+
+        idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
+        frames = []
+        for frame_idx in idxs:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, int(frame_idx))
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                cap.release()
+                return None
+            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        cap.release()
+        return np.stack(frames, axis=0)
+
+    def __getitem__(self, idx):
+        last_error = None
+        attempts = min(max(1, self.max_decode_retries), max(1, len(self.files)))
+        for offset in range(attempts):
+            sample_idx = (idx + offset) % len(self.files)
+            path, label = self._resolve_item(sample_idx)
             try:
-                vr = VideoReader(path, ctx=cpu(0))
-                total = len(vr)
-                idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
-                frames = vr.get_batch(idxs).asnumpy()
+                frames = self._decode_frames(path)
+                break
             except Exception as e:
-                # If video is corrupted or unreadable, delete it from the folder and raise error
-                os.remove(path)
-                raise RuntimeError(f"Corrupted video removed: {path} ({e})")
+                last_error = e
+                self._log_bad_video(path, e)
+        else:
+            raise RuntimeError(f"Failed to decode a usable video after {attempts} attempts. Last error: {last_error}")
 
         frames = [cv2.resize(f, (self.size, self.size)) for f in frames]
 

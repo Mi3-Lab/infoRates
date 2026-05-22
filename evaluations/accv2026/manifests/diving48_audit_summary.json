@@ -1,0 +1,20 @@
+{
+  "existing_files": 16997,
+  "fps": {
+    "max": 25.0,
+    "mean": 25.0,
+    "min": 25.0
+  },
+  "labels": {
+    "max_per_class": 1122,
+    "min_per_class": 50,
+    "num_classes": 47
+  },
+  "missing_files": 0,
+  "readable_files": 100,
+  "splits": {
+    "test": 1970,
+    "train": 15027
+  },
+  "total_rows": 16997
+}

@@ -1,0 +1,19 @@
+{
+  "existing_files": 6766,
+  "fps": {
+    "max": 30.0,
+    "mean": 30.0,
+    "min": 30.0
+  },
+  "labels": {
+    "max_per_class": 548,
+    "min_per_class": 102,
+    "num_classes": 51
+  },
+  "missing_files": 0,
+  "readable_files": 20,
+  "splits": {
+    "all": 6766
+  },
+  "total_rows": 6766
+}

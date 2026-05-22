@@ -1,0 +1,22 @@
+[
+  {
+    "name": "diving48_rgb_official",
+    "url": "PASTE_OFFICIAL_DIVING48_RGB_URL_HERE",
+    "output": "data/Diving48_data/raw_archives/Diving48_rgb.tar.gz"
+  },
+  {
+    "name": "diving48_train_v2_official",
+    "url": "PASTE_OFFICIAL_DIVING48_TRAIN_V2_JSON_URL_HERE",
+    "output": "data/Diving48_data/annotations/Diving48_train_v2.json"
+  },
+  {
+    "name": "diving48_test_v2_official",
+    "url": "PASTE_OFFICIAL_DIVING48_TEST_V2_JSON_URL_HERE",
+    "output": "data/Diving48_data/annotations/Diving48_test_v2.json"
+  },
+  {
+    "name": "something_something_v2_archive_part",
+    "url": "PASTE_QUALCOMM_LICENSED_DOWNLOAD_URL_HERE",
+    "output": "data/Something_data/raw_archives/something-something-v2-part001"
+  }
+]

@@ -47,6 +47,9 @@ Thumbs.db
 *.sublime-workspace
 *.sublime-project
 
+# Local paper/manuscript copies
+/*.pdf
+
 # =========================
 # HPC & Logs
 # =========================
@@ -54,7 +57,11 @@ wandb/
 *.wandb
 slurm*.out
 slurm*.err
+*.out
+*.err
 *.log
+*.tsv
+corrupted_webm_files.txt
 
 # =========================
 # Model Artifacts
@@ -91,3 +98,16 @@ data/UCF101_data/results/**/*.csv
 data/UCF101_data/results/*.csv
 # 2. EXCEPTION: Strictly allow ONLY the results folder
 !data/UCF101_data/results/
+
+# =========================
+# ACCV 2026 Generated Artifacts
+# =========================
+evaluations/accv2026/logs/
+evaluations/accv2026/fixed_budget/
+evaluations/accv2026/metrics/
+
+# Keep small reproducibility manifests visible to git.
+!evaluations/accv2026/
+!evaluations/accv2026/manifests/
+!evaluations/accv2026/manifests/*.csv
+!evaluations/accv2026/manifests/*.json

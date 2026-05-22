@@ -1,0 +1,15 @@
+{
+  "existing_files": 193690,
+  "labels": {
+    "max_per_class": 3584,
+    "min_per_class": 106,
+    "num_classes": 174
+  },
+  "missing_files": 0,
+  "readable_files": null,
+  "splits": {
+    "train": 168913,
+    "validation": 24777
+  },
+  "total_rows": 193690
+}

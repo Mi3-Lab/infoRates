@@ -1,0 +1,871 @@
+dataset,split,video_id,video_path,label,label_clean,label_id,exists
+somethingv2,train,136503,data/Something_data/videos/136503.webm,Holding [something] next to [something],Holding something next to something,19,True
+somethingv2,train,188515,data/Something_data/videos/188515.webm,Holding [something] next to [something],Holding something next to something,19,True
+somethingv2,train,34758,data/Something_data/videos/34758.webm,Holding [something] next to [something],Holding something next to something,19,True
+somethingv2,train,25247,data/Something_data/videos/25247.webm,Holding [something] next to [something],Holding something next to something,19,True
+somethingv2,train,197177,data/Something_data/videos/197177.webm,Holding [something] next to [something],Holding something next to something,19,True
+somethingv2,train,122972,data/Something_data/videos/122972.webm,Spreading [something] onto [something],Spreading something onto something,141,True
+somethingv2,train,41896,data/Something_data/videos/41896.webm,Spreading [something] onto [something],Spreading something onto something,141,True
+somethingv2,train,107603,data/Something_data/videos/107603.webm,Spreading [something] onto [something],Spreading something onto something,141,True
+somethingv2,train,142423,data/Something_data/videos/142423.webm,Spreading [something] onto [something],Spreading something onto something,141,True
+somethingv2,validation,76217,data/Something_data/videos/76217.webm,Spreading [something] onto [something],Spreading something onto something,141,True
+somethingv2,train,52491,data/Something_data/videos/52491.webm,Putting [something] on a surface,Putting something on a surface,109,True
+somethingv2,train,161194,data/Something_data/videos/161194.webm,Putting [something] on a surface,Putting something on a surface,109,True
+somethingv2,train,17881,data/Something_data/videos/17881.webm,Putting [something] on a surface,Putting something on a surface,109,True
+somethingv2,train,213379,data/Something_data/videos/213379.webm,Putting [something] on a surface,Putting something on a surface,109,True
+somethingv2,train,76597,data/Something_data/videos/76597.webm,Putting [something] on a surface,Putting something on a surface,109,True
+somethingv2,train,44155,data/Something_data/videos/44155.webm,"Lifting up one end of [something], then letting it drop down","Lifting up one end of something, then letting it drop down",31,True
+somethingv2,train,200870,data/Something_data/videos/200870.webm,"Lifting up one end of [something], then letting it drop down","Lifting up one end of something, then letting it drop down",31,True
+somethingv2,train,180790,data/Something_data/videos/180790.webm,"Lifting up one end of [something], then letting it drop down","Lifting up one end of something, then letting it drop down",31,True
+somethingv2,train,215490,data/Something_data/videos/215490.webm,"Lifting up one end of [something], then letting it drop down","Lifting up one end of something, then letting it drop down",31,True
+somethingv2,train,47572,data/Something_data/videos/47572.webm,"Lifting up one end of [something], then letting it drop down","Lifting up one end of something, then letting it drop down",31,True
+somethingv2,validation,109910,data/Something_data/videos/109910.webm,Holding [something],Holding something,16,True
+somethingv2,train,155945,data/Something_data/videos/155945.webm,Holding [something],Holding something,16,True
+somethingv2,train,198435,data/Something_data/videos/198435.webm,Holding [something],Holding something,16,True
+somethingv2,train,39132,data/Something_data/videos/39132.webm,Holding [something],Holding something,16,True
+somethingv2,train,2293,data/Something_data/videos/2293.webm,Holding [something],Holding something,16,True
+somethingv2,train,109821,data/Something_data/videos/109821.webm,Pushing [something] from right to left,Pushing something from right to left,94,True
+somethingv2,train,103664,data/Something_data/videos/103664.webm,Pushing [something] from right to left,Pushing something from right to left,94,True
+somethingv2,train,148460,data/Something_data/videos/148460.webm,Pushing [something] from right to left,Pushing something from right to left,94,True
+somethingv2,train,18767,data/Something_data/videos/18767.webm,Pushing [something] from right to left,Pushing something from right to left,94,True
+somethingv2,train,169816,data/Something_data/videos/169816.webm,Pushing [something] from right to left,Pushing something from right to left,94,True
+somethingv2,train,94429,data/Something_data/videos/94429.webm,Spilling [something] onto [something],Spilling something onto something,138,True
+somethingv2,train,4032,data/Something_data/videos/4032.webm,Spilling [something] onto [something],Spilling something onto something,138,True
+somethingv2,train,79661,data/Something_data/videos/79661.webm,Spilling [something] onto [something],Spilling something onto something,138,True
+somethingv2,validation,156666,data/Something_data/videos/156666.webm,Spilling [something] onto [something],Spilling something onto something,138,True
+somethingv2,train,18254,data/Something_data/videos/18254.webm,Spilling [something] onto [something],Spilling something onto something,138,True
+somethingv2,train,123235,data/Something_data/videos/123235.webm,Pushing [something] so that it slightly moves,Pushing something so that it slightly moves,100,True
+somethingv2,train,118244,data/Something_data/videos/118244.webm,Pushing [something] so that it slightly moves,Pushing something so that it slightly moves,100,True
+somethingv2,train,149109,data/Something_data/videos/149109.webm,Pushing [something] so that it slightly moves,Pushing something so that it slightly moves,100,True
+somethingv2,train,58491,data/Something_data/videos/58491.webm,Pushing [something] so that it slightly moves,Pushing something so that it slightly moves,100,True
+somethingv2,train,138732,data/Something_data/videos/138732.webm,Pushing [something] so that it slightly moves,Pushing something so that it slightly moves,100,True
+somethingv2,train,201309,data/Something_data/videos/201309.webm,Moving [something] across a surface until it falls down,Moving something across a surface until it falls down,34,True
+somethingv2,validation,82895,data/Something_data/videos/82895.webm,Moving [something] across a surface until it falls down,Moving something across a surface until it falls down,34,True
+somethingv2,validation,13842,data/Something_data/videos/13842.webm,Moving [something] across a surface until it falls down,Moving something across a surface until it falls down,34,True
+somethingv2,train,84926,data/Something_data/videos/84926.webm,Moving [something] across a surface until it falls down,Moving something across a surface until it falls down,34,True
+somethingv2,validation,219554,data/Something_data/videos/219554.webm,Moving [something] across a surface until it falls down,Moving something across a surface until it falls down,34,True
+somethingv2,train,147667,data/Something_data/videos/147667.webm,Folding [something],Folding something,14,True
+somethingv2,train,139428,data/Something_data/videos/139428.webm,Folding [something],Folding something,14,True
+somethingv2,train,216279,data/Something_data/videos/216279.webm,Folding [something],Folding something,14,True
+somethingv2,train,54171,data/Something_data/videos/54171.webm,Folding [something],Folding something,14,True
+somethingv2,validation,129113,data/Something_data/videos/129113.webm,Folding [something],Folding something,14,True
+somethingv2,validation,113226,data/Something_data/videos/113226.webm,Taking [one of many similar things on the table],Taking one of many similar things on the table,146,True
+somethingv2,train,208017,data/Something_data/videos/208017.webm,Taking [one of many similar things on the table],Taking one of many similar things on the table,146,True
+somethingv2,train,142567,data/Something_data/videos/142567.webm,Taking [one of many similar things on the table],Taking one of many similar things on the table,146,True
+somethingv2,train,199603,data/Something_data/videos/199603.webm,Taking [one of many similar things on the table],Taking one of many similar things on the table,146,True
+somethingv2,train,32172,data/Something_data/videos/32172.webm,Taking [one of many similar things on the table],Taking one of many similar things on the table,146,True
+somethingv2,train,217401,data/Something_data/videos/217401.webm,Pretending to turn [something] upside down,Pretending to turn something upside down,84,True
+somethingv2,train,74871,data/Something_data/videos/74871.webm,Pretending to turn [something] upside down,Pretending to turn something upside down,84,True
+somethingv2,train,40873,data/Something_data/videos/40873.webm,Pretending to turn [something] upside down,Pretending to turn something upside down,84,True
+somethingv2,train,7297,data/Something_data/videos/7297.webm,Pretending to turn [something] upside down,Pretending to turn something upside down,84,True
+somethingv2,train,121660,data/Something_data/videos/121660.webm,Pretending to turn [something] upside down,Pretending to turn something upside down,84,True
+somethingv2,train,120783,data/Something_data/videos/120783.webm,Pretending to take [something] from [somewhere],Pretending to take something from somewhere,81,True
+somethingv2,train,122783,data/Something_data/videos/122783.webm,Pretending to take [something] from [somewhere],Pretending to take something from somewhere,81,True
+somethingv2,train,103352,data/Something_data/videos/103352.webm,Pretending to take [something] from [somewhere],Pretending to take something from somewhere,81,True
+somethingv2,train,135531,data/Something_data/videos/135531.webm,Pretending to take [something] from [somewhere],Pretending to take something from somewhere,81,True
+somethingv2,train,117217,data/Something_data/videos/117217.webm,Pretending to take [something] from [somewhere],Pretending to take something from somewhere,81,True
+somethingv2,train,118333,data/Something_data/videos/118333.webm,Moving [something] up,Moving something up,45,True
+somethingv2,validation,50807,data/Something_data/videos/50807.webm,Moving [something] up,Moving something up,45,True
+somethingv2,train,153061,data/Something_data/videos/153061.webm,Moving [something] up,Moving something up,45,True
+somethingv2,train,86979,data/Something_data/videos/86979.webm,Moving [something] up,Moving something up,45,True
+somethingv2,train,139488,data/Something_data/videos/139488.webm,Moving [something] up,Moving something up,45,True
+somethingv2,train,101084,data/Something_data/videos/101084.webm,Twisting (wringing) [something] wet until water comes out,Twisting (wringing) something wet until water comes out,169,True
+somethingv2,train,191565,data/Something_data/videos/191565.webm,Twisting (wringing) [something] wet until water comes out,Twisting (wringing) something wet until water comes out,169,True
+somethingv2,train,1175,data/Something_data/videos/1175.webm,Twisting (wringing) [something] wet until water comes out,Twisting (wringing) something wet until water comes out,169,True
+somethingv2,train,129200,data/Something_data/videos/129200.webm,Twisting (wringing) [something] wet until water comes out,Twisting (wringing) something wet until water comes out,169,True
+somethingv2,train,217146,data/Something_data/videos/217146.webm,Twisting (wringing) [something] wet until water comes out,Twisting (wringing) something wet until water comes out,169,True
+somethingv2,validation,32706,data/Something_data/videos/32706.webm,Twisting [something],Twisting something,170,True
+somethingv2,train,44121,data/Something_data/videos/44121.webm,Twisting [something],Twisting something,170,True
+somethingv2,train,155139,data/Something_data/videos/155139.webm,Twisting [something],Twisting something,170,True
+somethingv2,train,66904,data/Something_data/videos/66904.webm,Twisting [something],Twisting something,170,True
+somethingv2,train,119692,data/Something_data/videos/119692.webm,Twisting [something],Twisting something,170,True
+somethingv2,train,167611,data/Something_data/videos/167611.webm,Taking [something] out of [something],Taking something out of something,148,True
+somethingv2,train,123932,data/Something_data/videos/123932.webm,Taking [something] out of [something],Taking something out of something,148,True
+somethingv2,train,97016,data/Something_data/videos/97016.webm,Taking [something] out of [something],Taking something out of something,148,True
+somethingv2,validation,148464,data/Something_data/videos/148464.webm,Taking [something] out of [something],Taking something out of something,148,True
+somethingv2,train,87281,data/Something_data/videos/87281.webm,Taking [something] out of [something],Taking something out of something,148,True
+somethingv2,train,105772,data/Something_data/videos/105772.webm,Dropping [something] in front of [something],Dropping something in front of something,9,True
+somethingv2,train,32845,data/Something_data/videos/32845.webm,Dropping [something] in front of [something],Dropping something in front of something,9,True
+somethingv2,train,216320,data/Something_data/videos/216320.webm,Dropping [something] in front of [something],Dropping something in front of something,9,True
+somethingv2,train,53861,data/Something_data/videos/53861.webm,Dropping [something] in front of [something],Dropping something in front of something,9,True
+somethingv2,train,24058,data/Something_data/videos/24058.webm,Dropping [something] in front of [something],Dropping something in front of something,9,True
+somethingv2,train,33864,data/Something_data/videos/33864.webm,Throwing [something] in the air and letting it fall,Throwing something in the air and letting it fall,154,True
+somethingv2,train,150449,data/Something_data/videos/150449.webm,Throwing [something] in the air and letting it fall,Throwing something in the air and letting it fall,154,True
+somethingv2,train,133845,data/Something_data/videos/133845.webm,Throwing [something] in the air and letting it fall,Throwing something in the air and letting it fall,154,True
+somethingv2,train,57731,data/Something_data/videos/57731.webm,Throwing [something] in the air and letting it fall,Throwing something in the air and letting it fall,154,True
+somethingv2,train,41279,data/Something_data/videos/41279.webm,Throwing [something] in the air and letting it fall,Throwing something in the air and letting it fall,154,True
+somethingv2,train,75283,data/Something_data/videos/75283.webm,Lifting up one end of [something] without letting it drop down,Lifting up one end of something without letting it drop down,30,True
+somethingv2,train,207895,data/Something_data/videos/207895.webm,Lifting up one end of [something] without letting it drop down,Lifting up one end of something without letting it drop down,30,True
+somethingv2,train,129674,data/Something_data/videos/129674.webm,Lifting up one end of [something] without letting it drop down,Lifting up one end of something without letting it drop down,30,True
+somethingv2,train,62745,data/Something_data/videos/62745.webm,Lifting up one end of [something] without letting it drop down,Lifting up one end of something without letting it drop down,30,True
+somethingv2,train,132769,data/Something_data/videos/132769.webm,Lifting up one end of [something] without letting it drop down,Lifting up one end of something without letting it drop down,30,True
+somethingv2,train,182953,data/Something_data/videos/182953.webm,Moving [something] towards the camera,Moving something towards the camera,44,True
+somethingv2,train,169205,data/Something_data/videos/169205.webm,Moving [something] towards the camera,Moving something towards the camera,44,True
+somethingv2,train,94523,data/Something_data/videos/94523.webm,Moving [something] towards the camera,Moving something towards the camera,44,True
+somethingv2,train,192447,data/Something_data/videos/192447.webm,Moving [something] towards the camera,Moving something towards the camera,44,True
+somethingv2,train,77247,data/Something_data/videos/77247.webm,Moving [something] towards the camera,Moving something towards the camera,44,True
+somethingv2,train,75259,data/Something_data/videos/75259.webm,Showing that [something] is empty,Showing that something is empty,129,True
+somethingv2,train,28859,data/Something_data/videos/28859.webm,Showing that [something] is empty,Showing that something is empty,129,True
+somethingv2,validation,66509,data/Something_data/videos/66509.webm,Showing that [something] is empty,Showing that something is empty,129,True
+somethingv2,train,72522,data/Something_data/videos/72522.webm,Showing that [something] is empty,Showing that something is empty,129,True
+somethingv2,train,115059,data/Something_data/videos/115059.webm,Showing that [something] is empty,Showing that something is empty,129,True
+somethingv2,validation,13167,data/Something_data/videos/13167.webm,Dropping [something] behind [something],Dropping something behind something,8,True
+somethingv2,train,75130,data/Something_data/videos/75130.webm,Dropping [something] behind [something],Dropping something behind something,8,True
+somethingv2,train,164159,data/Something_data/videos/164159.webm,Dropping [something] behind [something],Dropping something behind something,8,True
+somethingv2,train,144435,data/Something_data/videos/144435.webm,Dropping [something] behind [something],Dropping something behind something,8,True
+somethingv2,validation,116458,data/Something_data/videos/116458.webm,Dropping [something] behind [something],Dropping something behind something,8,True
+somethingv2,train,143986,data/Something_data/videos/143986.webm,Throwing [something] against [something],Throwing something against something,152,True
+somethingv2,train,41474,data/Something_data/videos/41474.webm,Throwing [something] against [something],Throwing something against something,152,True
+somethingv2,train,204163,data/Something_data/videos/204163.webm,Throwing [something] against [something],Throwing something against something,152,True
+somethingv2,train,29581,data/Something_data/videos/29581.webm,Throwing [something] against [something],Throwing something against something,152,True
+somethingv2,train,5949,data/Something_data/videos/5949.webm,Throwing [something] against [something],Throwing something against something,152,True
+somethingv2,train,29162,data/Something_data/videos/29162.webm,Holding [something] over [something],Holding something over something,20,True
+somethingv2,train,107144,data/Something_data/videos/107144.webm,Holding [something] over [something],Holding something over something,20,True
+somethingv2,validation,105939,data/Something_data/videos/105939.webm,Holding [something] over [something],Holding something over something,20,True
+somethingv2,train,187764,data/Something_data/videos/187764.webm,Holding [something] over [something],Holding something over something,20,True
+somethingv2,train,104427,data/Something_data/videos/104427.webm,Holding [something] over [something],Holding something over something,20,True
+somethingv2,train,81219,data/Something_data/videos/81219.webm,Moving [something] and [something] closer to each other,Moving something and something closer to each other,37,True
+somethingv2,train,161630,data/Something_data/videos/161630.webm,Moving [something] and [something] closer to each other,Moving something and something closer to each other,37,True
+somethingv2,train,118819,data/Something_data/videos/118819.webm,Moving [something] and [something] closer to each other,Moving something and something closer to each other,37,True
+somethingv2,train,24481,data/Something_data/videos/24481.webm,Moving [something] and [something] closer to each other,Moving something and something closer to each other,37,True
+somethingv2,train,197852,data/Something_data/videos/197852.webm,Moving [something] and [something] closer to each other,Moving something and something closer to each other,37,True
+somethingv2,train,211184,data/Something_data/videos/211184.webm,Pushing [something] so it spins,Pushing something so it spins,97,True
+somethingv2,validation,27794,data/Something_data/videos/27794.webm,Pushing [something] so it spins,Pushing something so it spins,97,True
+somethingv2,train,77260,data/Something_data/videos/77260.webm,Pushing [something] so it spins,Pushing something so it spins,97,True
+somethingv2,train,214104,data/Something_data/videos/214104.webm,Pushing [something] so it spins,Pushing something so it spins,97,True
+somethingv2,train,4042,data/Something_data/videos/4042.webm,Pushing [something] so it spins,Pushing something so it spins,97,True
+somethingv2,validation,80618,data/Something_data/videos/80618.webm,Covering [something] with [something],Covering something with something,6,True
+somethingv2,validation,75949,data/Something_data/videos/75949.webm,Covering [something] with [something],Covering something with something,6,True
+somethingv2,train,115848,data/Something_data/videos/115848.webm,Covering [something] with [something],Covering something with something,6,True
+somethingv2,train,194032,data/Something_data/videos/194032.webm,Covering [something] with [something],Covering something with something,6,True
+somethingv2,validation,178125,data/Something_data/videos/178125.webm,Covering [something] with [something],Covering something with something,6,True
+somethingv2,train,212495,data/Something_data/videos/212495.webm,Putting [something] into [something],Putting something into something,106,True
+somethingv2,train,218213,data/Something_data/videos/218213.webm,Putting [something] into [something],Putting something into something,106,True
+somethingv2,train,94880,data/Something_data/videos/94880.webm,Putting [something] into [something],Putting something into something,106,True
+somethingv2,train,177677,data/Something_data/videos/177677.webm,Putting [something] into [something],Putting something into something,106,True
+somethingv2,train,165499,data/Something_data/videos/165499.webm,Putting [something] into [something],Putting something into something,106,True
+somethingv2,train,59182,data/Something_data/videos/59182.webm,Showing that [something] is inside [something],Showing that something is inside something,130,True
+somethingv2,train,76075,data/Something_data/videos/76075.webm,Showing that [something] is inside [something],Showing that something is inside something,130,True
+somethingv2,train,86111,data/Something_data/videos/86111.webm,Showing that [something] is inside [something],Showing that something is inside something,130,True
+somethingv2,train,86978,data/Something_data/videos/86978.webm,Showing that [something] is inside [something],Showing that something is inside something,130,True
+somethingv2,train,39352,data/Something_data/videos/39352.webm,Showing that [something] is inside [something],Showing that something is inside something,130,True
+somethingv2,train,187953,data/Something_data/videos/187953.webm,Throwing [something],Throwing something,151,True
+somethingv2,train,50930,data/Something_data/videos/50930.webm,Throwing [something],Throwing something,151,True
+somethingv2,train,164838,data/Something_data/videos/164838.webm,Throwing [something],Throwing something,151,True
+somethingv2,train,154799,data/Something_data/videos/154799.webm,Throwing [something],Throwing something,151,True
+somethingv2,train,134615,data/Something_data/videos/134615.webm,Throwing [something],Throwing something,151,True
+somethingv2,train,209493,data/Something_data/videos/209493.webm,Pulling [something] from right to left,Pulling something from right to left,87,True
+somethingv2,train,74935,data/Something_data/videos/74935.webm,Pulling [something] from right to left,Pulling something from right to left,87,True
+somethingv2,validation,111103,data/Something_data/videos/111103.webm,Pulling [something] from right to left,Pulling something from right to left,87,True
+somethingv2,train,205198,data/Something_data/videos/205198.webm,Pulling [something] from right to left,Pulling something from right to left,87,True
+somethingv2,train,18011,data/Something_data/videos/18011.webm,Pulling [something] from right to left,Pulling something from right to left,87,True
+somethingv2,validation,96992,data/Something_data/videos/96992.webm,Tipping [something] over,Tipping something over,158,True
+somethingv2,train,214229,data/Something_data/videos/214229.webm,Tipping [something] over,Tipping something over,158,True
+somethingv2,train,9198,data/Something_data/videos/9198.webm,Tipping [something] over,Tipping something over,158,True
+somethingv2,train,25401,data/Something_data/videos/25401.webm,Tipping [something] over,Tipping something over,158,True
+somethingv2,train,180492,data/Something_data/videos/180492.webm,Tipping [something] over,Tipping something over,158,True
+somethingv2,train,211839,data/Something_data/videos/211839.webm,Poking a stack of [something] without the stack collapsing,Poking a stack of something without the stack collapsing,54,True
+somethingv2,train,110102,data/Something_data/videos/110102.webm,Poking a stack of [something] without the stack collapsing,Poking a stack of something without the stack collapsing,54,True
+somethingv2,validation,139346,data/Something_data/videos/139346.webm,Poking a stack of [something] without the stack collapsing,Poking a stack of something without the stack collapsing,54,True
+somethingv2,train,179634,data/Something_data/videos/179634.webm,Poking a stack of [something] without the stack collapsing,Poking a stack of something without the stack collapsing,54,True
+somethingv2,validation,191061,data/Something_data/videos/191061.webm,Poking a stack of [something] without the stack collapsing,Poking a stack of something without the stack collapsing,54,True
+somethingv2,train,27837,data/Something_data/videos/27837.webm,Letting [something] roll along a flat surface,Letting something roll along a flat surface,22,True
+somethingv2,train,21433,data/Something_data/videos/21433.webm,Letting [something] roll along a flat surface,Letting something roll along a flat surface,22,True
+somethingv2,train,138045,data/Something_data/videos/138045.webm,Letting [something] roll along a flat surface,Letting something roll along a flat surface,22,True
+somethingv2,train,20110,data/Something_data/videos/20110.webm,Letting [something] roll along a flat surface,Letting something roll along a flat surface,22,True
+somethingv2,train,40173,data/Something_data/videos/40173.webm,Letting [something] roll along a flat surface,Letting something roll along a flat surface,22,True
+somethingv2,train,51448,data/Something_data/videos/51448.webm,Showing [something] behind [something],Showing something behind something,125,True
+somethingv2,train,79342,data/Something_data/videos/79342.webm,Showing [something] behind [something],Showing something behind something,125,True
+somethingv2,train,159381,data/Something_data/videos/159381.webm,Showing [something] behind [something],Showing something behind something,125,True
+somethingv2,train,98191,data/Something_data/videos/98191.webm,Showing [something] behind [something],Showing something behind something,125,True
+somethingv2,train,214906,data/Something_data/videos/214906.webm,Showing [something] behind [something],Showing something behind something,125,True
+somethingv2,train,111821,data/Something_data/videos/111821.webm,Dropping [something] onto [something],Dropping something onto something,12,True
+somethingv2,train,130561,data/Something_data/videos/130561.webm,Dropping [something] onto [something],Dropping something onto something,12,True
+somethingv2,validation,198645,data/Something_data/videos/198645.webm,Dropping [something] onto [something],Dropping something onto something,12,True
+somethingv2,train,117906,data/Something_data/videos/117906.webm,Dropping [something] onto [something],Dropping something onto something,12,True
+somethingv2,train,8497,data/Something_data/videos/8497.webm,Dropping [something] onto [something],Dropping something onto something,12,True
+somethingv2,train,113503,data/Something_data/videos/113503.webm,Throwing [something] in the air and catching it,Throwing something in the air and catching it,153,True
+somethingv2,train,152303,data/Something_data/videos/152303.webm,Throwing [something] in the air and catching it,Throwing something in the air and catching it,153,True
+somethingv2,train,156370,data/Something_data/videos/156370.webm,Throwing [something] in the air and catching it,Throwing something in the air and catching it,153,True
+somethingv2,train,34037,data/Something_data/videos/34037.webm,Throwing [something] in the air and catching it,Throwing something in the air and catching it,153,True
+somethingv2,train,153537,data/Something_data/videos/153537.webm,Throwing [something] in the air and catching it,Throwing something in the air and catching it,153,True
+somethingv2,train,67507,data/Something_data/videos/67507.webm,Squeezing [something],Squeezing something,143,True
+somethingv2,validation,80754,data/Something_data/videos/80754.webm,Squeezing [something],Squeezing something,143,True
+somethingv2,train,15166,data/Something_data/videos/15166.webm,Squeezing [something],Squeezing something,143,True
+somethingv2,train,149455,data/Something_data/videos/149455.webm,Squeezing [something],Squeezing something,143,True
+somethingv2,train,168662,data/Something_data/videos/168662.webm,Squeezing [something],Squeezing something,143,True
+somethingv2,train,6947,data/Something_data/videos/6947.webm,Pushing [something] off of [something],Pushing something off of something,95,True
+somethingv2,train,138699,data/Something_data/videos/138699.webm,Pushing [something] off of [something],Pushing something off of something,95,True
+somethingv2,validation,42322,data/Something_data/videos/42322.webm,Pushing [something] off of [something],Pushing something off of something,95,True
+somethingv2,train,1786,data/Something_data/videos/1786.webm,Pushing [something] off of [something],Pushing something off of something,95,True
+somethingv2,train,194117,data/Something_data/videos/194117.webm,Pushing [something] off of [something],Pushing something off of something,95,True
+somethingv2,train,47811,data/Something_data/videos/47811.webm,Putting [something] upright on the table,Putting something upright on the table,119,True
+somethingv2,validation,53011,data/Something_data/videos/53011.webm,Putting [something] upright on the table,Putting something upright on the table,119,True
+somethingv2,train,108309,data/Something_data/videos/108309.webm,Putting [something] upright on the table,Putting something upright on the table,119,True
+somethingv2,validation,97551,data/Something_data/videos/97551.webm,Putting [something] upright on the table,Putting something upright on the table,119,True
+somethingv2,train,117879,data/Something_data/videos/117879.webm,Putting [something] upright on the table,Putting something upright on the table,119,True
+somethingv2,train,210110,data/Something_data/videos/210110.webm,Failing to put [something] into [something] because [something] does not fit,Failing to put something into something because something does not fit,13,True
+somethingv2,train,176661,data/Something_data/videos/176661.webm,Failing to put [something] into [something] because [something] does not fit,Failing to put something into something because something does not fit,13,True
+somethingv2,train,152080,data/Something_data/videos/152080.webm,Failing to put [something] into [something] because [something] does not fit,Failing to put something into something because something does not fit,13,True
+somethingv2,train,212572,data/Something_data/videos/212572.webm,Failing to put [something] into [something] because [something] does not fit,Failing to put something into something because something does not fit,13,True
+somethingv2,train,129244,data/Something_data/videos/129244.webm,Failing to put [something] into [something] because [something] does not fit,Failing to put something into something because something does not fit,13,True
+somethingv2,train,89052,data/Something_data/videos/89052.webm,Putting [something] onto [something else that cannot support it] so it falls down,Putting something onto something else that cannot support it so it falls down,113,True
+somethingv2,train,73335,data/Something_data/videos/73335.webm,Putting [something] onto [something else that cannot support it] so it falls down,Putting something onto something else that cannot support it so it falls down,113,True
+somethingv2,train,15447,data/Something_data/videos/15447.webm,Putting [something] onto [something else that cannot support it] so it falls down,Putting something onto something else that cannot support it so it falls down,113,True
+somethingv2,train,61040,data/Something_data/videos/61040.webm,Putting [something] onto [something else that cannot support it] so it falls down,Putting something onto something else that cannot support it so it falls down,113,True
+somethingv2,train,104054,data/Something_data/videos/104054.webm,Putting [something] onto [something else that cannot support it] so it falls down,Putting something onto something else that cannot support it so it falls down,113,True
+somethingv2,train,21078,data/Something_data/videos/21078.webm,Moving [something] down,Moving something down,43,True
+somethingv2,train,71746,data/Something_data/videos/71746.webm,Moving [something] down,Moving something down,43,True
+somethingv2,train,173396,data/Something_data/videos/173396.webm,Moving [something] down,Moving something down,43,True
+somethingv2,train,86279,data/Something_data/videos/86279.webm,Moving [something] down,Moving something down,43,True
+somethingv2,train,190131,data/Something_data/videos/190131.webm,Moving [something] down,Moving something down,43,True
+somethingv2,train,210949,data/Something_data/videos/210949.webm,Hitting [something] with [something],Hitting something with something,15,True
+somethingv2,train,94472,data/Something_data/videos/94472.webm,Hitting [something] with [something],Hitting something with something,15,True
+somethingv2,train,218473,data/Something_data/videos/218473.webm,Hitting [something] with [something],Hitting something with something,15,True
+somethingv2,train,128548,data/Something_data/videos/128548.webm,Hitting [something] with [something],Hitting something with something,15,True
+somethingv2,train,25543,data/Something_data/videos/25543.webm,Hitting [something] with [something],Hitting something with something,15,True
+somethingv2,train,15772,data/Something_data/videos/15772.webm,Putting [something] on the edge of [something] so it is not supported and falls down,Putting something on the edge of something so it is not supported and falls down,110,True
+somethingv2,validation,145214,data/Something_data/videos/145214.webm,Putting [something] on the edge of [something] so it is not supported and falls down,Putting something on the edge of something so it is not supported and falls down,110,True
+somethingv2,train,21179,data/Something_data/videos/21179.webm,Putting [something] on the edge of [something] so it is not supported and falls down,Putting something on the edge of something so it is not supported and falls down,110,True
+somethingv2,train,188850,data/Something_data/videos/188850.webm,Putting [something] on the edge of [something] so it is not supported and falls down,Putting something on the edge of something so it is not supported and falls down,110,True
+somethingv2,validation,43780,data/Something_data/videos/43780.webm,Putting [something] on the edge of [something] so it is not supported and falls down,Putting something on the edge of something so it is not supported and falls down,110,True
+somethingv2,train,102827,data/Something_data/videos/102827.webm,Moving [something] across a surface without it falling down,Moving something across a surface without it falling down,35,True
+somethingv2,train,206207,data/Something_data/videos/206207.webm,Moving [something] across a surface without it falling down,Moving something across a surface without it falling down,35,True
+somethingv2,validation,172232,data/Something_data/videos/172232.webm,Moving [something] across a surface without it falling down,Moving something across a surface without it falling down,35,True
+somethingv2,train,57377,data/Something_data/videos/57377.webm,Moving [something] across a surface without it falling down,Moving something across a surface without it falling down,35,True
+somethingv2,train,98860,data/Something_data/videos/98860.webm,Moving [something] across a surface without it falling down,Moving something across a surface without it falling down,35,True
+somethingv2,train,96247,data/Something_data/videos/96247.webm,Putting [something] and [something] on the table,Putting something and something on the table,103,True
+somethingv2,train,90794,data/Something_data/videos/90794.webm,Putting [something] and [something] on the table,Putting something and something on the table,103,True
+somethingv2,train,157944,data/Something_data/videos/157944.webm,Putting [something] and [something] on the table,Putting something and something on the table,103,True
+somethingv2,train,36999,data/Something_data/videos/36999.webm,Putting [something] and [something] on the table,Putting something and something on the table,103,True
+somethingv2,train,88556,data/Something_data/videos/88556.webm,Putting [something] and [something] on the table,Putting something and something on the table,103,True
+somethingv2,train,218175,data/Something_data/videos/218175.webm,Touching (without moving) [part] of [something],Touching (without moving) part of something,160,True
+somethingv2,train,14891,data/Something_data/videos/14891.webm,Touching (without moving) [part] of [something],Touching (without moving) part of something,160,True
+somethingv2,train,166376,data/Something_data/videos/166376.webm,Touching (without moving) [part] of [something],Touching (without moving) part of something,160,True
+somethingv2,train,25235,data/Something_data/videos/25235.webm,Touching (without moving) [part] of [something],Touching (without moving) part of something,160,True
+somethingv2,train,29916,data/Something_data/videos/29916.webm,Touching (without moving) [part] of [something],Touching (without moving) part of something,160,True
+somethingv2,validation,658,data/Something_data/videos/658.webm,Pretending to be tearing [something that is not tearable],Pretending to be tearing something that is not tearable,65,True
+somethingv2,train,104199,data/Something_data/videos/104199.webm,Pretending to be tearing [something that is not tearable],Pretending to be tearing something that is not tearable,65,True
+somethingv2,train,184592,data/Something_data/videos/184592.webm,Pretending to be tearing [something that is not tearable],Pretending to be tearing something that is not tearable,65,True
+somethingv2,train,184269,data/Something_data/videos/184269.webm,Pretending to be tearing [something that is not tearable],Pretending to be tearing something that is not tearable,65,True
+somethingv2,train,84493,data/Something_data/videos/84493.webm,Pretending to be tearing [something that is not tearable],Pretending to be tearing something that is not tearable,65,True
+somethingv2,train,12271,data/Something_data/videos/12271.webm,Putting [something] in front of [something],Putting something in front of something,105,True
+somethingv2,train,8036,data/Something_data/videos/8036.webm,Putting [something] in front of [something],Putting something in front of something,105,True
+somethingv2,validation,114106,data/Something_data/videos/114106.webm,Putting [something] in front of [something],Putting something in front of something,105,True
+somethingv2,train,125038,data/Something_data/videos/125038.webm,Putting [something] in front of [something],Putting something in front of something,105,True
+somethingv2,train,134352,data/Something_data/videos/134352.webm,Putting [something] in front of [something],Putting something in front of something,105,True
+somethingv2,train,36421,data/Something_data/videos/36421.webm,[Something] falling like a rock,Something falling like a rock,135,True
+somethingv2,train,80301,data/Something_data/videos/80301.webm,[Something] falling like a rock,Something falling like a rock,135,True
+somethingv2,train,66102,data/Something_data/videos/66102.webm,[Something] falling like a rock,Something falling like a rock,135,True
+somethingv2,train,49666,data/Something_data/videos/49666.webm,[Something] falling like a rock,Something falling like a rock,135,True
+somethingv2,train,185687,data/Something_data/videos/185687.webm,[Something] falling like a rock,Something falling like a rock,135,True
+somethingv2,train,1127,data/Something_data/videos/1127.webm,Holding [something] in front of [something],Holding something in front of something,18,True
+somethingv2,train,190787,data/Something_data/videos/190787.webm,Holding [something] in front of [something],Holding something in front of something,18,True
+somethingv2,train,64719,data/Something_data/videos/64719.webm,Holding [something] in front of [something],Holding something in front of something,18,True
+somethingv2,validation,161695,data/Something_data/videos/161695.webm,Holding [something] in front of [something],Holding something in front of something,18,True
+somethingv2,train,136737,data/Something_data/videos/136737.webm,Holding [something] in front of [something],Holding something in front of something,18,True
+somethingv2,train,220668,data/Something_data/videos/220668.webm,Putting [something] underneath [something],Putting something underneath something,118,True
+somethingv2,train,62055,data/Something_data/videos/62055.webm,Putting [something] underneath [something],Putting something underneath something,118,True
+somethingv2,train,136357,data/Something_data/videos/136357.webm,Putting [something] underneath [something],Putting something underneath something,118,True
+somethingv2,train,32155,data/Something_data/videos/32155.webm,Putting [something] underneath [something],Putting something underneath something,118,True
+somethingv2,train,84482,data/Something_data/videos/84482.webm,Putting [something] underneath [something],Putting something underneath something,118,True
+somethingv2,train,140154,data/Something_data/videos/140154.webm,Pretending to put [something] on a surface,Pretending to put something on a surface,74,True
+somethingv2,train,59801,data/Something_data/videos/59801.webm,Pretending to put [something] on a surface,Pretending to put something on a surface,74,True
+somethingv2,train,29806,data/Something_data/videos/29806.webm,Pretending to put [something] on a surface,Pretending to put something on a surface,74,True
+somethingv2,validation,107145,data/Something_data/videos/107145.webm,Pretending to put [something] on a surface,Pretending to put something on a surface,74,True
+somethingv2,train,73654,data/Something_data/videos/73654.webm,Pretending to put [something] on a surface,Pretending to put something on a surface,74,True
+somethingv2,train,170331,data/Something_data/videos/170331.webm,Pulling [something] out of [something],Pulling something out of something,89,True
+somethingv2,train,186357,data/Something_data/videos/186357.webm,Pulling [something] out of [something],Pulling something out of something,89,True
+somethingv2,train,111893,data/Something_data/videos/111893.webm,Pulling [something] out of [something],Pulling something out of something,89,True
+somethingv2,train,172456,data/Something_data/videos/172456.webm,Pulling [something] out of [something],Pulling something out of something,89,True
+somethingv2,train,205296,data/Something_data/videos/205296.webm,Pulling [something] out of [something],Pulling something out of something,89,True
+somethingv2,train,138,data/Something_data/videos/138.webm,Moving [something] away from [something],Moving something away from something,40,True
+somethingv2,train,41544,data/Something_data/videos/41544.webm,Moving [something] away from [something],Moving something away from something,40,True
+somethingv2,train,167184,data/Something_data/videos/167184.webm,Moving [something] away from [something],Moving something away from something,40,True
+somethingv2,train,25276,data/Something_data/videos/25276.webm,Moving [something] away from [something],Moving something away from something,40,True
+somethingv2,train,20039,data/Something_data/videos/20039.webm,Moving [something] away from [something],Moving something away from something,40,True
+somethingv2,train,30758,data/Something_data/videos/30758.webm,Tilting [something] with [something] on it until it falls off,Tilting something with something on it until it falls off,157,True
+somethingv2,train,50985,data/Something_data/videos/50985.webm,Tilting [something] with [something] on it until it falls off,Tilting something with something on it until it falls off,157,True
+somethingv2,train,33062,data/Something_data/videos/33062.webm,Tilting [something] with [something] on it until it falls off,Tilting something with something on it until it falls off,157,True
+somethingv2,train,209663,data/Something_data/videos/209663.webm,Tilting [something] with [something] on it until it falls off,Tilting something with something on it until it falls off,157,True
+somethingv2,train,114627,data/Something_data/videos/114627.webm,Tilting [something] with [something] on it until it falls off,Tilting something with something on it until it falls off,157,True
+somethingv2,train,40503,data/Something_data/videos/40503.webm,Moving [something] away from the camera,Moving something away from the camera,41,True
+somethingv2,train,216048,data/Something_data/videos/216048.webm,Moving [something] away from the camera,Moving something away from the camera,41,True
+somethingv2,train,217848,data/Something_data/videos/217848.webm,Moving [something] away from the camera,Moving something away from the camera,41,True
+somethingv2,train,133561,data/Something_data/videos/133561.webm,Moving [something] away from the camera,Moving something away from the camera,41,True
+somethingv2,train,159044,data/Something_data/videos/159044.webm,Moving [something] away from the camera,Moving something away from the camera,41,True
+somethingv2,train,109994,data/Something_data/videos/109994.webm,Pushing [something] from left to right,Pushing something from left to right,93,True
+somethingv2,train,129338,data/Something_data/videos/129338.webm,Pushing [something] from left to right,Pushing something from left to right,93,True
+somethingv2,train,90871,data/Something_data/videos/90871.webm,Pushing [something] from left to right,Pushing something from left to right,93,True
+somethingv2,train,122796,data/Something_data/videos/122796.webm,Pushing [something] from left to right,Pushing something from left to right,93,True
+somethingv2,train,119617,data/Something_data/videos/119617.webm,Pushing [something] from left to right,Pushing something from left to right,93,True
+somethingv2,train,112549,data/Something_data/videos/112549.webm,Moving [something] closer to [something],Moving something closer to something,42,True
+somethingv2,train,71395,data/Something_data/videos/71395.webm,Moving [something] closer to [something],Moving something closer to something,42,True
+somethingv2,validation,34040,data/Something_data/videos/34040.webm,Moving [something] closer to [something],Moving something closer to something,42,True
+somethingv2,validation,130837,data/Something_data/videos/130837.webm,Moving [something] closer to [something],Moving something closer to something,42,True
+somethingv2,train,197982,data/Something_data/videos/197982.webm,Moving [something] closer to [something],Moving something closer to something,42,True
+somethingv2,train,29926,data/Something_data/videos/29926.webm,Tearing [something] into two pieces,Tearing something into two pieces,149,True
+somethingv2,train,55595,data/Something_data/videos/55595.webm,Tearing [something] into two pieces,Tearing something into two pieces,149,True
+somethingv2,train,106400,data/Something_data/videos/106400.webm,Tearing [something] into two pieces,Tearing something into two pieces,149,True
+somethingv2,train,43995,data/Something_data/videos/43995.webm,Tearing [something] into two pieces,Tearing something into two pieces,149,True
+somethingv2,train,13377,data/Something_data/videos/13377.webm,Tearing [something] into two pieces,Tearing something into two pieces,149,True
+somethingv2,validation,100493,data/Something_data/videos/100493.webm,[Something] falling like a feather or paper,Something falling like a feather or paper,134,True
+somethingv2,train,92480,data/Something_data/videos/92480.webm,[Something] falling like a feather or paper,Something falling like a feather or paper,134,True
+somethingv2,validation,210519,data/Something_data/videos/210519.webm,[Something] falling like a feather or paper,Something falling like a feather or paper,134,True
+somethingv2,train,178629,data/Something_data/videos/178629.webm,[Something] falling like a feather or paper,Something falling like a feather or paper,134,True
+somethingv2,train,127981,data/Something_data/videos/127981.webm,[Something] falling like a feather or paper,Something falling like a feather or paper,134,True
+somethingv2,train,208075,data/Something_data/videos/208075.webm,Showing [something] next to [something],Showing something next to something,126,True
+somethingv2,train,20146,data/Something_data/videos/20146.webm,Showing [something] next to [something],Showing something next to something,126,True
+somethingv2,train,92743,data/Something_data/videos/92743.webm,Showing [something] next to [something],Showing something next to something,126,True
+somethingv2,train,81373,data/Something_data/videos/81373.webm,Showing [something] next to [something],Showing something next to something,126,True
+somethingv2,train,146997,data/Something_data/videos/146997.webm,Showing [something] next to [something],Showing something next to something,126,True
+somethingv2,train,45955,data/Something_data/videos/45955.webm,Scooping [something] up with [something],Scooping something up with something,123,True
+somethingv2,validation,178000,data/Something_data/videos/178000.webm,Scooping [something] up with [something],Scooping something up with something,123,True
+somethingv2,train,192907,data/Something_data/videos/192907.webm,Scooping [something] up with [something],Scooping something up with something,123,True
+somethingv2,validation,11386,data/Something_data/videos/11386.webm,Scooping [something] up with [something],Scooping something up with something,123,True
+somethingv2,train,4231,data/Something_data/videos/4231.webm,Scooping [something] up with [something],Scooping something up with something,123,True
+somethingv2,validation,130668,data/Something_data/videos/130668.webm,Putting [something] onto [something],Putting something onto something,112,True
+somethingv2,train,24098,data/Something_data/videos/24098.webm,Putting [something] onto [something],Putting something onto something,112,True
+somethingv2,train,37452,data/Something_data/videos/37452.webm,Putting [something] onto [something],Putting something onto something,112,True
+somethingv2,train,177494,data/Something_data/videos/177494.webm,Putting [something] onto [something],Putting something onto something,112,True
+somethingv2,train,411,data/Something_data/videos/411.webm,Putting [something] onto [something],Putting something onto something,112,True
+somethingv2,train,40778,data/Something_data/videos/40778.webm,"Lifting [something] up completely, then letting it drop down","Lifting something up completely, then letting it drop down",28,True
+somethingv2,train,192809,data/Something_data/videos/192809.webm,"Lifting [something] up completely, then letting it drop down","Lifting something up completely, then letting it drop down",28,True
+somethingv2,train,88735,data/Something_data/videos/88735.webm,"Lifting [something] up completely, then letting it drop down","Lifting something up completely, then letting it drop down",28,True
+somethingv2,train,120092,data/Something_data/videos/120092.webm,"Lifting [something] up completely, then letting it drop down","Lifting something up completely, then letting it drop down",28,True
+somethingv2,train,107317,data/Something_data/videos/107317.webm,"Lifting [something] up completely, then letting it drop down","Lifting something up completely, then letting it drop down",28,True
+somethingv2,train,110377,data/Something_data/videos/110377.webm,Putting [something similar to other things that are already on the table],Putting something similar to other things that are already on the table,114,True
+somethingv2,train,92479,data/Something_data/videos/92479.webm,Putting [something similar to other things that are already on the table],Putting something similar to other things that are already on the table,114,True
+somethingv2,train,62008,data/Something_data/videos/62008.webm,Putting [something similar to other things that are already on the table],Putting something similar to other things that are already on the table,114,True
+somethingv2,train,164729,data/Something_data/videos/164729.webm,Putting [something similar to other things that are already on the table],Putting something similar to other things that are already on the table,114,True
+somethingv2,train,171244,data/Something_data/videos/171244.webm,Putting [something similar to other things that are already on the table],Putting something similar to other things that are already on the table,114,True
+somethingv2,train,134215,data/Something_data/videos/134215.webm,Pretending to throw [something],Pretending to throw something,83,True
+somethingv2,train,216112,data/Something_data/videos/216112.webm,Pretending to throw [something],Pretending to throw something,83,True
+somethingv2,train,60854,data/Something_data/videos/60854.webm,Pretending to throw [something],Pretending to throw something,83,True
+somethingv2,train,25501,data/Something_data/videos/25501.webm,Pretending to throw [something],Pretending to throw something,83,True
+somethingv2,train,18078,data/Something_data/videos/18078.webm,Pretending to throw [something],Pretending to throw something,83,True
+somethingv2,train,48060,data/Something_data/videos/48060.webm,Lifting [something] with [something] on it,Lifting something with something on it,29,True
+somethingv2,train,214763,data/Something_data/videos/214763.webm,Lifting [something] with [something] on it,Lifting something with something on it,29,True
+somethingv2,train,181419,data/Something_data/videos/181419.webm,Lifting [something] with [something] on it,Lifting something with something on it,29,True
+somethingv2,train,103793,data/Something_data/videos/103793.webm,Lifting [something] with [something] on it,Lifting something with something on it,29,True
+somethingv2,validation,157520,data/Something_data/videos/157520.webm,Lifting [something] with [something] on it,Lifting something with something on it,29,True
+somethingv2,train,138936,data/Something_data/videos/138936.webm,Sprinkling [something] onto [something],Sprinkling something onto something,142,True
+somethingv2,train,50787,data/Something_data/videos/50787.webm,Sprinkling [something] onto [something],Sprinkling something onto something,142,True
+somethingv2,train,785,data/Something_data/videos/785.webm,Sprinkling [something] onto [something],Sprinkling something onto something,142,True
+somethingv2,validation,50872,data/Something_data/videos/50872.webm,Sprinkling [something] onto [something],Sprinkling something onto something,142,True
+somethingv2,train,11836,data/Something_data/videos/11836.webm,Sprinkling [something] onto [something],Sprinkling something onto something,142,True
+somethingv2,train,33600,data/Something_data/videos/33600.webm,"Putting [something that cannot actually stand upright] upright on the table, so it falls on its side","Putting something that cannot actually stand upright upright on the table, so it falls on its side",117,True
+somethingv2,train,178634,data/Something_data/videos/178634.webm,"Putting [something that cannot actually stand upright] upright on the table, so it falls on its side","Putting something that cannot actually stand upright upright on the table, so it falls on its side",117,True
+somethingv2,train,59163,data/Something_data/videos/59163.webm,"Putting [something that cannot actually stand upright] upright on the table, so it falls on its side","Putting something that cannot actually stand upright upright on the table, so it falls on its side",117,True
+somethingv2,validation,106175,data/Something_data/videos/106175.webm,"Putting [something that cannot actually stand upright] upright on the table, so it falls on its side","Putting something that cannot actually stand upright upright on the table, so it falls on its side",117,True
+somethingv2,train,60775,data/Something_data/videos/60775.webm,"Putting [something that cannot actually stand upright] upright on the table, so it falls on its side","Putting something that cannot actually stand upright upright on the table, so it falls on its side",117,True
+somethingv2,train,195767,data/Something_data/videos/195767.webm,Pretending to take [something] out of [something],Pretending to take something out of something,82,True
+somethingv2,train,53887,data/Something_data/videos/53887.webm,Pretending to take [something] out of [something],Pretending to take something out of something,82,True
+somethingv2,train,53344,data/Something_data/videos/53344.webm,Pretending to take [something] out of [something],Pretending to take something out of something,82,True
+somethingv2,train,161113,data/Something_data/videos/161113.webm,Pretending to take [something] out of [something],Pretending to take something out of something,82,True
+somethingv2,train,40169,data/Something_data/videos/40169.webm,Pretending to take [something] out of [something],Pretending to take something out of something,82,True
+somethingv2,train,174272,data/Something_data/videos/174272.webm,[Something] colliding with [something] and both are being deflected,Something colliding with something and both are being deflected,132,True
+somethingv2,train,33953,data/Something_data/videos/33953.webm,[Something] colliding with [something] and both are being deflected,Something colliding with something and both are being deflected,132,True
+somethingv2,validation,85244,data/Something_data/videos/85244.webm,[Something] colliding with [something] and both are being deflected,Something colliding with something and both are being deflected,132,True
+somethingv2,train,153003,data/Something_data/videos/153003.webm,[Something] colliding with [something] and both are being deflected,Something colliding with something and both are being deflected,132,True
+somethingv2,validation,86654,data/Something_data/videos/86654.webm,[Something] colliding with [something] and both are being deflected,Something colliding with something and both are being deflected,132,True
+somethingv2,train,154328,data/Something_data/videos/154328.webm,Dropping [something] into [something],Dropping something into something,10,True
+somethingv2,train,64863,data/Something_data/videos/64863.webm,Dropping [something] into [something],Dropping something into something,10,True
+somethingv2,train,71378,data/Something_data/videos/71378.webm,Dropping [something] into [something],Dropping something into something,10,True
+somethingv2,train,145859,data/Something_data/videos/145859.webm,Dropping [something] into [something],Dropping something into something,10,True
+somethingv2,validation,132010,data/Something_data/videos/132010.webm,Dropping [something] into [something],Dropping something into something,10,True
+somethingv2,train,50732,data/Something_data/videos/50732.webm,Burying [something] in [something],Burying something in something,4,True
+somethingv2,train,197576,data/Something_data/videos/197576.webm,Burying [something] in [something],Burying something in something,4,True
+somethingv2,train,210410,data/Something_data/videos/210410.webm,Burying [something] in [something],Burying something in something,4,True
+somethingv2,validation,178993,data/Something_data/videos/178993.webm,Burying [something] in [something],Burying something in something,4,True
+somethingv2,train,191345,data/Something_data/videos/191345.webm,Burying [something] in [something],Burying something in something,4,True
+somethingv2,train,125952,data/Something_data/videos/125952.webm,Pretending to put [something] into [something],Pretending to put something into something,72,True
+somethingv2,train,97906,data/Something_data/videos/97906.webm,Pretending to put [something] into [something],Pretending to put something into something,72,True
+somethingv2,train,134104,data/Something_data/videos/134104.webm,Pretending to put [something] into [something],Pretending to put something into something,72,True
+somethingv2,train,205760,data/Something_data/videos/205760.webm,Pretending to put [something] into [something],Pretending to put something into something,72,True
+somethingv2,train,3180,data/Something_data/videos/3180.webm,Pretending to put [something] into [something],Pretending to put something into something,72,True
+somethingv2,train,52993,data/Something_data/videos/52993.webm,Putting [something] next to [something],Putting something next to something,107,True
+somethingv2,train,203167,data/Something_data/videos/203167.webm,Putting [something] next to [something],Putting something next to something,107,True
+somethingv2,train,63037,data/Something_data/videos/63037.webm,Putting [something] next to [something],Putting something next to something,107,True
+somethingv2,train,161286,data/Something_data/videos/161286.webm,Putting [something] next to [something],Putting something next to something,107,True
+somethingv2,train,42085,data/Something_data/videos/42085.webm,Putting [something] next to [something],Putting something next to something,107,True
+somethingv2,train,174550,data/Something_data/videos/174550.webm,Pretending to open [something] without actually opening it,Pretending to open something without actually opening it,67,True
+somethingv2,validation,122538,data/Something_data/videos/122538.webm,Pretending to open [something] without actually opening it,Pretending to open something without actually opening it,67,True
+somethingv2,train,92873,data/Something_data/videos/92873.webm,Pretending to open [something] without actually opening it,Pretending to open something without actually opening it,67,True
+somethingv2,validation,55167,data/Something_data/videos/55167.webm,Pretending to open [something] without actually opening it,Pretending to open something without actually opening it,67,True
+somethingv2,validation,40464,data/Something_data/videos/40464.webm,Pretending to open [something] without actually opening it,Pretending to open something without actually opening it,67,True
+somethingv2,train,43900,data/Something_data/videos/43900.webm,Pretending to scoop [something] up with [something],Pretending to scoop something up with something,77,True
+somethingv2,train,180328,data/Something_data/videos/180328.webm,Pretending to scoop [something] up with [something],Pretending to scoop something up with something,77,True
+somethingv2,train,137242,data/Something_data/videos/137242.webm,Pretending to scoop [something] up with [something],Pretending to scoop something up with something,77,True
+somethingv2,train,121002,data/Something_data/videos/121002.webm,Pretending to scoop [something] up with [something],Pretending to scoop something up with something,77,True
+somethingv2,train,49147,data/Something_data/videos/49147.webm,Pretending to scoop [something] up with [something],Pretending to scoop something up with something,77,True
+somethingv2,train,217986,data/Something_data/videos/217986.webm,Attaching [something] to [something],Attaching something to something,1,True
+somethingv2,train,117210,data/Something_data/videos/117210.webm,Attaching [something] to [something],Attaching something to something,1,True
+somethingv2,train,158918,data/Something_data/videos/158918.webm,Attaching [something] to [something],Attaching something to something,1,True
+somethingv2,train,40285,data/Something_data/videos/40285.webm,Attaching [something] to [something],Attaching something to something,1,True
+somethingv2,train,123697,data/Something_data/videos/123697.webm,Attaching [something] to [something],Attaching something to something,1,True
+somethingv2,train,113769,data/Something_data/videos/113769.webm,Trying to bend [something unbendable] so nothing happens,Trying to bend something unbendable so nothing happens,162,True
+somethingv2,train,160084,data/Something_data/videos/160084.webm,Trying to bend [something unbendable] so nothing happens,Trying to bend something unbendable so nothing happens,162,True
+somethingv2,train,141567,data/Something_data/videos/141567.webm,Trying to bend [something unbendable] so nothing happens,Trying to bend something unbendable so nothing happens,162,True
+somethingv2,train,39080,data/Something_data/videos/39080.webm,Trying to bend [something unbendable] so nothing happens,Trying to bend something unbendable so nothing happens,162,True
+somethingv2,validation,66338,data/Something_data/videos/66338.webm,Trying to bend [something unbendable] so nothing happens,Trying to bend something unbendable so nothing happens,162,True
+somethingv2,train,165689,data/Something_data/videos/165689.webm,Poking [something] so lightly that it doesn't or almost doesn't move,Poking something so lightly that it doesn't or almost doesn't move,56,True
+somethingv2,train,189403,data/Something_data/videos/189403.webm,Poking [something] so lightly that it doesn't or almost doesn't move,Poking something so lightly that it doesn't or almost doesn't move,56,True
+somethingv2,train,14065,data/Something_data/videos/14065.webm,Poking [something] so lightly that it doesn't or almost doesn't move,Poking something so lightly that it doesn't or almost doesn't move,56,True
+somethingv2,train,17244,data/Something_data/videos/17244.webm,Poking [something] so lightly that it doesn't or almost doesn't move,Poking something so lightly that it doesn't or almost doesn't move,56,True
+somethingv2,train,175116,data/Something_data/videos/175116.webm,Poking [something] so lightly that it doesn't or almost doesn't move,Poking something so lightly that it doesn't or almost doesn't move,56,True
+somethingv2,train,200631,data/Something_data/videos/200631.webm,Spinning [something] that quickly stops spinning,Spinning something that quickly stops spinning,140,True
+somethingv2,train,202685,data/Something_data/videos/202685.webm,Spinning [something] that quickly stops spinning,Spinning something that quickly stops spinning,140,True
+somethingv2,train,198158,data/Something_data/videos/198158.webm,Spinning [something] that quickly stops spinning,Spinning something that quickly stops spinning,140,True
+somethingv2,train,195697,data/Something_data/videos/195697.webm,Spinning [something] that quickly stops spinning,Spinning something that quickly stops spinning,140,True
+somethingv2,train,192267,data/Something_data/videos/192267.webm,Spinning [something] that quickly stops spinning,Spinning something that quickly stops spinning,140,True
+somethingv2,train,62986,data/Something_data/videos/62986.webm,Opening [something],Opening something,46,True
+somethingv2,train,199284,data/Something_data/videos/199284.webm,Opening [something],Opening something,46,True
+somethingv2,validation,207835,data/Something_data/videos/207835.webm,Opening [something],Opening something,46,True
+somethingv2,train,60479,data/Something_data/videos/60479.webm,Opening [something],Opening something,46,True
+somethingv2,train,38060,data/Something_data/videos/38060.webm,Opening [something],Opening something,46,True
+somethingv2,train,95881,data/Something_data/videos/95881.webm,Moving [part] of [something],Moving part of something,33,True
+somethingv2,train,181990,data/Something_data/videos/181990.webm,Moving [part] of [something],Moving part of something,33,True
+somethingv2,train,116727,data/Something_data/videos/116727.webm,Moving [part] of [something],Moving part of something,33,True
+somethingv2,train,139037,data/Something_data/videos/139037.webm,Moving [part] of [something],Moving part of something,33,True
+somethingv2,train,78131,data/Something_data/videos/78131.webm,Moving [part] of [something],Moving part of something,33,True
+somethingv2,train,55598,data/Something_data/videos/55598.webm,Moving away from [something] with your camera,Moving away from something with your camera,32,True
+somethingv2,train,106188,data/Something_data/videos/106188.webm,Moving away from [something] with your camera,Moving away from something with your camera,32,True
+somethingv2,train,109550,data/Something_data/videos/109550.webm,Moving away from [something] with your camera,Moving away from something with your camera,32,True
+somethingv2,train,44134,data/Something_data/videos/44134.webm,Moving away from [something] with your camera,Moving away from something with your camera,32,True
+somethingv2,train,30704,data/Something_data/videos/30704.webm,Moving away from [something] with your camera,Moving away from something with your camera,32,True
+somethingv2,validation,188482,data/Something_data/videos/188482.webm,Plugging [something] into [something],Plugging something into something,49,True
+somethingv2,train,8421,data/Something_data/videos/8421.webm,Plugging [something] into [something],Plugging something into something,49,True
+somethingv2,validation,38565,data/Something_data/videos/38565.webm,Plugging [something] into [something],Plugging something into something,49,True
+somethingv2,train,29984,data/Something_data/videos/29984.webm,Plugging [something] into [something],Plugging something into something,49,True
+somethingv2,train,64043,data/Something_data/videos/64043.webm,Plugging [something] into [something],Plugging something into something,49,True
+somethingv2,train,27999,data/Something_data/videos/27999.webm,Turning [something] upside down,Turning something upside down,164,True
+somethingv2,train,217411,data/Something_data/videos/217411.webm,Turning [something] upside down,Turning something upside down,164,True
+somethingv2,validation,62609,data/Something_data/videos/62609.webm,Turning [something] upside down,Turning something upside down,164,True
+somethingv2,train,25631,data/Something_data/videos/25631.webm,Turning [something] upside down,Turning something upside down,164,True
+somethingv2,train,67858,data/Something_data/videos/67858.webm,Turning [something] upside down,Turning something upside down,164,True
+somethingv2,train,188420,data/Something_data/videos/188420.webm,Uncovering [something],Uncovering something,171,True
+somethingv2,train,174964,data/Something_data/videos/174964.webm,Uncovering [something],Uncovering something,171,True
+somethingv2,train,35133,data/Something_data/videos/35133.webm,Uncovering [something],Uncovering something,171,True
+somethingv2,train,205997,data/Something_data/videos/205997.webm,Uncovering [something],Uncovering something,171,True
+somethingv2,train,39339,data/Something_data/videos/39339.webm,Uncovering [something],Uncovering something,171,True
+somethingv2,train,38980,data/Something_data/videos/38980.webm,Stuffing [something] into [something],Stuffing something into something,145,True
+somethingv2,train,214709,data/Something_data/videos/214709.webm,Stuffing [something] into [something],Stuffing something into something,145,True
+somethingv2,train,84413,data/Something_data/videos/84413.webm,Stuffing [something] into [something],Stuffing something into something,145,True
+somethingv2,train,118719,data/Something_data/videos/118719.webm,Stuffing [something] into [something],Stuffing something into something,145,True
+somethingv2,train,147803,data/Something_data/videos/147803.webm,Stuffing [something] into [something],Stuffing something into something,145,True
+somethingv2,train,146885,data/Something_data/videos/146885.webm,Showing a photo of [something] to the camera,Showing a photo of something to the camera,124,True
+somethingv2,train,74971,data/Something_data/videos/74971.webm,Showing a photo of [something] to the camera,Showing a photo of something to the camera,124,True
+somethingv2,train,142074,data/Something_data/videos/142074.webm,Showing a photo of [something] to the camera,Showing a photo of something to the camera,124,True
+somethingv2,train,183309,data/Something_data/videos/183309.webm,Showing a photo of [something] to the camera,Showing a photo of something to the camera,124,True
+somethingv2,train,102279,data/Something_data/videos/102279.webm,Showing a photo of [something] to the camera,Showing a photo of something to the camera,124,True
+somethingv2,train,157425,data/Something_data/videos/157425.webm,Moving [something] and [something] so they pass each other,Moving something and something so they pass each other,39,True
+somethingv2,train,91134,data/Something_data/videos/91134.webm,Moving [something] and [something] so they pass each other,Moving something and something so they pass each other,39,True
+somethingv2,train,117696,data/Something_data/videos/117696.webm,Moving [something] and [something] so they pass each other,Moving something and something so they pass each other,39,True
+somethingv2,train,194424,data/Something_data/videos/194424.webm,Moving [something] and [something] so they pass each other,Moving something and something so they pass each other,39,True
+somethingv2,train,135595,data/Something_data/videos/135595.webm,Moving [something] and [something] so they pass each other,Moving something and something so they pass each other,39,True
+somethingv2,train,101700,data/Something_data/videos/101700.webm,Pulling two ends of [something] so that it gets stretched,Pulling two ends of something so that it gets stretched,91,True
+somethingv2,train,13472,data/Something_data/videos/13472.webm,Pulling two ends of [something] so that it gets stretched,Pulling two ends of something so that it gets stretched,91,True
+somethingv2,train,70352,data/Something_data/videos/70352.webm,Pulling two ends of [something] so that it gets stretched,Pulling two ends of something so that it gets stretched,91,True
+somethingv2,train,153850,data/Something_data/videos/153850.webm,Pulling two ends of [something] so that it gets stretched,Pulling two ends of something so that it gets stretched,91,True
+somethingv2,train,83921,data/Something_data/videos/83921.webm,Pulling two ends of [something] so that it gets stretched,Pulling two ends of something so that it gets stretched,91,True
+somethingv2,train,18280,data/Something_data/videos/18280.webm,Turning the camera upwards while filming [something],Turning the camera upwards while filming something,168,True
+somethingv2,train,113569,data/Something_data/videos/113569.webm,Turning the camera upwards while filming [something],Turning the camera upwards while filming something,168,True
+somethingv2,train,216844,data/Something_data/videos/216844.webm,Turning the camera upwards while filming [something],Turning the camera upwards while filming something,168,True
+somethingv2,train,135650,data/Something_data/videos/135650.webm,Turning the camera upwards while filming [something],Turning the camera upwards while filming something,168,True
+somethingv2,train,80815,data/Something_data/videos/80815.webm,Turning the camera upwards while filming [something],Turning the camera upwards while filming something,168,True
+somethingv2,train,106116,data/Something_data/videos/106116.webm,Piling [something] up,Piling something up,48,True
+somethingv2,train,178192,data/Something_data/videos/178192.webm,Piling [something] up,Piling something up,48,True
+somethingv2,train,121001,data/Something_data/videos/121001.webm,Piling [something] up,Piling something up,48,True
+somethingv2,train,196225,data/Something_data/videos/196225.webm,Piling [something] up,Piling something up,48,True
+somethingv2,train,57813,data/Something_data/videos/57813.webm,Piling [something] up,Piling something up,48,True
+somethingv2,validation,137138,data/Something_data/videos/137138.webm,Poking [something] so that it falls over,Poking something so that it falls over,57,True
+somethingv2,train,41537,data/Something_data/videos/41537.webm,Poking [something] so that it falls over,Poking something so that it falls over,57,True
+somethingv2,train,114453,data/Something_data/videos/114453.webm,Poking [something] so that it falls over,Poking something so that it falls over,57,True
+somethingv2,train,18579,data/Something_data/videos/18579.webm,Poking [something] so that it falls over,Poking something so that it falls over,57,True
+somethingv2,train,139525,data/Something_data/videos/139525.webm,Poking [something] so that it falls over,Poking something so that it falls over,57,True
+somethingv2,train,183787,data/Something_data/videos/183787.webm,Pretending to pick [something] up,Pretending to pick something up,68,True
+somethingv2,train,48824,data/Something_data/videos/48824.webm,Pretending to pick [something] up,Pretending to pick something up,68,True
+somethingv2,train,58281,data/Something_data/videos/58281.webm,Pretending to pick [something] up,Pretending to pick something up,68,True
+somethingv2,train,73049,data/Something_data/videos/73049.webm,Pretending to pick [something] up,Pretending to pick something up,68,True
+somethingv2,train,7997,data/Something_data/videos/7997.webm,Pretending to pick [something] up,Pretending to pick something up,68,True
+somethingv2,train,97602,data/Something_data/videos/97602.webm,Approaching [something] with your camera,Approaching something with your camera,0,True
+somethingv2,train,214006,data/Something_data/videos/214006.webm,Approaching [something] with your camera,Approaching something with your camera,0,True
+somethingv2,train,161062,data/Something_data/videos/161062.webm,Approaching [something] with your camera,Approaching something with your camera,0,True
+somethingv2,validation,62866,data/Something_data/videos/62866.webm,Approaching [something] with your camera,Approaching something with your camera,0,True
+somethingv2,validation,166475,data/Something_data/videos/166475.webm,Approaching [something] with your camera,Approaching something with your camera,0,True
+somethingv2,train,131202,data/Something_data/videos/131202.webm,Tearing [something] just a little bit,Tearing something just a little bit,150,True
+somethingv2,train,19100,data/Something_data/videos/19100.webm,Tearing [something] just a little bit,Tearing something just a little bit,150,True
+somethingv2,train,132070,data/Something_data/videos/132070.webm,Tearing [something] just a little bit,Tearing something just a little bit,150,True
+somethingv2,train,6096,data/Something_data/videos/6096.webm,Tearing [something] just a little bit,Tearing something just a little bit,150,True
+somethingv2,train,132145,data/Something_data/videos/132145.webm,Tearing [something] just a little bit,Tearing something just a little bit,150,True
+somethingv2,validation,54318,data/Something_data/videos/54318.webm,Bending [something] so that it deforms,Bending something so that it deforms,2,True
+somethingv2,train,166086,data/Something_data/videos/166086.webm,Bending [something] so that it deforms,Bending something so that it deforms,2,True
+somethingv2,train,74776,data/Something_data/videos/74776.webm,Bending [something] so that it deforms,Bending something so that it deforms,2,True
+somethingv2,train,190760,data/Something_data/videos/190760.webm,Bending [something] so that it deforms,Bending something so that it deforms,2,True
+somethingv2,train,188854,data/Something_data/videos/188854.webm,Bending [something] so that it deforms,Bending something so that it deforms,2,True
+somethingv2,train,96777,data/Something_data/videos/96777.webm,Showing [something] on top of [something],Showing something on top of something,127,True
+somethingv2,train,219005,data/Something_data/videos/219005.webm,Showing [something] on top of [something],Showing something on top of something,127,True
+somethingv2,train,25084,data/Something_data/videos/25084.webm,Showing [something] on top of [something],Showing something on top of something,127,True
+somethingv2,train,7978,data/Something_data/videos/7978.webm,Showing [something] on top of [something],Showing something on top of something,127,True
+somethingv2,train,95437,data/Something_data/videos/95437.webm,Showing [something] on top of [something],Showing something on top of something,127,True
+somethingv2,train,125323,data/Something_data/videos/125323.webm,Pulling [something] from left to right,Pulling something from left to right,86,True
+somethingv2,train,36371,data/Something_data/videos/36371.webm,Pulling [something] from left to right,Pulling something from left to right,86,True
+somethingv2,train,178724,data/Something_data/videos/178724.webm,Pulling [something] from left to right,Pulling something from left to right,86,True
+somethingv2,train,118793,data/Something_data/videos/118793.webm,Pulling [something] from left to right,Pulling something from left to right,86,True
+somethingv2,train,170167,data/Something_data/videos/170167.webm,Pulling [something] from left to right,Pulling something from left to right,86,True
+somethingv2,train,102089,data/Something_data/videos/102089.webm,Lifting a surface with [something] on it but not enough for it to slide down,Lifting a surface with something on it but not enough for it to slide down,25,True
+somethingv2,train,152508,data/Something_data/videos/152508.webm,Lifting a surface with [something] on it but not enough for it to slide down,Lifting a surface with something on it but not enough for it to slide down,25,True
+somethingv2,train,203115,data/Something_data/videos/203115.webm,Lifting a surface with [something] on it but not enough for it to slide down,Lifting a surface with something on it but not enough for it to slide down,25,True
+somethingv2,train,72704,data/Something_data/videos/72704.webm,Lifting a surface with [something] on it but not enough for it to slide down,Lifting a surface with something on it but not enough for it to slide down,25,True
+somethingv2,train,195928,data/Something_data/videos/195928.webm,Lifting a surface with [something] on it but not enough for it to slide down,Lifting a surface with something on it but not enough for it to slide down,25,True
+somethingv2,train,15084,data/Something_data/videos/15084.webm,Moving [something] and [something] away from each other,Moving something and something away from each other,36,True
+somethingv2,train,172287,data/Something_data/videos/172287.webm,Moving [something] and [something] away from each other,Moving something and something away from each other,36,True
+somethingv2,train,136261,data/Something_data/videos/136261.webm,Moving [something] and [something] away from each other,Moving something and something away from each other,36,True
+somethingv2,train,87823,data/Something_data/videos/87823.webm,Moving [something] and [something] away from each other,Moving something and something away from each other,36,True
+somethingv2,train,105685,data/Something_data/videos/105685.webm,Moving [something] and [something] away from each other,Moving something and something away from each other,36,True
+somethingv2,train,200968,data/Something_data/videos/200968.webm,"Removing [something], revealing [something] behind","Removing something, revealing something behind",121,True
+somethingv2,train,171341,data/Something_data/videos/171341.webm,"Removing [something], revealing [something] behind","Removing something, revealing something behind",121,True
+somethingv2,train,70326,data/Something_data/videos/70326.webm,"Removing [something], revealing [something] behind","Removing something, revealing something behind",121,True
+somethingv2,train,69815,data/Something_data/videos/69815.webm,"Removing [something], revealing [something] behind","Removing something, revealing something behind",121,True
+somethingv2,train,78039,data/Something_data/videos/78039.webm,"Removing [something], revealing [something] behind","Removing something, revealing something behind",121,True
+somethingv2,train,86695,data/Something_data/videos/86695.webm,Lifting [something] up completely without letting it drop down,Lifting something up completely without letting it drop down,27,True
+somethingv2,train,168923,data/Something_data/videos/168923.webm,Lifting [something] up completely without letting it drop down,Lifting something up completely without letting it drop down,27,True
+somethingv2,train,144011,data/Something_data/videos/144011.webm,Lifting [something] up completely without letting it drop down,Lifting something up completely without letting it drop down,27,True
+somethingv2,train,101515,data/Something_data/videos/101515.webm,Lifting [something] up completely without letting it drop down,Lifting something up completely without letting it drop down,27,True
+somethingv2,train,130398,data/Something_data/videos/130398.webm,Lifting [something] up completely without letting it drop down,Lifting something up completely without letting it drop down,27,True
+somethingv2,validation,72439,data/Something_data/videos/72439.webm,Bending [something] until it breaks,Bending something until it breaks,3,True
+somethingv2,train,73689,data/Something_data/videos/73689.webm,Bending [something] until it breaks,Bending something until it breaks,3,True
+somethingv2,validation,137207,data/Something_data/videos/137207.webm,Bending [something] until it breaks,Bending something until it breaks,3,True
+somethingv2,train,162696,data/Something_data/videos/162696.webm,Bending [something] until it breaks,Bending something until it breaks,3,True
+somethingv2,train,188225,data/Something_data/videos/188225.webm,Bending [something] until it breaks,Bending something until it breaks,3,True
+somethingv2,train,55855,data/Something_data/videos/55855.webm,Pushing [something] with [something],Pushing something with something,101,True
+somethingv2,train,197113,data/Something_data/videos/197113.webm,Pushing [something] with [something],Pushing something with something,101,True
+somethingv2,train,12920,data/Something_data/videos/12920.webm,Pushing [something] with [something],Pushing something with something,101,True
+somethingv2,train,151858,data/Something_data/videos/151858.webm,Pushing [something] with [something],Pushing something with something,101,True
+somethingv2,train,151681,data/Something_data/videos/151681.webm,Pushing [something] with [something],Pushing something with something,101,True
+somethingv2,train,36218,data/Something_data/videos/36218.webm,Pretending to put [something] onto [something],Pretending to put something onto something,75,True
+somethingv2,train,95125,data/Something_data/videos/95125.webm,Pretending to put [something] onto [something],Pretending to put something onto something,75,True
+somethingv2,train,83245,data/Something_data/videos/83245.webm,Pretending to put [something] onto [something],Pretending to put something onto something,75,True
+somethingv2,train,181863,data/Something_data/videos/181863.webm,Pretending to put [something] onto [something],Pretending to put something onto something,75,True
+somethingv2,train,7384,data/Something_data/videos/7384.webm,Pretending to put [something] onto [something],Pretending to put something onto something,75,True
+somethingv2,train,114064,data/Something_data/videos/114064.webm,Pretending to put [something] behind [something],Pretending to put something behind something,71,True
+somethingv2,train,3918,data/Something_data/videos/3918.webm,Pretending to put [something] behind [something],Pretending to put something behind something,71,True
+somethingv2,train,54229,data/Something_data/videos/54229.webm,Pretending to put [something] behind [something],Pretending to put something behind something,71,True
+somethingv2,train,58301,data/Something_data/videos/58301.webm,Pretending to put [something] behind [something],Pretending to put something behind something,71,True
+somethingv2,train,157243,data/Something_data/videos/157243.webm,Pretending to put [something] behind [something],Pretending to put something behind something,71,True
+somethingv2,train,27542,data/Something_data/videos/27542.webm,Picking [something] up,Picking something up,47,True
+somethingv2,train,186687,data/Something_data/videos/186687.webm,Picking [something] up,Picking something up,47,True
+somethingv2,train,155463,data/Something_data/videos/155463.webm,Picking [something] up,Picking something up,47,True
+somethingv2,train,172003,data/Something_data/videos/172003.webm,Picking [something] up,Picking something up,47,True
+somethingv2,train,191349,data/Something_data/videos/191349.webm,Picking [something] up,Picking something up,47,True
+somethingv2,train,20505,data/Something_data/videos/20505.webm,[Something] being deflected from [something],Something being deflected from something,131,True
+somethingv2,train,39918,data/Something_data/videos/39918.webm,[Something] being deflected from [something],Something being deflected from something,131,True
+somethingv2,train,73823,data/Something_data/videos/73823.webm,[Something] being deflected from [something],Something being deflected from something,131,True
+somethingv2,train,69730,data/Something_data/videos/69730.webm,[Something] being deflected from [something],Something being deflected from something,131,True
+somethingv2,train,92633,data/Something_data/videos/92633.webm,[Something] being deflected from [something],Something being deflected from something,131,True
+somethingv2,train,154728,data/Something_data/videos/154728.webm,"Putting [something], [something] and [something] on the table","Putting something, something and something on the table",120,True
+somethingv2,train,122337,data/Something_data/videos/122337.webm,"Putting [something], [something] and [something] on the table","Putting something, something and something on the table",120,True
+somethingv2,train,186143,data/Something_data/videos/186143.webm,"Putting [something], [something] and [something] on the table","Putting something, something and something on the table",120,True
+somethingv2,train,46673,data/Something_data/videos/46673.webm,"Putting [something], [something] and [something] on the table","Putting something, something and something on the table",120,True
+somethingv2,train,174544,data/Something_data/videos/174544.webm,"Putting [something], [something] and [something] on the table","Putting something, something and something on the table",120,True
+somethingv2,train,139950,data/Something_data/videos/139950.webm,Putting [something] onto a slanted surface but it doesn't glide down,Putting something onto a slanted surface but it doesn't glide down,111,True
+somethingv2,train,214804,data/Something_data/videos/214804.webm,Putting [something] onto a slanted surface but it doesn't glide down,Putting something onto a slanted surface but it doesn't glide down,111,True
+somethingv2,train,207349,data/Something_data/videos/207349.webm,Putting [something] onto a slanted surface but it doesn't glide down,Putting something onto a slanted surface but it doesn't glide down,111,True
+somethingv2,train,91089,data/Something_data/videos/91089.webm,Putting [something] onto a slanted surface but it doesn't glide down,Putting something onto a slanted surface but it doesn't glide down,111,True
+somethingv2,train,82211,data/Something_data/videos/82211.webm,Putting [something] onto a slanted surface but it doesn't glide down,Putting something onto a slanted surface but it doesn't glide down,111,True
+somethingv2,train,193432,data/Something_data/videos/193432.webm,Pushing [something] so that it falls off the table,Pushing something so that it falls off the table,99,True
+somethingv2,train,204917,data/Something_data/videos/204917.webm,Pushing [something] so that it falls off the table,Pushing something so that it falls off the table,99,True
+somethingv2,train,69649,data/Something_data/videos/69649.webm,Pushing [something] so that it falls off the table,Pushing something so that it falls off the table,99,True
+somethingv2,train,126729,data/Something_data/videos/126729.webm,Pushing [something] so that it falls off the table,Pushing something so that it falls off the table,99,True
+somethingv2,train,21339,data/Something_data/videos/21339.webm,Pushing [something] so that it falls off the table,Pushing something so that it falls off the table,99,True
+somethingv2,train,81530,data/Something_data/videos/81530.webm,Taking [something] from [somewhere],Taking something from somewhere,147,True
+somethingv2,validation,179575,data/Something_data/videos/179575.webm,Taking [something] from [somewhere],Taking something from somewhere,147,True
+somethingv2,train,215444,data/Something_data/videos/215444.webm,Taking [something] from [somewhere],Taking something from somewhere,147,True
+somethingv2,train,40841,data/Something_data/videos/40841.webm,Taking [something] from [somewhere],Taking something from somewhere,147,True
+somethingv2,train,127017,data/Something_data/videos/127017.webm,Taking [something] from [somewhere],Taking something from somewhere,147,True
+somethingv2,train,77825,data/Something_data/videos/77825.webm,Dropping [something] next to [something],Dropping something next to something,11,True
+somethingv2,train,185176,data/Something_data/videos/185176.webm,Dropping [something] next to [something],Dropping something next to something,11,True
+somethingv2,train,166537,data/Something_data/videos/166537.webm,Dropping [something] next to [something],Dropping something next to something,11,True
+somethingv2,validation,46965,data/Something_data/videos/46965.webm,Dropping [something] next to [something],Dropping something next to something,11,True
+somethingv2,train,91412,data/Something_data/videos/91412.webm,Dropping [something] next to [something],Dropping something next to something,11,True
+somethingv2,validation,163830,data/Something_data/videos/163830.webm,Rolling [something] on a flat surface,Rolling something on a flat surface,122,True
+somethingv2,train,42156,data/Something_data/videos/42156.webm,Rolling [something] on a flat surface,Rolling something on a flat surface,122,True
+somethingv2,train,147270,data/Something_data/videos/147270.webm,Rolling [something] on a flat surface,Rolling something on a flat surface,122,True
+somethingv2,train,214464,data/Something_data/videos/214464.webm,Rolling [something] on a flat surface,Rolling something on a flat surface,122,True
+somethingv2,train,85646,data/Something_data/videos/85646.webm,Rolling [something] on a flat surface,Rolling something on a flat surface,122,True
+somethingv2,train,53117,data/Something_data/videos/53117.webm,Spinning [something] so it continues spinning,Spinning something so it continues spinning,139,True
+somethingv2,validation,139908,data/Something_data/videos/139908.webm,Spinning [something] so it continues spinning,Spinning something so it continues spinning,139,True
+somethingv2,train,29531,data/Something_data/videos/29531.webm,Spinning [something] so it continues spinning,Spinning something so it continues spinning,139,True
+somethingv2,train,78605,data/Something_data/videos/78605.webm,Spinning [something] so it continues spinning,Spinning something so it continues spinning,139,True
+somethingv2,train,196528,data/Something_data/videos/196528.webm,Spinning [something] so it continues spinning,Spinning something so it continues spinning,139,True
+somethingv2,train,23543,data/Something_data/videos/23543.webm,Unfolding [something],Unfolding something,172,True
+somethingv2,train,113074,data/Something_data/videos/113074.webm,Unfolding [something],Unfolding something,172,True
+somethingv2,validation,56383,data/Something_data/videos/56383.webm,Unfolding [something],Unfolding something,172,True
+somethingv2,validation,211453,data/Something_data/videos/211453.webm,Unfolding [something],Unfolding something,172,True
+somethingv2,train,43461,data/Something_data/videos/43461.webm,Unfolding [something],Unfolding something,172,True
+somethingv2,train,26174,data/Something_data/videos/26174.webm,Pretending to squeeze [something],Pretending to squeeze something,80,True
+somethingv2,train,192435,data/Something_data/videos/192435.webm,Pretending to squeeze [something],Pretending to squeeze something,80,True
+somethingv2,train,39113,data/Something_data/videos/39113.webm,Pretending to squeeze [something],Pretending to squeeze something,80,True
+somethingv2,train,37142,data/Something_data/videos/37142.webm,Pretending to squeeze [something],Pretending to squeeze something,80,True
+somethingv2,train,42579,data/Something_data/videos/42579.webm,Pretending to squeeze [something],Pretending to squeeze something,80,True
+somethingv2,train,66434,data/Something_data/videos/66434.webm,"Trying to pour [something] into [something], but missing so it spills next to it","Trying to pour something into something, but missing so it spills next to it",163,True
+somethingv2,train,13599,data/Something_data/videos/13599.webm,"Trying to pour [something] into [something], but missing so it spills next to it","Trying to pour something into something, but missing so it spills next to it",163,True
+somethingv2,train,165416,data/Something_data/videos/165416.webm,"Trying to pour [something] into [something], but missing so it spills next to it","Trying to pour something into something, but missing so it spills next to it",163,True
+somethingv2,train,76526,data/Something_data/videos/76526.webm,"Trying to pour [something] into [something], but missing so it spills next to it","Trying to pour something into something, but missing so it spills next to it",163,True
+somethingv2,validation,21596,data/Something_data/videos/21596.webm,"Trying to pour [something] into [something], but missing so it spills next to it","Trying to pour something into something, but missing so it spills next to it",163,True
+somethingv2,train,213393,data/Something_data/videos/213393.webm,Pretending to close [something] without actually closing it,Pretending to close something without actually closing it,66,True
+somethingv2,train,129133,data/Something_data/videos/129133.webm,Pretending to close [something] without actually closing it,Pretending to close something without actually closing it,66,True
+somethingv2,train,49170,data/Something_data/videos/49170.webm,Pretending to close [something] without actually closing it,Pretending to close something without actually closing it,66,True
+somethingv2,train,78449,data/Something_data/videos/78449.webm,Pretending to close [something] without actually closing it,Pretending to close something without actually closing it,66,True
+somethingv2,validation,68181,data/Something_data/videos/68181.webm,Pretending to close [something] without actually closing it,Pretending to close something without actually closing it,66,True
+somethingv2,train,161060,data/Something_data/videos/161060.webm,Stacking [number of] [something],Stacking number of something,144,True
+somethingv2,validation,52285,data/Something_data/videos/52285.webm,Stacking [number of] [something],Stacking number of something,144,True
+somethingv2,train,152418,data/Something_data/videos/152418.webm,Stacking [number of] [something],Stacking number of something,144,True
+somethingv2,train,51399,data/Something_data/videos/51399.webm,Stacking [number of] [something],Stacking number of something,144,True
+somethingv2,train,98692,data/Something_data/videos/98692.webm,Stacking [number of] [something],Stacking number of something,144,True
+somethingv2,train,138492,data/Something_data/videos/138492.webm,Pretending to sprinkle air onto [something],Pretending to sprinkle air onto something,79,True
+somethingv2,train,195203,data/Something_data/videos/195203.webm,Pretending to sprinkle air onto [something],Pretending to sprinkle air onto something,79,True
+somethingv2,train,95429,data/Something_data/videos/95429.webm,Pretending to sprinkle air onto [something],Pretending to sprinkle air onto something,79,True
+somethingv2,validation,149825,data/Something_data/videos/149825.webm,Pretending to sprinkle air onto [something],Pretending to sprinkle air onto something,79,True
+somethingv2,train,150557,data/Something_data/videos/150557.webm,Pretending to sprinkle air onto [something],Pretending to sprinkle air onto something,79,True
+somethingv2,train,193486,data/Something_data/videos/193486.webm,Putting [number of] [something] onto [something],Putting number of something onto something,102,True
+somethingv2,train,74819,data/Something_data/videos/74819.webm,Putting [number of] [something] onto [something],Putting number of something onto something,102,True
+somethingv2,train,187198,data/Something_data/videos/187198.webm,Putting [number of] [something] onto [something],Putting number of something onto something,102,True
+somethingv2,train,36932,data/Something_data/videos/36932.webm,Putting [number of] [something] onto [something],Putting number of something onto something,102,True
+somethingv2,train,191896,data/Something_data/videos/191896.webm,Putting [number of] [something] onto [something],Putting number of something onto something,102,True
+somethingv2,train,69275,data/Something_data/videos/69275.webm,Pushing [something] so that it almost falls off but doesn't,Pushing something so that it almost falls off but doesn't,98,True
+somethingv2,train,77249,data/Something_data/videos/77249.webm,Pushing [something] so that it almost falls off but doesn't,Pushing something so that it almost falls off but doesn't,98,True
+somethingv2,train,174657,data/Something_data/videos/174657.webm,Pushing [something] so that it almost falls off but doesn't,Pushing something so that it almost falls off but doesn't,98,True
+somethingv2,train,49188,data/Something_data/videos/49188.webm,Pushing [something] so that it almost falls off but doesn't,Pushing something so that it almost falls off but doesn't,98,True
+somethingv2,train,73624,data/Something_data/videos/73624.webm,Pushing [something] so that it almost falls off but doesn't,Pushing something so that it almost falls off but doesn't,98,True
+somethingv2,train,194974,data/Something_data/videos/194974.webm,Putting [something] behind [something],Putting something behind something,104,True
+somethingv2,train,39140,data/Something_data/videos/39140.webm,Putting [something] behind [something],Putting something behind something,104,True
+somethingv2,validation,171041,data/Something_data/videos/171041.webm,Putting [something] behind [something],Putting something behind something,104,True
+somethingv2,train,153569,data/Something_data/videos/153569.webm,Putting [something] behind [something],Putting something behind something,104,True
+somethingv2,train,125412,data/Something_data/videos/125412.webm,Putting [something] behind [something],Putting something behind something,104,True
+somethingv2,train,35237,data/Something_data/videos/35237.webm,Moving [something] and [something] so they collide with each other,Moving something and something so they collide with each other,38,True
+somethingv2,train,63891,data/Something_data/videos/63891.webm,Moving [something] and [something] so they collide with each other,Moving something and something so they collide with each other,38,True
+somethingv2,train,113872,data/Something_data/videos/113872.webm,Moving [something] and [something] so they collide with each other,Moving something and something so they collide with each other,38,True
+somethingv2,train,25108,data/Something_data/videos/25108.webm,Moving [something] and [something] so they collide with each other,Moving something and something so they collide with each other,38,True
+somethingv2,train,164373,data/Something_data/videos/164373.webm,Moving [something] and [something] so they collide with each other,Moving something and something so they collide with each other,38,True
+somethingv2,train,6362,data/Something_data/videos/6362.webm,Pouring [something] out of [something],Pouring something out of something,62,True
+somethingv2,train,206468,data/Something_data/videos/206468.webm,Pouring [something] out of [something],Pouring something out of something,62,True
+somethingv2,train,198637,data/Something_data/videos/198637.webm,Pouring [something] out of [something],Pouring something out of something,62,True
+somethingv2,train,27493,data/Something_data/videos/27493.webm,Pouring [something] out of [something],Pouring something out of something,62,True
+somethingv2,validation,21401,data/Something_data/videos/21401.webm,Pouring [something] out of [something],Pouring something out of something,62,True
+somethingv2,train,184902,data/Something_data/videos/184902.webm,Showing [something] to the camera,Showing something to the camera,128,True
+somethingv2,train,81512,data/Something_data/videos/81512.webm,Showing [something] to the camera,Showing something to the camera,128,True
+somethingv2,train,217919,data/Something_data/videos/217919.webm,Showing [something] to the camera,Showing something to the camera,128,True
+somethingv2,train,133601,data/Something_data/videos/133601.webm,Showing [something] to the camera,Showing something to the camera,128,True
+somethingv2,train,21116,data/Something_data/videos/21116.webm,Showing [something] to the camera,Showing something to the camera,128,True
+somethingv2,train,57931,data/Something_data/videos/57931.webm,Throwing [something] onto a surface,Throwing something onto a surface,155,True
+somethingv2,train,25881,data/Something_data/videos/25881.webm,Throwing [something] onto a surface,Throwing something onto a surface,155,True
+somethingv2,train,73698,data/Something_data/videos/73698.webm,Throwing [something] onto a surface,Throwing something onto a surface,155,True
+somethingv2,validation,48289,data/Something_data/videos/48289.webm,Throwing [something] onto a surface,Throwing something onto a surface,155,True
+somethingv2,train,192257,data/Something_data/videos/192257.webm,Throwing [something] onto a surface,Throwing something onto a surface,155,True
+somethingv2,train,165574,data/Something_data/videos/165574.webm,Pretending to put [something] underneath [something],Pretending to put something underneath something,76,True
+somethingv2,train,195557,data/Something_data/videos/195557.webm,Pretending to put [something] underneath [something],Pretending to put something underneath something,76,True
+somethingv2,train,135374,data/Something_data/videos/135374.webm,Pretending to put [something] underneath [something],Pretending to put something underneath something,76,True
+somethingv2,train,128883,data/Something_data/videos/128883.webm,Pretending to put [something] underneath [something],Pretending to put something underneath something,76,True
+somethingv2,train,141540,data/Something_data/videos/141540.webm,Pretending to put [something] underneath [something],Pretending to put something underneath something,76,True
+somethingv2,validation,38331,data/Something_data/videos/38331.webm,Poking a hole into [something soft],Poking a hole into something soft,52,True
+somethingv2,validation,24959,data/Something_data/videos/24959.webm,Poking a hole into [something soft],Poking a hole into something soft,52,True
+somethingv2,train,48831,data/Something_data/videos/48831.webm,Poking a hole into [something soft],Poking a hole into something soft,52,True
+somethingv2,train,151189,data/Something_data/videos/151189.webm,Poking a hole into [something soft],Poking a hole into something soft,52,True
+somethingv2,train,54199,data/Something_data/videos/54199.webm,Poking a hole into [something soft],Poking a hole into something soft,52,True
+somethingv2,train,100126,data/Something_data/videos/100126.webm,Pouring [something] into [something] until it overflows,Pouring something into something until it overflows,60,True
+somethingv2,train,150632,data/Something_data/videos/150632.webm,Pouring [something] into [something] until it overflows,Pouring something into something until it overflows,60,True
+somethingv2,validation,44585,data/Something_data/videos/44585.webm,Pouring [something] into [something] until it overflows,Pouring something into something until it overflows,60,True
+somethingv2,train,143803,data/Something_data/videos/143803.webm,Pouring [something] into [something] until it overflows,Pouring something into something until it overflows,60,True
+somethingv2,train,187177,data/Something_data/videos/187177.webm,Pouring [something] into [something] until it overflows,Pouring something into something until it overflows,60,True
+somethingv2,train,65264,data/Something_data/videos/65264.webm,"Letting [something] roll up a slanted surface, so it rolls back down","Letting something roll up a slanted surface, so it rolls back down",24,True
+somethingv2,train,5131,data/Something_data/videos/5131.webm,"Letting [something] roll up a slanted surface, so it rolls back down","Letting something roll up a slanted surface, so it rolls back down",24,True
+somethingv2,train,78179,data/Something_data/videos/78179.webm,"Letting [something] roll up a slanted surface, so it rolls back down","Letting something roll up a slanted surface, so it rolls back down",24,True
+somethingv2,train,12606,data/Something_data/videos/12606.webm,"Letting [something] roll up a slanted surface, so it rolls back down","Letting something roll up a slanted surface, so it rolls back down",24,True
+somethingv2,validation,57786,data/Something_data/videos/57786.webm,"Letting [something] roll up a slanted surface, so it rolls back down","Letting something roll up a slanted surface, so it rolls back down",24,True
+somethingv2,train,215049,data/Something_data/videos/215049.webm,Turning the camera left while filming [something],Turning the camera left while filming something,166,True
+somethingv2,validation,72541,data/Something_data/videos/72541.webm,Turning the camera left while filming [something],Turning the camera left while filming something,166,True
+somethingv2,train,157395,data/Something_data/videos/157395.webm,Turning the camera left while filming [something],Turning the camera left while filming something,166,True
+somethingv2,train,22939,data/Something_data/videos/22939.webm,Turning the camera left while filming [something],Turning the camera left while filming something,166,True
+somethingv2,validation,6785,data/Something_data/videos/6785.webm,Turning the camera left while filming [something],Turning the camera left while filming something,166,True
+somethingv2,train,40482,data/Something_data/videos/40482.webm,Pretending to put [something] next to [something],Pretending to put something next to something,73,True
+somethingv2,train,157501,data/Something_data/videos/157501.webm,Pretending to put [something] next to [something],Pretending to put something next to something,73,True
+somethingv2,train,12953,data/Something_data/videos/12953.webm,Pretending to put [something] next to [something],Pretending to put something next to something,73,True
+somethingv2,train,187906,data/Something_data/videos/187906.webm,Pretending to put [something] next to [something],Pretending to put something next to something,73,True
+somethingv2,train,60821,data/Something_data/videos/60821.webm,Pretending to put [something] next to [something],Pretending to put something next to something,73,True
+somethingv2,train,187121,data/Something_data/videos/187121.webm,Poking [something] so it slightly moves,Poking something so it slightly moves,55,True
+somethingv2,train,64479,data/Something_data/videos/64479.webm,Poking [something] so it slightly moves,Poking something so it slightly moves,55,True
+somethingv2,train,181888,data/Something_data/videos/181888.webm,Poking [something] so it slightly moves,Poking something so it slightly moves,55,True
+somethingv2,train,188315,data/Something_data/videos/188315.webm,Poking [something] so it slightly moves,Poking something so it slightly moves,55,True
+somethingv2,train,213163,data/Something_data/videos/213163.webm,Poking [something] so it slightly moves,Poking something so it slightly moves,55,True
+somethingv2,train,48011,data/Something_data/videos/48011.webm,Turning the camera downwards while filming [something],Turning the camera downwards while filming something,165,True
+somethingv2,train,30712,data/Something_data/videos/30712.webm,Turning the camera downwards while filming [something],Turning the camera downwards while filming something,165,True
+somethingv2,train,156645,data/Something_data/videos/156645.webm,Turning the camera downwards while filming [something],Turning the camera downwards while filming something,165,True
+somethingv2,train,23761,data/Something_data/videos/23761.webm,Turning the camera downwards while filming [something],Turning the camera downwards while filming something,165,True
+somethingv2,train,142146,data/Something_data/videos/142146.webm,Turning the camera downwards while filming [something],Turning the camera downwards while filming something,165,True
+somethingv2,train,129303,data/Something_data/videos/129303.webm,"Putting [something] that can't roll onto a slanted surface, so it stays where it is","Putting something that can't roll onto a slanted surface, so it stays where it is",116,True
+somethingv2,train,63448,data/Something_data/videos/63448.webm,"Putting [something] that can't roll onto a slanted surface, so it stays where it is","Putting something that can't roll onto a slanted surface, so it stays where it is",116,True
+somethingv2,train,170170,data/Something_data/videos/170170.webm,"Putting [something] that can't roll onto a slanted surface, so it stays where it is","Putting something that can't roll onto a slanted surface, so it stays where it is",116,True
+somethingv2,train,174294,data/Something_data/videos/174294.webm,"Putting [something] that can't roll onto a slanted surface, so it stays where it is","Putting something that can't roll onto a slanted surface, so it stays where it is",116,True
+somethingv2,train,48086,data/Something_data/videos/48086.webm,"Putting [something] that can't roll onto a slanted surface, so it stays where it is","Putting something that can't roll onto a slanted surface, so it stays where it is",116,True
+somethingv2,train,137370,data/Something_data/videos/137370.webm,Pulling [something] onto [something],Pulling something onto something,88,True
+somethingv2,train,30357,data/Something_data/videos/30357.webm,Pulling [something] onto [something],Pulling something onto something,88,True
+somethingv2,train,82491,data/Something_data/videos/82491.webm,Pulling [something] onto [something],Pulling something onto something,88,True
+somethingv2,train,141510,data/Something_data/videos/141510.webm,Pulling [something] onto [something],Pulling something onto something,88,True
+somethingv2,train,129097,data/Something_data/videos/129097.webm,Pulling [something] onto [something],Pulling something onto something,88,True
+somethingv2,train,70773,data/Something_data/videos/70773.webm,Pretending to poke [something],Pretending to poke something,69,True
+somethingv2,validation,209538,data/Something_data/videos/209538.webm,Pretending to poke [something],Pretending to poke something,69,True
+somethingv2,train,19707,data/Something_data/videos/19707.webm,Pretending to poke [something],Pretending to poke something,69,True
+somethingv2,train,112925,data/Something_data/videos/112925.webm,Pretending to poke [something],Pretending to poke something,69,True
+somethingv2,train,113552,data/Something_data/videos/113552.webm,Pretending to poke [something],Pretending to poke something,69,True
+somethingv2,train,170519,data/Something_data/videos/170519.webm,Letting [something] roll down a slanted surface,Letting something roll down a slanted surface,23,True
+somethingv2,train,141541,data/Something_data/videos/141541.webm,Letting [something] roll down a slanted surface,Letting something roll down a slanted surface,23,True
+somethingv2,validation,22511,data/Something_data/videos/22511.webm,Letting [something] roll down a slanted surface,Letting something roll down a slanted surface,23,True
+somethingv2,train,183448,data/Something_data/videos/183448.webm,Letting [something] roll down a slanted surface,Letting something roll down a slanted surface,23,True
+somethingv2,train,39436,data/Something_data/videos/39436.webm,Letting [something] roll down a slanted surface,Letting something roll down a slanted surface,23,True
+somethingv2,train,79581,data/Something_data/videos/79581.webm,Holding [something] behind [something],Holding something behind something,17,True
+somethingv2,validation,102063,data/Something_data/videos/102063.webm,Holding [something] behind [something],Holding something behind something,17,True
+somethingv2,train,166194,data/Something_data/videos/166194.webm,Holding [something] behind [something],Holding something behind something,17,True
+somethingv2,train,33116,data/Something_data/videos/33116.webm,Holding [something] behind [something],Holding something behind something,17,True
+somethingv2,train,199103,data/Something_data/videos/199103.webm,Holding [something] behind [something],Holding something behind something,17,True
+somethingv2,train,94644,data/Something_data/videos/94644.webm,Pulling two ends of [something] but nothing happens,Pulling two ends of something but nothing happens,90,True
+somethingv2,train,182026,data/Something_data/videos/182026.webm,Pulling two ends of [something] but nothing happens,Pulling two ends of something but nothing happens,90,True
+somethingv2,train,67831,data/Something_data/videos/67831.webm,Pulling two ends of [something] but nothing happens,Pulling two ends of something but nothing happens,90,True
+somethingv2,train,127160,data/Something_data/videos/127160.webm,Pulling two ends of [something] but nothing happens,Pulling two ends of something but nothing happens,90,True
+somethingv2,train,186110,data/Something_data/videos/186110.webm,Pulling two ends of [something] but nothing happens,Pulling two ends of something but nothing happens,90,True
+somethingv2,train,44117,data/Something_data/videos/44117.webm,Closing [something],Closing something,5,True
+somethingv2,train,146168,data/Something_data/videos/146168.webm,Closing [something],Closing something,5,True
+somethingv2,train,95819,data/Something_data/videos/95819.webm,Closing [something],Closing something,5,True
+somethingv2,train,76140,data/Something_data/videos/76140.webm,Closing [something],Closing something,5,True
+somethingv2,validation,206705,data/Something_data/videos/206705.webm,Closing [something],Closing something,5,True
+somethingv2,train,214640,data/Something_data/videos/214640.webm,"Putting [something] that can't roll onto a slanted surface, so it slides down","Putting something that can't roll onto a slanted surface, so it slides down",115,True
+somethingv2,train,171732,data/Something_data/videos/171732.webm,"Putting [something] that can't roll onto a slanted surface, so it slides down","Putting something that can't roll onto a slanted surface, so it slides down",115,True
+somethingv2,validation,211490,data/Something_data/videos/211490.webm,"Putting [something] that can't roll onto a slanted surface, so it slides down","Putting something that can't roll onto a slanted surface, so it slides down",115,True
+somethingv2,validation,76808,data/Something_data/videos/76808.webm,"Putting [something] that can't roll onto a slanted surface, so it slides down","Putting something that can't roll onto a slanted surface, so it slides down",115,True
+somethingv2,validation,114323,data/Something_data/videos/114323.webm,"Putting [something] that can't roll onto a slanted surface, so it slides down","Putting something that can't roll onto a slanted surface, so it slides down",115,True
+somethingv2,train,94181,data/Something_data/videos/94181.webm,Trying but failing to attach [something] to [something] because it doesn't stick,Trying but failing to attach something to something because it doesn't stick,161,True
+somethingv2,train,117089,data/Something_data/videos/117089.webm,Trying but failing to attach [something] to [something] because it doesn't stick,Trying but failing to attach something to something because it doesn't stick,161,True
+somethingv2,train,15155,data/Something_data/videos/15155.webm,Trying but failing to attach [something] to [something] because it doesn't stick,Trying but failing to attach something to something because it doesn't stick,161,True
+somethingv2,train,6852,data/Something_data/videos/6852.webm,Trying but failing to attach [something] to [something] because it doesn't stick,Trying but failing to attach something to something because it doesn't stick,161,True
+somethingv2,train,214425,data/Something_data/videos/214425.webm,Trying but failing to attach [something] to [something] because it doesn't stick,Trying but failing to attach something to something because it doesn't stick,161,True
+somethingv2,train,207526,data/Something_data/videos/207526.webm,Pouring [something] into [something],Pouring something into something,59,True
+somethingv2,train,169233,data/Something_data/videos/169233.webm,Pouring [something] into [something],Pouring something into something,59,True
+somethingv2,train,136092,data/Something_data/videos/136092.webm,Pouring [something] into [something],Pouring something into something,59,True
+somethingv2,train,189876,data/Something_data/videos/189876.webm,Pouring [something] into [something],Pouring something into something,59,True
+somethingv2,train,134837,data/Something_data/videos/134837.webm,Pouring [something] into [something],Pouring something into something,59,True
+somethingv2,train,75883,data/Something_data/videos/75883.webm,Putting [something] on a flat surface without letting it roll,Putting something on a flat surface without letting it roll,108,True
+somethingv2,train,169358,data/Something_data/videos/169358.webm,Putting [something] on a flat surface without letting it roll,Putting something on a flat surface without letting it roll,108,True
+somethingv2,train,117163,data/Something_data/videos/117163.webm,Putting [something] on a flat surface without letting it roll,Putting something on a flat surface without letting it roll,108,True
+somethingv2,validation,21565,data/Something_data/videos/21565.webm,Putting [something] on a flat surface without letting it roll,Putting something on a flat surface without letting it roll,108,True
+somethingv2,validation,106279,data/Something_data/videos/106279.webm,Putting [something] on a flat surface without letting it roll,Putting something on a flat surface without letting it roll,108,True
+somethingv2,train,58745,data/Something_data/videos/58745.webm,Pretending or trying and failing to twist [something],Pretending or trying and failing to twist something,64,True
+somethingv2,train,187643,data/Something_data/videos/187643.webm,Pretending or trying and failing to twist [something],Pretending or trying and failing to twist something,64,True
+somethingv2,validation,199010,data/Something_data/videos/199010.webm,Pretending or trying and failing to twist [something],Pretending or trying and failing to twist something,64,True
+somethingv2,train,52567,data/Something_data/videos/52567.webm,Pretending or trying and failing to twist [something],Pretending or trying and failing to twist something,64,True
+somethingv2,train,107159,data/Something_data/videos/107159.webm,Pretending or trying and failing to twist [something],Pretending or trying and failing to twist something,64,True
+somethingv2,train,33736,data/Something_data/videos/33736.webm,Pouring [something] onto [something],Pouring something onto something,61,True
+somethingv2,train,134422,data/Something_data/videos/134422.webm,Pouring [something] onto [something],Pouring something onto something,61,True
+somethingv2,train,218981,data/Something_data/videos/218981.webm,Pouring [something] onto [something],Pouring something onto something,61,True
+somethingv2,train,60010,data/Something_data/videos/60010.webm,Pouring [something] onto [something],Pouring something onto something,61,True
+somethingv2,train,205484,data/Something_data/videos/205484.webm,Pouring [something] onto [something],Pouring something onto something,61,True
+somethingv2,train,109772,data/Something_data/videos/109772.webm,Spilling [something] next to [something],Spilling something next to something,137,True
+somethingv2,validation,209202,data/Something_data/videos/209202.webm,Spilling [something] next to [something],Spilling something next to something,137,True
+somethingv2,train,43471,data/Something_data/videos/43471.webm,Spilling [something] next to [something],Spilling something next to something,137,True
+somethingv2,validation,212475,data/Something_data/videos/212475.webm,Spilling [something] next to [something],Spilling something next to something,137,True
+somethingv2,train,61304,data/Something_data/videos/61304.webm,Spilling [something] next to [something],Spilling something next to something,137,True
+somethingv2,train,105149,data/Something_data/videos/105149.webm,"Tipping [something] with [something in it] over, so [something in it] falls out","Tipping something with something in it over, so something in it falls out",159,True
+somethingv2,train,12377,data/Something_data/videos/12377.webm,"Tipping [something] with [something in it] over, so [something in it] falls out","Tipping something with something in it over, so something in it falls out",159,True
+somethingv2,train,135424,data/Something_data/videos/135424.webm,"Tipping [something] with [something in it] over, so [something in it] falls out","Tipping something with something in it over, so something in it falls out",159,True
+somethingv2,train,202821,data/Something_data/videos/202821.webm,"Tipping [something] with [something in it] over, so [something in it] falls out","Tipping something with something in it over, so something in it falls out",159,True
+somethingv2,train,115033,data/Something_data/videos/115033.webm,"Tipping [something] with [something in it] over, so [something in it] falls out","Tipping something with something in it over, so something in it falls out",159,True
+somethingv2,validation,9895,data/Something_data/videos/9895.webm,Wiping [something] off of [something],Wiping something off of something,173,True
+somethingv2,train,81726,data/Something_data/videos/81726.webm,Wiping [something] off of [something],Wiping something off of something,173,True
+somethingv2,train,172059,data/Something_data/videos/172059.webm,Wiping [something] off of [something],Wiping something off of something,173,True
+somethingv2,train,116858,data/Something_data/videos/116858.webm,Wiping [something] off of [something],Wiping something off of something,173,True
+somethingv2,validation,144967,data/Something_data/videos/144967.webm,Wiping [something] off of [something],Wiping something off of something,173,True
+somethingv2,train,28924,data/Something_data/videos/28924.webm,Digging [something] out of [something],Digging something out of something,7,True
+somethingv2,validation,199147,data/Something_data/videos/199147.webm,Digging [something] out of [something],Digging something out of something,7,True
+somethingv2,train,152341,data/Something_data/videos/152341.webm,Digging [something] out of [something],Digging something out of something,7,True
+somethingv2,train,169738,data/Something_data/videos/169738.webm,Digging [something] out of [something],Digging something out of something,7,True
+somethingv2,train,118401,data/Something_data/videos/118401.webm,Digging [something] out of [something],Digging something out of something,7,True
+somethingv2,train,133851,data/Something_data/videos/133851.webm,Spilling [something] behind [something],Spilling something behind something,136,True
+somethingv2,train,28602,data/Something_data/videos/28602.webm,Spilling [something] behind [something],Spilling something behind something,136,True
+somethingv2,train,100894,data/Something_data/videos/100894.webm,Spilling [something] behind [something],Spilling something behind something,136,True
+somethingv2,train,162555,data/Something_data/videos/162555.webm,Spilling [something] behind [something],Spilling something behind something,136,True
+somethingv2,train,2229,data/Something_data/videos/2229.webm,Spilling [something] behind [something],Spilling something behind something,136,True
+somethingv2,validation,136669,data/Something_data/videos/136669.webm,Plugging [something] into [something] but pulling it right out as you remove your hand,Plugging something into something but pulling it right out as you remove your hand,50,True
+somethingv2,train,123943,data/Something_data/videos/123943.webm,Plugging [something] into [something] but pulling it right out as you remove your hand,Plugging something into something but pulling it right out as you remove your hand,50,True
+somethingv2,train,73830,data/Something_data/videos/73830.webm,Plugging [something] into [something] but pulling it right out as you remove your hand,Plugging something into something but pulling it right out as you remove your hand,50,True
+somethingv2,validation,108687,data/Something_data/videos/108687.webm,Plugging [something] into [something] but pulling it right out as you remove your hand,Plugging something into something but pulling it right out as you remove your hand,50,True
+somethingv2,validation,195308,data/Something_data/videos/195308.webm,Plugging [something] into [something] but pulling it right out as you remove your hand,Plugging something into something but pulling it right out as you remove your hand,50,True
+somethingv2,train,53975,data/Something_data/videos/53975.webm,Lifting a surface with [something] on it until it starts sliding down,Lifting a surface with something on it until it starts sliding down,26,True
+somethingv2,train,40858,data/Something_data/videos/40858.webm,Lifting a surface with [something] on it until it starts sliding down,Lifting a surface with something on it until it starts sliding down,26,True
+somethingv2,train,56673,data/Something_data/videos/56673.webm,Lifting a surface with [something] on it until it starts sliding down,Lifting a surface with something on it until it starts sliding down,26,True
+somethingv2,train,190751,data/Something_data/videos/190751.webm,Lifting a surface with [something] on it until it starts sliding down,Lifting a surface with something on it until it starts sliding down,26,True
+somethingv2,train,61753,data/Something_data/videos/61753.webm,Lifting a surface with [something] on it until it starts sliding down,Lifting a surface with something on it until it starts sliding down,26,True
+somethingv2,train,108797,data/Something_data/videos/108797.webm,Pushing [something] onto [something],Pushing something onto something,96,True
+somethingv2,train,22581,data/Something_data/videos/22581.webm,Pushing [something] onto [something],Pushing something onto something,96,True
+somethingv2,validation,73278,data/Something_data/videos/73278.webm,Pushing [something] onto [something],Pushing something onto something,96,True
+somethingv2,train,151552,data/Something_data/videos/151552.webm,Pushing [something] onto [something],Pushing something onto something,96,True
+somethingv2,train,188340,data/Something_data/videos/188340.webm,Pushing [something] onto [something],Pushing something onto something,96,True
+somethingv2,train,6666,data/Something_data/videos/6666.webm,Pulling [something] from behind of [something],Pulling something from behind of something,85,True
+somethingv2,train,157461,data/Something_data/videos/157461.webm,Pulling [something] from behind of [something],Pulling something from behind of something,85,True
+somethingv2,train,131076,data/Something_data/videos/131076.webm,Pulling [something] from behind of [something],Pulling something from behind of something,85,True
+somethingv2,train,155207,data/Something_data/videos/155207.webm,Pulling [something] from behind of [something],Pulling something from behind of something,85,True
+somethingv2,train,123720,data/Something_data/videos/123720.webm,Pulling [something] from behind of [something],Pulling something from behind of something,85,True
+somethingv2,validation,161017,data/Something_data/videos/161017.webm,"Pretending to pour [something] out of [something], but [something] is empty","Pretending to pour something out of something, but something is empty",70,True
+somethingv2,train,196337,data/Something_data/videos/196337.webm,"Pretending to pour [something] out of [something], but [something] is empty","Pretending to pour something out of something, but something is empty",70,True
+somethingv2,train,85642,data/Something_data/videos/85642.webm,"Pretending to pour [something] out of [something], but [something] is empty","Pretending to pour something out of something, but something is empty",70,True
+somethingv2,validation,193283,data/Something_data/videos/193283.webm,"Pretending to pour [something] out of [something], but [something] is empty","Pretending to pour something out of something, but something is empty",70,True
+somethingv2,train,55009,data/Something_data/videos/55009.webm,"Pretending to pour [something] out of [something], but [something] is empty","Pretending to pour something out of something, but something is empty",70,True
+somethingv2,validation,32433,data/Something_data/videos/32433.webm,Pretending or failing to wipe [something] off of [something],Pretending or failing to wipe something off of something,63,True
+somethingv2,train,35806,data/Something_data/videos/35806.webm,Pretending or failing to wipe [something] off of [something],Pretending or failing to wipe something off of something,63,True
+somethingv2,train,3930,data/Something_data/videos/3930.webm,Pretending or failing to wipe [something] off of [something],Pretending or failing to wipe something off of something,63,True
+somethingv2,train,63119,data/Something_data/videos/63119.webm,Pretending or failing to wipe [something] off of [something],Pretending or failing to wipe something off of something,63,True
+somethingv2,validation,123372,data/Something_data/videos/123372.webm,Pretending or failing to wipe [something] off of [something],Pretending or failing to wipe something off of something,63,True
+somethingv2,validation,47061,data/Something_data/videos/47061.webm,Pulling two ends of [something] so that it separates into two pieces,Pulling two ends of something so that it separates into two pieces,92,True
+somethingv2,train,19060,data/Something_data/videos/19060.webm,Pulling two ends of [something] so that it separates into two pieces,Pulling two ends of something so that it separates into two pieces,92,True
+somethingv2,train,121020,data/Something_data/videos/121020.webm,Pulling two ends of [something] so that it separates into two pieces,Pulling two ends of something so that it separates into two pieces,92,True
+somethingv2,validation,98420,data/Something_data/videos/98420.webm,Pulling two ends of [something] so that it separates into two pieces,Pulling two ends of something so that it separates into two pieces,92,True
+somethingv2,train,195198,data/Something_data/videos/195198.webm,Pulling two ends of [something] so that it separates into two pieces,Pulling two ends of something so that it separates into two pieces,92,True
+somethingv2,train,132134,data/Something_data/videos/132134.webm,Turning the camera right while filming [something],Turning the camera right while filming something,167,True
+somethingv2,train,72354,data/Something_data/videos/72354.webm,Turning the camera right while filming [something],Turning the camera right while filming something,167,True
+somethingv2,train,40082,data/Something_data/videos/40082.webm,Turning the camera right while filming [something],Turning the camera right while filming something,167,True
+somethingv2,train,76523,data/Something_data/videos/76523.webm,Turning the camera right while filming [something],Turning the camera right while filming something,167,True
+somethingv2,train,185548,data/Something_data/videos/185548.webm,Turning the camera right while filming [something],Turning the camera right while filming something,167,True
+somethingv2,train,209580,data/Something_data/videos/209580.webm,Tilting [something] with [something] on it slightly so it doesn't fall down,Tilting something with something on it slightly so it doesn't fall down,156,True
+somethingv2,train,57665,data/Something_data/videos/57665.webm,Tilting [something] with [something] on it slightly so it doesn't fall down,Tilting something with something on it slightly so it doesn't fall down,156,True
+somethingv2,train,49962,data/Something_data/videos/49962.webm,Tilting [something] with [something] on it slightly so it doesn't fall down,Tilting something with something on it slightly so it doesn't fall down,156,True
+somethingv2,train,28996,data/Something_data/videos/28996.webm,Tilting [something] with [something] on it slightly so it doesn't fall down,Tilting something with something on it slightly so it doesn't fall down,156,True
+somethingv2,train,90833,data/Something_data/videos/90833.webm,Tilting [something] with [something] on it slightly so it doesn't fall down,Tilting something with something on it slightly so it doesn't fall down,156,True
+somethingv2,train,130234,data/Something_data/videos/130234.webm,[Something] colliding with [something] and both come to a halt,Something colliding with something and both come to a halt,133,True
+somethingv2,train,175246,data/Something_data/videos/175246.webm,[Something] colliding with [something] and both come to a halt,Something colliding with something and both come to a halt,133,True
+somethingv2,validation,133030,data/Something_data/videos/133030.webm,[Something] colliding with [something] and both come to a halt,Something colliding with something and both come to a halt,133,True
+somethingv2,train,29818,data/Something_data/videos/29818.webm,[Something] colliding with [something] and both come to a halt,Something colliding with something and both come to a halt,133,True
+somethingv2,train,191674,data/Something_data/videos/191674.webm,[Something] colliding with [something] and both come to a halt,Something colliding with something and both come to a halt,133,True
+somethingv2,train,189505,data/Something_data/videos/189505.webm,"Laying [something] on the table on its side, not upright","Laying something on the table on its side, not upright",21,True
+somethingv2,train,117150,data/Something_data/videos/117150.webm,"Laying [something] on the table on its side, not upright","Laying something on the table on its side, not upright",21,True
+somethingv2,train,147705,data/Something_data/videos/147705.webm,"Laying [something] on the table on its side, not upright","Laying something on the table on its side, not upright",21,True
+somethingv2,train,33093,data/Something_data/videos/33093.webm,"Laying [something] on the table on its side, not upright","Laying something on the table on its side, not upright",21,True
+somethingv2,train,69889,data/Something_data/videos/69889.webm,"Laying [something] on the table on its side, not upright","Laying something on the table on its side, not upright",21,True
+somethingv2,train,205072,data/Something_data/videos/205072.webm,Pretending to spread air onto [something],Pretending to spread air onto something,78,True
+somethingv2,train,176534,data/Something_data/videos/176534.webm,Pretending to spread air onto [something],Pretending to spread air onto something,78,True
+somethingv2,train,206513,data/Something_data/videos/206513.webm,Pretending to spread air onto [something],Pretending to spread air onto something,78,True
+somethingv2,train,49871,data/Something_data/videos/49871.webm,Pretending to spread air onto [something],Pretending to spread air onto something,78,True
+somethingv2,train,124768,data/Something_data/videos/124768.webm,Pretending to spread air onto [something],Pretending to spread air onto something,78,True
+somethingv2,validation,214306,data/Something_data/videos/214306.webm,Poking a hole into [some substance],Poking a hole into some substance,51,True
+somethingv2,train,117432,data/Something_data/videos/117432.webm,Poking a hole into [some substance],Poking a hole into some substance,51,True
+somethingv2,train,107183,data/Something_data/videos/107183.webm,Poking a hole into [some substance],Poking a hole into some substance,51,True
+somethingv2,train,143588,data/Something_data/videos/143588.webm,Poking a hole into [some substance],Poking a hole into some substance,51,True
+somethingv2,validation,95695,data/Something_data/videos/95695.webm,Poking a hole into [some substance],Poking a hole into some substance,51,True
+somethingv2,train,35668,data/Something_data/videos/35668.webm,Poking a stack of [something] so the stack collapses,Poking a stack of something so the stack collapses,53,True
+somethingv2,train,67875,data/Something_data/videos/67875.webm,Poking a stack of [something] so the stack collapses,Poking a stack of something so the stack collapses,53,True
+somethingv2,train,28483,data/Something_data/videos/28483.webm,Poking a stack of [something] so the stack collapses,Poking a stack of something so the stack collapses,53,True
+somethingv2,train,10626,data/Something_data/videos/10626.webm,Poking a stack of [something] so the stack collapses,Poking a stack of something so the stack collapses,53,True
+somethingv2,train,200392,data/Something_data/videos/200392.webm,Poking a stack of [something] so the stack collapses,Poking a stack of something so the stack collapses,53,True
+somethingv2,train,116569,data/Something_data/videos/116569.webm,Poking [something] so that it spins around,Poking something so that it spins around,58,True
+somethingv2,train,155342,data/Something_data/videos/155342.webm,Poking [something] so that it spins around,Poking something so that it spins around,58,True
+somethingv2,train,210534,data/Something_data/videos/210534.webm,Poking [something] so that it spins around,Poking something so that it spins around,58,True
+somethingv2,train,203359,data/Something_data/videos/203359.webm,Poking [something] so that it spins around,Poking something so that it spins around,58,True
+somethingv2,train,101970,data/Something_data/videos/101970.webm,Poking [something] so that it spins around,Poking something so that it spins around,58,True
