@@ -324,7 +324,7 @@ def _flush_batch(
     logits_dir,
 ) -> None:
     t_infer = time.perf_counter()
-    inputs = processor(batch_frames, return_tensors="pt").to(device_obj)
+    inputs = _move_batch_to_device(processor(batch_frames, return_tensors="pt"), device_obj)
     with torch.amp.autocast(device_type=device_obj.type, enabled=device_obj.type == "cuda"):
         logits = model(**inputs).logits
     inference_time = time.perf_counter() - t_infer
@@ -370,6 +370,14 @@ def _flush_batch(
     del inputs, logits, probs, topk
     if device_obj.type == "cuda":
         torch.cuda.empty_cache()
+
+
+def _move_batch_to_device(inputs, device_obj):
+    if hasattr(inputs, "to"):
+        return inputs.to(device_obj)
+    if isinstance(inputs, dict):
+        return {k: v.to(device_obj) if torch.is_tensor(v) else v for k, v in inputs.items()}
+    raise TypeError(f"Unsupported processor output type: {type(inputs)!r}")
 
 
 def summarize_results(results: pd.DataFrame) -> pd.DataFrame:
