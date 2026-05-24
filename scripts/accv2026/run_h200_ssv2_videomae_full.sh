@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -27,9 +27,9 @@ mkdir -p "${HF_HOME}" evaluations/accv2026/fixed_budget fine_tuned_models evalua
 echo "[h200-videomae-full] GPU status"
 nvidia-smi
 
-if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
+if [[ ! -f "${CHECKPOINT}/accv_meta.json" ]]; then
   echo "[h200-videomae-full] Training full SSV2 VideoMAE — ${EPOCHS} epochs"
-  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-1}" scripts/accv2026/train_something.py \
+  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-1}" scripts/accv2026/train_transformers.py \
     --ddp \
     --data-root data/Something_data \
     --model videomae \

@@ -14,12 +14,10 @@ from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
-SCRIPTS = ROOT / "scripts" / "data_processing"
-for path in (SRC, SCRIPTS):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
-from model_factory import ModelFactory  # noqa: E402
+from info_rates.models.model_factory import ModelFactory  # noqa: E402
 from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results  # noqa: E402
 from info_rates.models.torchvision_video import load_torchvision_video_checkpoint  # noqa: E402
 from info_rates.models.slowfast_video import load_slowfast_checkpoint  # noqa: E402

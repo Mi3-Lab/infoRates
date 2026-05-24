@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -29,9 +29,9 @@ SUMMARY="${OUT_DIR}/somethingv2_validation_accv2026_timesformer_ssv2_10k_e1_a100
 echo "[a100-timesformer-pilot] GPU status"
 nvidia-smi
 
-if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
+if [[ ! -f "${CHECKPOINT}/accv_meta.json" ]]; then
   echo "[a100-timesformer-pilot] Training TimeSformer SSV2 pilot with 2-GPU DDP"
-  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/accv2026/train_something.py \
+  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/accv2026/train_transformers.py \
     --ddp \
     --data-root data/Something_data \
     --model timesformer \

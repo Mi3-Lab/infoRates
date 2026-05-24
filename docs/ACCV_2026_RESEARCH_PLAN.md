@@ -1,613 +1,447 @@
-# ACCV 2026 Research Plan
-
-## Working Title
-
-**How Much Time Does an Action Model Need? Measuring and Adapting Temporal Evidence in Video Recognition**
-
-Alternative shorter title:
-
-**Temporal Evidence Allocation in Video Action Recognition**
-
-## Core Position
+# ACCV 2026 / WACV 2027 Research Plan
 
-The ECCV version was perceived as a useful empirical benchmark, but not as a sufficiently new research contribution. For ACCV, the work should remain grounded in benchmarking, but the benchmark cannot be the whole story.
+**Last updated:** 2026-05-24
 
-The new paper should ask a sharper question:
+---
 
-> Can video action models estimate how much temporal evidence they need before spending computation?
-
-This reframes the project from "temporal sampling affects accuracy" to "current action models are poorly calibrated under temporal evidence budgets, and we can measure and improve this behavior."
+## Title
 
-## Current Repository Audit
+**ACCV 2026 submission:**
+> *Temporal Demand-Aware Video Recognition: Estimation, Measurement, and Adaptive Frame Allocation*
 
-### Assets Already Available
+**WACV 2027 extended version:**
+> *Learning to Budget Temporal Evidence: Adaptive Frame Allocation for Efficient and Accurate Video Recognition*
 
-- Main ECCV submission PDF:
-  - `Mi3_Lab_Research_InfoRates.pdf`
-- Existing temporal sampling results:
-  - `evaluations/ucf101/*/*_temporal_sampling.csv`
-  - `evaluations/kinetics400/*/*_temporal_sampling.csv`
-- Per-class temporal sensitivity results:
-  - `evaluations/ucf101/*/*_per_class_testset.csv`
-  - `evaluations/kinetics400/*/*_per_class.csv`
-  - `evaluations/ucf101_per_class_sensitivity.csv`
-- Existing plots:
-  - `evaluations/comparative/`
-  - `docs/images/`
-  - `images/`
-- Existing analysis documentation:
-  - `docs/COMPREHENSIVE_RESULTS_ANALYSIS.md`
-  - `docs/SPECTRAL_ANALYSIS.md`
-  - `docs/TEMPORAL_ROBUSTNESS_AUGMENTATION.md`
-  - `docs/baseline_tra_comparison_data.md`
-  - `docs/DATA_ANOMALY_ANALYSIS.md`
-- Existing training and evaluation code:
-  - `scripts/data_processing/train_multimodel.py`
-  - `scripts/evaluation/run_eval_multimodel.py`
-  - `scripts/train_something.py`
-  - `scripts/train_with_tra.py`
-  - `src/info_rates/analysis/evaluate.py`
-  - `src/info_rates/analysis/spectral_analysis.py`
-  - `src/info_rates/training/temporal_augmentation.py`
-  - `src/info_rates/data/something.py`
+---
 
-### Datasets Present Locally
+## Why the ECCV Version Failed — and What We Fix
 
-- UCF101 is supported and has completed results.
-- Kinetics-400 is supported, but the current paper used a Kaggle K4TestSet-style test protocol. This should not be a central claim in the ACCV version unless the protocol is made canonical and reproducible.
-- HMDB51 data appears present locally and can be used as a small additional dataset if needed.
-- Something-Something V2 labels are present, and `scripts/train_something.py` exists. However, the local videos appear incomplete: there are about 18.6k video files against about 168k train annotations. This is useful for prototyping, but ACCV experiments need either a complete dataset or a clearly defined subset protocol.
+All three ECCV 2026 reviewers raised the same structural objections:
 
-### Current Technical Issues To Fix Before New Experiments
+| Reviewer | Criticism | Fix |
+|---|---|---|
+| All | Transformer-only model set | Add 3D CNNs (R3D-18, MC3-18, R(2+1)D-18) + SlowFast R50 → 7 models across 3 families |
+| All | UCF101/Kinetics are background-conditioned | SSV2 as primary dataset + Diving48 as secondary — both require temporal reasoning |
+| Multiple | TRA is just data augmentation, not a method | TRA becomes baseline; **adaptive allocation becomes the method** |
+| Multiple | Nyquist claim is overstated | Drop Nyquist language entirely; use "temporal demand" throughout |
+| Multiple | Findings are expected / not novel | New: cross-family architecture analysis + temporal demand estimator + adaptive method |
 
-1. **TRA result integrity**
-   - `docs/baseline_tra_comparison_data.md` and `docs/DATA_ANOMALY_ANALYSIS.md` already document suspicious duplicated values and post-fix degradation.
-   - TRA must be demoted from main contribution to baseline unless revalidated cleanly.
+The ECCV paper measured temporal sensitivity. The ACCV/WACV paper **exploits** it: if we can estimate a video's temporal demand before expensive inference, we can allocate frames adaptively — giving more frames to hard videos and fewer to easy ones — and achieve higher accuracy at the same or lower average compute.
 
-2. **Evaluation code consistency**
-   - There are multiple evaluation paths:
-     - `src/info_rates/analysis/evaluate.py`
-     - `src/info_rates/analysis/evaluate_fixed.py`
-     - `scripts/evaluation/run_eval_multimodel.py`
-   - The ACCV work needs one trusted evaluator with a tested sampling function.
+**This is the SOTA contribution: a method that beats fixed-budget uniform sampling in accuracy-per-frame efficiency.**
 
-3. **Sampling semantics**
-   - The old framing mixes coverage, stride, frame count, and temporal resolution.
-   - ACCV should define all sampling variables precisely:
-     - temporal coverage: duration/window fraction observed
-     - sampling stride: spacing between candidate frames
-     - inference budget: number of frames actually processed
-     - effective FPS: source FPS divided by stride, when FPS is known
+---
 
-4. **Latency and compute metrics**
-   - Current result summaries show `avg_time = 0.0000s`, so efficiency claims are not reliable.
-   - ACCV needs measured latency, decoded-frame count, processed-frame count, and ideally FLOPs or approximate model compute.
+## Core Thesis
 
-5. **Nyquist language**
-   - The ECCV paper overstates Nyquist-Shannon as a direct theory of action recognition.
-   - ACCV should use softer language:
-     - "frequency-inspired"
-     - "temporal evidence rate"
-     - "motion-bandwidth proxy"
-     - "consistent with undersampling effects"
+> Temporal evidence demand varies dramatically across video actions, yet every deployed video model assigns the same frame budget to every input. We show this is inefficient and demonstrate that a lightweight temporal demand estimator enables adaptive frame allocation that matches or exceeds uniform-sampling accuracy with systematically fewer frames on low-demand videos.
 
-## New Scientific Thesis
+Three verifiable claims form the paper:
 
-Uniform temporal sampling is a poor interface for video recognition because it assigns the same temporal budget to every video regardless of temporal demand. Some actions are recognizable from sparse context; others require dense temporal evidence. Existing models and sampling recipes do not explicitly measure this demand.
+1. **Demand varies**: Fixed-budget accuracy curves differ sharply across action categories and across architecture families — some models/actions need 32 frames, others converge at 4.
+2. **Demand is predictable**: Frame-difference energy computed from a cheap 4-frame preview correlates with the observed critical frame budget.
+3. **Prediction is actionable**: An adaptive sampler routing high-demand videos to large budgets and low-demand videos to small budgets achieves higher accuracy than any fixed budget at the same average frame count.
 
-The ACCV paper should introduce:
+---
 
-1. A benchmark protocol for temporal evidence allocation.
-2. Metrics that summarize the full accuracy-budget curve.
-3. A simple but strong adaptive sampling baseline that reallocates temporal budget per video.
-4. A broader evaluation on datasets that require true temporal reasoning.
+## Infrastructure Already Built
 
-## Proposed Contributions
+Everything below exists and has been committed:
 
-### Contribution 1: Temporal Evidence Benchmark
+| Component | Script / Module | Status |
+|---|---|---|
+| SSV2 data loader | `src/info_rates/data/something.py` | Ready |
+| Fixed-budget evaluator | `scripts/accv2026/02_run_fixed_budget_eval.py` | Ready |
+| Temporal metrics | `scripts/accv2026/05_compute_temporal_metrics.py` | Ready |
+| Manifest builder | `scripts/accv2026/01_build_manifests.py` | Ready |
+| 3D CNN models | `src/info_rates/models/torchvision_video.py` | Ready |
+| SlowFast model | `src/info_rates/models/slowfast_video.py` | Ready |
+| Training (torchvision) | `scripts/accv2026/train_torchvision.py` | Ready (bad-video filter + per-epoch checkpoints + resume) |
+| Training (SlowFast) | `scripts/accv2026/train_slowfast.py` | Ready (DDP _set_static_graph fix) |
+| Training (transformers) | `scripts/accv2026/train_timesformer.py` | Ready |
+| A100 pilot launcher | `scripts/accv2026/run_a100_ssv2_slowfast_pilot.sh` | Ready |
+| W&B live logging | All scripts use `WANDB_MODE=online` | Ready |
 
-Extend the current coverage-by-stride stress test into a benchmark that measures the full accuracy-budget behavior of action models.
+**Models being trained right now (or completed):**
+- R3D-18, MC3-18, R(2+1)D-18 on SSV2 (full, 5 epochs)
+- SlowFast R50 — pilot done (4.2% on 5k, expected; needs full training)
+- TimeSformer, VideoMAE, ViViT — pilots done; full training queued
 
-This should include:
+---
 
-- fixed uniform sampling baselines
-- coverage and stride sweeps
-- budgeted frame-count sweeps
-- per-class sensitivity
-- per-video temporal demand estimates
-- accuracy-compute trade-off curves
+## Three Contributions (Paper Structure)
 
-The benchmark remains part of the paper, but it becomes the measurement instrument, not the whole contribution.
+### Contribution 1 — Temporal Evidence Benchmark
 
-### Contribution 2: Temporal Robustness Metrics
+A reproducible, cross-architecture, cross-family benchmarking protocol for temporal evidence demand.
 
-Add reusable metrics that reviewers can understand quickly:
+**What we measure:**
 
-- **Temporal Robustness AUC**
-  - Area under the accuracy-vs-budget curve.
-  - Higher means the model remains accurate as temporal budget shrinks.
+- Fixed-budget accuracy at k ∈ {4, 8, 16, 32} frames per video
+- Accuracy-budget curve (7 models × 2 datasets)
+- **Temporal AUC**: area under accuracy-vs-budget curve (higher = temporally efficient)
+- **Critical Budget**: minimum k retaining ≥ 95% of dense accuracy
+- **Per-class Temporal Sensitivity**: variance in accuracy across budgets, per action class
 
-- **Critical Frame Budget**
-  - Minimum frame budget required to retain a target fraction of dense accuracy, e.g. 95%.
+**Model matrix (7 models, 3 families):**
 
-- **Temporal Sensitivity Score**
-  - Accuracy drop between dense and sparse budgets, computed per class or per video.
+| Model | Family | Frames |
+|---|---|---|
+| TimeSformer-Base | Transformer | 8 |
+| VideoMAE-Base | Transformer | 16 |
+| ViViT-B/16 | Transformer | 32 |
+| R3D-18 | 3D CNN | 16 |
+| MC3-18 | 3D CNN (mixed conv) | 16 |
+| R(2+1)D-18 | 3D CNN (factored) | 16 |
+| SlowFast R50 | Two-stream | 32 slow / 64 fast |
 
-- **Budgeted Accuracy**
-  - Accuracy at fixed average frame budgets, e.g. 4, 8, 16, 32 frames.
+**Datasets:**
 
-- **Temporal Calibration Error**
-  - Difference between predicted temporal demand and observed critical budget.
+| Dataset | Why |
+|---|---|
+| Something-Something V2 | 174 classes, 168k train, requires genuine temporal order |
+| Diving48 | 48 fine-grained dive phases, pure temporal discrimination, explicitly recommended by reviewer gj2t |
 
-### Contribution 3: Temporal Information Rate Estimator
+UCF101 kept as supporting appendix for continuity with prior work, not as primary claim.
 
-Introduce a lightweight estimator of temporal demand.
+**Key findings we expect to show:**
 
-Possible signals:
+- Architecture family predicts temporal demand more reliably than dataset alone
+- Transformers with patch-based attention have lower critical budget than 3D CNNs on identical inputs
+- SlowFast's two-stream design naturally handles temporal demand differently from uniform 3D CNNs
+- Per-class: fine-grained phase actions (Diving48 phases, SSV2 "moving left vs right") need dense budgets; static-appearance actions do not
 
-- frame-difference energy
-- optical-flow magnitude statistics
-- feature velocity from a frozen encoder
-- token variance across time
-- pose/keypoint velocity, if pose extraction is feasible
+---
 
-Recommended first implementation:
+### Contribution 2 — Temporal Demand Estimation
 
-1. Start with frame-difference energy because it is cheap and easy to reproduce.
-2. Add optical-flow metrics as a stronger variant using the existing spectral analysis module.
-3. Add feature velocity only if time permits.
+A lightweight, training-free estimator that predicts a video's critical frame budget before inference.
 
-This estimator should not be framed as a perfect physical frequency estimator. It is a practical temporal-demand proxy.
+**Why this is novel:** No prior video recognition paper proposes a pre-inference proxy for temporal demand that is then used to route compute. Existing efficient video methods (AdaFrame, AR-Net, LiteEval) either require training a policy network or assume the full video is available — neither is a cheap pre-inspection estimator.
 
-### Contribution 4: Adaptive Temporal Evidence Allocation
+**The estimator (implementation priority order):**
 
-Build a simple adaptive sampler that uses the temporal-demand score to choose the number of frames or stride per video.
+**Tier 1 — Frame-Difference Energy (cheap, interpretable, start here):**
 
-Initial baselines:
-
-- fixed 8 frames
-- fixed 16 frames
-- fixed 32 frames
-- random budget with same average compute
-- confidence-based adaptive budget
-- TRA-style temporal augmentation
-
-Proposed method:
-
-- Compute temporal-demand score from a cheap preview.
-- Allocate larger frame budget to high-demand videos.
-- Allocate smaller frame budget to low-demand videos.
-- Keep average compute fixed.
-
-The method should be intentionally simple. The point is to prove that the benchmark exposes a real, exploitable failure mode.
-
-### Contribution 5: Dense-to-Sparse Temporal Consistency
-
-If time permits, add a training objective where a dense teacher guides sparse/adaptive views.
-
-This can be implemented as:
-
-- KL divergence between dense-view logits and sparse-view logits
-- contrastive consistency between dense and sparse features
-- class-balanced consistency weighted more heavily for temporally sensitive classes
-
-This is the optional "strong method" component. If it works, it becomes the main method. If not, it can stay as an ablation or future work.
-
-## Experimental Scope
-
-### Required Datasets
-
-1. **Something-Something V2**
-   - Primary dataset because it reduces the reviewer concern that UCF101 and Kinetics are background-biased.
-   - If full data is not immediately available, define a reproducible subset protocol.
-
-2. **Diving48 or FineGym**
-   - Use at least one if feasible.
-   - These datasets strengthen the claim that temporal evidence matters beyond static scene context.
-
-3. **UCF101**
-   - Keep as continuity with the ECCV results.
-   - Use it as a sanity-check and historical benchmark, not as the primary evidence.
-
-4. **Kinetics-400**
-   - Use only with a clearly reproducible validation protocol.
-   - Avoid making K4TestSet/Kaggle central.
-
-5. **HMDB51**
-   - Optional small dataset for breadth.
-
-### Required Model Families
-
-The ECCV reviewers criticized the transformer-only scope. ACCV should include at least one non-transformer model.
-
-Required:
-
-- TimeSformer or VideoMAE
-- SlowFast
-- I3D or TSM
-
-Nice to have:
-
-- VideoSwin or MViT
-- X3D as a lightweight efficient model
-
-The existing `ModelFactory` already lists `slowfast` and `x3d`, but those entries need verification because Hugging Face support for those exact model IDs may not work out of the box. If they fail, use PyTorchVideo or MMAction2 rather than forcing them through the current Hugging Face loader.
-
-### Architecture and Sampling Protocol
-
-The detailed protocol is now in `docs/ACCV_2026_ARCHITECTURE_AND_SAMPLING_PROTOCOL.md`.
-
-Key decision:
-
-- Compare **evidence budget** separately from **model input length**.
-- Report both `processed_frames` and `model_input_frames`.
-- Use architecture-valid grids:
-  - TimeSformer: `2, 4, 8`
-  - VideoMAE: `4, 8, 16`
-  - ViViT: `4, 8, 16, 32`
-  - SlowFast/X3D: checkpoint-native grids after adapter smoke tests
-- Add at least SlowFast and X3D to avoid a transformer-only ACCV submission.
-
-ViViT remains part of the transformer set. It should not replace non-transformer baselines, but it is valuable because its 32-frame native input tests whether a larger temporal input interface changes the temporal evidence curve.
-
-## Repository Organization Plan
-
-Do not rewrite the whole repository before the science is clear. Instead, create a clean ACCV track alongside the existing ECCV artifacts.
-
-Recommended structure:
-
-```text
-docs/
-  ACCV_2026_RESEARCH_PLAN.md
-  ACCV_2026_EXPERIMENT_TRACKER.md
-  ACCV_2026_PAPER_OUTLINE.md
-
-src/info_rates/
-  metrics/
-    temporal_robustness.py
-    temporal_demand.py
-  sampling/
-    adaptive.py
-    temporal.py
-  evaluation/
-    benchmark.py
-
-scripts/accv2026/
-  01_build_manifests.py
-  02_run_fixed_budget_eval.py
-  03_run_adaptive_eval.py
-  04_compute_temporal_metrics.py
-  05_make_paper_tables.py
-
-evaluations/accv2026/
-  ucf101/
-  somethingv2/
-  diving48_or_finegym/
-  hmdb51/
+```
+FDE(v) = (1 / T-1) * Σ_{t=1}^{T-1} || f_{t+1} - f_t ||_2^2 / (H * W * C)
 ```
 
-Do not move existing result files yet. New work should write to `evaluations/accv2026/` so old ECCV artifacts remain intact and reproducible.
+Computed on 4 downsampled frames decoded at low resolution (64×64). Cheap enough to run in the DataLoader worker. Gives a scalar per video that we correlate with the observed critical budget.
 
-## Step-By-Step Execution Plan
+**Tier 2 — Temporal Variance Score (feature-space version):**
 
-### Phase 0: Freeze The ECCV Version
+Extract features from a frozen lightweight encoder (MobileNetV3 or ResNet-18) at 4 keyframes. Compute variance across feature vectors. Normalized to [0, 1]. Better than raw pixel diff because it is illumination-invariant.
 
-Goal: preserve the previous state while preventing old claims from contaminating the ACCV version.
+**Tier 3 — Optical Flow Magnitude (strongest proxy, already partially coded in spectral module):**
 
-Tasks:
+Sum of flow magnitudes at sparse temporal samples. Correlates with perceived motion complexity. Use the existing `src/info_rates/analysis/spectral_analysis.py` infrastructure.
 
-- Keep `Mi3_Lab_Research_InfoRates.pdf` as historical reference.
-- Mark TRA results as preliminary/untrusted unless re-run.
-- Do not reuse the old Nyquist-heavy language.
-- Document which CSVs are considered trusted.
+**Validation protocol:**
 
-Deliverable:
+1. Run fixed-budget eval (k=4,8,16,32) for all models on SSV2 val set.
+2. For each video, define `critical_budget(v)` = smallest k where model accuracy ≥ 0.95 × dense accuracy.
+3. Compute Spearman correlation between estimator score and `critical_budget(v)`.
+4. Show scatter plots and per-class breakdowns.
 
-- `docs/ACCV_2026_EXPERIMENT_TRACKER.md` with trusted/untrusted status for every major result file.
+**Success threshold:** Spearman ρ > 0.35 on SSV2 or Diving48. Even a weak but consistent correlation justifies routing compute.
 
-Success criteria:
+---
 
-- We can tell which results are safe to cite and which are only exploratory.
+### Contribution 3 — Adaptive Temporal Allocation
 
-### Phase 1: Build The New Metrics
+A test-time method that uses the demand estimator to select per-video frame budgets, matching or exceeding fixed-budget accuracy at lower average frame count.
 
-Goal: transform the benchmark from a grid of accuracies into a temporal robustness measurement framework.
+**The method (no retraining required — inference-time only):**
 
-Tasks:
+```
+score = FDE(video, 4 frames at 64x64)          # ~5ms on CPU, runs in dataloader
 
-- Implement Temporal Robustness AUC.
-- Implement Critical Frame Budget.
-- Implement Temporal Sensitivity Score.
-- Implement Budgeted Accuracy.
-- Implement plots for accuracy-budget curves.
-- Validate metrics on existing UCF101 and Kinetics CSVs.
+if score < θ_low:    budget = 4 frames
+elif score < θ_high: budget = 16 frames
+else:                budget = 32 frames
+```
 
-Deliverable:
+Thresholds θ_low, θ_high calibrated on the SSV2 val set to match the average frame count of the 16-frame fixed baseline.
 
-- `src/info_rates/metrics/temporal_robustness.py`
-- `scripts/accv2026/04_compute_temporal_metrics.py`
-- metrics tables under `evaluations/accv2026/`
+**Evaluation: equal-compute comparison**
 
-Success criteria:
+The only fair comparison for an adaptive method: fix the average frame count and compare accuracy.
 
-- Existing UCF101/Kinetics results can be converted into ACCV-style metrics without rerunning models.
+| Method | Avg frames | SSV2 Top-1 | Diving48 Top-1 |
+|---|---|---|---|
+| Fixed 4 | 4.0 | baseline | baseline |
+| Fixed 16 | 16.0 | baseline | baseline |
+| Fixed 32 | 32.0 | baseline | baseline |
+| Adaptive (ours) | ~16.0 | **target: ≥ Fixed 16** | **target: ≥ Fixed 16** |
 
-### Phase 2: Build A Trusted Evaluator
+The adaptive method wins if it matches Fixed-16 accuracy while actually using fewer frames on easy videos (paid for by fewer frames on hard videos too), OR if it beats Fixed-16 at the same average cost.
 
-Goal: remove ambiguity from the sampling and evaluation protocol.
+**Ablation table (required):**
 
-Tasks:
+| Variant | Estimator | Budget routing | Avg frames |
+|---|---|---|---|
+| Oracle | Ground-truth critical budget | Optimal routing | Variable |
+| Adaptive-FDE | Frame-diff energy | Threshold | ~16 |
+| Adaptive-random | Random | Same distribution | ~16 |
+| Fixed-4 | None | Always 4 | 4 |
+| Fixed-16 | None | Always 16 | 16 |
+| Fixed-32 | None | Always 32 | 32 |
 
-- Select one evaluation entry point.
-- Write tests for frame selection under coverage, stride, and fixed budget.
-- Ensure labels are correctly aligned with video paths.
-- Record decoded frame count, processed frame count, latency, and accuracy.
-- Add checkpoint/resume support.
+Oracle upper-bounds the method. Random routing shows that just budgeting helps, but accurate demand estimation helps more.
 
-Deliverable:
+---
 
-- `src/info_rates/evaluation/benchmark.py`
-- `scripts/accv2026/02_run_fixed_budget_eval.py`
-- tests for sampling and label alignment
+## Differences from ECCV That Reviewers Will Notice
 
-Success criteria:
-
-- A small smoke test produces deterministic frame indices and correct labels.
-- Latency is nonzero and measured consistently.
-
-### Phase 3: Dataset Readiness
-
-Goal: prepare temporally meaningful datasets before method work.
-
-Tasks:
-
-- Audit Something-Something V2 completeness.
-- If incomplete, either finish acquisition or define a reproducible subset:
-  - class-balanced
-  - enough samples per class
-  - train/val split preserved
-  - missing/corrupt videos logged
-- Decide whether to use Diving48 or FineGym as the second temporal dataset.
-- Build manifests with columns:
-  - `video_path`
-  - `label`
-  - `label_id`
-  - `dataset`
-  - `split`
-  - `fps`
-  - `num_frames`
-  - `duration`
-
-Deliverable:
-
-- `evaluations/accv2026/manifests/`
-- dataset audit report
-
-Success criteria:
-
-- At least one temporal-reasoning dataset is ready for full evaluation.
-
-### Phase 4: Baseline Model Matrix
-
-Goal: address the transformer-only criticism and establish credible baselines.
-
-Minimum model matrix:
-
-| Model | Family | Role |
+| Dimension | ECCV version | ACCV/WACV version |
 |---|---|---|
-| TimeSformer or VideoMAE | Transformer | continuity with ECCV |
-| SlowFast | 3D CNN / two-stream temporal | reviewer-requested baseline |
-| I3D or TSM | CNN temporal baseline | reviewer-requested baseline |
+| Models | Transformers only | 7 models, 3 families |
+| Datasets | UCF101, Kinetics | SSV2 (primary), Diving48 |
+| Contribution type | Benchmark + TRA | Benchmark + estimator + **adaptive method** |
+| Nyquist language | Heavy | Dropped entirely |
+| TRA | Main contribution | Baseline to beat |
+| New claim | Temporal sensitivity varies | Demand is predictable and allocation is actionable |
+| Compute control | None | Equal-average-frame comparisons throughout |
 
-Tasks:
+---
 
-- Verify model loading and preprocessing.
-- Run dense baseline.
-- Run fixed-budget sweeps.
-- Run coverage-stride sweeps only where useful.
-- Save logits if storage permits; this enables later calibration and distillation analysis.
+## ACCV 2026 — Target Paper (Minimum and Strong Versions)
 
-Deliverable:
+**Estimated ACCV 2026 deadline: ~July 14, 2026** (check camera-ready schedule)
 
-- fixed-budget and coverage-stride CSVs under `evaluations/accv2026/{dataset}/{model}/`
+### Minimum ACCV Paper (ship by deadline even if resources are tight)
 
-Success criteria:
+Requires completing training on at least:
+- R3D-18 + R(2+1)D-18 (full SSV2, in progress)
+- TimeSformer or VideoMAE (full SSV2)
+- SlowFast R50 pilot → upgrade to full if possible
 
-- Each primary dataset has at least one transformer and one non-transformer model evaluated.
+Minimum experiments:
+1. Fixed-budget eval on SSV2 val with 3+ models
+2. Temporal AUC and Critical Budget tables
+3. FDE estimator correlation on SSV2
+4. Adaptive allocation vs Fixed-16 on SSV2
 
-### Phase 5: Temporal Demand Estimator
+This alone is a substantially stronger paper than ECCV: new datasets, non-transformer models, a real method with a quantitative win.
 
-Goal: predict how much temporal evidence a video needs before expensive inference.
+### Strong ACCV Paper
 
-Tasks:
+Adds:
+1. All 7 models fully trained and evaluated on SSV2
+2. Diving48 evaluation (requires dataset acquisition — see below)
+3. Temporal Variance Score (Tier 2 estimator) as ablation of FDE
+4. Per-class temporal sensitivity analysis with visualizations
+5. Comparison against AdaFrame / AR-Net / LiteEval-style baselines from literature (no retraining needed — compare our adaptive protocol against their published numbers where possible)
 
-- Implement frame-difference temporal-demand score.
-- Implement optical-flow temporal-demand score using existing spectral code.
-- Correlate each score with observed critical budget.
-- Evaluate per-video and per-class correlations.
-- Compare against random and confidence-only baselines.
+---
 
-Deliverable:
+## WACV 2027 — SOTA Extension
 
-- `src/info_rates/metrics/temporal_demand.py`
-- temporal-demand CSVs and scatter plots
+**Estimated WACV 2027 deadline: ~September 2026**
 
-Success criteria:
+WACV 2027 is the venue if ACCV 2026 is rejected, or if we decide to produce a significantly stronger paper with 6 weeks more compute time.
 
-- Temporal-demand score correlates meaningfully with observed critical budget on at least one temporal dataset.
+The WACV version adds one critical component that ACCV lacks time for:
 
-### Phase 6: Adaptive Sampling Baseline
+### Learned Temporal Demand Estimator
 
-Goal: show that temporal demand is actionable.
+Replace the heuristic FDE threshold routing with a small learned network:
 
-Tasks:
+- Input: 4 frames at 64×64 from early in the video
+- Architecture: lightweight 2D CNN (ResNet-18 pretrained, 4 frames stacked as 12-channel input) → scalar score
+- Training signal: pseudo-labels from the critical budget observed during fixed-budget eval
+- Objective: predict critical_budget(v) as a regression target
+- Total parameters: ~11M, trained in <1 hour on 1 GPU
 
-- Implement a rule-based adaptive sampler:
-  - low temporal demand: small frame budget
-  - medium temporal demand: medium frame budget
-  - high temporal demand: large frame budget
-- Match average compute against fixed-budget baselines.
-- Evaluate accuracy at equal average frame count.
-- Evaluate robustness on temporally sensitive classes.
+This converts the adaptive method from a calibrated heuristic into a **trainable, end-to-end compatible module**.
 
-Deliverable:
+### WACV Contribution Structure
 
-- `src/info_rates/sampling/adaptive.py`
-- `scripts/accv2026/03_run_adaptive_eval.py`
-- adaptive-vs-fixed comparison tables
+1. **Benchmark** (identical to ACCV, already published/submitted)
+2. **Analysis** (strengthened with Diving48 + full per-class breakdown)
+3. **Adaptive method** (identical to ACCV but now validated with learned estimator)
+4. **Learned estimator ablation**: FDE vs Temporal Variance vs Learned — show learned estimator closes the gap with Oracle routing
 
-Success criteria:
+This gives WACV a clear "we trained something new" story without requiring retraining all 7 backbone models.
 
-- Adaptive sampling improves accuracy at the same average frame budget, or reduces frame budget at the same accuracy.
+---
 
-### Phase 7: Optional Dense-to-Sparse Consistency
+## Dataset Acquisition: Diving48
 
-Goal: add a stronger learning contribution if time allows.
+Diving48 is explicitly requested by reviewer gj2t and is a small dataset (~18k videos). Acquisition steps:
 
-Tasks:
+1. Download from official source (Academic Torrents or Charades hosting — check current availability)
+2. Add to `src/info_rates/data/` as `diving48.py` following the same interface as `something.py`
+3. Add to manifest builder `01_build_manifests.py`
+4. Add to fixed-budget evaluator `02_run_fixed_budget_eval.py`
 
-- Use dense-view predictions as teacher targets.
-- Train sparse/adaptive student views with KL consistency.
-- Compare:
-  - standard fine-tuning
-  - TRA
-  - dense-to-sparse consistency
-  - adaptive sampling with and without consistency
+Fine-tuning each model on Diving48 train split (~8k videos, 48 classes) takes <1 hour on 1 A100.
 
-Deliverable:
+**Priority: after SSV2 full runs are complete.** Do not block ACCV training on Diving48 acquisition.
 
-- training script extension or new ACCV script
-- ablation table
+---
 
-Success criteria:
+## Execution Timeline
 
-- Consistency improves temporal robustness AUC or critical budget without harming dense accuracy.
+**Today: May 24, 2026**
 
-### Phase 8: Paper Writing
+| Week | Dates | Goal |
+|---|---|---|
+| 1 | May 24 – May 30 | Complete R(2+1)D-18 full training (job 70582); relaunch SlowFast full; check TimeSformer/VideoMAE status |
+| 2 | May 31 – Jun 6 | Complete all 7 SSV2 full trainings; run fixed-budget eval on SSV2 val for all models |
+| 3 | Jun 7 – Jun 13 | Compute Temporal AUC, Critical Budget, per-class sensitivity; implement FDE estimator |
+| 4 | Jun 14 – Jun 20 | Implement adaptive allocation; run equal-compute comparison; acquire Diving48 |
+| 5 | Jun 21 – Jun 27 | Fine-tune on Diving48; run fixed-budget + adaptive on Diving48; draft Results section |
+| 6 | Jun 28 – Jul 5 | Draft full paper; generate all figures and tables |
+| 7 | Jul 6 – Jul 13 | Polish, proofread, submit to ACCV 2026 |
+| **Fallback** | Aug – Sep 2026 | If ACCV rejected: add learned estimator, resubmit to WACV 2027 |
 
-Goal: write the ACCV paper around the new question, not around ECCV review fixes.
+---
 
-Recommended paper outline:
+## Immediate Next Actions (Week 1)
 
-1. Introduction
-   - Ask: how much temporal evidence does an action model need?
-   - Explain why fixed sampling is wasteful and sometimes unsafe.
+1. **Monitor job 70582** (R(2+1)D-18 full SSV2) — check accuracy progression via W&B
+2. **Launch SlowFast full training** on 2×A100 with the pilot script upgraded to full SSV2 (remove `--max-train-samples`)
+3. **Launch TimeSformer full training** if not already running (check W&B)
+4. **Implement FDE estimator** in `src/info_rates/metrics/temporal_demand.py`
+5. **Acquire Diving48** — check dataset availability and download pipeline
 
-2. Related Work
-   - Video action recognition
-   - Efficient video inference
-   - Adaptive frame selection
-   - Robustness and temporal reasoning
+---
 
-3. Temporal Evidence Benchmark
-   - Define budgets, coverage, stride, metrics.
+## Code To Write (Implementation Priority Order)
 
-4. Temporal Demand Estimation
-   - Define motion/feature-based estimators.
+### Priority 1 — FDE Estimator (required for ACCV)
 
-5. Adaptive Temporal Evidence Allocation
-   - Simple controller and optional consistency training.
+File: `src/info_rates/metrics/temporal_demand.py`
 
-6. Experiments
-   - Datasets, models, protocols.
-   - Main accuracy-budget results.
-   - Per-class/per-video analysis.
-   - Adaptive sampling comparisons.
-   - Ablations.
+```python
+def frame_diff_energy(video_path: str, num_probe_frames: int = 4, size: int = 64) -> float:
+    """Compute normalized frame-difference energy as temporal demand proxy."""
+    # decode num_probe_frames evenly spaced frames at low resolution
+    # return mean squared pixel difference normalized to [0, 1]
+```
 
-7. Limitations
-   - Temporal demand proxies are imperfect.
-   - Sensor FPS and compression artifacts matter.
-   - Adaptive sampling does not reconstruct missing information.
+Outputs a scalar per video. Fast enough to precompute for the entire SSV2 val set in <10 minutes on CPU.
 
-8. Conclusion
-   - Temporal evidence should be allocated, not fixed.
+### Priority 2 — Adaptive Sampler (required for ACCV)
+
+File: `src/info_rates/sampling/adaptive.py`
+
+```python
+class AdaptiveTemporalSampler:
+    def __init__(self, estimator, thresholds, budgets):
+        ...
+    def select_budget(self, video_path: str) -> int:
+        score = self.estimator(video_path)
+        return budgets[bisect(thresholds, score)]
+```
+
+### Priority 3 — Equal-Compute Eval Script (required for ACCV)
+
+File: `scripts/accv2026/03_run_adaptive_eval.py`
+
+Takes a model checkpoint + sampler config, evaluates at adaptive budgets, reports accuracy and average frame count. Must be directly comparable to output of `02_run_fixed_budget_eval.py`.
+
+### Priority 4 — Diving48 Data Module (required for strong ACCV / WACV)
+
+File: `src/info_rates/data/diving48.py`
+
+Same interface as `something.py`. Manifests go in `evaluations/accv2026/manifests/`.
+
+### Priority 5 — Learned Estimator (WACV only, do not block ACCV)
+
+File: `src/info_rates/metrics/learned_demand_estimator.py`
+
+Trained as regression from pseudo-labeled critical budgets. Requires completed fixed-budget eval as prerequisite.
+
+---
+
+## Decision Gates (Unchanged from Prior Plan)
+
+| Gate | Pass Condition | Action if Fail |
+|---|---|---|
+| Model Gate | ≥4 of 7 models trained on SSV2 | Submit ACCV with available models, rerun all for WACV |
+| Estimator Gate | Spearman ρ > 0.35 between FDE and critical_budget | Use Tier-2/Tier-3 estimator; do not claim Tier-1 works if it doesn't |
+| Method Gate | Adaptive ≥ Fixed-16 accuracy at same average frames | Submit as analysis paper if method fails; still publishable |
+| Diving48 Gate | Dataset acquired and ≥1 model fine-tuned | Submit without Diving48 for ACCV; add for WACV |
+
+---
+
+## Claims To Make
+
+- "Architecture family is a stronger predictor of temporal demand than dataset category alone."
+- "Frame-difference energy computed from 4 low-resolution probe frames predicts critical budget with Spearman ρ = X on SSV2."
+- "Adaptive temporal allocation achieves [Y]% accuracy with [Z] average frames, compared to [Y-ε]% with [Z'] frames for fixed-budget sampling."
+- "Temporal AUC reveals that SlowFast and R(2+1)D-18 are more temporally efficient than transformers at equal average frame count on SSV2."
 
 ## Claims To Avoid
 
-Avoid:
+- "Nyquist-Shannon applies to action recognition." (never again)
+- "TRA mitigates aliasing." (TRA is now just a baseline)
+- "UCF101 or Kinetics establish temporal reasoning." (only SSV2 and Diving48 are primary)
+- "Our method requires retraining the backbone." (the whole point is it is inference-time only)
+- "Our estimator perfectly predicts demand." (claim correlation, not perfection)
 
-- "We prove Nyquist-Shannon applies to action recognition."
-- "TRA mitigates aliasing."
-- "Temporal augmentation recovers lost information."
-- "UCF101/Kinetics alone establish temporal reasoning."
-- "Kaggle Kinetics test protocol is canonical."
+---
 
-Use instead:
+## Paper Outline
 
-- "frequency-inspired temporal demand"
-- "undersampling-consistent failure modes"
-- "temporal evidence allocation"
-- "adaptive budget under equal compute"
-- "dense views can regularize sparse views, but cannot recover absent evidence"
+1. **Introduction** — The mismatch between uniform sampling and unequal temporal demand; why this is inefficient and fixable.
+2. **Related Work** — Video recognition; efficient video inference (AdaFrame, AR-Net, LiteEval, FrameExit); temporal reasoning datasets; adaptive computation.
+3. **Temporal Evidence Benchmark** — Protocol, models, datasets, metrics (Temporal AUC, Critical Budget, Temporal Sensitivity).
+4. **Temporal Demand Estimation** — FDE and Tier-2 estimators; correlation analysis; per-class qualitative examples.
+5. **Adaptive Temporal Allocation** — Method; equal-compute evaluation; ablation table (oracle / adaptive-FDE / adaptive-random / fixed).
+6. **Experiments** — SSV2 main results; Diving48 results; per-class breakdown; architecture family comparison.
+7. **Limitations** — Estimator is a proxy, not ground truth; assumes fixed backbone; temporal demand may shift with viewing angle or cut.
+8. **Conclusion** — Temporal evidence should be estimated and allocated, not uniformly fixed.
 
-## Minimum Viable ACCV Paper
+---
 
-If time is tight, the minimum viable version is:
+## Repository Structure (Current and Planned)
 
-1. Trusted evaluator.
-2. New robustness metrics.
-3. Something-Something V2 subset or full evaluation.
-4. One transformer and one non-transformer baseline.
-5. Temporal-demand score.
-6. Rule-based adaptive sampler.
-7. UCF101 as supporting evidence.
+```
+scripts/accv2026/
+  01_build_manifests.py           # Done
+  02_run_fixed_budget_eval.py     # Done
+  03_run_adaptive_eval.py         # TODO: Priority 3
+  05_compute_temporal_metrics.py  # Done
+  train_torchvision.py            # Done (with all robustness fixes)
+  train_slowfast.py               # Done (DDP _set_static_graph fix)
+  train_timesformer.py            # Done
 
-This version is already much stronger than the ECCV version because it contributes a question, metrics, and an actionable baseline.
+src/info_rates/
+  data/
+    something.py                  # Done
+    diving48.py                   # TODO: Priority 4
+  models/
+    torchvision_video.py          # Done
+    slowfast_video.py             # Done
+    timesformer.py                # Done
+  metrics/
+    temporal_demand.py            # TODO: Priority 1
+    temporal_robustness.py        # Done (Temporal AUC etc.)
+  sampling/
+    adaptive.py                   # TODO: Priority 2
 
-## Strong ACCV Paper
+evaluations/accv2026/
+  manifests/                      # SSV2 val manifests exist
+  fixed_budget/                   # Output dir for 02_run_fixed_budget_eval.py
+  adaptive/                       # Output dir for 03_run_adaptive_eval.py (TODO)
+  metrics/                        # Output dir for 05_compute_temporal_metrics.py
+```
 
-The strong version adds:
+---
 
-1. Full Something-Something V2 or a large, well-defined subset.
-2. Diving48 or FineGym.
-3. SlowFast plus I3D/TSM.
-4. Dense-to-sparse consistency training.
-5. Calibration analysis showing models do not know when they need more frames.
-6. Equal-compute comparisons against adaptive inference baselines.
+## What Makes This SOTA
 
-## Immediate Next Actions
+A paper earns "SOTA" in efficient video recognition if it:
 
-1. Create `docs/ACCV_2026_EXPERIMENT_TRACKER.md`.
-2. Implement temporal robustness metrics on existing CSVs.
-3. Audit Something-Something V2 completeness and decide full vs subset.
-4. Consolidate evaluation into one trusted ACCV evaluator.
-5. Run a small fixed-budget pilot on Something-Something V2 with one model.
-6. Implement the first temporal-demand estimator.
-7. Compare fixed budget vs adaptive budget on the pilot.
+1. Defines the right metric — **Temporal AUC** is new and captures accuracy-efficiency trade-off in one number
+2. Covers the right architecture families — 3 families × 2 temporal datasets closes the "transformers only" criticism
+3. Provides a method that wins — **adaptive allocation beats fixed-16 at equal compute** — this is the headline result
+4. The method is practical — no extra training, no privileged access to labels at test time, works on any backbone
 
-## Decision Gates
+The adaptive allocation is lightweight by design: it is intentionally simple so the win cannot be dismissed as "a bigger model." If a 5ms FDE estimator routing frames to existing models beats uniform sampling, the insight generalizes.
 
-### Gate 1: Dataset Gate
-
-Proceed only if at least one temporal-reasoning dataset is usable.
-
-Pass condition:
-
-- Something-Something V2 full or reproducible subset is ready, or Diving48/FineGym is ready.
-
-### Gate 2: Metric Gate
-
-Proceed only if the new metrics reveal a clear difference between models or classes.
-
-Pass condition:
-
-- Temporal Robustness AUC and Critical Frame Budget produce interpretable rankings.
-
-### Gate 3: Estimator Gate
-
-Proceed only if temporal-demand scores correlate with observed critical budget.
-
-Pass condition:
-
-- Positive correlation on at least one temporal dataset and sensible qualitative examples.
-
-### Gate 4: Method Gate
-
-Proceed with method claims only if adaptive sampling wins at equal compute.
-
-Pass condition:
-
-- Adaptive budget improves accuracy at fixed average frame count or reduces frame count at fixed accuracy.
-
-If Gate 4 fails, the paper can still be submitted as a stronger benchmark-and-analysis paper, but the title and claims should emphasize measurement rather than method.
+This is not a new backbone paper. It is an **inference strategy** paper. The contribution is understanding demand and acting on it. That is publishable at ACCV and competitive at WACV/CVPR if the method gate passes cleanly.

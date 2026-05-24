@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Fine-tune SlowFast R50 on Something-Something V2 for ACCV 2026."""
+"""Fine-tune HuggingFace transformer video models (TimeSformer/VideoMAE/ViViT) on SSV2."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -11,9 +12,7 @@ from typing import Optional
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
-SCRIPTS = ROOT / "scripts"
-DATA_PROCESSING = SCRIPTS / "data_processing"
-for path in (ROOT, SRC, SCRIPTS, DATA_PROCESSING):
+for path in (ROOT, SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
@@ -31,35 +30,46 @@ from info_rates.data.something import (
     get_train_val_test_manifests,
     list_classes,
 )
+from info_rates.models.model_factory import ModelFactory
 from info_rates.models.timesformer import UCFDataset
-from info_rates.models.slowfast_video import (
-    SlowFastVideoProcessor,
-    create_slowfast_model,
-    save_slowfast_checkpoint,
-    SLOWFAST_FAST_FRAMES,
-)
 from info_rates.training.ddp import cleanup_ddp, setup_ddp
+
+
+BAD_VIDEOS_LOG = ROOT / "evaluations/accv2026/logs/bad_videos.tsv"
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", default="data/Something_data")
+    parser.add_argument("--model", choices=sorted(ModelFactory.REGISTRY), default="videomae")
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--num-workers", type=int, default=6)
-    parser.add_argument("--input-size", type=int, default=224)
     parser.add_argument("--max-train-samples", type=int, default=0)
     parser.add_argument("--max-val-samples", type=int, default=0)
-    parser.add_argument("--save-path", default="fine_tuned_models/accv2026_slowfast_r50_ssv2")
+    parser.add_argument("--save-path", default="fine_tuned_models/accv2026_transformer_ssv2")
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
+    parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from")
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--wandb-project", default="inforates-accv2026")
     parser.add_argument("--wandb-run-name", default=None)
     parser.add_argument("--wandb-tags", nargs="*", default=None)
     return parser.parse_args()
+
+
+def load_bad_video_paths() -> set:
+    if not BAD_VIDEOS_LOG.exists():
+        return set()
+    bad = set()
+    with open(BAD_VIDEOS_LOG) as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if parts and parts[0]:
+                bad.add(parts[0])
+    return bad
 
 
 def prepare_data(data_root: str, max_train: int, max_val: int):
@@ -75,14 +85,22 @@ def prepare_data(data_root: str, max_train: int, max_val: int):
         train_df = train_df.iloc[:max_train].copy()
     if max_val > 0:
         val_df = val_df.iloc[:max_val].copy()
+
     train_files = list(zip(train_df["video_path"].tolist(), train_df["label"].astype(int).tolist()))
     val_files = list(zip(val_df["video_path"].tolist(), val_df["label"].astype(int).tolist()))
+
+    bad_videos = load_bad_video_paths()
+    if bad_videos:
+        before = len(train_files)
+        train_files = [(p, l) for p, l in train_files if p not in bad_videos]
+        val_files = [(p, l) for p, l in val_files if p not in bad_videos]
+        print(f"[DataFilter] Excluded {before - len(train_files)} known-bad videos from training set")
+
     return class_names, train_files, val_files
 
 
-def make_loader(files, processor, args, use_ddp: bool, train: bool):
-    # UCFDataset decodes `num_frames` from the video; SlowFast adapts internally
-    dataset = UCFDataset(files, processor, num_frames=SLOWFAST_FAST_FRAMES, size=args.input_size)
+def make_loader(files, processor, num_frames: int, input_size: int, args, use_ddp: bool, train: bool):
+    dataset = UCFDataset(files, processor, num_frames=num_frames, size=input_size)
     sampler = DistributedSampler(dataset, shuffle=train) if use_ddp else None
     return DataLoader(
         dataset,
@@ -91,34 +109,34 @@ def make_loader(files, processor, args, use_ddp: bool, train: bool):
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
-        persistent_workers=args.num_workers > 0,
+        persistent_workers=False,
         prefetch_factor=2 if args.num_workers > 0 else None,
     )
 
 
-def init_wandb(args, class_count: int, train_count: int, val_count: int) -> Optional[object]:
+def init_wandb(args, model_info: dict, class_count: int, train_count: int, val_count: int) -> Optional[object]:
     if args.no_wandb or int(os.environ.get("LOCAL_RANK", "0")) != 0:
         return None
     try:
         import wandb
     except ImportError:
-        print("[WARN] wandb unavailable")
+        print("[WARN] wandb unavailable; continuing without W&B")
         return None
     return wandb.init(
         project=args.wandb_project,
-        name=args.wandb_run_name or f"train-slowfast-r50-{Path(args.save_path).name}",
+        name=args.wandb_run_name or f"train-{args.model}-{Path(args.save_path).name}",
         tags=args.wandb_tags,
         config={
             "dataset": "something-something-v2",
-            "model": "slowfast_r50",
-            "architecture": "slowfast",
+            "model": args.model,
+            "model_id": model_info["model_id"],
+            "architecture": model_info["architecture"],
             "epochs": args.epochs,
             "batch_size": args.batch_size,
             "learning_rate": args.lr,
             "weight_decay": args.weight_decay,
-            "input_size": args.input_size,
-            "slow_frames": 8,
-            "fast_frames": SLOWFAST_FAST_FRAMES,
+            "num_frames": model_info["default_frames"],
+            "input_size": model_info["input_size"],
             "max_train_samples": args.max_train_samples,
             "max_val_samples": args.max_val_samples,
             "class_count": class_count,
@@ -139,7 +157,7 @@ def reduce_sum(value: float, device: torch.device) -> float:
     return float(tensor.item())
 
 
-def train_one_epoch(model, loader, optimizer, scaler, device, epoch, show_progress):
+def train_one_epoch(model, loader, optimizer, scaler, device, epoch: int, show_progress: bool):
     model.train()
     total_loss, total_n = 0.0, 0
     pbar = tqdm(loader, desc=f"epoch={epoch} train", disable=not show_progress)
@@ -163,7 +181,7 @@ def train_one_epoch(model, loader, optimizer, scaler, device, epoch, show_progre
 
 
 @torch.inference_mode()
-def evaluate(model, loader, device, show_progress):
+def evaluate(model, loader, device, show_progress: bool):
     model.eval()
     total_loss, total_correct, total_n = 0.0, 0.0, 0.0
     for batch in tqdm(loader, desc="validation", disable=not show_progress):
@@ -181,6 +199,29 @@ def evaluate(model, loader, device, show_progress):
     return total_loss / max(1.0, total_n), total_correct / max(1.0, total_n)
 
 
+def save_checkpoint(save_dir: str | Path, model, processor, class_names: list[str], model_name: str,
+                    model_info: dict, extra: dict | None = None) -> None:
+    save_dir = Path(save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    raw = model.module if hasattr(model, "module") else model
+    raw.save_pretrained(str(save_dir))
+    processor.save_pretrained(str(save_dir))
+    meta = {
+        "backend": "transformer",
+        "model_name": model_name,
+        "model_id": model_info["model_id"],
+        "architecture": model_info["architecture"],
+        "num_labels": len(class_names),
+        "class_names": class_names,
+        "num_frames": model_info["default_frames"],
+        "input_size": model_info["input_size"],
+    }
+    if extra:
+        meta.update(extra)
+    with open(save_dir / "accv_meta.json", "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
+
+
 def main() -> None:
     args = parse_args()
     local_rank = 0
@@ -190,52 +231,69 @@ def main() -> None:
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
     is_main = local_rank == 0
 
+    model_info = ModelFactory.get_model_info(args.model)
+    num_frames = model_info["default_frames"]
+    input_size = model_info["input_size"]
+
     class_names, train_files, val_files = prepare_data(args.data_root, args.max_train_samples, args.max_val_samples)
     if is_main:
         print(f"Classes: {len(class_names)} | Train: {len(train_files)} | Val: {len(val_files)}")
 
-    processor = SlowFastVideoProcessor(size=args.input_size)
-    train_loader = make_loader(train_files, processor, args, args.ddp, train=True)
-    val_loader = make_loader(val_files, processor, args, args.ddp, train=False)
+    processor = ModelFactory.load_processor(args.model)
+    train_loader = make_loader(train_files, processor, num_frames, input_size, args, args.ddp, train=True)
+    val_loader = make_loader(val_files, processor, num_frames, input_size, args, args.ddp, train=False)
 
-    model = create_slowfast_model(len(class_names), pretrained=not args.no_pretrained).to(device)
+    start_epoch = 1
+    resume_path = Path(args.resume_from) if args.resume_from else None
+    if resume_path and (resume_path / "accv_meta.json").exists():
+        meta = json.loads((resume_path / "accv_meta.json").read_text())
+        model, _ = ModelFactory.load_model(args.model, num_labels=len(class_names),
+                                            checkpoint=resume_path, device=str(device))
+        start_epoch = meta.get("epoch", 1) + 1
+        if is_main:
+            print(f"[Resume] Loaded from {resume_path}, starting at epoch {start_epoch}")
+    else:
+        pretrained_src = None if args.no_pretrained else model_info["model_id"]
+        model, _ = ModelFactory.load_model(
+            args.model, num_labels=len(class_names),
+            checkpoint=pretrained_src, device=str(device),
+        )
+
     if args.ddp:
-        model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-        # SlowFast lateral connections cause the same weight to accumulate
-        # gradients twice per backward; _set_static_graph() handles this correctly.
-        model._set_static_graph()
+        model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.amp.GradScaler(enabled=device.type == "cuda")
-    wandb_run = init_wandb(args, len(class_names), len(train_files), len(val_files))
+    wandb_run = init_wandb(args, model_info, len(class_names), len(train_files), len(val_files))
 
     best_acc = -1.0
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
         train_loss = train_one_epoch(model, train_loader, optimizer, scaler, device, epoch, is_main)
         val_loss, val_acc = evaluate(model, val_loader, device, is_main)
+
         if is_main:
             print(f"Epoch {epoch}/{args.epochs}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
             if wandb_run is not None:
                 import wandb
                 wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
+
+            epoch_ckpt = f"{args.save_path}_epoch{epoch}"
+            save_checkpoint(epoch_ckpt, model, processor, class_names, args.model, model_info,
+                            extra={"epoch": epoch, "val_acc": val_acc})
+            print(f"  -> Saved epoch checkpoint: {epoch_ckpt}")
+
         best_acc = max(best_acc, val_acc)
 
     if is_main:
-        raw_model = model.module if hasattr(model, "module") else model
-        save_slowfast_checkpoint(
-            args.save_path,
-            raw_model,
-            class_names=class_names,
-            num_frames=SLOWFAST_FAST_FRAMES,
-            input_size=args.input_size,
-        )
-        print(f"Saved SlowFast checkpoint to {args.save_path}; best_val_acc={best_acc:.4f}")
+        save_checkpoint(args.save_path, model, processor, class_names, args.model, model_info)
+        print(f"Saved transformer checkpoint to {args.save_path}; best_val_acc={best_acc:.4f}")
         if wandb_run is not None:
             import wandb
             wandb.summary["checkpoint_path"] = args.save_path
             wandb.summary["best_val_accuracy"] = best_acc
-            wandb.save(str(Path(args.save_path) / "config.json"), policy="now")
+            wandb.save(str(Path(args.save_path) / "accv_meta.json"), policy="now")
             wandb_run.finish()
 
     if args.ddp:

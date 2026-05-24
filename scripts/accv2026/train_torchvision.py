@@ -36,9 +36,10 @@ from info_rates.models.torchvision_video import (  # noqa: E402
     MODEL_REGISTRY,
     TorchvisionVideoProcessor,
     create_torchvision_video_model,
+    load_torchvision_video_checkpoint,
     save_torchvision_video_checkpoint,
 )
-from scripts.data_processing.train_multimodel import cleanup_ddp, setup_ddp  # noqa: E402
+from info_rates.training.ddp import cleanup_ddp, setup_ddp  # noqa: E402
 
 
 def parse_args():
@@ -57,11 +58,27 @@ def parse_args():
     parser.add_argument("--save-path", default="fine_tuned_models/accv2026_r3d18_ssv2")
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
+    parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from (sets start epoch automatically)")
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--wandb-project", default="inforates-accv2026")
     parser.add_argument("--wandb-run-name", default=None)
     parser.add_argument("--wandb-tags", nargs="*", default=None)
     return parser.parse_args()
+
+
+BAD_VIDEOS_LOG = ROOT / "evaluations/accv2026/logs/bad_videos.tsv"
+
+
+def load_bad_video_paths() -> set:
+    if not BAD_VIDEOS_LOG.exists():
+        return set()
+    bad = set()
+    with open(BAD_VIDEOS_LOG) as f:
+        for line in f:
+            parts = line.strip().split("\t")
+            if parts and parts[0]:
+                bad.add(parts[0])
+    return bad
 
 
 def prepare_data(data_root: str, max_train: int, max_val: int):
@@ -79,6 +96,14 @@ def prepare_data(data_root: str, max_train: int, max_val: int):
         val_df = val_df.iloc[:max_val].copy()
     train_files = list(zip(train_df["video_path"].tolist(), train_df["label"].astype(int).tolist()))
     val_files = list(zip(val_df["video_path"].tolist(), val_df["label"].astype(int).tolist()))
+
+    bad_videos = load_bad_video_paths()
+    if bad_videos:
+        before = len(train_files)
+        train_files = [(p, l) for p, l in train_files if p not in bad_videos]
+        val_files = [(p, l) for p, l in val_files if p not in bad_videos]
+        print(f"[DataFilter] Excluded {before - len(train_files)} known-bad videos from training set")
+
     return class_names, train_files, val_files
 
 
@@ -92,7 +117,7 @@ def make_loader(files, processor, args, use_ddp: bool, train: bool):
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
-        persistent_workers=args.num_workers > 0,
+        persistent_workers=False,
         prefetch_factor=2 if args.num_workers > 0 else None,
     )
 
@@ -201,7 +226,20 @@ def main() -> None:
     train_loader = make_loader(train_files, processor, args, args.ddp, train=True)
     val_loader = make_loader(val_files, processor, args, args.ddp, train=False)
 
+    # Determine which epoch to start from (resume support)
+    start_epoch = 1
     model = create_torchvision_video_model(args.model, len(class_names), pretrained=not args.no_pretrained).to(device)
+    if args.resume_from:
+        resume_path = Path(args.resume_from)
+        if (resume_path / "config.json").exists():
+            model, _, resume_meta = load_torchvision_video_checkpoint(str(resume_path), device=str(device))
+            start_epoch = resume_meta.get("epoch", 1) + 1
+            if is_main:
+                print(f"[Resume] Loaded checkpoint from {resume_path}, starting at epoch {start_epoch}")
+        else:
+            if is_main:
+                print(f"[Resume] Checkpoint not found at {resume_path}, starting from scratch")
+
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=False)
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -209,7 +247,7 @@ def main() -> None:
     wandb_run = init_wandb(args, len(class_names), len(train_files), len(val_files))
 
     best_acc = -1.0
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
         train_loss = train_one_epoch(model, train_loader, optimizer, scaler, device, epoch, is_main)
@@ -218,8 +256,18 @@ def main() -> None:
             print(f"Epoch {epoch}/{args.epochs}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
             if wandb_run is not None:
                 import wandb
-
                 wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
+
+            # Save per-epoch checkpoint so a crash doesn't lose all progress
+            raw_model = model.module if hasattr(model, "module") else model
+            epoch_ckpt = f"{args.save_path}_epoch{epoch}"
+            save_torchvision_video_checkpoint(
+                epoch_ckpt, raw_model, model_name=args.model,
+                class_names=class_names, num_frames=args.num_frames, input_size=args.input_size,
+                extra={"epoch": epoch, "val_acc": val_acc},
+            )
+            print(f"  -> Saved epoch checkpoint: {epoch_ckpt}")
+
         best_acc = max(best_acc, val_acc)
 
     if is_main:

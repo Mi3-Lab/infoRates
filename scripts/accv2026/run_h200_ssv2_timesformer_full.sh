@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -29,9 +29,9 @@ SUMMARY="${OUT_DIR}/somethingv2_validation_accv2026_timesformer_ssv2_full_e3_fix
 echo "[h200-timesformer-full] GPU status"
 nvidia-smi
 
-if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
+if [[ ! -f "${CHECKPOINT}/accv_meta.json" ]]; then
   echo "[h200-timesformer-full] Training full SSV2 TimeSformer checkpoint"
-  python scripts/accv2026/train_something.py \
+  python scripts/accv2026/train_transformers.py \
     --data-root data/Something_data \
     --model timesformer \
     --epochs "${EPOCHS:-3}" \

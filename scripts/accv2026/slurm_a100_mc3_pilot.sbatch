@@ -12,7 +12,7 @@ set -euo pipefail
 cd /data/wesleyferreiramaia/infoRates
 
 export WANDB_PROJECT="${WANDB_PROJECT:-inforates-accv2026}"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export ACCV_JOB_ID="${SLURM_JOB_ID:-manual}"
 export TRAIN_GPU=0
 export EVAL_GPU=0

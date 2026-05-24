@@ -10,7 +10,7 @@ fi
 
 export PYTHONPATH=src
 export TORCH_HOME="${TORCH_HOME:-/scratch/wesleyferreiramaia/infoRates/torch_cache}"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -27,7 +27,7 @@ nvidia-smi
 
 if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
   echo "[a100-slowfast-pilot] Training SlowFast R50 SSV2 5k pilot with 2-GPU DDP"
-  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/accv2026/04_train_slowfast.py \
+  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/accv2026/train_slowfast.py \
     --ddp \
     --data-root data/Something_data \
     --epochs "${EPOCHS}" \

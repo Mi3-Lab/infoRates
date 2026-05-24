@@ -107,6 +107,7 @@ def save_torchvision_video_checkpoint(
     class_names: list[str],
     num_frames: int,
     input_size: int,
+    extra: dict | None = None,
 ) -> None:
     save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -119,6 +120,8 @@ def save_torchvision_video_checkpoint(
         "num_frames": num_frames,
         "input_size": input_size,
     }
+    if extra:
+        config.update(extra)
     with open(save_dir / "config.json", "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 

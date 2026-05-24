@@ -13,7 +13,7 @@ cd /data/wesleyferreiramaia/infoRates
 mkdir -p evaluations/accv2026/logs
 
 export WANDB_PROJECT="${WANDB_PROJECT:-inforates-accv2026}"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export BATCH_SIZE="${BATCH_SIZE:-12}"
 export EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-16}"
 export NUM_WORKERS="${NUM_WORKERS:-8}"

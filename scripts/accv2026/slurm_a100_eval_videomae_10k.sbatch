@@ -13,7 +13,7 @@ cd /data/wesleyferreiramaia/infoRates
 mkdir -p evaluations/accv2026/logs
 
 export WANDB_PROJECT="${WANDB_PROJECT:-inforates-accv2026}"
-export WANDB_MODE="${WANDB_MODE:-offline}"
+export WANDB_MODE="${WANDB_MODE:-online}"
 export EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-12}"
 
 srun --ntasks=1 --cpus-per-task=12 --gpus=1 \

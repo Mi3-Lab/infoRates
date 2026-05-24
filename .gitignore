@@ -87,6 +87,7 @@ config.local.yaml
 images/
 logs/
 corrupted_webm_files.txt
+.wandb_daemon.pid
 
 # =========================
 # Build artifacts
