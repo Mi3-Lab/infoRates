@@ -30,7 +30,7 @@ python -m compileall -q \
   src/info_rates/evaluation/benchmark.py \
   src/info_rates/metrics/temporal_robustness.py \
   scripts/accv2026/02_run_fixed_budget_eval.py \
-  scripts/accv2026/04_compute_temporal_metrics.py
+  scripts/accv2026/05_compute_temporal_metrics.py
 
 echo "[stage1] Evaluator smoke test. Accuracy is not a paper result."
 python scripts/accv2026/02_run_fixed_budget_eval.py \
@@ -45,7 +45,7 @@ python scripts/accv2026/02_run_fixed_budget_eval.py \
   --output-dir evaluations/accv2026/fixed_budget/smoke_timesformer_ssv2
 
 echo "[stage1] Train first useful SSV2 checkpoint"
-python scripts/train_something.py \
+python scripts/accv2026/train_something.py \
   --data-root data/Something_data \
   --model timesformer \
   --epochs 1 \
@@ -74,7 +74,7 @@ python scripts/accv2026/02_run_fixed_budget_eval.py \
   --wandb-tags accv2026 h200 ssv2 timesformer evaluation eval "job-${ACCV_JOB_ID}"
 
 echo "[stage1] Compute temporal metrics"
-python scripts/accv2026/04_compute_temporal_metrics.py \
+python scripts/accv2026/05_compute_temporal_metrics.py \
   --summary evaluations/accv2026/fixed_budget/timesformer_ssv2_10k_e1/somethingv2_validation_accv2026_timesformer_ssv2_10k_e1_fixed_budget_summary.csv \
   --output evaluations/accv2026/fixed_budget/timesformer_ssv2_10k_e1/temporal_metrics.csv
 

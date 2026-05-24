@@ -1,156 +1,140 @@
-# InfoRates: Temporal Sampling for Action Recognition
+# InfoRates — Temporal Evidence Allocation for Video Recognition
 
-This repository explores how temporal sampling (coverage and stride) affects action recognition across modern video models.
+Research code for ACCV 2026 submission.
 
-## 🆕 **Spectral Analysis: Now Available!**
+**Core question:** how many frames does a video model actually need to make a correct prediction, and how does that vary across model families?
 
-**Quantitative validation of the Nyquist-Shannon sampling theorem for video action recognition.**
-
-- 📊 Analyze optical flow frequency content from action videos  
-- 🎯 Prove high-frequency actions require dense sampling; low-frequency actions tolerate subsampling
-- 📈 Complete implementation with publication-quality visualizations
-- ✅ All tests passing (6/6)
-
-**Quick start:** `python scripts/run_spectral_analysis.py --output-dir evaluations/spectral_demo`
-
-**Documentation:** See [docs/SPECTRAL_ANALYSIS.md](docs/SPECTRAL_ANALYSIS.md).
+We measure this with *fixed-budget evaluation*: force a model to decide using only `k` frames sampled uniformly from the video, and sweep `k` from small to large. The resulting accuracy-vs-frames curve — and its area (temporal AUC) — quantifies each model's temporal evidence demand.
 
 ---
 
-**Interactive Dashboard**: Visit our [GitHub Pages dashboard](https://mi3-lab.github.io/infoRates/) for an interactive reference tool with results tables, plots, and recommendations.
+## Repository layout
 
-Quick start: see START_HERE.txt for commands, or the full docs/UNIFIED_GUIDE.md for end‑to‑end docs.
+```
+infoRates/
+├── src/info_rates/          # Python package (models, evaluation, data utils)
+│   ├── models/              # timesformer, videomae, vivit, torchvision_video, slowfast_video
+│   ├── evaluation/          # benchmark.py — fixed-budget evaluator
+│   └── data/                # SSV2, UCF101, HMDB51 dataset readers
+│
+├── scripts/accv2026/        # ACCV 2026 experiment pipeline
+│   ├── 00_prepare_datasets.py
+│   ├── 01_audit_datasets.py
+│   ├── 02_make_manifests.py
+│   ├── 02_run_fixed_budget_eval.py   # main evaluator entrypoint
+│   ├── 04_compute_temporal_demand.py
+│   ├── 05_compute_temporal_metrics.py
+│   ├── 06_demand_vs_budget.py
+│   ├── 07_build_comparison_table.py
+│   ├── train_something.py            # transformer training (TimeSformer, VideoMAE, ViViT)
+│   ├── train_torchvision.py          # 3D CNN training (R3D-18, MC3-18, R(2+1)D-18)
+│   ├── train_slowfast.py             # SlowFast R50 training
+│   ├── run_*.sh                      # shell launchers (A100 / H200)
+│   ├── slurm_*.sbatch                # Slurm batch scripts
+│   └── sync_wandb.sh                 # sync W&B runs after job finishes
+│
+├── evaluations/accv2026/
+│   ├── manifests/           # dataset manifests (tracked — small CSVs)
+│   ├── fixed_budget/        # per-model results (gitignored — large)
+│   ├── metrics/             # comparison tables (gitignored — generated)
+│   └── logs/                # Slurm logs (gitignored)
+│
+├── docs/                    # ACCV 2026 documentation
+│   ├── ACCV_2026_EXPERIMENT_TRACKER.md
+│   ├── ACCV_2026_RESEARCH_PLAN.md
+│   ├── ACCV_2026_DATASET_PREP.md
+│   ├── ACCV_2026_H200_RUNBOOK.md
+│   ├── ACCV_2026_ARCHITECTURE_AND_SAMPLING_PROTOCOL.md
+│   └── legacy/              # archived ECCV-era docs
+│
+└── scripts/legacy/          # archived scripts from ECCV phase
+```
 
-Key entry points
-- Training (multi-model, DDP-ready): scripts/data_processing/train_ddp.sh → launches scripts/data_processing/train_multimodel.py
-- Evaluation (multi-model): scripts/evaluation/run_eval_multimodel.py
-- Plotting (all analysis plots): scripts/plotting/generate_analysis_plots.py --model MODEL --dataset DATASET
-- Data management (build manifests, fix paths, download subsets): `scripts/manage_data.py` (subcommands: `build-manifest`, `fix-manifest`, `download`)
-- Archived scripts: `scripts/archived/` contains deprecated scripts preserved for provenance; prefer `scripts/manage_data.py` for new workflows.
-- Legacy DDP eval of a saved model: scripts/evaluation/run_eval.py and scripts/data_processing/pipeline_eval.sh
+---
 
-Setup
+## Setup
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e src/
 ```
 
-Examples
+Requires CUDA. Tested on A100-PCIE-40GB and H200 NVL.
+
+---
+
+## Models supported
+
+| Model | Family | Input frames | Training script |
+|---|---|---|---|
+| TimeSformer | Transformer | 8 | `train_something.py --model timesformer` |
+| VideoMAE | Transformer | 16 | `train_something.py --model videomae` |
+| ViViT | Transformer | 32 | `train_something.py --model vivit` |
+| R3D-18 | 3D CNN | 16 | `train_torchvision.py --model r3d_18` |
+| MC3-18 | 3D CNN | 16 | `train_torchvision.py --model mc3_18` |
+| R(2+1)D-18 | 3D CNN | 16 | `train_torchvision.py --model r2plus1d_18` |
+| SlowFast R50 | SlowFast | 8+32 | `train_slowfast.py` |
+
+All models are fine-tuned on Something-Something V2 (SSV2).
+
+---
+
+## Running experiments
+
+### 1. Prepare dataset manifests
+
 ```bash
-# 2 GPUs, fine-tune VideoMAE
-bash scripts/data_processing/train_ddp.sh --model videomae --gpus 2 --epochs 5
-
-# Evaluate all models with temporal sampling
-python scripts/evaluation/run_eval_multimodel.py --model all --batch-size 16
-
-# Generate all analysis plots for VideoMAE on UCF101
-python scripts/plotting/generate_analysis_plots.py --model videomae --dataset ucf101
-
-# Generate plots for all models on Kinetics400
-python scripts/plotting/generate_analysis_plots.py --model all --dataset kinetics400
+python scripts/accv2026/00_prepare_datasets.py
+python scripts/accv2026/01_audit_datasets.py
+python scripts/accv2026/02_make_manifests.py
 ```
 
-More details: docs/UNIFIED_GUIDE.md
+### 2. Submit training jobs (Slurm)
 
-## Repository Structure
-
-- `data/`: Raw datasets (UCF101, Kinetics400, HMDB51)
-- `evaluations/`: Model evaluation results and plots
-  - `kinetics400/`: Kinetics400 results by model
-  - `ucf101/`: UCF101 results by model
-- `scripts/`: Utility scripts
-  - `data_processing/`: Data preparation, training scripts
-  - `evaluation/`: Evaluation and testing scripts
-  - `plotting/`: Plotting and statistical analysis scripts
-- `src/`: Source code (models, analysis modules)
-- `docs/`: Documentation and evaluation reports
-- `fine_tuned_models/`: Saved model checkpoints
-- `models/`: Pre-trained models
-
-## Datasets
-
-The repository supports multiple video action recognition datasets:
-
-- **UCF101**: Main dataset for temporal sampling analysis
-- **Kinetics400**: Additional evaluation dataset  
-- **HMDB51**: Additional evaluation dataset
-- **Something-Something V2**: Planned for future analysis
-
-To download datasets:
-- UCF101: See `data/UCF101_data/README.md`
-- HMDB51: `scripts/data_processing/download_hmdb51.sh`
-- Kinetics400 subsets: `scripts/data_processing/download_kinetics_mini.sh` or `download_kinetics50_subset.sh`
-- Something-Something V2: `scripts/data_processing/download_ssv2.sh` (Note: Large dataset ~100GB)
-
-## Advanced Analysis Features
-
-### Critical Frequency Analysis
-Analyze action dynamics and identify optimal sampling rates:
 ```bash
-# Analyze critical frequencies for a dataset
-python scripts/analysis/critical_frequency_analysis.py --dataset ucf101 --sample-size 100
+# 3D CNN baselines on 2x A100
+sbatch scripts/accv2026/slurm_a100_r2plus1d_full.sbatch
+sbatch scripts/accv2026/slurm_a100_r3d18_full.sbatch
+sbatch scripts/accv2026/slurm_a100_mc3_full.sbatch
+
+# Transformers on H200
+sbatch scripts/accv2026/slurm_h200_timesformer_full.sbatch
+sbatch scripts/accv2026/slurm_h200_videomae_full.sbatch
+sbatch scripts/accv2026/slurm_h200_vivit_full.sbatch
 ```
 
-### Temporal Mitigation Strategies
-Implement advanced techniques to combat aliasing:
+### 3. Sync W&B after jobs finish (run from login node)
+
 ```bash
-# Temporal augmentation for robust training
-python scripts/analysis/temporal_mitigation.py --mode augment
-
-# Adaptive sampling based on model confidence
-python scripts/analysis/temporal_mitigation.py --mode adaptive --video-path path/to/video.mp4
-
-# Multiresolution analysis
-python scripts/analysis/temporal_mitigation.py --mode multiresolution --video-path path/to/video.mp4
+bash scripts/accv2026/sync_wandb.sh
 ```
 
-### Comprehensive Hyperparameter Sweep
-Systematic testing across frame rates and clip durations:
+Compute nodes have no internet; W&B saves locally and this syncs everything at once.
+
+### 4. Build comparison table
+
 ```bash
-# Full hyperparameter sweep (as per research milestones)
-python scripts/analysis/hyperparameter_sweep.py --models timesformer videomae vivit --datasets ucf101 kinetics400 --dry-run
-
-# Execute sweep
-python scripts/analysis/hyperparameter_sweep.py --models timesformer videomae --max-workers 4
+python scripts/accv2026/07_build_comparison_table.py
 ```
 
-### Research Report Generation
-Generate publication-ready reports with graphs and tables:
-```bash
-# Generate complete research report
-python scripts/analysis/generate_research_report.py --results-dir evaluations --output-dir docs/research_report
-```
+---
 
-## Paper and Figures
+## Pilot results (1 epoch / 5-10k samples — pipeline validation only)
 
-The comprehensive results analysis is documented in `docs/COMPREHENSIVE_RESULTS_ANALYSIS.md`, including all figures and LaTeX code for the paper.
+| Model | Family | 4 frames | 8 frames | 16 frames | Temporal AUC |
+|---|---|---|---|---|---|
+| VideoMAE | Transformer | 3.05% | 5.37% | 7.44% | 5.67% |
+| R(2+1)D-18 | 3D CNN | 2.07% | 3.29% | 4.39% | 3.46% |
+| TimeSformer | Transformer | 2.44% | 2.44% | 3.41% | 3.10% |
+| MC3-18 | 3D CNN | 1.34% | 2.68% | 2.80% | 2.50% |
+| R3D-18 | 3D CNN | 1.34% | 1.83% | 3.54% | 2.32% |
+| ViViT | Transformer | 1.95% | 1.95% | 2.20% | 2.26% |
 
-Example figures demonstrating temporal aliasing are available in `docs/figures/` (YoYo action frames at different sampling rates).
+Low accuracy is expected: these are pipeline-validation pilots (1 epoch, tiny subset). Full runs use the complete SSV2 training set and 5 epochs.
 
-## Benchmark Results and Recommendations
+---
 
-This repository serves as a reference for optimal temporal sampling configurations across different action recognition models and datasets. The table below summarizes key findings from our experiments, providing recommendations for coverage and stride based on activity type.
+## W&B project
 
-### Recommended Configurations by Activity Type
-
-| Activity Type | Characteristics | Recommended Model | Coverage | Stride | Rationale |
-|---------------|-----------------|-------------------|----------|--------|-----------|
-| High-Frequency Actions (e.g., YoYo, JumpingJack, SalsaSpin) | Explosive, non-repetitive motions | TimeSformer | 100% | 1-2 | Requires dense sampling to capture rapid state changes |
-| Moderate-Frequency Actions (e.g., Sports, tool use) | Dynamic controlled motions | ViViT | 75-100% | 2-4 | Balanced performance with some stride tolerance |
-| Low-Frequency Actions (e.g., Billiards, Typing, locomotion) | Gentle, rhythmic motions | VideoMAE | 50-75% | 4-8 | Robust to subsampling, efficient for resource-constrained scenarios |
-
-### Full Experimental Results Summary
-
-| Dataset | Model | Peak Accuracy | Best Coverage-Stride | Mean Drop (100%→25%) | Latency (ms) | Notes |
-|---------|-------|---------------|----------------------|----------------------|-------------|-------|
-| UCF-101 | TimeSformer | 85.09% | 100%-stride2 | 6.86% | 0.000 | Most robust to stride changes |
-| UCF-101 | VideoMAE | 86.90% | 100%-stride1 | 17.18% | 0.000 | Highest sensitivity to coverage reduction |
-| UCF-101 | ViViT | 85.49% | 100%-stride1 | 13.18% | 0.000 | Good balance, occasional paradoxical improvements |
-| Kinetics-400 | TimeSformer | 74.19% | 100%-stride4 | 10.60% | 0.000 | Consistent performance across configurations |
-| Kinetics-400 | VideoMAE | 76.52% | 50%-stride2 | 7.16% | 0.000 | Benefits from moderate subsampling |
-| Kinetics-400 | ViViT | 76.19% | 100%-stride1 | 8.23% | 0.000 | Stable at high coverage |
-
-**Extensibility**: This benchmark is designed to be extensible. If you conduct additional experiments (e.g., new models, datasets, or activity types), please contribute by submitting a pull request with updated results. Include the evaluation CSV, statistical analysis, and a brief description of the setup. For questions or contributions, open an issue or email the maintainers.
-
-**Note on Sign Language Recognition**: Sign language datasets (e.g., WLASL, MS-ASL) were not included in the current evaluation due to focus on general human activities. However, the temporal aliasing principles apply similarly, and we encourage extensions to include sign language recognition for fine-grained temporal analysis.
+Project: `inforates-accv2026` — runs are tagged with `train`/`eval`, model name, and Slurm job ID.

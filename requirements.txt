@@ -1,4 +1,5 @@
 torch
+torchvision
 transformers>=4.44.0
 decord
 av
@@ -8,3 +9,6 @@ pandas
 numpy
 wandb
 pyyaml
+pytorchvideo
+fvcore
+iopath

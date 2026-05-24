@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-online}"
+export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -31,7 +31,7 @@ nvidia-smi
 
 if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
   echo "[h200-timesformer-full] Training full SSV2 TimeSformer checkpoint"
-  python scripts/train_something.py \
+  python scripts/accv2026/train_something.py \
     --data-root data/Something_data \
     --model timesformer \
     --epochs "${EPOCHS:-3}" \
@@ -65,7 +65,7 @@ else
 fi
 
 echo "[h200-timesformer-full] Computing temporal metrics"
-python scripts/accv2026/04_compute_temporal_metrics.py \
+python scripts/accv2026/05_compute_temporal_metrics.py \
   --summary "${SUMMARY}" \
   --output "${OUT_DIR}/temporal_metrics.csv"
 

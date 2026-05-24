@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-online}"
+export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -31,7 +31,7 @@ nvidia-smi
 
 if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
   echo "[a100-vivit-pilot] Training ViViT SSV2 pilot with 2-GPU DDP"
-  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/train_something.py \
+  torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-2}" scripts/accv2026/train_something.py \
     --ddp \
     --data-root data/Something_data \
     --model vivit \
@@ -68,7 +68,7 @@ else
 fi
 
 echo "[a100-vivit-pilot] Computing temporal metrics"
-python scripts/accv2026/04_compute_temporal_metrics.py \
+python scripts/accv2026/05_compute_temporal_metrics.py \
   --summary "${SUMMARY}" \
   --output "${OUT_DIR}/temporal_metrics.csv"
 

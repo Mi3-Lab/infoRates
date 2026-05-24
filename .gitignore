@@ -67,12 +67,11 @@ corrupted_webm_files.txt
 # Model Artifacts
 # =========================
 fine_tuned_models/
-models/timesformer_ucf101_ddp/
+/models/
 *.pt
 *.pth
-# Ignore model folder contents generally
-models/*.pt
-models/*.pth
+*.safetensors
+*.bin
 
 # =========================
 # Archives & Config
@@ -80,8 +79,19 @@ models/*.pth
 *.tar.gz
 *.zip
 *.rar
-*.bin
 config.local.yaml
+
+# =========================
+# Root-level loose files
+# =========================
+images/
+logs/
+corrupted_webm_files.txt
+
+# =========================
+# Build artifacts
+# =========================
+src/*.egg-info/
 
 # =========================
 # DATASET MANAGEMENT

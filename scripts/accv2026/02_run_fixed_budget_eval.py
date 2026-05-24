@@ -21,6 +21,8 @@ for path in (SRC, SCRIPTS):
 
 from model_factory import ModelFactory  # noqa: E402
 from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results  # noqa: E402
+from info_rates.models.torchvision_video import load_torchvision_video_checkpoint  # noqa: E402
+from info_rates.models.slowfast_video import load_slowfast_checkpoint  # noqa: E402
 
 
 def load_model_and_processor(args):
@@ -28,6 +30,15 @@ def load_model_and_processor(args):
     if args.checkpoint:
         checkpoint = Path(args.checkpoint)
         print(f"Loading checkpoint: {checkpoint}")
+        config_path = checkpoint / "config.json"
+        if config_path.exists():
+            config_text = config_path.read_text(encoding="utf-8")
+            if '"backend": "torchvision_video"' in config_text:
+                model, processor, _ = load_torchvision_video_checkpoint(checkpoint, device=device)
+                return model, processor
+            if '"backend": "slowfast_video"' in config_text:
+                model, processor, _ = load_slowfast_checkpoint(checkpoint, device=device)
+                return model, processor
         processor = AutoImageProcessor.from_pretrained(str(checkpoint))
         model = AutoModelForVideoClassification.from_pretrained(str(checkpoint)).to(device)
         model.eval()
@@ -144,7 +155,7 @@ def main() -> None:
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--dataset-name", default=None)
     parser.add_argument("--split", default="validation")
-    parser.add_argument("--model", choices=["timesformer", "videomae", "vivit"], default="timesformer")
+    parser.add_argument("--model", choices=["timesformer", "videomae", "vivit", "r3d_18", "mc3_18", "r2plus1d_18"], default="timesformer")
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--num-labels", type=int, default=174)
     parser.add_argument("--budgets", nargs="+", type=int, default=[4, 8, 16, 32])

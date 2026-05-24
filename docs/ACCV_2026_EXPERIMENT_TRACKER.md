@@ -109,7 +109,10 @@ The current pilot stage answers:
 - `model_input_frames` is now tracked separately from evidence `processed_frames`.
 - TimeSformer 10k/1-epoch pilot produced a checkpoint and fixed-budget curve.
 - VideoMAE 10k/1-epoch DDP pilot produced a checkpoint and fixed-budget curve.
-- ViViT remains in scope as the 32-frame transformer reference; it needs a tiny smoke test before any pilot because it is memory-heavy.
+- ViViT 5k/1-epoch DDP pilot produced a checkpoint and fixed-budget curve.
+- TorchVision 3D CNN support is implemented for `r3d_18`, `mc3_18`, and `r2plus1d_18`.
+- R3D-18, MC3-18, and R(2+1)D-18 smoke tests passed on SSV2.
+- R3D-18, MC3-18, and R(2+1)D-18 5k/1-epoch pilots produced checkpoints and fixed-budget curves.
 
 ### Current Pilot Results
 
@@ -117,9 +120,12 @@ The current pilot stage answers:
 |---|---|---:|---|---|
 | TimeSformer | `fine_tuned_models/accv2026_timesformer_ssv2_10k_e1` | `4,8,16,32` | 2.44%, 2.44%, 3.41%, 3.29% | Useful pilot; grid predates the cleaner `2,4,8` protocol |
 | VideoMAE | `fine_tuned_models/accv2026_videomae_ssv2_10k_e1_a100ddp` | `4,8,16` | 3.05%, 5.37%, 7.44% | Useful pilot; clean architecture-valid grid |
-| ViViT | `fine_tuned_models/accv2026_vivit_ssv2_5k_e1_a100ddp` | `4,8,16,32` | Pending | Tiny A100 smoke passed; 2xA100 Slurm pilot submitted as job `70312` |
+| ViViT | `fine_tuned_models/accv2026_vivit_ssv2_5k_e1_a100ddp` | `4,8,16,32` | 1.95%, 1.95%, 2.20%, 2.68% | Useful pilot; 32-frame transformer reference |
+| R3D-18 | `fine_tuned_models/accv2026_r3d18_ssv2_5k_e1_a100ddp` | `4,8,16` | 1.34%, 1.83%, 3.54% | First completed non-transformer pilot; 2xA100 train, single-A100 eval |
+| MC3-18 | `fine_tuned_models/accv2026_mc3_18_ssv2_5k_e1_a100` | `4,8,16` | 1.34%, 2.68%, 2.80% | Completed non-transformer pilot; single-A100 train/eval |
+| R(2+1)D-18 | `fine_tuned_models/accv2026_r2plus1d_18_ssv2_5k_e1_a100` | `4,8,16` | 2.07%, 3.29%, 4.39% | Completed non-transformer pilot; best 3D CNN pilot so far |
 
-These accuracies are low because the models trained for only one epoch on a 10k subset. Their purpose is pipeline validation, not paper performance.
+These accuracies are low because the models trained for only one epoch on small SSV2 subsets. Their purpose is pipeline validation, not paper performance.
 
 ### Immediate Next Steps
 
@@ -133,8 +139,9 @@ These accuracies are low because the models trained for only one epoch on a 10k 
    - Use 2-3 epochs first, then decide whether longer training is worth the GPU time.
    - Evaluate on `somethingv2_val_20_per_class.csv`, not only `val_5_per_class`.
 
-3. **Add non-transformer baselines before claiming breadth**
-   - First target: SlowFast R50.
+3. **Add stronger non-transformer baselines before claiming breadth**
+   - TorchVision 3D CNN pilots now cover R3D-18, MC3-18, and R(2+1)D-18.
+   - Next target: SlowFast R50.
    - Second target: X3D-S or X3D-M.
    - Use PyTorchVideo/PySlowFast adapters rather than forcing them through Hugging Face.
 
@@ -258,10 +265,43 @@ Additional evaluation fix:
 Architecture expansion:
 
 - Added `docs/ACCV_2026_ARCHITECTURE_AND_SAMPLING_PROTOCOL.md`.
-- Current environment does not have `pytorchvideo`, `torchvision`, `fvcore`, or `iopath`; do not install into the active `.venv` while long jobs are using it.
-- Next non-transformer target: PyTorchVideo/PySlowFast SlowFast R50, then X3D-S or X3D-M.
+- Installed `torchvision==0.23.0+cu128`, `pytorchvideo`, `fvcore`, and `iopath` in the active `.venv` after the transformer pilots finished.
+- Added a TorchVision 3D CNN baseline path with `r3d_18`, `mc3_18`, and `r2plus1d_18` support.
+- First non-transformer target completed: TorchVision R3D-18 pretrained on Kinetics-400 and fine-tuned on SSV2 5k/1 epoch.
+- Second non-transformer target completed: TorchVision MC3-18 pretrained on Kinetics-400 and fine-tuned on SSV2 5k/1 epoch.
+- Third non-transformer target completed: TorchVision R(2+1)D-18 pretrained on Kinetics-400 and fine-tuned on SSV2 5k/1 epoch.
+- Next non-transformer target after the TorchVision CNN family: PyTorchVideo/PySlowFast SlowFast R50, then X3D-S or X3D-M.
 - Purpose: directly answer the ECCV criticism that the study only evaluated transformer models.
 - ViViT remains in the transformer set as the 32-frame transformer reference. It is useful for testing whether higher native temporal input changes the evidence-budget curve.
+
+TorchVision 3D CNN baseline implementation:
+
+- Model adapter: `src/info_rates/models/torchvision_video.py`
+- Training script: `scripts/accv2026/03_train_torchvision_video.py`
+- R3D-specific run script: `scripts/accv2026/run_a100_ssv2_r3d18_pilot_ddp.sh`
+- Generic TorchVision run script: `scripts/accv2026/run_a100_ssv2_torchvision_pilot.sh`
+- MC3 wrapper script: `scripts/accv2026/run_a100_ssv2_mc3_pilot.sh`
+- R(2+1)D wrapper script: `scripts/accv2026/run_a100_ssv2_r2plus1d_pilot.sh`
+- Slurm script: `scripts/accv2026/slurm_a100_r3d18_pilot.sbatch`
+- MC3 Slurm wrapper: `scripts/accv2026/slurm_a100_mc3_pilot.sbatch`
+- R(2+1)D Slurm wrapper: `scripts/accv2026/slurm_a100_r2plus1d_pilot.sbatch`
+- Fixed-budget evaluator now accepts dict-style processor outputs as well as Hugging Face `BatchFeature` outputs.
+- R3D-18 smoke tests passed on `gnode002`: 4 train videos, 4 validation videos, checkpoint save, checkpoint reload, and fixed-budget evaluation over budgets `4,8,16`.
+- MC3-18 smoke tests passed on `gnode002`: 4 train videos, 4 validation videos, checkpoint save, and fixed-budget evaluation over budgets `4,8,16`.
+- R(2+1)D-18 smoke tests passed on `gnode002`: 4 train videos, 4 validation videos, checkpoint save, and fixed-budget evaluation over budgets `4,8,16`.
+- Completed R3D-18 run: `interactive70263` on `gnode002`, trained with 2xA100, `max_train_samples=5000`, `max_val_samples=1000`, `batch_size=16`, `num_frames=16`, `input_size=112`; training finished with train loss `4.7888`, validation loss `4.5582`, validation accuracy `0.1030`.
+- R3D-18 fixed-budget result on the 5-per-class SSV2 validation manifest: `0.0134` at 4 frames, `0.0183` at 8 frames, `0.0354` at 16 frames; temporal robustness AUC `0.023171`; critical frame budget `16`.
+- R3D-18 artifacts: `fine_tuned_models/accv2026_r3d18_ssv2_5k_e1_a100ddp`, `evaluations/accv2026/fixed_budget/r3d18_ssv2_5k_e1_a100ddp/somethingv2_validation_accv2026_r3d18_ssv2_5k_e1_a100ddp_fixed_budget_summary.csv`, and `evaluations/accv2026/fixed_budget/r3d18_ssv2_5k_e1_a100ddp/temporal_metrics.csv`.
+- Completed MC3-18 clean restart: `interactive70263-mc3-restart` on `gnode002`, using GPU 1, `max_train_samples=5000`, `max_val_samples=1000`, `batch_size=16`, `num_frames=16`, `input_size=112`.
+- MC3-18 fixed-budget result on the 5-per-class SSV2 validation manifest: `0.0134` at 4 frames, `0.0268` at 8 frames, `0.0280` at 16 frames; temporal robustness AUC `0.025000`; critical frame budget `8`.
+- MC3-18 artifacts: `fine_tuned_models/accv2026_mc3_18_ssv2_5k_e1_a100`, `evaluations/accv2026/fixed_budget/mc3_18_ssv2_5k_e1_a100/somethingv2_validation_accv2026_mc3_18_ssv2_5k_e1_a100_fixed_budget_summary.csv`, and `evaluations/accv2026/fixed_budget/mc3_18_ssv2_5k_e1_a100/temporal_metrics.csv`.
+- Completed R(2+1)D-18 run: `interactive70263-r2plus1d` on `gnode002`, using GPU 0, `max_train_samples=5000`, `max_val_samples=1000`, `batch_size=16`, `num_frames=16`, `input_size=112`; training finished with train loss `4.7355`, validation loss `4.5151`, validation accuracy `0.1150`.
+- R(2+1)D-18 fixed-budget result on the 5-per-class SSV2 validation manifest: `0.0207` at 4 frames, `0.0329` at 8 frames, `0.0439` at 16 frames; temporal robustness AUC `0.034553`; critical frame budget `16`.
+- R(2+1)D-18 artifacts: `fine_tuned_models/accv2026_r2plus1d_18_ssv2_5k_e1_a100`, `evaluations/accv2026/fixed_budget/r2plus1d_18_ssv2_5k_e1_a100/somethingv2_validation_accv2026_r2plus1d_18_ssv2_5k_e1_a100_fixed_budget_summary.csv`, and `evaluations/accv2026/fixed_budget/r2plus1d_18_ssv2_5k_e1_a100/temporal_metrics.csv`.
+- W&B R3D train run: `train-a100ddp-r3d18-ssv2-5k-e1-jobinteractive70263`.
+- W&B R3D eval run: `eval-a100-r3d18-ssv2-5k-e1-jobinteractive70263`.
+- W&B MC3 train run: `train-a100-mc3-ssv2-5k-e1-restart-jobinteractive70263`.
+- W&B R(2+1)D train run: `train-a100-r2plus1d-ssv2-5k-e1-jobinteractive70263`.
 
 Execution priority:
 
@@ -281,7 +321,7 @@ Execution priority:
 | E03 | Something-Something V2 dataset audit | Something-Something V2 | n/a | Complete: 193,690 train/validation rows, 0 missing | `evaluations/accv2026/manifests/` |
 | E03b | Diving48 dataset audit | Diving48 | n/a | Complete from OpenMMLab/PYSKL pkl: 16,997 annotated videos, 0 missing, 47 observed labels because label 30 is absent from the pkl | `evaluations/accv2026/manifests/` |
 | E04 | Fixed-budget sweep on temporal dataset | Something-Something V2 subset/full | TimeSformer, VideoMAE, ViViT | Running pilots | accuracy-budget CSVs + W&B runs |
-| E04b | Non-transformer architecture adapter | Something-Something V2 smoke subset | SlowFast, X3D | Pending; protocol documented | adapter smoke tests + pilot scripts |
+| E04b | Non-transformer architecture adapter | Something-Something V2 smoke subset | R3D-18, MC3-18, R(2+1)D-18, SlowFast, X3D | TorchVision CNN pilots complete; SlowFast and X3D pending | adapter smoke tests + pilot scripts |
 | E05 | Temporal-demand score correlation | Something-Something V2 | same as E04 | Pending | demand-vs-critical-budget tables |
 | E06 | Adaptive budget baseline | Something-Something V2 | same as E04 | Pending | adaptive-vs-fixed table |
 | E07 | Optional dense-to-sparse consistency | primary temporal dataset | best model pair | Pending | ablation table |

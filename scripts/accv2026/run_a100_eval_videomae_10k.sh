@@ -12,7 +12,7 @@ export PYTHONPATH=src
 export HF_HOME=/scratch/wesleyferreiramaia/infoRates/hf_cache
 export TRANSFORMERS_CACHE="${HF_HOME}/transformers"
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
-export WANDB_MODE="${WANDB_MODE:-online}"
+export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM=false
 export ACCV_JOB_ID="${ACCV_JOB_ID:-${SLURM_JOB_ID:-manual}}"
 
@@ -44,7 +44,7 @@ CUDA_VISIBLE_DEVICES="${EVAL_GPU:-0}" python scripts/accv2026/02_run_fixed_budge
   --wandb-tags accv2026 a100 ssv2 videomae evaluation recovered eval "job-${ACCV_JOB_ID}"
 
 echo "[a100-videomae-eval] Computing temporal metrics"
-python scripts/accv2026/04_compute_temporal_metrics.py \
+python scripts/accv2026/05_compute_temporal_metrics.py \
   --summary "${SUMMARY}" \
   --output "${OUT_DIR}/temporal_metrics.csv"
 
