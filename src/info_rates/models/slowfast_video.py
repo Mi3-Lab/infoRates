@@ -15,6 +15,7 @@ import torch.nn as nn
 # The budget (evidence frames decoded from video) is adapted to these sizes.
 SLOWFAST_SLOW_FRAMES = 8
 SLOWFAST_FAST_FRAMES = 32
+SLOWFAST_ALPHA = SLOWFAST_FAST_FRAMES // SLOWFAST_SLOW_FRAMES  # 4
 
 
 def _resample_to(tensor: torch.Tensor, target_t: int) -> torch.Tensor:

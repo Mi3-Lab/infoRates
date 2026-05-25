@@ -62,19 +62,23 @@ class UCFDataset(Dataset):
         except Exception:
             pass
 
+    def _decode_frames_av(self, path):
+        # PyAV (FFmpeg wrapper) — raises Python exceptions, never calls C abort()
+        import av
+        all_frames = []
+        with av.open(str(path)) as container:
+            stream = container.streams.video[0]
+            for frame in container.decode(stream):
+                all_frames.append(frame.to_ndarray(format="rgb24"))
+        if not all_frames:
+            raise RuntimeError(f"No frames decoded from: {path}")
+        idxs = np.linspace(0, len(all_frames) - 1, self.num_frames).astype(int)
+        return np.stack([all_frames[i] for i in idxs])
+
     def _decode_frames(self, path):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Video file not found: {path}")
-        try:
-            vr = VideoReader(path, ctx=cpu(0))
-            total = len(vr)
-            idxs = np.linspace(0, max(total - 1, 0), self.num_frames).astype(int)
-            return vr.get_batch(idxs).asnumpy()
-        except Exception as decord_error:
-            frames = self._decode_frames_cv2(path)
-            if frames is None:
-                raise decord_error
-            return frames
+        return self._decode_frames_av(path)
 
     def _decode_frames_cv2(self, path):
         cap = cv2.VideoCapture(path)

@@ -40,10 +40,14 @@ BAD_VIDEOS_LOG = ROOT / "evaluations/accv2026/logs/bad_videos.tsv"
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", default="data/Something_data")
+    parser.add_argument("--dataset", default="ssv2",
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "epic_kitchens"],
+                        help="Dataset to train on (default: ssv2)")
+    parser.add_argument("--data-root", default=None,
+                        help="Dataset root (auto-detected from --dataset if omitted)")
     parser.add_argument("--model", choices=sorted(ModelFactory.REGISTRY), default="videomae")
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--weight-decay", type=float, default=0.05)
     parser.add_argument("--num-workers", type=int, default=6)
@@ -72,29 +76,52 @@ def load_bad_video_paths() -> set:
     return bad
 
 
-def prepare_data(data_root: str, max_train: int, max_val: int):
-    labels_path = Path(data_root) / "labels" / "labels.json"
-    class_names = list_classes(str(labels_path))
-    train_df, val_df, _ = get_train_val_test_manifests(data_root)
-    mapping = get_class_mapping(str(labels_path))
-    train_df = get_numeric_labels(train_df, mapping)
-    val_df = get_numeric_labels(val_df, mapping)
-    train_df = train_df[train_df["video_path"].apply(os.path.exists)].copy()
-    val_df = val_df[val_df["video_path"].apply(os.path.exists)].copy()
-    if max_train > 0:
-        train_df = train_df.iloc[:max_train].copy()
-    if max_val > 0:
-        val_df = val_df.iloc[:max_val].copy()
+_DEFAULT_DATA_ROOTS = {
+    "ssv2": "data/Something_data",
+    "ucf101": "data/UCF101_data",
+    "hmdb51": "data/HMDB51_data",
+    "diving48": "data/Diving48_data",
+    "wlasl": "data/WLASL_data",
+    "epic_kitchens": "data/EPIC_data",
+}
 
-    train_files = list(zip(train_df["video_path"].tolist(), train_df["label"].astype(int).tolist()))
-    val_files = list(zip(val_df["video_path"].tolist(), val_df["label"].astype(int).tolist()))
+
+def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: int):
+    root = data_root or _DEFAULT_DATA_ROOTS.get(dataset, "data/Something_data")
+
+    if dataset == "ssv2":
+        labels_path = Path(root) / "labels" / "labels.json"
+        class_names = list_classes(str(labels_path))
+        train_df, val_df, _ = get_train_val_test_manifests(root)
+        mapping = get_class_mapping(str(labels_path))
+        train_df = get_numeric_labels(train_df, mapping)
+        val_df = get_numeric_labels(val_df, mapping)
+        train_df = train_df[train_df["video_path"].apply(os.path.exists)].copy()
+        val_df = val_df[val_df["video_path"].apply(os.path.exists)].copy()
+        if max_train > 0:
+            train_df = train_df.iloc[:max_train].copy()
+        if max_val > 0:
+            val_df = val_df.iloc[:max_val].copy()
+        train_files = list(zip(train_df["video_path"].tolist(), train_df["label"].astype(int).tolist()))
+        val_files = list(zip(val_df["video_path"].tolist(), val_df["label"].astype(int).tolist()))
+    else:
+        from info_rates.data.datasets import load_dataset
+        class_names, train_files, val_files = load_dataset(dataset, root)
+        train_files = [(p, l) for p, l in train_files if os.path.exists(p)]
+        val_files = [(p, l) for p, l in val_files if os.path.exists(p)]
+        if max_train > 0:
+            train_files = train_files[:max_train]
+        if max_val > 0:
+            val_files = val_files[:max_val]
 
     bad_videos = load_bad_video_paths()
     if bad_videos:
         before = len(train_files)
         train_files = [(p, l) for p, l in train_files if p not in bad_videos]
         val_files = [(p, l) for p, l in val_files if p not in bad_videos]
-        print(f"[DataFilter] Excluded {before - len(train_files)} known-bad videos from training set")
+        filtered = before - len(train_files)
+        if filtered:
+            print(f"[DataFilter] Excluded {filtered} known-bad videos from training set")
 
     return class_names, train_files, val_files
 
@@ -111,6 +138,7 @@ def make_loader(files, processor, num_frames: int, input_size: int, args, use_dd
         pin_memory=True,
         persistent_workers=False,
         prefetch_factor=2 if args.num_workers > 0 else None,
+        multiprocessing_context="forkserver" if args.num_workers > 0 else None,
     )
 
 
@@ -127,7 +155,7 @@ def init_wandb(args, model_info: dict, class_count: int, train_count: int, val_c
         name=args.wandb_run_name or f"train-{args.model}-{Path(args.save_path).name}",
         tags=args.wandb_tags,
         config={
-            "dataset": "something-something-v2",
+            "dataset": args.dataset,
             "model": args.model,
             "model_id": model_info["model_id"],
             "architecture": model_info["architecture"],
@@ -157,7 +185,7 @@ def reduce_sum(value: float, device: torch.device) -> float:
     return float(tensor.item())
 
 
-def train_one_epoch(model, loader, optimizer, scaler, device, epoch: int, show_progress: bool):
+def train_one_epoch(model, loader, optimizer, device, epoch: int, show_progress: bool):
     model.train()
     total_loss, total_n = 0.0, 0
     pbar = tqdm(loader, desc=f"epoch={epoch} train", disable=not show_progress)
@@ -165,12 +193,11 @@ def train_one_epoch(model, loader, optimizer, scaler, device, epoch: int, show_p
         labels = batch.pop("labels").to(device, non_blocking=True)
         inputs = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
         optimizer.zero_grad(set_to_none=True)
-        with torch.amp.autocast(device_type=device.type, enabled=device.type == "cuda"):
+        with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
             logits = model(**inputs).logits
             loss = torch.nn.functional.cross_entropy(logits, labels)
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        loss.backward()
+        optimizer.step()
         total_loss += float(loss.detach().item()) * labels.numel()
         total_n += labels.numel()
         if show_progress:
@@ -187,7 +214,7 @@ def evaluate(model, loader, device, show_progress: bool):
     for batch in tqdm(loader, desc="validation", disable=not show_progress):
         labels = batch.pop("labels").to(device, non_blocking=True)
         inputs = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
-        with torch.amp.autocast(device_type=device.type, enabled=device.type == "cuda"):
+        with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
             logits = model(**inputs).logits
             loss = torch.nn.functional.cross_entropy(logits, labels)
         total_loss += float(loss.item()) * labels.numel()
@@ -235,7 +262,7 @@ def main() -> None:
     num_frames = model_info["default_frames"]
     input_size = model_info["input_size"]
 
-    class_names, train_files, val_files = prepare_data(args.data_root, args.max_train_samples, args.max_val_samples)
+    class_names, train_files, val_files = prepare_data(args.dataset, args.data_root, args.max_train_samples, args.max_val_samples)
     if is_main:
         print(f"Classes: {len(class_names)} | Train: {len(train_files)} | Val: {len(val_files)}")
 
@@ -263,14 +290,13 @@ def main() -> None:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scaler = torch.amp.GradScaler(enabled=device.type == "cuda")
     wandb_run = init_wandb(args, model_info, len(class_names), len(train_files), len(val_files))
 
     best_acc = -1.0
     for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
-        train_loss = train_one_epoch(model, train_loader, optimizer, scaler, device, epoch, is_main)
+        train_loss = train_one_epoch(model, train_loader, optimizer, device, epoch, is_main)
         val_loss, val_acc = evaluate(model, val_loader, device, is_main)
 
         if is_main:

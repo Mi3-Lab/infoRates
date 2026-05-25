@@ -37,13 +37,14 @@ if [[ ! -f "${CHECKPOINT}/config.json" ]]; then
     --data-root data/Something_data \
     --model "${MODEL_NAME}" \
     --epochs "${EPOCHS}" \
-    --batch-size "${BATCH_SIZE:-24}" \
-    --lr "${LR:-5e-5}" \
+    --batch-size "${BATCH_SIZE:-64}" \
+    --lr "${LR:-1e-4}" \
     --weight-decay "${WEIGHT_DECAY:-0.05}" \
     --num-workers "${NUM_WORKERS:-8}" \
     --num-frames "${MODEL_FRAMES:-16}" \
     --input-size "${INPUT_SIZE:-112}" \
     --save-path "${CHECKPOINT}" \
+    ${RESUME_FROM:+--resume-from "${RESUME_FROM}"} \
     --wandb-project "${WANDB_PROJECT:-inforates-accv2026}" \
     --wandb-run-name "${WANDB_RUN_NAME:-train-a100ddp-${TRAIN_TAG}-job${ACCV_JOB_ID}}" \
     --wandb-tags accv2026 a100 ssv2 "${MODEL_NAME}" 3d-cnn full ddp train "job-${ACCV_JOB_ID}"
