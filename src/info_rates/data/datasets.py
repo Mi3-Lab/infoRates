@@ -168,40 +168,125 @@ def load_wlasl(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     return class_names, train_files, val_files
 
 
-def load_epic_kitchens(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+def load_wlasl100(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """WLASL-100: first 100 glosses of WLASL_v0.3.json (same raw_videos as WLASL-2000).
+
+    100 classes, ~1000 train / ~240 val videos available on disk.
+    """
+    import json
+    from urllib.parse import urlparse, parse_qs
+
+    root = Path(data_root)
+    json_path = root / "WLASL_v0.3.json"
+    videos_dir = root / "raw_videos"
+
+    if not json_path.exists():
+        raise FileNotFoundError(f"WLASL JSON not found: {json_path}")
+
+    with open(json_path) as f:
+        data = json.load(f)
+
+    available: dict[str, str] = {
+        p.stem: str(p) for p in videos_dir.glob("*.mp4")
+    }
+
+    def _resolve(video_id: str, url: str) -> str | None:
+        if video_id in available:
+            return available[video_id]
+        if "youtube" in url or "youtu.be" in url:
+            parsed = urlparse(url)
+            yt_id = parse_qs(parsed.query).get("v", [None])[0]
+            if yt_id and yt_id in available:
+                return available[yt_id]
+        return None
+
+    train_files: DataSplit = []
+    val_files: DataSplit = []
+    gloss_to_id: dict[str, int] = {}
+    class_names: List[str] = []
+    cid = 0
+
+    for entry in data[:100]:  # first 100 glosses only
+        gloss = entry["gloss"]
+        has_any = any(
+            _resolve(inst["video_id"], inst.get("url", "")) is not None
+            for inst in entry["instances"]
+        )
+        if not has_any:
+            continue
+        if gloss not in gloss_to_id:
+            gloss_to_id[gloss] = cid
+            class_names.append(gloss)
+            cid += 1
+
+    for entry in data[:100]:
+        gloss = entry["gloss"]
+        if gloss not in gloss_to_id:
+            continue
+        label_id = gloss_to_id[gloss]
+        for inst in entry["instances"]:
+            path = _resolve(inst["video_id"], inst.get("url", ""))
+            if path is None:
+                continue
+            split = inst.get("split", "train")
+            if split == "train":
+                train_files.append((path, label_id))
+            elif split in ("val", "test"):
+                val_files.append((path, label_id))
+
+    return class_names, train_files, val_files
+
+
+def load_epic_kitchens(data_root: str, val_fraction: float = 0.2, seed: int = 42) -> Tuple[List[str], DataSplit, DataSplit]:
     """EPIC-Kitchens 100 action recognition using verb classes (97 classes).
 
     Expects pre-extracted clips at {data_root}/clips/{participant_id}/{narration_id}.mp4
-    and annotation CSVs at {data_root}/annotations/EPIC_100_{train,validation}.csv.
-    Only includes rows for which a clip file actually exists (lightly-ai subset).
+    (lightly-ai/epic-kitchens-100-clips, extension portion only).
+    Uses a random stratified 80/20 split since the official val set has no overlap
+    with the lightly-ai extension clips.
     """
     import pandas as pd
+    import random
 
     root = Path(data_root)
     clips_dir = root / "clips"
     ann_dir = root / "annotations"
 
     train_df = pd.read_csv(ann_dir / "EPIC_100_train.csv")
-    val_df = pd.read_csv(ann_dir / "EPIC_100_validation.csv")
 
     # Load verb class names
     verb_df = pd.read_csv(ann_dir / "EPIC_100_verb_classes.csv")
-    # columns: id, key, instances (semi-colon separated synonyms)
     class_names = [""] * len(verb_df)
     for _, row in verb_df.iterrows():
         class_names[int(row["id"])] = str(row["key"])
 
-    def _build_split(df: "pd.DataFrame") -> DataSplit:
-        result: DataSplit = []
-        for _, row in df.iterrows():
-            pid = row["participant_id"]
-            nid = row["narration_id"]
-            clip_path = clips_dir / pid / f"{nid}.mp4"
-            if clip_path.exists():
-                result.append((str(clip_path), int(row["verb_class"])))
-        return result
+    # Collect all available clips from lightly-ai extension (train CSV only —
+    # official val uses non-extension sessions with zero overlap)
+    all_clips: DataSplit = []
+    for _, row in train_df.iterrows():
+        pid = row["participant_id"]
+        nid = row["narration_id"]
+        clip_path = clips_dir / pid / f"{nid}.mp4"
+        if clip_path.exists():
+            all_clips.append((str(clip_path), int(row["verb_class"])))
 
-    return class_names, _build_split(train_df), _build_split(val_df)
+    # Stratified split by verb_class
+    from collections import defaultdict
+    by_class: dict[int, list] = defaultdict(list)
+    for path, label in all_clips:
+        by_class[label].append((path, label))
+
+    rng = random.Random(seed)
+    train_files: DataSplit = []
+    val_files: DataSplit = []
+    for label_id in sorted(by_class):
+        items = by_class[label_id]
+        rng.shuffle(items)
+        n_val = max(1, int(len(items) * val_fraction))
+        val_files.extend(items[:n_val])
+        train_files.extend(items[n_val:])
+
+    return class_names, train_files, val_files
 
 
 _LOADERS = {
@@ -209,6 +294,7 @@ _LOADERS = {
     "hmdb51": (load_hmdb51, "data/HMDB51_data"),
     "diving48": (load_diving48, "data/Diving48_data"),
     "wlasl": (load_wlasl, "data/WLASL_data"),
+    "wlasl100": (load_wlasl100, "data/WLASL_data"),
     "epic_kitchens": (load_epic_kitchens, "data/EPIC_data"),
 }
 

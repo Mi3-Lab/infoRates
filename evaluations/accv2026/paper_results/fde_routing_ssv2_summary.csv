@@ -1,0 +1,8 @@
+Model,Fixed-16f Acc,Adaptive Acc,Adaptive Avg Frames,Acc Delta,Frame Savings
+R3D-18,37.1%,34.6%,15.5,-2.5%,+0.5f
+MC3-18,33.6%,31.2%,15.5,-2.4%,+0.5f
+R(2+1)D-18,42.6%,39.5%,15.5,-3.1%,+0.5f
+TimeSformer,41.3%,41.6%,9.2,+0.3%,+6.8f
+ViViT,30.5%,28.8%,15.5,-1.8%,+0.5f
+SlowFast,33.3%,42.8%,27.0,+9.5%,-11.0f
+VideoMAE,52.3%,50.4%,15.5,-1.9%,+0.5f

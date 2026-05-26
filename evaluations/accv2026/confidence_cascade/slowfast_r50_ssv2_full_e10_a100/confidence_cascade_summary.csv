@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+slowfast_r50_ssv2_full_e10_a100,somethingv2,4,8,0.293,0.1066,5.95,0.0409,0.0656,0.1521
+slowfast_r50_ssv2_full_e10_a100,somethingv2,4,16,0.424,0.2437,11.96,0.0916,0.0656,0.3334
+slowfast_r50_ssv2_full_e10_a100,somethingv2,4,32,0.465,0.3744,23.85,0.0409,0.0656,0.495
+slowfast_r50_ssv2_full_e10_a100,somethingv2,8,16,0.364,0.2528,11.94,0.1008,0.1521,0.3334
+slowfast_r50_ssv2_full_e10_a100,somethingv2,8,32,0.495,0.407,23.93,0.0736,0.1521,0.495
+slowfast_r50_ssv2_full_e10_a100,somethingv2,16,32,0.535,0.4342,23.96,0.1008,0.3334,0.495
+slowfast_r50_ssv2_full_e10_a100,somethingv2,4,32,"[np.float64(0.5), np.float64(0.5), np.float64(0.1)]",0.2473,11.66,0.0953,0.0656,0.495

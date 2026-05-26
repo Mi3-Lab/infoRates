@@ -35,6 +35,7 @@ from info_rates.models.timesformer import UCFDataset
 from info_rates.models.slowfast_video import (
     SlowFastVideoProcessor,
     create_slowfast_model,
+    load_slowfast_checkpoint,
     save_slowfast_checkpoint,
     SLOWFAST_FAST_FRAMES,
 )
@@ -59,6 +60,7 @@ def parse_args():
     parser.add_argument("--save-path", default="fine_tuned_models/accv2026_slowfast_r50_ssv2")
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
+    parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from (epoch parsed from dir name _epochN)")
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--wandb-project", default="inforates-accv2026")
     parser.add_argument("--wandb-run-name", default=None)
@@ -225,7 +227,23 @@ def main() -> None:
     train_loader = make_loader(train_files, processor, args, args.ddp, train=True)
     val_loader = make_loader(val_files, processor, args, args.ddp, train=False)
 
+    start_epoch = 1
     model = create_slowfast_model(len(class_names), pretrained=not args.no_pretrained).to(device)
+    if args.resume_from:
+        resume_path = Path(args.resume_from)
+        if (resume_path / "config.json").exists():
+            model, _, _ = load_slowfast_checkpoint(str(resume_path), device=str(device))
+            model.to(device)
+            # Parse epoch from checkpoint name (_epochN suffix)
+            import re
+            m = re.search(r"_epoch(\d+)$", resume_path.name)
+            start_epoch = int(m.group(1)) + 1 if m else 2
+            if is_main:
+                print(f"[Resume] Loaded from {resume_path}, starting at epoch {start_epoch}")
+        else:
+            if is_main:
+                print(f"[Resume] Checkpoint not found at {resume_path}, starting from scratch")
+
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank)
         # SlowFast lateral connections cause the same weight to accumulate
@@ -235,7 +253,7 @@ def main() -> None:
     wandb_run = init_wandb(args, len(class_names), len(train_files), len(val_files))
 
     best_acc = -1.0
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
         train_loss = train_one_epoch(model, train_loader, optimizer, device, epoch, is_main)

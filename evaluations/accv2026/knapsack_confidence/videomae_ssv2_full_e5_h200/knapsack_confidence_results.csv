@@ -1,0 +1,20 @@
+method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
+Fixed-4f,4.0,0.210381679389313,fixed,,,VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Fixed-8f,8.0,0.3948091603053435,fixed,,,VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Fixed-16f,16.0,0.5233587786259541,fixed,,,VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Fixed-32f,32.0,0.5190839694656488,fixed,,,VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-proxy@avg8f,8.0,0.2879389312977099,knapsack_proxy,-0.1068702290076336,"{'4': 1922, '8': 586, '16': 670, '32': 97}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-learned@avg8f,8.0,0.34961832061068704,knapsack_learned,-0.04519083969465648,"{'4': 64, '8': 559, '16': 32, '32': 0}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Oracle-knapsack@avg8f,8.0,0.4030534351145038,oracle_knapsack,0.00824427480916029,"{'4': 454, '8': 122, '16': 5, '32': 74}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-proxy@avg10f,9.9993893129771,0.3004580152671756,knapsack_proxy,-0.09435114503816794,"{'4': 1713, '8': 595, '16': 613, '32': 354}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-learned@avg10f,9.996946564885496,0.39541984732824426,knapsack_learned,0.0006106870229007355,"{'4': 53, '8': 412, '16': 190, '32': 0}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Oracle-knapsack@avg10f,9.996946564885496,0.4259541984732824,oracle_knapsack,0.0311450381679389,"{'4': 413, '8': 114, '16': 7, '32': 121}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-proxy@avg12f,12.0,0.323969465648855,knapsack_proxy,-0.07083969465648854,"{'4': 1473, '8': 608, '16': 604, '32': 590}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-learned@avg12f,12.0,0.4396946564885496,knapsack_learned,0.044885496183206086,"{'4': 35, '8': 275, '16': 345, '32': 0}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Oracle-knapsack@avg12f,12.0,0.4442748091603053,oracle_knapsack,0.0494656488549618,"{'4': 371, '8': 107, '16': 9, '32': 168}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-proxy@avg14f,13.9993893129771,0.3480916030534351,knapsack_proxy,-0.17526717557251903,"{'4': 1254, '8': 602, '16': 587, '32': 832}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-learned@avg14f,13.996946564885496,0.4687022900763359,knapsack_learned,-0.05465648854961824,"{'4': 0, '8': 164, '16': 491, '32': 0}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Oracle-knapsack@avg14f,13.996946564885496,0.467175572519084,oracle_knapsack,-0.056183206106870165,"{'4': 328, '8': 100, '16': 13, '32': 214}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-proxy@avg16f,16.0,0.3648854961832061,knapsack_proxy,-0.15847328244274805,"{'4': 1060, '8': 548, '16': 598, '32': 1069}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Knapsack-learned@avg16f,16.0,0.5053435114503817,knapsack_learned,-0.018015267175572447,"{'4': 0, '8': 0, '16': 655, '32': 0}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200
+Oracle-knapsack@avg16f,16.0,0.4854961832061069,oracle_knapsack,-0.03786259541984727,"{'4': 288, '8': 90, '16': 16, '32': 261}",VideoMAE,SSV2,videomae_ssv2_full_e5_h200

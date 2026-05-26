@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,4,8,0.535,0.5831,5.97,0.1209,0.4621,0.6316
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,4,16,0.242,0.5277,5.98,0.0655,0.4621,0.7311
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,4,32,0.162,0.4972,5.99,0.035,0.4621,0.7458
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,8,16,0.798,0.7175,11.84,0.0859,0.6316,0.7311
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,8,32,0.374,0.6757,11.91,0.0441,0.6316,0.7458
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,16,32,0.727,0.7503,20.74,0.0192,0.7311,0.7458
+r2plus1d_18_hmdb51_full_e10_a100,hmdb51,4,32,"[np.float64(0.5), np.float64(0.1), np.float64(0.1)]",0.5763,5.85,0.1141,0.4621,0.7458

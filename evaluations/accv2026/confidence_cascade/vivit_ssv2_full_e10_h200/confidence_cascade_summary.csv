@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+vivit_ssv2_full_e10_h200,somethingv2,4,8,0.535,0.1347,5.99,0.0507,0.084,0.175
+vivit_ssv2_full_e10_h200,somethingv2,4,16,0.687,0.2321,11.92,0.0571,0.084,0.3053
+vivit_ssv2_full_e10_h200,somethingv2,4,32,0.192,0.1111,5.94,0.0272,0.084,0.3832
+vivit_ssv2_full_e10_h200,somethingv2,8,16,0.525,0.2498,11.93,0.0748,0.175,0.3053
+vivit_ssv2_full_e10_h200,somethingv2,8,32,0.273,0.2186,11.99,0.0437,0.175,0.3832
+vivit_ssv2_full_e10_h200,somethingv2,16,32,0.606,0.3631,23.83,0.0577,0.3053,0.3832
+vivit_ssv2_full_e10_h200,somethingv2,4,32,"[np.float64(0.7), np.float64(0.9), np.float64(0.1)]",0.2321,11.44,0.0571,0.084,0.3832

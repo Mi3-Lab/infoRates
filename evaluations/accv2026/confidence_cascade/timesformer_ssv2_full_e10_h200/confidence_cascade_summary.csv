@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+timesformer_ssv2_full_e10_h200,somethingv2,4,8,0.727,0.3887,5.98,0.0702,0.3185,0.4229
+timesformer_ssv2_full_e10_h200,somethingv2,4,16,0.354,0.3395,5.83,0.0211,0.3185,0.4128
+timesformer_ssv2_full_e10_h200,somethingv2,4,32,0.253,0.3276,5.88,0.0092,0.3185,0.4171
+timesformer_ssv2_full_e10_h200,somethingv2,8,16,0.869,0.4168,12.31,0.004,0.4229,0.4128
+timesformer_ssv2_full_e10_h200,somethingv2,8,32,0.596,0.4229,15.25,0.0101,0.4229,0.4171
+timesformer_ssv2_full_e10_h200,somethingv2,16,32,0.525,0.4186,19.59,0.0058,0.4128,0.4171
+timesformer_ssv2_full_e10_h200,somethingv2,4,32,"[np.float64(0.7), np.float64(0.1), np.float64(0.1)]",0.3847,5.89,0.0663,0.3185,0.4171

@@ -1,0 +1,20 @@
+method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
+Fixed-4f,4.0,0.05787348586810229,fixed,,,SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Fixed-8f,8.0,0.14535666218034993,fixed,,,SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Fixed-16f,16.0,0.26379542395693134,fixed,,,SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Fixed-32f,32.0,0.5047106325706595,fixed,,,SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-proxy@avg8f,8.0,0.12113055181695828,knapsack_proxy,-0.024226110363391645,"{'4': 506, '8': 114, '16': 58, '32': 65}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-learned@avg8f,8.0,0.1476510067114094,knapsack_learned,0.002294344531059478,"{'4': 28, '8': 107, '16': 14, '32': 0}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Oracle-knapsack@avg8f,8.0,0.18120805369127516,oracle_knapsack,0.03585139151092523,"{'4': 116, '8': 13, '16': 1, '32': 19}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-proxy@avg10f,9.997308209959623,0.1601615074024226,knapsack_proxy,0.014804845222072677,"{'4': 397, '8': 162, '16': 84, '32': 100}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-learned@avg10f,9.986577181208053,0.18791946308724833,knapsack_learned,0.0425628009068984,"{'4': 22, '8': 87, '16': 36, '32': 4}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Oracle-knapsack@avg10f,9.986577181208053,0.2080536912751678,oracle_knapsack,0.06269702909481786,"{'4': 104, '8': 14, '16': 2, '32': 29}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-proxy@avg12f,12.0,0.2018842530282638,knapsack_proxy,0.05652759084791387,"{'4': 307, '8': 177, '16': 126, '32': 133}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-learned@avg12f,12.0,0.2080536912751678,knapsack_learned,0.06269702909481786,"{'4': 21, '8': 85, '16': 22, '32': 21}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Oracle-knapsack@avg12f,12.0,0.22818791946308725,oracle_knapsack,0.08283125728273733,"{'4': 93, '8': 15, '16': 1, '32': 40}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-proxy@avg14f,13.997308209959623,0.23283983849259757,knapsack_proxy,-0.030955585464333774,"{'4': 238, '8': 179, '16': 151, '32': 175}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-learned@avg14f,13.986577181208053,0.21476510067114093,knapsack_learned,-0.049030323285790406,"{'4': 17, '8': 78, '16': 21, '32': 33}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Oracle-knapsack@avg14f,13.986577181208053,0.2550335570469799,oracle_knapsack,-0.008761866909951455,"{'4': 83, '8': 13, '16': 3, '32': 50}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-proxy@avg16f,16.0,0.2651413189771198,knapsack_proxy,0.0013458950201884479,"{'4': 172, '8': 178, '16': 175, '32': 218}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Knapsack-learned@avg16f,16.0,0.2550335570469799,knapsack_learned,-0.008761866909951455,"{'4': 14, '8': 73, '16': 15, '32': 47}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100
+Oracle-knapsack@avg16f,16.0,0.28187919463087246,oracle_knapsack,0.018083770673941124,"{'4': 72, '8': 14, '16': 2, '32': 61}",SlowFast,Diving48,slowfast_r50_diving48_full_e10_a100

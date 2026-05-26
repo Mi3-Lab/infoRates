@@ -1,0 +1,10 @@
+Model,Dataset,Best_Acc,Critical_Budget,AUC
+R(2+1)D-18,UCF101,89.0%,16,0.859
+R(2+1)D-18,HMDB51,74.6%,16,0.695
+R(2+1)D-18,Diving48,35.3%,16,0.293
+SlowFast,UCF101,87.6%,32,0.776
+SlowFast,HMDB51,79.3%,32,0.627
+SlowFast,Diving48,50.5%,32,0.293
+VideoMAE,UCF101,95.5%,8,0.936
+VideoMAE,HMDB51,84.4%,16,0.795
+VideoMAE,Diving48,49.9%,16,0.416

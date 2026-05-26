@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+videomae_diving48_full_e10_h200,diving48,4,8,0.424,0.1911,5.97,0.105,0.0861,0.2759
+videomae_diving48_full_e10_h200,diving48,4,16,0.596,0.3701,11.99,0.0942,0.0861,0.4859
+videomae_diving48_full_e10_h200,diving48,4,32,0.152,0.1171,5.88,0.031,0.0861,0.4993
+videomae_diving48_full_e10_h200,diving48,8,16,0.636,0.3836,11.84,0.1077,0.2759,0.4859
+videomae_diving48_full_e10_h200,diving48,8,32,0.343,0.3163,11.94,0.0404,0.2759,0.4993
+videomae_diving48_full_e10_h200,diving48,16,32,0.838,0.5061,23.17,0.0202,0.4859,0.4993
+videomae_diving48_full_e10_h200,diving48,4,32,"[np.float64(0.9), np.float64(0.7), np.float64(0.3)]",0.3782,11.89,0.1023,0.0861,0.4993

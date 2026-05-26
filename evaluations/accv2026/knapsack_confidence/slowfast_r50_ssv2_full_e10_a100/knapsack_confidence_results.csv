@@ -1,0 +1,20 @@
+method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
+Fixed-4f,4.0,0.06564885496183206,fixed,,,SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Fixed-8f,8.0,0.15206106870229008,fixed,,,SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Fixed-16f,16.0,0.3334351145038168,fixed,,,SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Fixed-32f,32.0,0.4949618320610687,fixed,,,SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-proxy@avg8f,8.0,0.13923664122137405,knapsack_proxy,-0.012824427480916029,"{'4': 2166, '8': 498, '16': 375, '32': 236}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-learned@avg8f,8.0,0.14961832061068703,knapsack_learned,-0.002442748091603053,"{'4': 364, '8': 109, '16': 182, '32': 0}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Oracle-knapsack@avg8f,8.0,0.20916030534351146,oracle_knapsack,0.05709923664122138,"{'4': 508, '8': 59, '16': 5, '32': 83}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-proxy@avg10f,9.9993893129771,0.17251908396946564,knapsack_proxy,0.020458015267175556,"{'4': 1855, '8': 544, '16': 441, '32': 435}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-learned@avg10f,9.996946564885496,0.20610687022900764,knapsack_learned,0.05404580152671756,"{'4': 311, '8': 25, '16': 319, '32': 0}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Oracle-knapsack@avg10f,9.996946564885496,0.23969465648854962,oracle_knapsack,0.08763358778625954,"{'4': 463, '8': 57, '16': 5, '32': 130}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-proxy@avg12f,12.0,0.20488549618320612,knapsack_proxy,0.052824427480916036,"{'4': 1587, '8': 537, '16': 511, '32': 640}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-learned@avg12f,12.0,0.250381679389313,knapsack_learned,0.09832061068702291,"{'4': 217, '8': 2, '16': 436, '32': 0}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Oracle-knapsack@avg12f,12.0,0.26106870229007634,oracle_knapsack,0.10900763358778626,"{'4': 421, '8': 48, '16': 10, '32': 176}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-proxy@avg14f,13.9993893129771,0.23725190839694657,knapsack_proxy,-0.09618320610687023,"{'4': 1358, '8': 510, '16': 543, '32': 864}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-learned@avg14f,13.996946564885496,0.27938931297709924,knapsack_learned,-0.05404580152671756,"{'4': 152, '8': 0, '16': 471, '32': 32}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Oracle-knapsack@avg14f,13.996946564885496,0.28549618320610687,oracle_knapsack,-0.04793893129770993,"{'4': 376, '8': 46, '16': 10, '32': 223}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-proxy@avg16f,16.0,0.2729770992366412,knapsack_proxy,-0.06045801526717559,"{'4': 1122, '8': 523, '16': 527, '32': 1103}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Knapsack-learned@avg16f,16.0,0.30229007633587784,knapsack_learned,-0.031145038167938954,"{'4': 128, '8': 2, '16': 428, '32': 97}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100
+Oracle-knapsack@avg16f,16.0,0.3236641221374046,oracle_knapsack,-0.009770992366412212,"{'4': 332, '8': 42, '16': 11, '32': 270}",SlowFast,SSV2,slowfast_r50_ssv2_full_e10_a100

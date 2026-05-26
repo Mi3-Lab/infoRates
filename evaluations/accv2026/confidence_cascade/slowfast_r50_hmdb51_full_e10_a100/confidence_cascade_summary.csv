@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,4,8,0.424,0.4237,5.98,0.0723,0.3514,0.4475
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,4,16,0.737,0.6056,11.93,0.1582,0.3514,0.6508
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,4,32,0.838,0.7299,23.96,0.0791,0.3514,0.7932
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,8,16,0.636,0.5944,11.95,0.1469,0.4475,0.6508
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,8,32,0.889,0.7503,23.89,0.0994,0.4475,0.7932
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,16,32,0.909,0.7853,23.92,0.1345,0.6508,0.7932
+slowfast_r50_hmdb51_full_e10_a100,hmdb51,4,32,"[np.float64(0.7), np.float64(0.7), np.float64(0.3)]",0.6124,11.77,0.165,0.3514,0.7932

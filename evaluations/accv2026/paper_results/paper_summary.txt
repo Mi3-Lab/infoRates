@@ -1,0 +1,35 @@
+ACCV 2026 Paper Results Summary
+============================================================
+
+Table 1: SSV2 Fixed-Budget Evaluation
+      Model Acc@4f Acc@8f Acc@16f Acc@32f Best_Acc  Critical_Budget   AUC
+     R3D-18   9.8%  19.7%   37.1%   36.9%    37.1%               16 0.314
+     MC3-18   8.2%  18.8%   33.6%   34.5%    34.5%               16 0.289
+ R(2+1)D-18  12.6%  24.3%   42.6%   42.1%    42.6%               16 0.364
+TimeSformer  31.8%  42.3%   41.3%   41.7%    42.3%                8 0.409
+      ViViT   8.4%  17.5%   30.5%   38.3%    38.3%               32 0.284
+   SlowFast   6.6%  15.2%   33.3%   49.5%    49.5%               32 0.322
+   VideoMAE  21.0%  39.5%   52.3%   51.9%    52.3%               16 0.472
+
+Table 2: Cross-Dataset Results
+     Model  Dataset Best_Acc  Critical_Budget   AUC
+R(2+1)D-18   UCF101    89.0%               16 0.859
+R(2+1)D-18   HMDB51    74.6%               16 0.695
+R(2+1)D-18 Diving48    35.3%               16 0.293
+  SlowFast   UCF101    87.6%               32 0.776
+  SlowFast   HMDB51    79.3%               32 0.627
+  SlowFast Diving48    50.5%               32 0.293
+  VideoMAE   UCF101    95.5%                8 0.936
+  VideoMAE   HMDB51    84.4%               16 0.795
+  VideoMAE Diving48    49.9%               16 0.416
+
+Key Findings:
+- Critical frame budget varies by model architecture:
+  Conv (R3D/MC3/R2+1D): 16f | TimeSformer: 8f | ViViT/SlowFast: 32f
+- Cross-dataset: UCF101 (appearance-biased) has 2-3x higher AUC than Diving48/SSV2
+- VideoMAE achieves critical=8f on UCF101 (most frame-efficient)
+- FDE routing: only TimeSformer benefits (+0.3% acc, saves 6.8f); Diving48 shows NEGATIVE FDE-demand correlation
+- Per-class: 'Poking a hole', 'Pushing onto' are hardest; camera motion classes easiest
+- TDS (mean FDE) predicts temporal robustness: Spearman r=0.927, p=0.001 (n=8)
+  Bootstrap 95% CI: estimated (rerun 07_dataset_temporal_demand.py for details)
+  UCF101 TDS=0.052 → AUC=0.86-0.94 | Diving48 TDS=0.081 → AUC=0.29-0.42

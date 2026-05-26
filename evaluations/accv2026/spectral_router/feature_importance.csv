@@ -1,0 +1,8 @@
+feature,spearman_r,p_value
+fde_mean,0.0902,0.0
+fde_max,0.0616,0.000423
+fde_entropy,0.0445,0.010822
+fde_std,0.0292,0.094559
+temporal_skew,-0.026,0.137056
+dct_hf_ratio,0.0247,0.158308
+hog_entropy,0.0247,0.158225

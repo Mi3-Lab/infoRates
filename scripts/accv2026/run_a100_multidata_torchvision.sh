@@ -23,7 +23,7 @@ OUT_DIR="${OUT_DIR:-evaluations/accv2026/fixed_budget/${MODEL_NAME}_${DATASET}_f
 CHECKPOINT_NAME="$(basename "${CHECKPOINT}")"
 MANIFEST_DIR="evaluations/accv2026/manifests"
 EVAL_MANIFEST="${EVAL_MANIFEST:-${MANIFEST_DIR}/${DATASET}_val_20_per_class.csv}"
-SUMMARY="${OUT_DIR}/${DATASET}_validation_${CHECKPOINT_NAME}_fixed_budget_summary.csv"
+SUMMARY="${OUT_DIR}/${DATASET}_val_${CHECKPOINT_NAME}_fixed_budget_summary.csv"
 
 mkdir -p evaluations/accv2026/fixed_budget fine_tuned_models evaluations/accv2026/logs "${MANIFEST_DIR}"
 

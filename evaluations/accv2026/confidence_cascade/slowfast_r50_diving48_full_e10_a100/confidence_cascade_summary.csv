@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+slowfast_r50_diving48_full_e10_a100,diving48,4,8,0.131,0.1036,5.86,0.0458,0.0579,0.1454
+slowfast_r50_diving48_full_e10_a100,diving48,4,16,0.172,0.1898,11.8,0.0444,0.0579,0.2638
+slowfast_r50_diving48_full_e10_a100,diving48,4,32,0.182,0.3607,22.99,0.0969,0.0579,0.5047
+slowfast_r50_diving48_full_e10_a100,diving48,8,16,0.283,0.2005,11.8,0.0552,0.1454,0.2638
+slowfast_r50_diving48_full_e10_a100,diving48,8,32,0.394,0.3795,23.57,0.1157,0.1454,0.5047
+slowfast_r50_diving48_full_e10_a100,diving48,16,32,0.556,0.4092,23.95,0.1454,0.2638,0.5047
+slowfast_r50_diving48_full_e10_a100,diving48,4,32,"[np.float64(0.3), np.float64(0.9), np.float64(0.7)]",0.4105,23.9,0.1467,0.0579,0.5047

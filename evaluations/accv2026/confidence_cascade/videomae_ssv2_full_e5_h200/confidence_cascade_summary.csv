@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+videomae_ssv2_full_e5_h200,somethingv2,4,8,0.414,0.324,5.99,0.1136,0.2104,0.3948
+videomae_ssv2_full_e5_h200,somethingv2,4,16,0.182,0.2745,5.96,0.0641,0.2104,0.5234
+videomae_ssv2_full_e5_h200,somethingv2,4,32,0.121,0.2321,5.79,0.0217,0.2104,0.5191
+videomae_ssv2_full_e5_h200,somethingv2,8,16,0.606,0.4898,11.96,0.095,0.3948,0.5234
+videomae_ssv2_full_e5_h200,somethingv2,8,32,0.293,0.4366,11.82,0.0418,0.3948,0.5191
+videomae_ssv2_full_e5_h200,somethingv2,16,32,0.384,0.5304,18.22,0.007,0.5234,0.5191
+videomae_ssv2_full_e5_h200,somethingv2,4,32,"[np.float64(0.3), np.float64(0.1), np.float64(0.3)]",0.2971,5.44,0.0867,0.2104,0.5191
