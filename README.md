@@ -1,166 +1,154 @@
-# InfoRates — Temporal Evidence Allocation for Video Recognition
+# InfoRates — Adaptive Temporal Frame Allocation for Video Recognition
 
-Research code for ACCV 2026 submission.
+**ACCV 2026 submission** · Mi3 Lab
 
-**Core question:** how many frames does a video model actually need to make a correct prediction, and how does that vary across model families and dataset types?
-
-We measure this with *fixed-budget evaluation*: force a model to decide using only `k` frames sampled uniformly from the video, and sweep `k ∈ {4, 8, 16, 32}`. The resulting accuracy-vs-frames curve — and its area (temporal AUC) — quantifies each model's temporal evidence demand. We then use this signal to build a confidence-based routing system that allocates frames adaptively at inference time without retraining.
-
-**Run status:** [`docs/ACCV_2026_RUN_STATUS.md`](docs/ACCV_2026_RUN_STATUS.md)
+We study how many frames a video model actually needs. Our method predicts the minimum frame budget per video — saving compute without sacrificing accuracy — and characterizes each dataset's *temporal demand* (TDS score).
 
 ---
 
-## Repository layout
+## Requirements
 
-```
-infoRates/
-├── src/info_rates/          # Python package (models, evaluation, data utils)
-│   ├── models/              # timesformer, videomae, vivit, torchvision_video, slowfast_video
-│   ├── evaluation/          # benchmark.py — fixed-budget evaluator
-│   └── data/                # dataset loaders: SSV2, UCF101, HMDB51, Diving48,
-│                            #   EPIC-Kitchens, WLASL100
-│
-├── scripts/accv2026/        # ACCV 2026 experiment pipeline
-│   ├── 02_run_fixed_budget_eval.py   # main evaluator entrypoint
-│   ├── 05_compute_temporal_metrics.py
-│   ├── 07_dataset_temporal_demand.py
-│   ├── 08_compile_paper_results.py
-│   ├── 09_plot_paper_figures.py
-│   ├── 10_per_class_temporal_analysis.py
-│   ├── 12_confidence_cascade.py      # cascade routing (k_low → k_high)
-│   ├── 13_knapsack_confidence.py     # batch knapsack allocator (learned MLP)
-│   ├── 14_plot_routing_comparison.py # unified routing figure
-│   ├── 15_baseline_comparison.py     # FrameExit vs knapsack
-│   ├── train_transformers.py         # VideoMAE, TimeSformer, ViViT
-│   ├── train_torchvision.py          # R3D-18, MC3-18, R(2+1)D-18
-│   ├── train_slowfast.py             # SlowFast R50
-│   ├── run_*.sh                      # shell launchers (A100 / H200)
-│   ├── slurm_*.sbatch                # Slurm batch scripts
-│   └── run_post_completion_analyses.sh  # all post-training analyses
-│
-├── evaluations/accv2026/
-│   ├── manifests/           # dataset manifests (tracked — small CSVs)
-│   ├── fixed_budget/        # per-model results (gitignored — large)
-│   ├── paper_results/       # compiled tables and figures (gitignored)
-│   ├── confidence_cascade/  # cascade routing results (gitignored)
-│   ├── knapsack_confidence/ # knapsack allocator results (gitignored)
-│   └── logs/                # Slurm logs (gitignored)
-│
-└── docs/
-    ├── ACCV_2026_RUN_STATUS.md      # ← current run status and results
-    └── ACCV_2026_RESEARCH_PLAN.md
-```
-
----
-
-## Setup
+- Python 3.10+
+- CUDA GPU (trained on A100 40GB and H200 80GB)
+- ~512 GB scratch storage for datasets + checkpoints
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-pip install -e src/
-export PYTHONPATH=src
+pip install -e .          # installs src/info_rates as a package
 ```
 
-Requires CUDA. Tested on A100-PCIE-40GB and H200 NVL.
-
 ---
-
-## Models
-
-| Model | Family | Frames | Training script |
-|-------|--------|--------|-----------------|
-| VideoMAE | Transformer | 16 | `train_transformers.py --model videomae` |
-| TimeSformer | Transformer | 8 | `train_transformers.py --model timesformer` |
-| ViViT | Transformer | 32 | `train_transformers.py --model vivit` |
-| SlowFast R50 | SlowFast | 8+32 | `train_slowfast.py` |
-| R(2+1)D-18 | 3D CNN | 16 | `train_torchvision.py --model r2plus1d_18` |
-| R3D-18 | 3D CNN | 16 | `train_torchvision.py --model r3d_18` |
-| MC3-18 | 3D CNN | 16 | `train_torchvision.py --model mc3_18` |
 
 ## Datasets
 
-| Dataset | Classes | Domain | Status |
-|---------|---------|--------|--------|
-| SSV2 | 174 | Motion-centric (temporal) | ✅ All 7 models |
-| UCF101 | 101 | Action (appearance) | ✅ 3 models |
-| HMDB51 | 51 | Action (appearance) | ✅ 3 models |
-| Diving48 | 48 | Fine-grained action | ✅ 3 models |
-| EPIC-Kitchens | 97 | Egocentric (verb) | 🔄 Running |
-| WLASL100 | 100 | Sign language | 🔄 Training |
+All datasets live at `data/`. Download each and place them as shown:
+
+| Dataset | Path | Classes | Download |
+|---------|------|---------|----------|
+| SSV2 | `data/Something_data/` | 174 | [20bn-something-something-v2](https://developer.qualcomm.com/software/ai-datasets/something-something) |
+| UCF-101 | `data/UCF101_data/` | 101 | [UCF-101](https://www.crcv.ucf.edu/data/UCF101.php) |
+| HMDB-51 | `data/HMDB51_data/` | 51 | [HMDB51](https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/) |
+| Diving-48 | `data/Diving48_data/` | 48 | [Diving48](http://www.svcl.ucsd.edu/projects/action_quality_assessment/) |
+| EPIC-Kitchens | `data/EPIC_data/` | 97 | `python scripts/accv2026/download_epic_clips.py` |
+| AUTSL | `data/AUTSL_data/` | 226 | [Kaggle: sttaseen/autsl](https://www.kaggle.com/datasets/sttaseen/autsl) |
+| DriveAct | `data/DriveAct_data/` | 34 | [DriveAct](https://driveact.de/) |
+| Kinetics-400 | `data/Kinetics400_data/` | 400 | [K400 val](https://github.com/cvdfoundation/kinetics-dataset) |
+
+For AUTSL and DriveAct, run preprocessing after download:
+
+```bash
+python scripts/accv2026/preprocess_autsl.py   # generates data/AUTSL_data/splits/
+python scripts/accv2026/preprocess_driveact.py # generates data/DriveAct_data/splits/
+```
 
 ---
 
-## Running experiments
+## Training
 
-### Submit a training + eval job
+Models: **R3D-18**, **MC3-18**, **SlowFast-R50** · **TimeSformer**, **ViViT**
 
-Each sbatch script trains for 10 epochs, saves per-epoch checkpoints, and runs fixed-budget eval automatically at the end.
+### Automated (recommended)
+
+The feeder daemon submits Slurm jobs as GPU slots open, until all datasets × models are done:
 
 ```bash
-# Examples — multi-dataset
-sbatch scripts/accv2026/slurm_h200_wlasl100_videomae.sbatch
-sbatch scripts/accv2026/slurm_a100_wlasl100_r2plus1d.sbatch
-sbatch scripts/accv2026/slurm_h200_vivit_full.sbatch   # SSV2
+nohup bash scripts/accv2026/feeder_submit_jobs.sh &
 ```
 
-### Run all post-completion analyses
+It calls `submit_missing_jobs.sh` every 2 minutes — idempotent, safe to re-run.
 
-After training jobs finish, run once to generate all paper outputs:
+### Manual (one dataset)
+
+```bash
+# CNN models (R3D-18, MC3-18, SlowFast-R50) — requires A100
+export DATASET=hmdb51   # hmdb51 | diving48 | epic_kitchens | autsl | driveact
+bash scripts/accv2026/run_a100_dataset_all_cnn.sh
+
+# Transformers (TimeSformer, ViViT) — requires H200 or large-memory GPU
+bash scripts/accv2026/run_h200_dataset_all_transformer.sh
+```
+
+Each script is idempotent: skips training if a checkpoint exists, skips eval if results exist.
+
+### Key environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATASET` | required | dataset name (see table above) |
+| `EPOCHS` | `10` | training epochs |
+| `WANDB_PROJECT` | `inforates-accv2026` | W&B project |
+| `HF_HOME` | `~/.cache/huggingface` | HuggingFace model cache |
+
+---
+
+## Analysis Pipeline
+
+After all training jobs finish:
 
 ```bash
 bash scripts/accv2026/run_post_completion_analyses.sh
-# with FDE routing:
-bash scripts/accv2026/run_post_completion_analyses.sh --fde-routing
 ```
 
-Outputs:
-- `evaluations/accv2026/paper_results/` — tables and figures
-- `evaluations/accv2026/confidence_cascade/` — cascade routing results
-- `evaluations/accv2026/knapsack_confidence/` — knapsack allocator results
+Or run steps individually (numbered scripts = pipeline order):
+
+| Script | What it does |
+|--------|-------------|
+| `02_make_manifests.py` | Build per-class eval manifests |
+| `04_compute_temporal_demand.py` | Compute TDS score per dataset |
+| `05_compute_temporal_metrics.py` | AUC and critical budget per model |
+| `07_dataset_temporal_demand.py` | Dataset-level TDS summary |
+| `08_compile_paper_results.py` | Paper tables |
+| `09_plot_paper_figures.py` | Paper figures (Fig 1–9) |
+| `10_per_class_temporal_analysis.py` | Per-class temporal analysis |
+| `06_fde_adaptive_routing.py` | FDE routing evaluation |
+| `11_spectral_router.py` | Spectral router |
+| `12_confidence_cascade.py` | Confidence cascade analysis |
+| `13_knapsack_confidence.py` | Knapsack frame allocator |
+| `14_plot_routing_comparison.py` | Routing comparison figures |
+| `15_baseline_comparison.py` | Multi-dataset baseline table |
+
+Results are written to `evaluations/accv2026/paper_results/`.
 
 ---
 
-## Current results (fixed-budget, full training)
+## Repository Structure
 
-### SSV2 — temporally demanding
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|----|----|-----|-----|
-| VideoMAE | 21.0% | 39.5% | **52.3%** | 51.9% |
-| TimeSformer | 31.8% | **42.3%** | 41.3% | 41.7% |
-| SlowFast R50 | 6.6% | 15.2% | 33.3% | **49.5%** |
-| R(2+1)D-18 | 12.6% | 24.3% | **42.6%** | 42.1% |
-| ViViT | 8.4% | 17.5% | 30.5% | **38.3%** |
-| R3D-18 | 9.8% | 19.7% | **37.1%** | 36.9% |
-| MC3-18 | 8.2% | 18.8% | **34.5%** | 34.5% |
-
-### UCF101 — appearance-driven (saturates early)
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|----|----|-----|-----|
-| VideoMAE | 81.4% | 91.4% | 95.4% | **95.5%** |
-| R(2+1)D-18 | 70.0% | 81.6% | 88.6% | **89.0%** |
-| SlowFast R50 | 50.1% | 66.2% | 81.3% | **87.6%** |
-
-### HMDB51
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|----|----|-----|-----|
-| VideoMAE | 51.5% | 73.6% | 84.0% | **84.4%** |
-| SlowFast R50 | 35.1% | 44.7% | 65.1% | **79.3%** |
-| R(2+1)D-18 | 46.2% | 63.2% | 73.1% | **74.6%** |
-
-### Diving48 — requires many frames
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|----|----|-----|-----|
-| SlowFast R50 | 5.8% | 14.5% | 26.4% | **50.5%** |
-| VideoMAE | 8.6% | 27.6% | 48.6% | **49.9%** |
-| R(2+1)D-18 | 8.6% | 16.8% | **35.3%** | 34.7% |
+```
+.
+├── src/info_rates/               # Python package
+│   ├── data/datasets.py          # unified loader: load_dataset(name, root)
+│   ├── metrics/                  # TDS, AUC, temporal metrics
+│   └── models/                   # model factory
+├── scripts/accv2026/             # active pipeline
+│   ├── 00–15_*.py                # numbered analysis steps
+│   ├── train_torchvision.py      # R3D-18, MC3-18 trainer
+│   ├── train_slowfast.py         # SlowFast-R50 trainer
+│   ├── train_transformers.py     # TimeSformer, ViViT trainer
+│   ├── eval_fixed_budget.py      # fixed-budget evaluation
+│   ├── feeder_submit_jobs.sh     # automation daemon
+│   ├── submit_missing_jobs.sh    # idempotent job submission
+│   ├── run_a100_dataset_all_cnn.sh
+│   ├── run_h200_dataset_all_transformer.sh
+│   ├── preprocess_autsl.py
+│   └── preprocess_driveact.py
+├── scripts/legacy/               # archived experiments (ECCV, SSV2-only)
+├── evaluations/accv2026/
+│   ├── fixed_budget/             # per-model per-dataset eval results
+│   ├── paper_results/            # final tables and figures
+│   ├── manifests/                # eval manifests
+│   └── logs/                     # Slurm job logs
+├── data/                         # datasets (symlink to /scratch on cluster)
+├── fine_tuned_models/            # checkpoints (symlink to /scratch on cluster)
+└── requirements.txt
+```
 
 ---
 
-## W&B project
+## Cluster Notes (Mi3 Lab HPC)
 
-Project: `inforates-accv2026` — runs tagged with model, dataset, and Slurm job ID.
+- **A100 partition:** `gpu` — CNN models (max 4 concurrent jobs)
+- **H200 partition:** `cenvalarc.gpu` — transformers (max 4 concurrent jobs)
+- `data/` and `fine_tuned_models/` are symlinked to `/scratch` (512 GB)
+- `HF_HOME=/scratch/wesleyferreiramaia/hf_unified` — consolidated model cache

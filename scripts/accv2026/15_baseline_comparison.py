@@ -55,9 +55,19 @@ EVAL_CONFIGS = [
     ("slowfast_r50_hmdb51_full_e10_a100",  "hmdb51_*_samples.csv",      "SlowFast",    "HMDB51"),
     ("videomae_hmdb51_full_e10_h200",      "hmdb51_*_samples.csv",      "VideoMAE",    "HMDB51"),
     # Diving48
-    ("r2plus1d_18_diving48_full_e10_a100", "diving48_*_samples.csv",    "R2+1D-18",    "Diving48"),
-    ("slowfast_r50_diving48_full_e10_a100","diving48_*_samples.csv",    "SlowFast",    "Diving48"),
-    ("videomae_diving48_full_e10_h200",    "diving48_*_samples.csv",    "VideoMAE",    "Diving48"),
+    ("r2plus1d_18_diving48_full_e10_a100", "diving48_*_samples.csv",      "R2+1D-18",  "Diving48"),
+    ("slowfast_r50_diving48_full_e10_a100","diving48_*_samples.csv",      "SlowFast",  "Diving48"),
+    ("videomae_diving48_full_e10_h200",    "diving48_*_samples.csv",      "VideoMAE",  "Diving48"),
+    # EPIC-Kitchens
+    ("r2plus1d_18_epic_kitchens_full_e10_a100", "epic_kitchens_*_samples.csv", "R2+1D-18", "EPIC"),
+    ("videomae_epic_kitchens_full_e10_h200",    "epic_kitchens_*_samples.csv", "VideoMAE",  "EPIC"),
+    # WLASL100 — replaced by AUTSL
+    # AUTSL — uncomment when training completes
+    # ("r2plus1d_18_autsl_full_e10_a100",  "autsl_*_samples.csv",        "R2+1D-18",  "AUTSL"),
+    # ("videomae_autsl_full_e10_h200",     "autsl_*_samples.csv",        "VideoMAE",  "AUTSL"),
+    # Drive&Act — uncomment when training completes
+    # ("r2plus1d_18_driveact_full_e10_a100","driveact_*_samples.csv",    "R2+1D-18",  "DriveAct"),
+    # ("videomae_driveact_full_e10_h200",  "driveact_*_samples.csv",     "VideoMAE",  "DriveAct"),
 ]
 
 EVAL_BASE = ROOT / "evaluations/accv2026/fixed_budget"
@@ -305,8 +315,10 @@ def main():
     print("=" * 70)
     print(f"{'Dataset':12s}  {'Fixed-8f':>8s}  {'FrameExit@8f':>12s}  {'Knapsack@8f':>11s}  {'Oracle@8f':>9s}")
     print("-" * 65)
-    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48"]:
+    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]:
         sub = global_df[global_df["dataset"] == ds]
+        if sub.empty:
+            continue
         f8  = sub[sub["method"] == "Fixed-8f"]["accuracy"].mean()
         fe  = sub[sub["method"].str.startswith("FrameExit(4→16)@8")]["accuracy"].mean()
         kl  = sub[sub["method"] == "Knapsack-learned@8f"]["accuracy"].mean()
@@ -318,8 +330,10 @@ def main():
     print("=" * 70)
     print(f"{'Dataset':12s}  {'Fixed-8f':>8s}  {'Fixed-16f':>9s}  {'FrameExit@12f':>13s}  {'Knapsack@12f':>12s}  {'Oracle@12f':>10s}")
     print("-" * 72)
-    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48"]:
+    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]:
         sub = global_df[global_df["dataset"] == ds]
+        if sub.empty:
+            continue
         f8  = sub[sub["method"] == "Fixed-8f"]["accuracy"].mean()
         f16 = sub[sub["method"] == "Fixed-16f"]["accuracy"].mean()
         fe  = sub[sub["method"].str.startswith("FrameExit(4→16)@10")]["accuracy"].mean()
@@ -334,8 +348,12 @@ def main():
 
 
 def _plot_comparison(df: pd.DataFrame):
-    datasets = ["SSV2", "UCF101", "HMDB51", "Diving48"]
-    fig, axes = plt.subplots(1, 4, figsize=(18, 4.5), sharey=False)
+    datasets = [ds for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]
+                if ds in df["dataset"].unique()]
+    n_ds = len(datasets)
+    fig, axes = plt.subplots(1, n_ds, figsize=(4.5 * n_ds, 4.5), sharey=False)
+    if n_ds == 1:
+        axes = [axes]
 
     COLORS = {
         "fixed":           "#aaaaaa",
@@ -344,7 +362,8 @@ def _plot_comparison(df: pd.DataFrame):
         "oracle_knapsack": "#2980b9",
     }
     TITLES = {"SSV2": "SSV2 (temporal-hard)", "UCF101": "UCF101",
-              "HMDB51": "HMDB51", "Diving48": "Diving48 (temporal-hard)"}
+              "HMDB51": "HMDB51", "Diving48": "Diving48 (temporal-hard)",
+              "EPIC": "EPIC-Kitchens", "WLASL100": "WLASL100 (sign language)"}
 
     for ax, ds in zip(axes, datasets):
         sub = df[df["dataset"] == ds]
@@ -386,7 +405,7 @@ def _plot_comparison(df: pd.DataFrame):
 
         ax.set_title(TITLES.get(ds, ds), fontsize=10, fontweight="bold")
         ax.set_xlabel("Avg frames / video", fontsize=9)
-        if ax == axes[0]:
+        if ax == axes[0]:  # noqa: E712
             ax.set_ylabel("Top-1 accuracy (%)", fontsize=9)
             ax.legend(fontsize=7.5, loc="upper left")
         ax.grid(True, alpha=0.3, ls=":")

@@ -4,12 +4,11 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=01:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=/data/wesleyferreiramaia/infoRates/evaluations/accv2026/logs/%x-%j.out
 #SBATCH --error=/data/wesleyferreiramaia/infoRates/evaluations/accv2026/logs/%x-%j.err
 
 # Run fixed-budget evaluation for EPIC-Kitchens R2+1D using best available checkpoint.
-# Submit after training job (70782) finishes.
 set -euo pipefail
 cd /data/wesleyferreiramaia/infoRates
 mkdir -p evaluations/accv2026/logs
@@ -25,13 +24,18 @@ MANIFEST="evaluations/accv2026/manifests/epic_kitchens_val_20_per_class.csv"
 OUT_DIR="evaluations/accv2026/fixed_budget/r2plus1d_18_epic_kitchens_full_e${EPOCHS}_a100"
 SUMMARY="${OUT_DIR}/epic_kitchens_val_accv2026_r2plus1d_18_epic_kitchens_full_e${EPOCHS}_a100_fixed_budget_summary.csv"
 
-# Find best available epoch checkpoint
+# Pick best checkpoint by val_acc from config.json
 BEST_CKPT=""
-for epoch in 10 9 8 7 6 5 4 3 2 1; do
+BEST_ACC=-1
+for epoch in $(seq 1 10); do
   ckpt="fine_tuned_models/accv2026_r2plus1d_18_epic_kitchens_full_e${EPOCHS}_a100_epoch${epoch}"
-  if [[ -d "$ckpt" ]]; then
-    BEST_CKPT="$ckpt"
-    break
+  cfg="${ckpt}/config.json"
+  if [[ -f "$cfg" ]]; then
+    acc=$(python3 -c "import json; print(json.load(open('${cfg}')).get('val_acc', 0))" 2>/dev/null || echo 0)
+    if python3 -c "exit(0 if float('${acc}') > float('${BEST_ACC}') else 1)" 2>/dev/null; then
+      BEST_ACC="$acc"
+      BEST_CKPT="$ckpt"
+    fi
   fi
 done
 
@@ -39,7 +43,7 @@ if [[ -z "$BEST_CKPT" ]]; then
   echo "[epic-r2-eval] No checkpoint found. Exiting."
   exit 1
 fi
-echo "[epic-r2-eval] Using checkpoint: $BEST_CKPT"
+echo "[epic-r2-eval] Using checkpoint: $BEST_CKPT (val_acc=${BEST_ACC})"
 
 mkdir -p "$OUT_DIR"
 
@@ -53,7 +57,7 @@ if [[ ! -f "$SUMMARY" ]]; then
     --budgets 4 8 16 32 \
     --model-frames 16 \
     --batch-size 32 \
-    --resize 224 \
+    --resize 112 \
     --output-dir "$OUT_DIR" \
     --wandb-project "inforates-accv2026" \
     --wandb-run-name "eval-r2plus1d-epic-best-epoch-job${ACCV_JOB_ID}" \

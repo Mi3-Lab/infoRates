@@ -269,9 +269,16 @@ EVAL_CONFIGS = [
     ("r2plus1d_18_diving48_full_e10_a100","diving48_*_samples.csv",     "R2plus1D-18", "Diving48"),
     ("slowfast_r50_diving48_full_e10_a100","diving48_*_samples.csv",    "SlowFast",    "Diving48"),
     ("videomae_diving48_full_e10_h200",   "diving48_*_samples.csv",     "VideoMAE",    "Diving48"),
-    # EPIC-Kitchens (added when evals complete)
+    # EPIC-Kitchens
     ("r2plus1d_18_epic_kitchens_full_e10_a100","epic_kitchens_*_samples.csv","R2plus1D-18","EPIC"),
     ("videomae_epic_kitchens_full_e10_h200",   "epic_kitchens_*_samples.csv","VideoMAE",   "EPIC"),
+    # WLASL100 — replaced by AUTSL
+    # AUTSL (Turkish Sign Language) — uncomment when training completes
+    # ("r2plus1d_18_autsl_full_e10_a100",      "autsl_*_samples.csv",       "R2plus1D-18","AUTSL"),
+    # ("videomae_autsl_full_e10_h200",         "autsl_*_samples.csv",       "VideoMAE",   "AUTSL"),
+    # Drive&Act — uncomment when training completes
+    # ("r2plus1d_18_driveact_full_e10_a100",   "driveact_*_samples.csv",    "R2plus1D-18","DriveAct"),
+    # ("videomae_driveact_full_e10_h200",      "driveact_*_samples.csv",    "VideoMAE",   "DriveAct"),
 ]
 
 

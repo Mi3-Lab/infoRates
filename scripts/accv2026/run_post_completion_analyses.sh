@@ -51,7 +51,7 @@ if [[ $RUN_CASCADE -eq 1 ]]; then
   python scripts/accv2026/12_confidence_cascade.py \
     --eval-base  evaluations/accv2026/fixed_budget \
     --output-dir evaluations/accv2026/confidence_cascade \
-    --datasets ssv2 ucf101 hmdb51 diving48 epic 2>/dev/null || true
+    --datasets ssv2 ucf101 hmdb51 diving48 epic wlasl100 autsl driveact 2>/dev/null || true
 fi
 
 if [[ $RUN_KNAPSACK -eq 1 ]]; then
@@ -60,7 +60,7 @@ if [[ $RUN_KNAPSACK -eq 1 ]]; then
   python scripts/accv2026/13_knapsack_confidence.py \
     --eval-base  evaluations/accv2026/fixed_budget \
     --output-dir evaluations/accv2026/knapsack_confidence \
-    --datasets ssv2 ucf101 hmdb51 diving48 epic 2>/dev/null || true
+    --datasets ssv2 ucf101 hmdb51 diving48 epic wlasl100 autsl driveact 2>/dev/null || true
 fi
 
 if [[ $RUN_FDE -eq 1 ]]; then

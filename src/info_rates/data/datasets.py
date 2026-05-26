@@ -289,13 +289,94 @@ def load_epic_kitchens(data_root: str, val_fraction: float = 0.2, seed: int = 42
     return class_names, train_files, val_files
 
 
+def load_autsl(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """AUTSL Turkish Sign Language — 226 classes, ~38k videos.
+
+    Expects preprocessed splits at {data_root}/splits/train.csv and val.csv.
+    Run scripts/accv2026/preprocess_autsl.py first.
+    """
+    import pandas as pd
+    root = Path(data_root)
+    train_df = pd.read_csv(root / "splits" / "train.csv")
+    val_df   = pd.read_csv(root / "splits" / "val.csv")
+
+    classes_df = (
+        pd.concat([train_df[["label", "label_id"]], val_df[["label", "label_id"]]])
+        .drop_duplicates().sort_values("label_id")
+    )
+    class_names = classes_df["label"].tolist()
+
+    def _rows(df: "pd.DataFrame") -> DataSplit:
+        return [(str(r["video_path"]), int(r["label_id"])) for _, r in df.iterrows()
+                if Path(str(r["video_path"])).exists()]
+
+    return class_names, _rows(train_df), _rows(val_df)
+
+
+def load_driveact(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Drive&Act in-cabin activity recognition — 34 midlevel classes.
+
+    Expects preprocessed clips at {data_root}/splits/train.csv and val.csv.
+    Run scripts/accv2026/preprocess_driveact.py first.
+    """
+    import pandas as pd
+    root = Path(data_root)
+    train_df = pd.read_csv(root / "splits" / "train.csv")
+    val_df   = pd.read_csv(root / "splits" / "val.csv")
+
+    classes_df = (
+        pd.concat([train_df[["label", "label_id"]], val_df[["label", "label_id"]]])
+        .drop_duplicates().sort_values("label_id")
+    )
+    class_names = classes_df["label"].tolist()
+
+    def _rows(df: "pd.DataFrame") -> DataSplit:
+        return [(str(r["video_path"]), int(r["label_id"])) for _, r in df.iterrows()
+                if Path(str(r["video_path"])).exists()]
+
+    return class_names, _rows(train_df), _rows(val_df)
+
+
+def load_kinetics400(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Kinetics-400 val set — 400 classes, ~19.8k videos (val only, no training split).
+
+    Uses pre-trained VideoMAE checkpoint; this loader returns empty train_files.
+    """
+    import pandas as pd
+    manifest = Path("evaluations/accv2026/manifests/kinetics400_val.csv")
+    if not manifest.exists():
+        manifest = Path(data_root) / "manifests" / "kinetics400_val.csv"
+    df = pd.read_csv(manifest)
+
+    # Load class names from HF config cache if available
+    hf_id2label_path = Path(data_root) / "id2label.json"
+    if hf_id2label_path.exists():
+        import json
+        id2label = json.load(open(hf_id2label_path))
+    else:
+        id2label = {str(i): f"class_{i:03d}" for i in range(400)}
+
+    num_classes = int(df["label"].max()) + 1
+    class_names = [id2label.get(str(i), f"class_{i:03d}") for i in range(num_classes)]
+
+    val_files: DataSplit = [
+        (str(r["video_path"]), int(r["label"]))
+        for _, r in df.iterrows()
+        if Path(str(r["video_path"])).exists()
+    ]
+    return class_names, [], val_files  # no train split available
+
+
 _LOADERS = {
-    "ucf101": (load_ucf101, "data/UCF101_data"),
-    "hmdb51": (load_hmdb51, "data/HMDB51_data"),
-    "diving48": (load_diving48, "data/Diving48_data"),
-    "wlasl": (load_wlasl, "data/WLASL_data"),
-    "wlasl100": (load_wlasl100, "data/WLASL_data"),
-    "epic_kitchens": (load_epic_kitchens, "data/EPIC_data"),
+    "ucf101":       (load_ucf101,       "data/UCF101_data"),
+    "hmdb51":       (load_hmdb51,       "data/HMDB51_data"),
+    "diving48":     (load_diving48,     "data/Diving48_data"),
+    "wlasl":        (load_wlasl,        "data/WLASL_data"),
+    "wlasl100":     (load_wlasl100,     "data/WLASL_data"),
+    "epic_kitchens":(load_epic_kitchens,"data/EPIC_data"),
+    "autsl":        (load_autsl,        "data/AUTSL_data"),
+    "driveact":     (load_driveact,     "data/DriveAct_data"),
+    "kinetics400":  (load_kinetics400,  "data/Kinetics400_data"),
 }
 
 

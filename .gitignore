@@ -121,4 +121,3 @@ evaluations/accv2026/metrics/
 !evaluations/accv2026/
 !evaluations/accv2026/manifests/
 !evaluations/accv2026/manifests/*.csv
-!evaluations/accv2026/manifests/*.json

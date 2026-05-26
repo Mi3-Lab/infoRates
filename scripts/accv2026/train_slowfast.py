@@ -45,7 +45,7 @@ from info_rates.training.ddp import cleanup_ddp, setup_ddp
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="ssv2",
-                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "epic_kitchens"],
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact"],
                         help="Dataset to train on (default: ssv2)")
     parser.add_argument("--data-root", default=None,
                         help="Dataset root (auto-detected from --dataset if omitted)")
@@ -74,7 +74,10 @@ _DEFAULT_DATA_ROOTS = {
     "hmdb51": "data/HMDB51_data",
     "diving48": "data/Diving48_data",
     "wlasl": "data/WLASL_data",
+    "wlasl100": "data/WLASL_data",
     "epic_kitchens": "data/EPIC_data",
+    "autsl": "data/AUTSL_data",
+    "driveact": "data/DriveAct_data",
 }
 
 

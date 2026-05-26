@@ -59,7 +59,7 @@ fi
 
 if [[ ! -f "${SUMMARY}" ]]; then
   echo "[multidata-videomae] Fixed-budget evaluation"
-  CUDA_VISIBLE_DEVICES="${EVAL_GPU:-0}" python scripts/accv2026/02_run_fixed_budget_eval.py \
+  CUDA_VISIBLE_DEVICES="${EVAL_GPU:-0}" python scripts/accv2026/eval_fixed_budget.py \
     --manifest "${EVAL_MANIFEST}" \
     --dataset-name "${DATASET}" \
     --split "val" \

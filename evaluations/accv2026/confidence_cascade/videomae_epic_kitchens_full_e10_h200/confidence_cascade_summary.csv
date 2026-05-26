@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,4,8,0.354,0.283,5.97,0.0824,0.2006,0.3575
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,4,16,0.545,0.4816,11.94,0.1241,0.2006,0.6048
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,4,32,0.111,0.2264,5.84,0.0258,0.2006,0.5789
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,8,16,0.566,0.4935,11.92,0.136,0.3575,0.6048
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,8,32,0.242,0.4052,11.86,0.0477,0.3575,0.5789
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,16,32,0.929,0.5879,24.17,0.0089,0.6048,0.5789
+videomae_epic_kitchens_full_e10_h200,epic_kitchens,4,32,"[np.float64(0.7), np.float64(0.7), np.float64(0.1)]",0.4697,11.11,0.1122,0.2006,0.5789
