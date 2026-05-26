@@ -9,7 +9,7 @@ We study how many frames a video model actually needs. Our method predicts the m
 ## Requirements
 
 - Python 3.10+
-- CUDA GPU (trained on A100 40GB and H200 80GB)
+- CUDA GPU (trained on A100 40GB and H200 141GB)
 - ~512 GB scratch storage for datasets + checkpoints
 
 ```bash
@@ -80,6 +80,93 @@ Each script is idempotent: skips training if a checkpoint exists, skips eval if 
 | `EPOCHS` | `10` | training epochs |
 | `WANDB_PROJECT` | `inforates-accv2026` | W&B project |
 | `HF_HOME` | `~/.cache/huggingface` | HuggingFace model cache |
+
+---
+
+## Current Results (as of 2026-05-26)
+
+Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = still training.
+
+### HMDB-51 — 51 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 49.2% | 67.1% | 80.3% | 80.1% |
+| MC3-18 | 63.5% | 71.2% | 78.6% | 78.2% |
+| SlowFast-R50 | 35.1% | 44.7% | 65.1% | 79.3% |
+| TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
+| ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
+| VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
+
+### UCF-101 — 101 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 59.5% | 72.6% | 81.2% | 81.4% |
+| MC3-18 | 72.9% | 80.9% | 85.4% | 85.1% |
+| SlowFast-R50 | 50.1% | 66.2% | 81.3% | 87.6% |
+| TimeSformer | 90.0% | 91.0% | 91.2% | 90.9% |
+| VideoMAE | 81.4% | 91.4% | 95.4% | 95.5% |
+
+### Something-Something v2 (SSv2) — 174 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 9.8% | 19.7% | 37.1% | 36.9% |
+| MC3-18 | 8.2% | 18.8% | 33.6% | 34.5% |
+| SlowFast-R50 | 6.6% | 15.2% | 33.3% | 49.5% |
+| TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
+| ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
+| VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
+
+### Kinetics-400 — 400 classes (pretrained, no fine-tune)
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| VideoMAE | 62.4% | 69.1% | 75.7% | 75.5% |
+
+### AUTSL — 226 classes (sign language) — partial
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 4.7% | 24.5% | 75.0% | 74.4% |
+| MC3-18 | — | — | — | — |
+| SlowFast-R50 | — | — | — | — |
+| TimeSformer | — | — | — | — |
+| ViViT | — | — | — | — |
+
+### Diving-48 — 48 classes — partial
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| SlowFast-R50 | 5.8% | 14.5% | 26.4% | 50.5% |
+| VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
+| R3D-18 | — | — | — | — |
+| MC3-18 | — | — | — | — |
+| TimeSformer | — | — | — | — |
+| ViViT | — | — | — | — |
+
+### EPIC-Kitchens — 97 classes — partial
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| VideoMAE | 20.1% | 35.7% | 60.5% | 57.9% |
+| R3D-18 | — | — | — | — |
+| MC3-18 | — | — | — | — |
+| SlowFast-R50 | — | — | — | — |
+| TimeSformer | — | — | — | — |
+| ViViT | — | — | — | — |
+
+### DriveAct — 34 classes — partial
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
+| R3D-18 | — | — | — | — |
+| MC3-18 | — | — | — | — |
+| SlowFast-R50 | — | — | — | — |
+| TimeSformer | — | — | — | — |
+| ViViT | — | — | — | — |
 
 ---
 
