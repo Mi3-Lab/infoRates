@@ -169,7 +169,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | SlowFast-R50 | 8.0% | 15.5% | 30.1% | 43.0% |
 | TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
 | ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
-| VideoMAE | 20.4% | 40.0% | 78.9% | 74.2% |
+| VideoMAE | — | — | — | — |
 
 ### VideoMamba (SSM) — todos os datasets — pendente (instalação em andamento)
 

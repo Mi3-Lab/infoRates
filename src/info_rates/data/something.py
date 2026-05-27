@@ -52,8 +52,9 @@ def get_train_val_test_manifests(data_root: str) -> Tuple[pd.DataFrame, pd.DataF
     val_df = val_df.rename(columns={'id': 'video_path'})
     test_df = test_df.rename(columns={'id': 'video_path'})
     
-    # Convert video paths to full paths
-    video_root = Path(data_root) / "videos"
+    # Convert video paths to full paths — prefer videos_full/ (complete download) over videos/
+    _root = Path(data_root)
+    video_root = _root / "videos_full" if (_root / "videos_full").exists() and any((_root / "videos_full").iterdir()) else _root / "videos"
     train_df['video_path'] = train_df['video_path'].apply(lambda x: str(video_root / f"{x}.webm"))
     val_df['video_path'] = val_df['video_path'].apply(lambda x: str(video_root / f"{x}.webm"))
     test_df['video_path'] = test_df['video_path'].apply(lambda x: str(video_root / f"{x}.webm"))
