@@ -62,12 +62,12 @@ EVAL_CONFIGS = [
     ("r2plus1d_18_epic_kitchens_full_e10_a100", "epic_kitchens_*_samples.csv", "R2+1D-18", "EPIC"),
     ("videomae_epic_kitchens_full_e10_h200",    "epic_kitchens_*_samples.csv", "VideoMAE",  "EPIC"),
     # WLASL100 — replaced by AUTSL
-    # AUTSL — uncomment when training completes
-    # ("r2plus1d_18_autsl_full_e10_a100",  "autsl_*_samples.csv",        "R2+1D-18",  "AUTSL"),
+    # AUTSL — R2+1D-18 done; VideoMAE still training (job 71753)
+    ("r2plus1d_18_autsl_full_e10_a100",  "autsl_*_samples.csv",        "R2+1D-18",  "AUTSL"),
     # ("videomae_autsl_full_e10_h200",     "autsl_*_samples.csv",        "VideoMAE",  "AUTSL"),
-    # Drive&Act — uncomment when training completes
-    # ("r2plus1d_18_driveact_full_e10_a100","driveact_*_samples.csv",    "R2+1D-18",  "DriveAct"),
-    # ("videomae_driveact_full_e10_h200",  "driveact_*_samples.csv",     "VideoMAE",  "DriveAct"),
+    # Drive&Act — all models done
+    ("r2plus1d_18_driveact_full_e10_a100","driveact_*_samples.csv",    "R2+1D-18",  "DriveAct"),
+    ("videomae_driveact_full_e10_h200",  "driveact_*_samples.csv",     "VideoMAE",  "DriveAct"),
 ]
 
 EVAL_BASE = ROOT / "evaluations/accv2026/fixed_budget"
@@ -315,7 +315,7 @@ def main():
     print("=" * 70)
     print(f"{'Dataset':12s}  {'Fixed-8f':>8s}  {'FrameExit@8f':>12s}  {'Knapsack@8f':>11s}  {'Oracle@8f':>9s}")
     print("-" * 65)
-    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]:
+    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "AUTSL", "DriveAct"]:
         sub = global_df[global_df["dataset"] == ds]
         if sub.empty:
             continue
@@ -330,7 +330,7 @@ def main():
     print("=" * 70)
     print(f"{'Dataset':12s}  {'Fixed-8f':>8s}  {'Fixed-16f':>9s}  {'FrameExit@12f':>13s}  {'Knapsack@12f':>12s}  {'Oracle@12f':>10s}")
     print("-" * 72)
-    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]:
+    for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "AUTSL", "DriveAct"]:
         sub = global_df[global_df["dataset"] == ds]
         if sub.empty:
             continue
@@ -348,7 +348,7 @@ def main():
 
 
 def _plot_comparison(df: pd.DataFrame):
-    datasets = [ds for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "WLASL100"]
+    datasets = [ds for ds in ["SSV2", "UCF101", "HMDB51", "Diving48", "EPIC", "AUTSL", "DriveAct"]
                 if ds in df["dataset"].unique()]
     n_ds = len(datasets)
     fig, axes = plt.subplots(1, n_ds, figsize=(4.5 * n_ds, 4.5), sharey=False)
@@ -363,7 +363,8 @@ def _plot_comparison(df: pd.DataFrame):
     }
     TITLES = {"SSV2": "SSV2 (temporal-hard)", "UCF101": "UCF101",
               "HMDB51": "HMDB51", "Diving48": "Diving48 (temporal-hard)",
-              "EPIC": "EPIC-Kitchens", "WLASL100": "WLASL100 (sign language)"}
+              "EPIC": "EPIC-Kitchens", "AUTSL": "AUTSL (sign language)",
+              "DriveAct": "Drive&Act (driving)"}
 
     for ax, ds in zip(axes, datasets):
         sub = df[df["dataset"] == ds]

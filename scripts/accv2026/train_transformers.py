@@ -139,8 +139,8 @@ def make_loader(files, processor, num_frames: int, input_size: int, args, use_dd
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
-        persistent_workers=False,
-        prefetch_factor=2 if args.num_workers > 0 else None,
+        persistent_workers=args.num_workers > 0,
+        prefetch_factor=4 if args.num_workers > 0 else None,
         multiprocessing_context="forkserver" if args.num_workers > 0 else None,
     )
 
@@ -261,6 +261,10 @@ def main() -> None:
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
     is_main = local_rank == 0
 
+    if torch.cuda.is_available():
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+
     model_info = ModelFactory.get_model_info(args.model)
     num_frames = model_info["default_frames"]
     input_size = model_info["input_size"]
@@ -292,10 +296,20 @@ def main() -> None:
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
+    if torch.cuda.is_available() and not args.ddp:
+        try:
+            model = torch.compile(model, mode="reduce-overhead", fullgraph=False)
+            if is_main:
+                print("[torch.compile] Model compiled successfully")
+        except Exception as e:
+            if is_main:
+                print(f"[torch.compile] Skipped: {e}")
+
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     wandb_run = init_wandb(args, model_info, len(class_names), len(train_files), len(val_files))
 
     best_acc = -1.0
+    best_epoch = start_epoch
     for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
@@ -313,11 +327,15 @@ def main() -> None:
                             extra={"epoch": epoch, "val_acc": val_acc})
             print(f"  -> Saved epoch checkpoint: {epoch_ckpt}")
 
-        best_acc = max(best_acc, val_acc)
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_epoch = epoch
+                save_checkpoint(args.save_path, model, processor, class_names, args.model, model_info,
+                                extra={"epoch": epoch, "val_acc": val_acc, "is_best": True})
+                print(f"  -> New best! Saved to {args.save_path} (epoch {epoch}, val_acc={val_acc:.4f})")
 
     if is_main:
-        save_checkpoint(args.save_path, model, processor, class_names, args.model, model_info)
-        print(f"Saved transformer checkpoint to {args.save_path}; best_val_acc={best_acc:.4f}")
+        print(f"Training complete. Best val_acc={best_acc:.4f} at epoch {best_epoch}. Checkpoint: {args.save_path}")
         if wandb_run is not None:
             import wandb
             wandb.summary["checkpoint_path"] = args.save_path

@@ -47,7 +47,7 @@ python scripts/accv2026/preprocess_driveact.py # generates data/DriveAct_data/sp
 
 ## Training
 
-Models: **R3D-18**, **MC3-18**, **SlowFast-R50** · **TimeSformer**, **ViViT**
+Models: **R3D-18**, **MC3-18**, **R2Plus1D-18**, **SlowFast-R50** · **TimeSformer**, **ViViT**, **VideoMAE**
 
 ### Automated (recommended)
 
@@ -83,30 +83,9 @@ Each script is idempotent: skips training if a checkpoint exists, skips eval if 
 
 ---
 
-## Current Results (as of 2026-05-26)
+## Current Results (as of 2026-05-27)
 
-Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = still training.
-
-### HMDB-51 — 51 classes ✓ complete
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|---:|---:|----:|----:|
-| R3D-18 | 49.2% | 67.1% | 80.3% | 80.1% |
-| MC3-18 | 63.5% | 71.2% | 78.6% | 78.2% |
-| SlowFast-R50 | 35.1% | 44.7% | 65.1% | 79.3% |
-| TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
-| ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
-| VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
-
-### UCF-101 — 101 classes ✓ complete
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|---:|---:|----:|----:|
-| R3D-18 | 59.5% | 72.6% | 81.2% | 81.4% |
-| MC3-18 | 72.9% | 80.9% | 85.4% | 85.1% |
-| SlowFast-R50 | 50.1% | 66.2% | 81.3% | 87.6% |
-| TimeSformer | 90.0% | 91.0% | 91.2% | 90.9% |
-| VideoMAE | 81.4% | 91.4% | 95.4% | 95.5% |
+Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda treinando / pendente.
 
 ### Something-Something v2 (SSv2) — 174 classes ✓ complete
 
@@ -114,59 +93,89 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = still tr
 |-------|---:|---:|----:|----:|
 | R3D-18 | 9.8% | 19.7% | 37.1% | 36.9% |
 | MC3-18 | 8.2% | 18.8% | 33.6% | 34.5% |
+| R2Plus1D-18 | 12.6% | 24.3% | 42.6% | 42.1% |
 | SlowFast-R50 | 6.6% | 15.2% | 33.3% | 49.5% |
 | TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
 | ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
 | VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
 
-### Kinetics-400 — 400 classes (pretrained, no fine-tune)
+### UCF-101 — 101 classes ✓ complete
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
-| VideoMAE | 62.4% | 69.1% | 75.7% | 75.5% |
+| R3D-18 | 59.5% | 72.6% | 81.2% | 81.4% |
+| MC3-18 | 72.9% | 80.9% | 85.4% | 85.1% |
+| R2Plus1D-18 | 70.0% | 81.6% | 88.6% | 89.0% |
+| SlowFast-R50 | 50.1% | 66.2% | 81.3% | 87.6% |
+| TimeSformer | 90.0% | 91.0% | 91.2% | 90.9% |
+| ViViT | 75.3% | 86.9% | 92.5% | 94.3% |
+| VideoMAE | 81.4% | 91.4% | 95.4% | 95.5% |
 
-### AUTSL — 226 classes (sign language) — partial
+### HMDB-51 — 51 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 49.2% | 67.1% | 80.3% | 80.1% |
+| MC3-18 | 63.5% | 71.2% | 78.6% | 78.2% |
+| R2Plus1D-18 | 46.2% | 63.2% | 73.1% | 74.6% |
+| SlowFast-R50 | 35.1% | 44.7% | 65.1% | 79.3% |
+| TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
+| ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
+| VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
+
+### DriveAct — 34 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 47.8% | 56.2% | 68.3% | 67.2% |
+| MC3-18 | 55.1% | 65.8% | 69.0% | 68.5% |
+| R2Plus1D-18 | 37.7% | 49.8% | 62.5% | 61.8% |
+| SlowFast-R50 | 42.6% | 53.3% | 66.7% | 72.5% |
+| TimeSformer | 64.7% | 67.6% | 68.8% | 66.5% |
+| ViViT | 48.9% | 55.8% | 62.5% | 67.4% |
+| VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
+
+### Diving-48 — 48 classes ✓ complete
+
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 5.9% | 14.4% | 28.8% | 28.8% |
+| MC3-18 | 8.2% | 19.5% | 31.6% | 33.4% |
+| R2Plus1D-18 | 8.6% | 16.8% | 35.3% | 34.7% |
+| SlowFast-R50 | 5.8% | 14.5% | 26.4% | 50.5% |
+| TimeSformer | 23.6% | 38.0% | 36.9% | 38.0% |
+| ViViT | 7.9% | 19.9% | 35.1% | 53.0% |
+| VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
+
+### AUTSL — 226 classes (sign language) ✓ complete
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
 | R3D-18 | 4.7% | 24.5% | 75.0% | 74.4% |
-| MC3-18 | — | — | — | — |
-| SlowFast-R50 | — | — | — | — |
-| TimeSformer | — | — | — | — |
-| ViViT | — | — | — | — |
+| MC3-18 | 4.1% | 37.5% | 63.7% | 63.7% |
+| R2Plus1D-18 | 8.4% | 30.2% | 75.9% | 75.0% |
+| SlowFast-R50 | 1.6% | 12.7% | 41.8% | 82.3% |
+| TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
+| ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
+| VideoMAE | 17.6% | 43.2% | 79.5% | 78.9% |
 
-### Diving-48 — 48 classes — partial
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|---:|---:|----:|----:|
-| SlowFast-R50 | 5.8% | 14.5% | 26.4% | 50.5% |
-| VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
-| R3D-18 | — | — | — | — |
-| MC3-18 | — | — | — | — |
-| TimeSformer | — | — | — | — |
-| ViViT | — | — | — | — |
-
-### EPIC-Kitchens — 97 classes — partial
+### EPIC-Kitchens — 97 classes — partial (R3D-18 e MC3-18 ainda treinando)
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
-| VideoMAE | 20.1% | 35.7% | 60.5% | 57.9% |
 | R3D-18 | — | — | — | — |
 | MC3-18 | — | — | — | — |
-| SlowFast-R50 | — | — | — | — |
-| TimeSformer | — | — | — | — |
-| ViViT | — | — | — | — |
+| R2Plus1D-18 | 18.7% | 30.9% | 52.0% | 51.4% |
+| SlowFast-R50 | 8.0% | 15.5% | 30.1% | 43.0% |
+| TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
+| ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
+| VideoMAE | 20.4% | 40.0% | 78.9% | 74.2% |
 
-### DriveAct — 34 classes — partial
+### VideoMamba (SSM) — todos os datasets — pendente (instalação em andamento)
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
-| VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
-| R3D-18 | — | — | — | — |
-| MC3-18 | — | — | — | — |
-| SlowFast-R50 | — | — | — | — |
-| TimeSformer | — | — | — | — |
-| ViViT | — | — | — | — |
+| VideoMamba | — | — | — | — |
 
 ---
 

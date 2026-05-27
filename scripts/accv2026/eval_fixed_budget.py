@@ -21,6 +21,7 @@ from info_rates.models.model_factory import ModelFactory  # noqa: E402
 from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results  # noqa: E402
 from info_rates.models.torchvision_video import load_torchvision_video_checkpoint  # noqa: E402
 from info_rates.models.slowfast_video import load_slowfast_checkpoint  # noqa: E402
+from info_rates.models.videomamba_model import load_videomamba_checkpoint  # noqa: E402
 
 
 def load_model_and_processor(args):
@@ -36,6 +37,10 @@ def load_model_and_processor(args):
                 return model, processor
             if '"backend": "slowfast_video"' in config_text:
                 model, processor, _ = load_slowfast_checkpoint(checkpoint, device=device)
+                return model, processor
+            if '"backend": "videomamba"' in config_text:
+                model, processor, _ = load_videomamba_checkpoint(checkpoint, device=device)
+                model.eval()
                 return model, processor
         processor = AutoImageProcessor.from_pretrained(str(checkpoint))
         model = AutoModelForVideoClassification.from_pretrained(str(checkpoint)).to(device)

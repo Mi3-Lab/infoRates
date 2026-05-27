@@ -25,14 +25,17 @@ CASCADE_GLOBAL = ROOT / "evaluations/accv2026/confidence_cascade/cascade_global_
 KNAPSACK_GLOBAL = ROOT / "evaluations/accv2026/knapsack_confidence/knapsack_global_results.csv"
 BUDGET_CURVES   = ROOT / "evaluations/accv2026/paper_results/paper_fig_budget_curves.csv"
 
-DATASETS_ORDER = ["SSV2", "UCF101", "HMDB51", "Diving48"]
-DATASET_LABELS = {"SSV2": "SSV2 (temporal)", "UCF101": "UCF101", "HMDB51": "HMDB51", "Diving48": "Diving48 (temporal)"}
+DATASETS_ORDER = ["SSV2", "UCF101", "HMDB51", "Diving48", "AUTSL", "DriveAct"]
+DATASET_LABELS = {"SSV2": "SSV2 (temporal)", "UCF101": "UCF101", "HMDB51": "HMDB51",
+                  "Diving48": "Diving48 (temporal)", "AUTSL": "AUTSL (sign lang.)", "DriveAct": "Drive&Act"}
 # Maps canonical dataset name → possible substrings in each CSV's dataset column
 DS_ALIASES = {
-    "SSV2":    ["ssv2", "somethingv2", "something-something"],
-    "UCF101":  ["ucf101", "ucf-101"],
-    "HMDB51":  ["hmdb51", "hmdb-51"],
-    "Diving48":["diving48", "diving-48"],
+    "SSV2":     ["ssv2", "somethingv2", "something-something"],
+    "UCF101":   ["ucf101", "ucf-101"],
+    "HMDB51":   ["hmdb51", "hmdb-51"],
+    "Diving48": ["diving48", "diving-48"],
+    "AUTSL":    ["autsl"],
+    "DriveAct": ["driveact", "drive&act", "drive_act"],
 }
 
 COLORS = {

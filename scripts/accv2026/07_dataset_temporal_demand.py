@@ -132,19 +132,26 @@ DATASETS = {
         "temporal_metrics": "evaluations/accv2026/fixed_budget/videomae_diving48_full_e10_h200/temporal_metrics.csv",
         "display": "Diving48", "character": "temporal", "model": "VideoMAE",
     },
-    "wlasl_r2p1d": {
-        "samples": "evaluations/accv2026/fixed_budget/r2plus1d_18_wlasl_full_e10_a100/"
-                   "wlasl_val_accv2026_r2plus1d_18_wlasl_full_e10_a100_fixed_budget_samples.csv",
-        "fde_cache": "evaluations/accv2026/fixed_budget/r2plus1d_18_wlasl_full_e10_a100/fde_cache.csv",
-        "temporal_metrics": "evaluations/accv2026/fixed_budget/r2plus1d_18_wlasl_full_e10_a100/temporal_metrics.csv",
-        "display": "WLASL", "character": "temporal", "model": "R(2+1)D",
+    "autsl_r2p1d": {
+        "samples": "evaluations/accv2026/fixed_budget/r2plus1d_18_autsl_full_e10_a100/"
+                   "autsl_val_accv2026_r2plus1d_18_autsl_full_e10_a100_fixed_budget_samples.csv",
+        "fde_cache": "evaluations/accv2026/fixed_budget/r2plus1d_18_autsl_full_e10_a100/fde_cache.csv",
+        "temporal_metrics": "evaluations/accv2026/fixed_budget/r2plus1d_18_autsl_full_e10_a100/temporal_metrics.csv",
+        "display": "AUTSL", "character": "temporal", "model": "R(2+1)D",
     },
-    "wlasl_videomae": {
-        "samples": "evaluations/accv2026/fixed_budget/videomae_wlasl_full_e10_h200/"
-                   "wlasl_val_accv2026_videomae_wlasl_full_e10_h200_fixed_budget_samples.csv",
-        "fde_cache": "evaluations/accv2026/fixed_budget/videomae_wlasl_full_e10_h200/fde_cache.csv",
-        "temporal_metrics": "evaluations/accv2026/fixed_budget/videomae_wlasl_full_e10_h200/temporal_metrics.csv",
-        "display": "WLASL", "character": "temporal", "model": "VideoMAE",
+    "driveact_r2p1d": {
+        "samples": "evaluations/accv2026/fixed_budget/r2plus1d_18_driveact_full_e10_a100/"
+                   "driveact_val_accv2026_r2plus1d_18_driveact_full_e10_a100_fixed_budget_samples.csv",
+        "fde_cache": "evaluations/accv2026/fixed_budget/r2plus1d_18_driveact_full_e10_a100/fde_cache.csv",
+        "temporal_metrics": "evaluations/accv2026/fixed_budget/r2plus1d_18_driveact_full_e10_a100/temporal_metrics.csv",
+        "display": "DriveAct", "character": "appearance-biased", "model": "R(2+1)D",
+    },
+    "driveact_videomae": {
+        "samples": "evaluations/accv2026/fixed_budget/videomae_driveact_full_e10_h200/"
+                   "driveact_val_accv2026_videomae_driveact_full_e10_h200_fixed_budget_samples.csv",
+        "fde_cache": "evaluations/accv2026/fixed_budget/videomae_driveact_full_e10_h200/fde_cache.csv",
+        "temporal_metrics": "evaluations/accv2026/fixed_budget/videomae_driveact_full_e10_h200/temporal_metrics.csv",
+        "display": "DriveAct", "character": "appearance-biased", "model": "VideoMAE",
     },
     "epic_r2p1d": {
         "samples": "evaluations/accv2026/fixed_budget/r2plus1d_18_epic_kitchens_full_e10_a100/"

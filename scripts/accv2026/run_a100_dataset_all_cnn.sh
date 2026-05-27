@@ -29,9 +29,14 @@ run_model() {
     echo "──────────────────────────────────────────"
     if [[ "$model" == "slowfast_r50" ]]; then
         BATCH_SIZE="${BATCH_SIZE_SF:-8}" EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE_SF:-8}" \
+            RESUME_FROM="${RESUME_FROM_SF:-}" \
             bash scripts/accv2026/run_a100_multidata_slowfast.sh
     else
+        local resume_var="RESUME_FROM_${model^^}"  # e.g. RESUME_FROM_R3D_18 → too long; use model slug
+        local resume_slug="RESUME_FROM_$(echo "$model" | tr '[:lower:]' '[:upper:]' | tr '-' '_')"
+        local resume_val="${!resume_slug:-}"
         MODEL_NAME="$model" BATCH_SIZE="${BATCH_SIZE_CNN:-32}" EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE_CNN:-24}" \
+            RESUME_FROM="$resume_val" \
             bash scripts/accv2026/run_a100_multidata_torchvision.sh
     fi
     local rc=$?
@@ -42,7 +47,7 @@ run_model() {
     fi
 }
 
-for model in r3d_18 mc3_18 slowfast_r50; do
+for model in r3d_18 mc3_18 slowfast_r50 r2plus1d_18; do
     run_model "$model" || true
 done
 

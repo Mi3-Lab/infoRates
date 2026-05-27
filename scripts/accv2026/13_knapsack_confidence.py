@@ -272,13 +272,12 @@ EVAL_CONFIGS = [
     # EPIC-Kitchens
     ("r2plus1d_18_epic_kitchens_full_e10_a100","epic_kitchens_*_samples.csv","R2plus1D-18","EPIC"),
     ("videomae_epic_kitchens_full_e10_h200",   "epic_kitchens_*_samples.csv","VideoMAE",   "EPIC"),
-    # WLASL100 — replaced by AUTSL
-    # AUTSL (Turkish Sign Language) — uncomment when training completes
-    # ("r2plus1d_18_autsl_full_e10_a100",      "autsl_*_samples.csv",       "R2plus1D-18","AUTSL"),
+    # AUTSL — R2plus1D-18 done; VideoMAE still training (job 71753)
+    ("r2plus1d_18_autsl_full_e10_a100",      "autsl_*_samples.csv",       "R2plus1D-18","AUTSL"),
     # ("videomae_autsl_full_e10_h200",         "autsl_*_samples.csv",       "VideoMAE",   "AUTSL"),
-    # Drive&Act — uncomment when training completes
-    # ("r2plus1d_18_driveact_full_e10_a100",   "driveact_*_samples.csv",    "R2plus1D-18","DriveAct"),
-    # ("videomae_driveact_full_e10_h200",      "driveact_*_samples.csv",    "VideoMAE",   "DriveAct"),
+    # Drive&Act — all models done
+    ("r2plus1d_18_driveact_full_e10_a100",   "driveact_*_samples.csv",    "R2plus1D-18","DriveAct"),
+    ("videomae_driveact_full_e10_h200",      "driveact_*_samples.csv",    "VideoMAE",   "DriveAct"),
 ]
 
 

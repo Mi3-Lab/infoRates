@@ -16,14 +16,16 @@ Table 2: Cross-Dataset Results
 R(2+1)D-18        UCF101    89.0%               16 0.859
 R(2+1)D-18        HMDB51    74.6%               16 0.695
 R(2+1)D-18      Diving48    35.3%               16 0.293
+R(2+1)D-18         AUTSL    75.9%               16 0.610
+R(2+1)D-18      DriveAct    62.5%               16 0.578
   SlowFast        UCF101    87.6%               32 0.776
   SlowFast        HMDB51    79.3%               32 0.627
   SlowFast      Diving48    50.5%               32 0.293
   VideoMAE        UCF101    95.5%                8 0.936
   VideoMAE        HMDB51    84.4%               16 0.795
   VideoMAE      Diving48    49.9%               16 0.416
-  VideoMAE         WLASL     4.4%               16 0.036
-  VideoMAE EPIC-Kitchens    60.5%               16 0.516
+  VideoMAE EPIC-Kitchens    78.9%               16 0.651
+  VideoMAE      DriveAct    74.1%               16 0.674
 
 Key Findings:
 - Critical frame budget varies by model architecture:
@@ -32,6 +34,6 @@ Key Findings:
 - VideoMAE achieves critical=8f on UCF101 (most frame-efficient)
 - FDE routing: only TimeSformer benefits (+0.3% acc, saves 6.8f); Diving48 shows NEGATIVE FDE-demand correlation
 - Per-class: 'Poking a hole', 'Pushing onto' are hardest; camera motion classes easiest
-- TDS (mean FDE) predicts temporal robustness: Spearman r=0.927, p=0.001 (n=8)
+- TDS (mean FDE) predicts temporal robustness: Spearman r=0.411, p=0.238 (n=10)
   Bootstrap 95% CI: estimated (rerun 07_dataset_temporal_demand.py for details)
   UCF101 TDS=0.052 → AUC=0.86-0.94 | Diving48 TDS=0.081 → AUC=0.29-0.42

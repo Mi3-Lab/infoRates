@@ -27,7 +27,19 @@ run_model() {
     echo "──────────────────────────────────────────"
     echo "  START: ${model} on ${DATASET}"
     echo "──────────────────────────────────────────"
-    MODEL="$model" bash scripts/accv2026/run_h200_multidata_transformer.sh
+    if [[ "$model" == "timesformer" ]]; then
+        MODEL="$model" BATCH_SIZE="${BATCH_SIZE_TSF:-32}" EVAL_BATCH_SIZE="${BATCH_SIZE_TSF:-32}" \
+            RESUME_FROM="${RESUME_FROM_TSF:-}" \
+            bash scripts/accv2026/run_h200_multidata_transformer.sh
+    elif [[ "$model" == "videomae" ]]; then
+        MODEL="$model" BATCH_SIZE="${BATCH_SIZE_VME:-24}" EVAL_BATCH_SIZE="${BATCH_SIZE_VME:-24}" \
+            RESUME_FROM="${RESUME_FROM_VME:-}" \
+            bash scripts/accv2026/run_h200_multidata_transformer.sh
+    else
+        MODEL="$model" BATCH_SIZE="${BATCH_SIZE_VVT:-16}" EVAL_BATCH_SIZE="${BATCH_SIZE_VVT:-16}" \
+            RESUME_FROM="${RESUME_FROM_VVT:-}" \
+            bash scripts/accv2026/run_h200_multidata_transformer.sh
+    fi
     local rc=$?
     if [[ $rc -ne 0 ]]; then
         echo "  [WARN] ${model} exited with code ${rc} — continuing"
@@ -36,7 +48,7 @@ run_model() {
     fi
 }
 
-for model in timesformer vivit; do
+for model in timesformer vivit videomae; do
     run_model "$model" || true
 done
 

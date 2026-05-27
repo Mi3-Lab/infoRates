@@ -41,16 +41,18 @@ MULTI_RUNS = [
     ("R(2+1)D-18", "UCF101",       "r2plus1d_18_ucf101_full_e10_a100",       "ucf101_val_accv2026_r2plus1d_18_ucf101_full_e10_a100_fixed_budget_summary.csv"),
     ("R(2+1)D-18", "HMDB51",       "r2plus1d_18_hmdb51_full_e10_a100",       "hmdb51_val_accv2026_r2plus1d_18_hmdb51_full_e10_a100_fixed_budget_summary.csv"),
     ("R(2+1)D-18", "Diving48",     "r2plus1d_18_diving48_full_e10_a100",     "diving48_val_accv2026_r2plus1d_18_diving48_full_e10_a100_fixed_budget_summary.csv"),
-    ("R(2+1)D-18", "WLASL",        "r2plus1d_18_wlasl_full_e10_a100",        "wlasl_val_accv2026_r2plus1d_18_wlasl_full_e10_a100_fixed_budget_summary.csv"),
     ("R(2+1)D-18", "EPIC-Kitchens","r2plus1d_18_epic_kitchens_full_e10_a100","epic_kitchens_val_accv2026_r2plus1d_18_epic_kitchens_full_e10_a100_fixed_budget_summary.csv"),
+    ("R(2+1)D-18", "AUTSL",        "r2plus1d_18_autsl_full_e10_a100",        "autsl_val_accv2026_r2plus1d_18_autsl_full_e10_a100_fixed_budget_summary.csv"),
+    ("R(2+1)D-18", "DriveAct",     "r2plus1d_18_driveact_full_e10_a100",     "driveact_val_accv2026_r2plus1d_18_driveact_full_e10_a100_fixed_budget_summary.csv"),
     ("SlowFast",   "UCF101",       "slowfast_r50_ucf101_full_e10_a100",      "ucf101_val_accv2026_slowfast_r50_ucf101_full_e10_a100_fixed_budget_summary.csv"),
     ("SlowFast",   "HMDB51",       "slowfast_r50_hmdb51_full_e10_a100",      "hmdb51_val_accv2026_slowfast_r50_hmdb51_full_e10_a100_fixed_budget_summary.csv"),
     ("SlowFast",   "Diving48",     "slowfast_r50_diving48_full_e10_a100",    "diving48_val_accv2026_slowfast_r50_diving48_full_e10_a100_fixed_budget_summary.csv"),
     ("VideoMAE",   "UCF101",       "videomae_ucf101_full_e10_h200",          "ucf101_val_accv2026_videomae_ucf101_full_e10_h200_fixed_budget_summary.csv"),
     ("VideoMAE",   "HMDB51",       "videomae_hmdb51_full_e10_h200",          "hmdb51_val_accv2026_videomae_hmdb51_full_e10_h200_fixed_budget_summary.csv"),
     ("VideoMAE",   "Diving48",     "videomae_diving48_full_e10_h200",        "diving48_val_accv2026_videomae_diving48_full_e10_h200_fixed_budget_summary.csv"),
-    ("VideoMAE",   "WLASL",        "videomae_wlasl_full_e10_h200",           "wlasl_val_accv2026_videomae_wlasl_full_e10_h200_fixed_budget_summary.csv"),
     ("VideoMAE",   "EPIC-Kitchens","videomae_epic_kitchens_full_e10_h200",   "epic_kitchens_val_accv2026_videomae_epic_kitchens_full_e10_h200_fixed_budget_summary.csv"),
+    ("VideoMAE",   "DriveAct",     "videomae_driveact_full_e10_h200",        "driveact_val_accv2026_videomae_driveact_full_e10_h200_fixed_budget_summary.csv"),
+    # VideoMAE AUTSL still training (job 71753) — add when complete
 ]
 
 
