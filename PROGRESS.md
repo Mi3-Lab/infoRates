@@ -1,7 +1,7 @@
 # InfoRates — Research Progress & Roadmap
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia  
-Last updated: 2026-05-26 — **43/49 runs complete** (7 modelos × 7 datasets) + VideoMamba (8th model, SSM, em setup)
+Last updated: 2026-05-27 — **45/49 runs complete** (7 modelos × 7 datasets) + VideoMamba (8th model, SSM, treinando em 4 GPUs simultâneos)
 
 ---
 
@@ -91,14 +91,14 @@ Target: **7 modelos × 7 datasets = 49 runs** — **38/49 completos**
 | AUTSL | SlowFast-R50 | 1.6% | 12.7% | 41.8% | 82.3% |
 | AUTSL | TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
 | AUTSL | ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
-| AUTSL | VideoMAE | — | — | — | — |
+| AUTSL | VideoMAE | 17.6% | 43.2% | 79.5% | 78.9% |
 | EPIC-Kitchens | R3D-18 | — | — | — | — |
 | EPIC-Kitchens | MC3-18 | — | — | — | — |
-| EPIC-Kitchens | R2Plus1D-18 | — | — | — | — |
-| EPIC-Kitchens | SlowFast-R50 | — | — | — | — |
+| EPIC-Kitchens | R2Plus1D-18 | 18.7% | 30.9% | 52.0% | 51.4% |
+| EPIC-Kitchens | SlowFast-R50 | 8.0% | 15.5% | 30.1% | 43.0% |
 | EPIC-Kitchens | TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
 | EPIC-Kitchens | ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
-| EPIC-Kitchens | VideoMAE | 20.4% | 40.0% | 78.9% | 74.2% |
+| EPIC-Kitchens | VideoMAE | 19.5% | 39.4% | 78.6% | 73.2% |
 
 ### Achados Relevantes
 

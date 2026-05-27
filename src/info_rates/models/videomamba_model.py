@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[3]
 VIDEOMAMBA_REPO = ROOT / "third_party" / "videomamba_repo" / "videomamba" / "video_sm"
@@ -81,6 +82,11 @@ class VideoMambaModel(nn.Module):
     def __init__(self, backbone: nn.Module):
         super().__init__()
         self.backbone = backbone
+        num_labels = backbone.head.out_features
+        self.config = SimpleNamespace(
+            num_labels=num_labels,
+            id2label={i: str(i) for i in range(num_labels)},
+        )
 
     def forward(self, pixel_values: torch.Tensor, **kwargs) -> _LogitsOutput:
         return _LogitsOutput(self.backbone(pixel_values))
@@ -90,6 +96,27 @@ class VideoMambaModel(nn.Module):
         save_dir.mkdir(parents=True, exist_ok=True)
         raw = self.backbone.module if hasattr(self.backbone, "module") else self.backbone
         torch.save(raw.state_dict(), save_dir / "model.pth")
+
+
+def _remap_bimamba_keys(ckpt: dict) -> dict:
+    """Remap flat Mamba keys from the K400 pretrained checkpoint to BiMamba layout.
+
+    Original keys: layers.N.mixer.{A_log,D,in_proj,...}
+    BiMamba keys:  layers.N.mixer.fwd.{A_log,...}  (+ .bwd copy)
+
+    The backward branch is initialised with the same weights as the forward branch
+    so fine-tuning starts from a sensible bidirectional state.
+    """
+    state = ckpt.get("model", ckpt)
+    new_state = {}
+    for k, v in state.items():
+        if ".mixer." in k and not any(f".mixer.{d}." in k for d in ("fwd", "bwd")):
+            prefix, suffix = k.split(".mixer.", 1)
+            new_state[f"{prefix}.mixer.fwd.{suffix}"] = v
+            new_state[f"{prefix}.mixer.bwd.{suffix}"] = v.clone()
+        else:
+            new_state[k] = v
+    return new_state
 
 
 def build_videomamba(
@@ -110,6 +137,7 @@ def build_videomamba(
 
     if pretrained_path is not None:
         ckpt = torch.load(str(pretrained_path), map_location="cpu")
+        ckpt = _remap_bimamba_keys(ckpt)
         vm_load(model_raw, ckpt, center=True)
         # vm_load deletes head.weight/bias and loads strict=False; rebuild head
         model_raw.head = nn.Linear(EMBED_DIM, num_classes)

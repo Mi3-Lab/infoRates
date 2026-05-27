@@ -242,8 +242,11 @@ def load_epic_kitchens(data_root: str, val_fraction: float = 0.2, seed: int = 42
 
     Expects pre-extracted clips at {data_root}/clips/{participant_id}/{narration_id}.mp4
     (lightly-ai/epic-kitchens-100-clips, extension portion only).
-    Uses a random stratified 80/20 split since the official val set has no overlap
-    with the lightly-ai extension clips.
+
+    The train/val split is frozen to a CSV the first time it is computed so that
+    incremental clip downloads do not alter which clips belong to val (which would
+    cause data leakage between subsequent training runs and evaluation).
+    Split CSVs: {data_root}/splits/epic_train_split.csv and epic_val_split.csv.
     """
     import pandas as pd
     import random
@@ -251,40 +254,56 @@ def load_epic_kitchens(data_root: str, val_fraction: float = 0.2, seed: int = 42
     root = Path(data_root)
     clips_dir = root / "clips"
     ann_dir = root / "annotations"
+    splits_dir = root / "splits"
+    train_csv = splits_dir / "epic_train_split.csv"
+    val_csv = splits_dir / "epic_val_split.csv"
 
-    train_df = pd.read_csv(ann_dir / "EPIC_100_train.csv")
-
-    # Load verb class names
+    # Load verb class names (always needed)
     verb_df = pd.read_csv(ann_dir / "EPIC_100_verb_classes.csv")
     class_names = [""] * len(verb_df)
     for _, row in verb_df.iterrows():
         class_names[int(row["id"])] = str(row["key"])
 
-    # Collect all available clips from lightly-ai extension (train CSV only —
-    # official val uses non-extension sessions with zero overlap)
+    # Use frozen split if it already exists
+    if train_csv.exists() and val_csv.exists():
+        tr = pd.read_csv(train_csv)
+        va = pd.read_csv(val_csv)
+        train_files: DataSplit = list(zip(tr["path"].tolist(), tr["label_id"].tolist()))
+        val_files: DataSplit = list(zip(va["path"].tolist(), va["label_id"].tolist()))
+        # Filter to only existing clips (handles partial downloads without changing split)
+        train_files = [(p, l) for p, l in train_files if Path(p).exists()]
+        val_files = [(p, l) for p, l in val_files if Path(p).exists()]
+        return class_names, train_files, val_files
+
+    # First run: compute the split and freeze it to CSV
+    train_ann = pd.read_csv(ann_dir / "EPIC_100_train.csv")
     all_clips: DataSplit = []
-    for _, row in train_df.iterrows():
+    for _, row in train_ann.iterrows():
         pid = row["participant_id"]
         nid = row["narration_id"]
         clip_path = clips_dir / pid / f"{nid}.mp4"
         if clip_path.exists():
             all_clips.append((str(clip_path), int(row["verb_class"])))
 
-    # Stratified split by verb_class
     from collections import defaultdict
     by_class: dict[int, list] = defaultdict(list)
     for path, label in all_clips:
         by_class[label].append((path, label))
 
     rng = random.Random(seed)
-    train_files: DataSplit = []
-    val_files: DataSplit = []
+    train_files = []
+    val_files = []
     for label_id in sorted(by_class):
         items = by_class[label_id]
         rng.shuffle(items)
         n_val = max(1, int(len(items) * val_fraction))
         val_files.extend(items[:n_val])
         train_files.extend(items[n_val:])
+
+    # Persist the frozen split
+    splits_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"path": [p for p, _ in train_files], "label_id": [l for _, l in train_files]}).to_csv(train_csv, index=False)
+    pd.DataFrame({"path": [p for p, _ in val_files], "label_id": [l for _, l in val_files]}).to_csv(val_csv, index=False)
 
     return class_names, train_files, val_files
 

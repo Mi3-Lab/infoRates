@@ -85,9 +85,9 @@ Each script is idempotent: skips training if a checkpoint exists, skips eval if 
 
 ## Current Results (as of 2026-05-27)
 
-Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda treinando / pendente.
+Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training or eval pending. VideoMamba †val_acc = training val accuracy (8f); fixed-budget eval still running.
 
-### Something-Something v2 (SSv2) — 174 classes ✓ complete
+### Something-Something v2 (SSv2) — 174 classes
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -98,8 +98,9 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
 | ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
 | VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
+| VideoMamba† | — | — (46.8%) | — | — |
 
-### UCF-101 — 101 classes ✓ complete
+### UCF-101 — 101 classes
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -110,8 +111,9 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 90.0% | 91.0% | 91.2% | 90.9% |
 | ViViT | 75.3% | 86.9% | 92.5% | 94.3% |
 | VideoMAE | 81.4% | 91.4% | 95.4% | 95.5% |
+| VideoMamba | 85.0% | 88.4% | 88.2% | 87.8% |
 
-### HMDB-51 — 51 classes ✓ complete
+### HMDB-51 — 51 classes
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -122,8 +124,9 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
 | ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
 | VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
+| VideoMamba† | — | — (70.7%) | — | — |
 
-### DriveAct — 34 classes ✓ complete
+### DriveAct — 34 classes
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -134,8 +137,9 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 64.7% | 67.6% | 68.8% | 66.5% |
 | ViViT | 48.9% | 55.8% | 62.5% | 67.4% |
 | VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
+| VideoMamba† | — | — (69.5%) | — | — |
 
-### Diving-48 — 48 classes ✓ complete
+### Diving-48 — 48 classes
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -146,8 +150,9 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 23.6% | 38.0% | 36.9% | 38.0% |
 | ViViT | 7.9% | 19.9% | 35.1% | 53.0% |
 | VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
+| VideoMamba† | — | — (43.6%) | — | — |
 
-### AUTSL — 226 classes (sign language) ✓ complete
+### AUTSL — 226 classes (sign language)
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -157,9 +162,10 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | SlowFast-R50 | 1.6% | 12.7% | 41.8% | 82.3% |
 | TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
 | ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
-| VideoMAE | 17.6% | 43.2% | 79.5% | 78.9% |
+| VideoMAE | 17.7% | 43.2% | 79.5% | 78.9% |
+| VideoMamba† | — | — | — | — |
 
-### EPIC-Kitchens — 97 classes — partial (R3D-18 e MC3-18 ainda treinando)
+### EPIC-Kitchens — 97 classes — parcial (R3D-18/MC3-18 reeval, VideoMAE retreinando, VideoMamba treinando)
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -170,12 +176,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = ainda tr
 | TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
 | ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
 | VideoMAE | — | — | — | — |
-
-### VideoMamba (SSM) — todos os datasets — pendente (instalação em andamento)
-
-| Model | 4f | 8f | 16f | 32f |
-|-------|---:|---:|----:|----:|
-| VideoMamba | — | — | — | — |
+| VideoMamba† | — | — (52.2%) | — | — |
 
 ---
 

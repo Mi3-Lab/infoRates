@@ -26,7 +26,10 @@ CHECKPOINT="${CHECKPOINT:-fine_tuned_models/accv2026_videomamba_${DATASET}_full_
 OUT_DIR="${OUT_DIR:-evaluations/accv2026/fixed_budget/videomamba_${DATASET}_full_e${EPOCHS}_h200}"
 CHECKPOINT_NAME="$(basename "${CHECKPOINT}")"
 MANIFEST_DIR="evaluations/accv2026/manifests"
-EVAL_MANIFEST="${EVAL_MANIFEST:-${MANIFEST_DIR}/${DATASET}_val_20_per_class.csv}"
+# ssv2 uses 'somethingv2' as the manifest prefix
+MANIFEST_PREFIX="${DATASET}"
+[[ "${DATASET}" == "ssv2" ]] && MANIFEST_PREFIX="somethingv2"
+EVAL_MANIFEST="${EVAL_MANIFEST:-${MANIFEST_DIR}/${MANIFEST_PREFIX}_val_20_per_class.csv}"
 SUMMARY="${OUT_DIR}/${DATASET}_val_${CHECKPOINT_NAME}_fixed_budget_summary.csv"
 
 DEFAULT_BATCH="${BATCH_SIZE:-16}"
