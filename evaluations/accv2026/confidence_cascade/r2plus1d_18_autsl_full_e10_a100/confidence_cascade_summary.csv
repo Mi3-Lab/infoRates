@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+r2plus1d_18_autsl_full_e10_a100,autsl,4,8,0.152,0.1949,5.96,0.1105,0.0844,0.3022
+r2plus1d_18_autsl_full_e10_a100,autsl,4,16,0.222,0.5446,11.92,0.2424,0.0844,0.7594
+r2plus1d_18_autsl_full_e10_a100,autsl,4,32,0.051,0.1315,5.88,0.0471,0.0844,0.7499
+r2plus1d_18_autsl_full_e10_a100,autsl,8,16,0.455,0.5613,11.92,0.2592,0.3022,0.7594
+r2plus1d_18_autsl_full_e10_a100,autsl,8,32,0.222,0.3925,11.88,0.0903,0.3022,0.7499
+r2plus1d_18_autsl_full_e10_a100,autsl,16,32,0.424,0.7614,16.64,0.002,0.7594,0.7499
+r2plus1d_18_autsl_full_e10_a100,autsl,4,32,"[np.float64(0.3), np.float64(0.7), np.float64(0.1)]",0.5652,11.91,0.263,0.0844,0.7499
