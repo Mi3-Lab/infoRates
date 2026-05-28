@@ -124,6 +124,11 @@ evaluations/accv2026/metrics/
 !evaluations/accv2026/manifests/*.csv
 
 # =========================
+# Third-party repos (nested git, not submodules)
+# =========================
+third_party/videomamba_repo/
+
+# =========================
 # Local VideoMamba3 / Mamba3 experiments
 # =========================
 docs/VIDEOMAMBA3_*.md
