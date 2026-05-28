@@ -1,0 +1,8 @@
+model,dataset,k_low,k_high,best_tau,accuracy,avg_frames,delta_acc,fixed_low,fixed_high
+videomae_driveact_full_e10_h200,driveact,4,8,0.869,0.5312,5.96,0.1295,0.4018,0.5603
+videomae_driveact_full_e10_h200,driveact,4,16,0.96,0.6786,11.96,0.1183,0.4018,0.7411
+videomae_driveact_full_e10_h200,driveact,4,32,0.333,0.4375,5.94,0.0357,0.4018,0.7254
+videomae_driveact_full_e10_h200,driveact,8,16,0.848,0.6987,11.95,0.1384,0.5603,0.7411
+videomae_driveact_full_e10_h200,driveact,8,32,0.444,0.6094,11.96,0.0491,0.5603,0.7254
+videomae_driveact_full_e10_h200,driveact,16,32,0.646,0.7433,19.36,0.0022,0.7411,0.7254
+videomae_driveact_full_e10_h200,driveact,4,32,"[np.float64(0.7), np.float64(0.3), np.float64(0.1)]",0.5,5.41,0.0982,0.4018,0.7254
