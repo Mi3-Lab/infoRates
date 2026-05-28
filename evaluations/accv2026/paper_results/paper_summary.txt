@@ -1,39 +1,129 @@
 ACCV 2026 Paper Results Summary
 ============================================================
+Models: 8  |  Datasets: 7  |  Budgets: 4/8/16/32
+Complete runs: 56 / 56
 
-Table 1: SSV2 Fixed-Budget Evaluation
-      Model Acc@4f Acc@8f Acc@16f Acc@32f Best_Acc  Critical_Budget   AUC
-     R3D-18   9.8%  19.7%   37.1%   36.9%    37.1%               16 0.314
-     MC3-18   8.2%  18.8%   33.6%   34.5%    34.5%               16 0.289
- R(2+1)D-18  12.6%  24.3%   42.6%   42.1%    42.6%               16 0.364
-TimeSformer  31.8%  42.3%   41.3%   41.7%    42.3%                8 0.409
-      ViViT   8.4%  17.5%   30.5%   38.3%    38.3%               32 0.284
-   SlowFast   6.6%  15.2%   33.3%   49.5%    49.5%               32 0.322
-   VideoMAE  21.0%  39.5%   52.3%   51.9%    52.3%               16 0.472
+Fixed-Budget Results:
+       Model       Dataset  Acc@4f  Acc@8f  Acc@16f  Acc@32f
+      R3D-18          SSv2     9.8    19.7     37.1     36.9
+      MC3-18          SSv2     8.2    18.8     33.6     34.5
+  R(2+1)D-18          SSv2    12.6    24.3     42.6     42.1
+SlowFast-R50          SSv2     6.6    15.2     33.3     49.5
+ TimeSformer          SSv2    31.8    42.3     41.3     41.7
+       ViViT          SSv2     8.4    17.5     30.5     38.3
+    VideoMAE          SSv2    21.0    39.5     52.3     51.9
+  VideoMamba          SSv2    31.8    43.9     44.4     44.2
+      R3D-18       UCF-101    59.5    72.6     81.2     81.4
+      MC3-18       UCF-101    72.9    80.9     85.4     85.1
+  R(2+1)D-18       UCF-101    70.0    81.6     88.6     89.0
+SlowFast-R50       UCF-101    50.1    66.2     81.3     87.6
+ TimeSformer       UCF-101    90.0    91.0     91.2     90.9
+       ViViT       UCF-101    75.3    86.9     92.5     94.3
+    VideoMAE       UCF-101    81.4    91.4     95.4     95.5
+  VideoMamba       UCF-101    85.0    88.4     88.2     87.8
+      R3D-18       HMDB-51    49.2    67.1     80.3     80.1
+      MC3-18       HMDB-51    63.5    71.2     78.6     78.2
+  R(2+1)D-18       HMDB-51    46.2    63.2     73.1     74.6
+SlowFast-R50       HMDB-51    35.1    44.7     65.1     79.3
+ TimeSformer       HMDB-51    73.0    79.9     80.0     79.8
+       ViViT       HMDB-51    52.4    66.1     75.4     80.2
+    VideoMAE       HMDB-51    51.5    73.6     84.0     84.4
+  VideoMamba       HMDB-51    61.7    69.8     68.6     69.7
+      R3D-18      DriveAct    47.8    56.2     68.3     67.2
+      MC3-18      DriveAct    55.1    65.8     69.0     68.5
+  R(2+1)D-18      DriveAct    37.7    49.8     62.5     61.8
+SlowFast-R50      DriveAct    42.6    53.3     66.7     72.5
+ TimeSformer      DriveAct    64.7    67.6     68.8     66.5
+       ViViT      DriveAct    48.9    55.8     62.5     67.4
+    VideoMAE      DriveAct    40.2    56.0     74.1     72.5
+  VideoMamba      DriveAct    50.9    57.8     58.0     56.7
+      R3D-18     Diving-48     5.9    14.4     28.8     28.8
+      MC3-18     Diving-48     8.2    19.5     31.6     33.4
+  R(2+1)D-18     Diving-48     8.6    16.8     35.3     34.7
+SlowFast-R50     Diving-48     5.8    14.5     26.4     50.5
+ TimeSformer     Diving-48    23.6    38.0     36.9     38.0
+       ViViT     Diving-48     7.9    19.9     35.1     53.0
+    VideoMAE     Diving-48     8.6    27.6     48.6     49.9
+  VideoMamba     Diving-48    18.2    36.3     33.0     31.4
+      R3D-18         AUTSL     4.7    24.5     75.0     74.4
+      MC3-18         AUTSL     4.1    37.5     63.7     63.7
+  R(2+1)D-18         AUTSL     8.4    30.2     75.9     75.0
+SlowFast-R50         AUTSL     1.6    12.7     41.8     82.3
+ TimeSformer         AUTSL    52.0    66.8     66.2     67.0
+       ViViT         AUTSL     8.4    25.5     61.2     74.6
+    VideoMAE         AUTSL    17.7    43.2     79.5     78.9
+  VideoMamba         AUTSL     0.4     0.4      0.4      0.4
+      R3D-18 EPIC-Kitchens    13.6    22.3     37.2     37.0
+      MC3-18 EPIC-Kitchens    11.3    27.1     36.2     37.2
+  R(2+1)D-18 EPIC-Kitchens    13.0    20.2     35.5     35.2
+SlowFast-R50 EPIC-Kitchens     9.2    15.8     27.2     39.4
+ TimeSformer EPIC-Kitchens    19.5    32.3     31.5     31.0
+       ViViT EPIC-Kitchens    10.3    21.1     26.9     32.9
+    VideoMAE EPIC-Kitchens    13.4    28.3     37.7     37.5
+  VideoMamba EPIC-Kitchens    23.2    28.3     28.2     28.4
 
-Table 2: Cross-Dataset Results
-     Model       Dataset Best_Acc  Critical_Budget   AUC
-R(2+1)D-18        UCF101    89.0%               16 0.859
-R(2+1)D-18        HMDB51    74.6%               16 0.695
-R(2+1)D-18      Diving48    35.3%               16 0.293
-R(2+1)D-18         AUTSL    75.9%               16 0.610
-R(2+1)D-18      DriveAct    62.5%               16 0.578
-  SlowFast        UCF101    87.6%               32 0.776
-  SlowFast        HMDB51    79.3%               32 0.627
-  SlowFast      Diving48    50.5%               32 0.293
-  VideoMAE        UCF101    95.5%                8 0.936
-  VideoMAE        HMDB51    84.4%               16 0.795
-  VideoMAE      Diving48    49.9%               16 0.416
-  VideoMAE EPIC-Kitchens    78.9%               16 0.651
-  VideoMAE      DriveAct    74.1%               16 0.674
+TDS / Temporal Metrics:
+       Model       Dataset  Best_Acc  Critical_Budget  Temporal_AUC
+      R3D-18          SSv2      37.1               16        0.3138
+      MC3-18          SSv2      34.5               16        0.2887
+  R(2+1)D-18          SSv2      42.6               16        0.3639
+SlowFast-R50          SSv2      49.5               32        0.3216
+ TimeSformer          SSv2      42.3                8        0.4095
+       ViViT          SSv2      38.3               32        0.2838
+    VideoMAE          SSv2      52.3               16        0.4722
+  VideoMamba          SSv2      44.4                8        0.4332
+      R3D-18       UCF-101      81.4               16        0.7789
+      MC3-18       UCF-101      85.4               16        0.8345
+  R(2+1)D-18       UCF-101      89.0               16        0.8588
+SlowFast-R50       UCF-101      87.6               32        0.7763
+ TimeSformer       UCF-101      91.2                4        0.9099
+       ViViT       UCF-101      94.3               16        0.9057
+    VideoMAE       UCF-101      95.5                8        0.9360
+  VideoMamba       UCF-101      88.4                4        0.8791
+      R3D-18       HMDB-51      80.3               16        0.7521
+      MC3-18       HMDB-51      78.6               16        0.7584
+  R(2+1)D-18       HMDB-51      74.6               16        0.6948
+SlowFast-R50       HMDB-51      79.3               32        0.6266
+ TimeSformer       HMDB-51      80.0                8        0.7941
+       ViViT       HMDB-51      80.2               32        0.7313
+    VideoMAE       HMDB-51      84.4               16        0.7954
+  VideoMamba       HMDB-51      69.8                8        0.6868
+      R3D-18      DriveAct      68.3               16        0.6393
+      MC3-18      DriveAct      69.0                8        0.6719
+  R(2+1)D-18      DriveAct      62.5               16        0.5781
+SlowFast-R50      DriveAct      72.5               32        0.6381
+ TimeSformer      DriveAct      68.8                8        0.6759
+       ViViT      DriveAct      67.4               32        0.6150
+    VideoMAE      DriveAct      74.1               16        0.6736
+  VideoMamba      DriveAct      58.0                8        0.5710
+      R3D-18     Diving-48      28.8               16        0.2408
+      MC3-18     Diving-48      33.4               32        0.2786
+  R(2+1)D-18     Diving-48      35.3               16        0.2925
+SlowFast-R50     Diving-48      50.5               32        0.2925
+ TimeSformer     Diving-48      38.0                8        0.3646
+       ViViT     Diving-48      53.0               32        0.3504
+    VideoMAE     Diving-48      49.9               16        0.4162
+  VideoMamba     Diving-48      36.3                8        0.3218
+      R3D-18         AUTSL      75.0               16        0.5898
+      MC3-18         AUTSL      63.7               16        0.5386
+  R(2+1)D-18         AUTSL      75.9               16        0.6105
+SlowFast-R50         AUTSL      82.3               32        0.4425
+ TimeSformer         AUTSL      67.0                8        0.6553
+       ViViT         AUTSL      74.6               32        0.5362
+    VideoMAE         AUTSL      79.5               16        0.6714
+  VideoMamba         AUTSL       0.4                4        0.0043
+      R3D-18 EPIC-Kitchens      37.2               16        0.3223
+      MC3-18 EPIC-Kitchens      37.2               16        0.3272
+  R(2+1)D-18 EPIC-Kitchens      35.5               16        0.3053
+SlowFast-R50 EPIC-Kitchens      39.4               32        0.2694
+ TimeSformer EPIC-Kitchens      32.3                8        0.3064
+       ViViT EPIC-Kitchens      32.9               32        0.2618
+    VideoMAE EPIC-Kitchens      37.7               16        0.3391
+  VideoMamba EPIC-Kitchens      28.4                8        0.2796
 
-Key Findings:
-- Critical frame budget varies by model architecture:
-  Conv (R3D/MC3/R2+1D): 16f | TimeSformer: 8f | ViViT/SlowFast: 32f
-- Cross-dataset: UCF101 (appearance-biased) has 2-3x higher AUC than Diving48/SSV2
-- VideoMAE achieves critical=8f on UCF101 (most frame-efficient)
-- FDE routing: only TimeSformer benefits (+0.3% acc, saves 6.8f); Diving48 shows NEGATIVE FDE-demand correlation
-- Per-class: 'Poking a hole', 'Pushing onto' are hardest; camera motion classes easiest
-- TDS (mean FDE) predicts temporal robustness: Spearman r=0.411, p=0.238 (n=10)
-  Bootstrap 95% CI: estimated (rerun 07_dataset_temporal_demand.py for details)
-  UCF101 TDS=0.052 → AUC=0.86-0.94 | Diving48 TDS=0.081 → AUC=0.29-0.42
+Key findings:
+- CNN native frames: R3D-18/MC3-18/R(2+1)D-18/VideoMAE = 16f
+- TimeSformer/VideoMamba native: 8f — plateau after 8f budget
+- SlowFast-R50/ViViT native: 32f — large jump at 32f budget (architectural)
+- AUTSL (sign language): highest temporal demand; VideoMamba fails (feature collapse)
+- EPIC-Kitchens: all models ~28-37% at 16f — uniformly hard dataset

@@ -17,6 +17,16 @@ import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 
+
+def save_fig(fig, path, dpi=300):
+    """Save figure as both PDF (for LaTeX) and PNG (for review/slides)."""
+    from pathlib import Path
+    p = Path(path)
+    save_fig(fig, p)
+    save_fig(fig, p.with_suffix(".png"), dpi=dpi, bbox_inches="tight")
+
+
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 

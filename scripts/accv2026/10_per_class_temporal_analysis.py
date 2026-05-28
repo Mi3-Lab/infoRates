@@ -23,6 +23,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+
+def save_fig(fig, path, dpi=300):
+    """Save figure as both PDF (for LaTeX) and PNG (for review/slides)."""
+    from pathlib import Path
+    p = Path(path)
+    save_fig(fig, p)
+    save_fig(fig, p.with_suffix(".png"), dpi=dpi, bbox_inches="tight")
+
+
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
@@ -148,7 +158,7 @@ def plot_per_class(df: pd.DataFrame, model_name: str, dataset: str, budgets: lis
     ax.set_title(f"Lowest (red) & Highest (green) AUC Classes\n{model_name} on {dataset}")
 
     fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
+    save_fig(fig, out_path)
     plt.close(fig)
     print(f"  Saved: {out_path}")
 
@@ -264,7 +274,7 @@ def main():
         ax.set_title("SSV2 Class-Level Temporal Demand (all models)")
         fig.tight_layout()
         out_fig = FIGURE_OUT / "fig_cross_model_class_auc_ssv2.pdf"
-        fig.savefig(out_fig, dpi=150)
+        save_fig(fig, out_fig)
         plt.close(fig)
         print(f"Saved: {out_fig}")
 
