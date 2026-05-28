@@ -1,7 +1,7 @@
 # InfoRates — Research Progress & Roadmap
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia  
-Last updated: 2026-05-27 — **45/49 runs complete** (7 modelos × 7 datasets) + VideoMamba (8th model, SSM, treinando em 4 GPUs simultâneos)
+Last updated: 2026-05-27 (tarde) — **46/56 runs complete** (7 modelos × 7 datasets + VideoMamba 8 datasets)
 
 ---
 
@@ -29,22 +29,22 @@ Last updated: 2026-05-27 — **45/49 runs complete** (7 modelos × 7 datasets) +
 
 ---
 
-## Status Atual (2026-05-26)
+## Status Atual (2026-05-27 tarde)
 
 ### Fase 1: Fine-tuning + Fixed-Budget Evaluation
 
-**Objetivo:** Treinar todos os 7 modelos em todos os 7 datasets para ter a baseline de acurácia por budget.
-Target: **7 modelos × 7 datasets = 49 runs** — **38/49 completos**
+**Objetivo:** Treinar todos os 7 modelos em todos os 7 datasets (+ VideoMamba em 8 datasets).
+Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 
-| Dataset | R3D-18 | MC3-18 | R2Plus1D | SlowFast | TSF | ViViT | VideoMAE | Status |
-|---------|--------|--------|----------|----------|-----|-------|----------|--------|
-| SSv2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| UCF-101 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| HMDB-51 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| DriveAct | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| Diving-48 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| AUTSL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 | 6/7 |
-| EPIC-Kitchens | 🔄* | 🔄* | 🔄 | 🔄 | ✅ | ✅ | ✅ | 3/7+2retry |
+| Dataset | R3D-18 | MC3-18 | R2Plus1D | SlowFast | TSF | ViViT | VideoMAE | VideoMamba | Status |
+|---------|--------|--------|----------|----------|-----|-------|----------|------------|--------|
+| SSv2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 eval (job 72616) | 7/8 |
+| UCF-101 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
+| HMDB-51 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
+| DriveAct | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
+| Diving-48 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
+| AUTSL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 7/8 (VideoMamba não converge — feature collapse K400→ASL) |
+| EPIC-Kitchens | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
 
 ### Resultados — Top-1 por Budget
 
@@ -92,45 +92,51 @@ Target: **7 modelos × 7 datasets = 49 runs** — **38/49 completos**
 | AUTSL | TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
 | AUTSL | ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
 | AUTSL | VideoMAE | 17.6% | 43.2% | 79.5% | 78.9% |
-| EPIC-Kitchens | R3D-18 | — | — | — | — |
-| EPIC-Kitchens | MC3-18 | — | — | — | — |
-| EPIC-Kitchens | R2Plus1D-18 | 18.7% | 30.9% | 52.0% | 51.4% |
-| EPIC-Kitchens | SlowFast-R50 | 8.0% | 15.5% | 30.1% | 43.0% |
-| EPIC-Kitchens | TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
-| EPIC-Kitchens | ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
-| EPIC-Kitchens | VideoMAE | 19.5% | 39.4% | 78.6% | 73.2% |
+| EPIC-Kitchens | R3D-18 | 13.6% | 22.3% | 37.2% | 37.0% |
+| EPIC-Kitchens | MC3-18 | 11.3% | 27.1% | 36.2% | 37.2% |
+| EPIC-Kitchens | R2Plus1D-18 | 13.0% | 20.2% | 35.5% | 35.2% |
+| EPIC-Kitchens | SlowFast-R50 | 9.2% | 15.8% | 27.2% | 39.4% |
+| EPIC-Kitchens | TimeSformer | 19.5% | 32.3% | 31.5% | 31.0% |
+| EPIC-Kitchens | ViViT | 10.3% | 21.1% | 26.9% | 32.9% |
+| EPIC-Kitchens | VideoMAE | 13.4% | 28.3% | 37.7% | 37.5% |
+| EPIC-Kitchens | VideoMamba | 23.2% | 28.3% | 28.2% | 28.4% |
 
 ### Achados Relevantes
 
 - **TimeSformer satura rápido:** HMDB-51 73%→80% em só 8f. UCF-101 já 90% com 4f. critical_frame_budget = 4–8f.
-- **SlowFast precisa de muitos frames:** HMDB-51 35%→79% (4→32f), Diving-48 5.8%→50.5%. Alta demanda temporal.
-- **AUTSL (sign language):** jump brutal 24.5% (8f) → 75.0% (16f) → plateau. Precisa de janela temporal mínima de 16f.
+- **SlowFast precisa de muitos frames:** HMDB-51 35%→79% (4→32f), Diving-48 5.8%→50.5%. Alta demanda temporal — comportamento arquitetural (model_frames=32).
+- **AUTSL (sign language):** jump brutal 24.5% (8f) → 75.0% (16f) → plateau. Janela temporal mínima de 16f obrigatória.
 - **Diving-48 é o dataset mais exigente:** ViViT 7.9%→53.0%, SlowFast 5.8%→50.5%. Enorme ganho com mais frames.
 - **SSv2 vs UCF-101:** SSv2 TDS muito maior — motions sutis vs. ações grosseiras — confirma hipótese.
-- **EPIC-Kitchens (resultados limpos após fix de data leakage):** TimeSformer 22.5%→37.4% (plateau imediato), VideoMAE 20.4%→78.9% (16f), ViViT 11.7%→40.2%. Os valores anteriores (TSF 83.6%) eram inflados por data leakage.
-- **AUTSL (sign language, 226 classes):** Demanda temporal extrema. SlowFast 1.6%→82.3% (4→32f). R3D-18 4.7%→75.0% apenas com 16f. TimeSformer excepcionalmente bom a 4f (52%), mas plateau em 67% — provavelmente aprende padrões de postura, não sequência temporal.
+- **EPIC-Kitchens (split limpo):** Todos os modelos convergem para ~35-37% em 16f (R3D-18 37.2%, VideoMAE 37.7%, TimeSformer 31.5%). VideoMAE NÃO é superior em EPIC — resultado anterior de 78% era inflado por data leakage. Dataset uniformemente difícil para todos os modelos.
+- **VideoMamba plateau após 8f:** comportamento arquitetural — model_frames=8, budgets maiores são subsampled de volta a 8f de posições temporais diferentes.
 - **Latência:** CNN (R3D/MC3) são 6-25x mais rápidas que Transformers. MC3-18: ~1.6ms/sample; ViViT: ~41ms/sample. TimeSformer domina eficiência em budget baixo (4-8f), CNN dominam em budget alto (16-32f). Arquivo: `evaluations/accv2026/paper_results/latency_summary.csv`.
 
-### Jobs Rodando no Cluster (2026-05-26 ~22:00)
+### Jobs Rodando no Cluster (2026-05-28)
 
-| Job ID | Partição | Dataset | Modelos | Status |
-|--------|----------|---------|---------|--------|
-| 71704 | A100 (gpu) | epic_kitchens | slowfast_r50 (epoch 6/10) + r2plus1d_18 pendente | running |
-| 71788 | A100 (gpu) | epic_kitchens | r3d_18 (resume ep4→5+) + mc3_18 + r2plus1d_18 | running (retry com prefetch_factor=2 fix) |
-| 71753 | H200 (cenvalarc.gpu) | autsl | videomae (epoch 1/10) | running |
-| 71789 | H200 (cenvalarc.gpu) | — | build mamba-ssm para VideoMamba | pending |
+| Job ID | Partição | Dataset/Modelo | Status |
+|--------|----------|----------------|--------|
+| 72616 | H200 (cenvalarc.gpu) | VideoMamba SSV2 eval (fix dataset-name bug) | rodando |
 
-**Completos nesta sessão:**
-- ✅ EPIC-Kitchens: TimeSformer + ViViT + VideoMAE (todos H200, resultados limpos após fix de data leakage)
+**Completos (2026-05-27 a 2026-05-28):**
+- ✅ R3D-18 EPIC (split limpo): 13.6/22.3/37.2/37.0%
+- ✅ MC3-18 EPIC (split limpo): 11.3/27.1/36.2/37.2%
+- ✅ R2Plus1D-18 EPIC (split limpo, resize fix 224→112): 13.0/20.2/35.5/35.2%
+- ✅ TimeSformer EPIC (retrain clean): 19.5/32.3/31.5/31.0%
+- ✅ ViViT EPIC (retrain clean): 10.3/21.1/26.9/32.9%
+- ✅ SlowFast-R50 EPIC (retrain clean): 9.2/15.8/27.2/39.4%
+- ✅ VideoMAE EPIC (retrain clean): 13.4/28.3/37.7/37.5%
+- ✅ VideoMamba SSV2 treino: best val_acc=52.2% (ep5), eval com bug (job 72616 corrige)
+- ❌ VideoMamba AUTSL: não converge — feature collapse K400→língua de sinais (raw pixel std 10× menor que UCF-101)
 
-**VideoMamba (8th model — SSM):**
-- `.venv_mamba` criado com PyTorch 2.8.0+cu128
-- Código: `third_party/videomamba_repo/` + pesos K400 em `fine_tuned_models/videomamba_pretrained/`
-- Scripts: `train_videomamba.py`, `run_h200_multidata_videomamba.sh`, `slurm_h200_videomamba_all_datasets.sbatch`
-- Build job 71789: instalando `causal-conv1d` + `mamba-ssm` com fake-nvcc (workaround CUDA 13.x vs 12.8)
-- Smoke test → treinamento completo pendente (aguarda build bem-sucedido)
+**Bugs encontrados e corrigidos:**
+- EPIC split contaminado (train/val leak) → corrigido 2026-05-27 01:09; modelos contaminados retreinados
+- R2Plus1D eval com model-frames=8 (deveria ser 16) → eval refeita
+- R2Plus1D eval com resize=224 (treinado em 112px) → eval refeita com resize=112
+- VideoMAE EPIC resultado ~78% era inflado por split contaminado → resultado real: ~37.7%
 
-**Bug fix nesta sessão:** `train_torchvision.py` prefetch_factor 4→2 (fix DataLoader worker OOM em EPIC-Kitchens)
+**Anomalia aberta:**
+- VideoMamba AUTSL: loss=ln(226) em todos os epochs com qualquer LR. Hipótese: `decord` retorna frames incorretos para vídeos AUTSL (codec incompatível). Todos os outros 6 datasets funcionam normalmente.
 
 ---
 
@@ -193,11 +199,10 @@ bash scripts/accv2026/run_post_completion_analyses.sh
 
 ## Próximas Etapas Imediatas
 
-1. **Aguardar jobs terminarem** (~10-15h) — feeder automático, não precisa de ação
-2. **Rodar análises pós-treinamento** — `bash scripts/accv2026/run_post_completion_analyses.sh`
-3. **Verificar Table 1 completa** — `evaluations/accv2026/paper_results/paper_table_main_comparison.csv`
-4. **Checar AUTSL/DriveAct/EPIC nas análises de router** — scripts 12, 13, 15 têm entradas comentadas para esses datasets, descomentar após os results chegarem
-5. **Analisar TDS ranking** — confirmar hipótese: Diving-48 > AUTSL > HMDB-51 > UCF-101 > SSv2 (invertido — SSv2 é mais difícil temporalmente)
+1. **Aguardar SlowFast + ViViT EPIC** (jobs 72182, 72220) — ~4h restantes
+2. **Investigar VideoMamba AUTSL** — verificar se `decord` decodifica os vídeos AUTSL corretamente (testar carregar 1 clip manualmente em `.venv_mamba`)
+3. **Rodar análises pós-treinamento** assim que EPIC estiver completo — `bash scripts/accv2026/run_post_completion_analyses.sh`
+4. **Analisar TDS ranking** — confirmar hipótese: Diving-48 > AUTSL > SSv2 > HMDB-51 > UCF-101
 
 ---
 

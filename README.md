@@ -85,7 +85,7 @@ Each script is idempotent: skips training if a checkpoint exists, skips eval if 
 
 ## Current Results (as of 2026-05-27)
 
-Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training or eval pending. VideoMamba †val_acc = training val accuracy (8f); fixed-budget eval still running.
+Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = eval pendente.
 
 ### Something-Something v2 (SSv2) — 174 classes
 
@@ -98,7 +98,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training
 | TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
 | ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
 | VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
-| VideoMamba† | — | — (46.8%) | — | — |
+| VideoMamba | — | — | — | — |
 
 ### UCF-101 — 101 classes
 
@@ -124,7 +124,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training
 | TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
 | ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
 | VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
-| VideoMamba† | — | — (70.7%) | — | — |
+| VideoMamba | 61.7% | 69.8% | 68.6% | 69.7% |
 
 ### DriveAct — 34 classes
 
@@ -137,7 +137,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training
 | TimeSformer | 64.7% | 67.6% | 68.8% | 66.5% |
 | ViViT | 48.9% | 55.8% | 62.5% | 67.4% |
 | VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
-| VideoMamba† | — | — (69.5%) | — | — |
+| VideoMamba | 50.9% | 57.8% | 58.0% | 56.7% |
 
 ### Diving-48 — 48 classes
 
@@ -150,7 +150,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training
 | TimeSformer | 23.6% | 38.0% | 36.9% | 38.0% |
 | ViViT | 7.9% | 19.9% | 35.1% | 53.0% |
 | VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
-| VideoMamba† | — | — (43.6%) | — | — |
+| VideoMamba | 18.2% | 36.3% | 33.0% | 31.4% |
 
 ### AUTSL — 226 classes (sign language)
 
@@ -163,20 +163,25 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = training
 | TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
 | ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
 | VideoMAE | 17.7% | 43.2% | 79.5% | 78.9% |
-| VideoMamba† | — | — | — | — |
+| VideoMamba† | 0.4% | 0.4% | 0.4% | 0.4% |
 
-### EPIC-Kitchens — 97 classes — parcial (R3D-18/MC3-18 reeval, VideoMAE retreinando, VideoMamba treinando)
+† VideoMamba não convergiu no AUTSL em nenhuma configuração testada (LR=1e-4 e LR=5e-4): loss travado em ln(226)≈5.42 durante 10 epochs em ambos os runs — exatamente chance aleatória para 226 classes. Todos os outros modelos aprendem AUTSL normalmente (R3D-18 75%, VideoMAE 79.5%). Causa provável: `decord` retornando frames incorretos para os vídeos AUTSL (codec incompatível), dado que o backbone K400 do VideoMamba funciona normalmente em todos os outros 6 datasets.
 
-| Model | 4f | 8f | 16f | 32f |
-|-------|---:|---:|----:|----:|
-| R3D-18 | — | — | — | — |
-| MC3-18 | — | — | — | — |
-| R2Plus1D-18 | 18.7% | 30.9% | 52.0% | 51.4% |
-| SlowFast-R50 | 8.0% | 15.5% | 30.1% | 43.0% |
-| TimeSformer | 22.5% | 37.4% | 37.4% | 36.1% |
-| ViViT | 11.7% | 23.2% | 36.2% | 40.2% |
-| VideoMAE | — | — | — | — |
-| VideoMamba† | — | — (52.2%) | — | — |
+### EPIC-Kitchens — 97 classes
+
+Split limpo desde 2026-05-27 (vídeos duplicados entre treino/val removidos).
+✓ = avaliado com split limpo. `—` = retreino em andamento.
+
+| Model | 4f | 8f | 16f | 32f | |
+|-------|---:|---:|----:|----:|--|
+| R3D-18 | 13.6% | 22.3% | 37.2% | 37.0% | ✓ |
+| MC3-18 | 11.3% | 27.1% | 36.2% | 37.2% | ✓ |
+| R2Plus1D-18 | 13.0% | 20.2% | 35.5% | 35.2% | ✓ |
+| SlowFast-R50 | 9.2% | 15.8% | 27.2% | 39.4% | ✓ |
+| TimeSformer | 19.5% | 32.3% | 31.5% | 31.0% | ✓ |
+| ViViT | 10.3% | 21.1% | 26.9% | 32.9% | ✓ |
+| VideoMAE | 13.4% | 28.3% | 37.7% | 37.5% | ✓ |
+| VideoMamba | 23.2% | 28.3% | 28.2% | 28.4% | ✓ |
 
 ---
 
