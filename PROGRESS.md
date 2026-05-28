@@ -1,7 +1,7 @@
 # InfoRates — Research Progress & Roadmap
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia
-Last updated: 2026-05-28 — **55/57 runs complete** (7 models × 7 datasets + VideoMamba 8 datasets)
+Last updated: 2026-05-28 — **Phase 1 COMPLETE (56 runs) · Phase 2 COMPLETE**
 
 ---
 
@@ -138,40 +138,37 @@ Last updated: 2026-05-28 — **55/57 runs complete** (7 models × 7 datasets + V
 
 ## Running Jobs
 
-| Job ID | Partition | Task | Status |
-|--------|-----------|------|--------|
-| 72710 | H200 | VideoMamba SSV2 eval (manifest + split fix) | running |
+None — cluster is idle.
 
 ---
 
-## TODO
+## TODO — Phase 3: Paper Writing
 
-- [x] **VideoMamba SSV2** — 31.8% / 43.9% / 44.4% / 44.2% (job 72710 complete)
-- [ ] **Run post-training analyses** — `bash scripts/accv2026/run_post_completion_analyses.sh` (all models done except VideoMamba SSV2)
-  - [ ] `04_compute_temporal_demand.py` — TDS score per dataset
-  - [ ] `05_compute_temporal_metrics.py` — AUC and critical_frame_budget per model
-  - [ ] `07_dataset_temporal_demand.py` — dataset-level TDS ranking
-  - [ ] `08_compile_paper_results.py` — paper tables
-  - [ ] `09_plot_paper_figures.py` — figures 1–9
-  - [ ] `10_per_class_temporal_analysis.py` — per-class temporal analysis
-  - [ ] `06_fde_adaptive_routing.py` — FDE router evaluation
-  - [ ] `11_spectral_router.py` — spectral router
-  - [ ] `12_confidence_cascade.py` — confidence cascade analysis
-  - [ ] `13_knapsack_confidence.py` — knapsack frame allocator
-  - [ ] `14_plot_routing_comparison.py` — routing comparison figures
-  - [ ] `15_baseline_comparison.py` — multi-dataset baseline table
-- [ ] **Investigate VideoMamba AUTSL** — optional; feature collapse is a valid finding; if needed, test with ImageNet pretrained backbone or domain-adapted weights
-- [ ] **Paper writing** — Table 1 (fixed-budget baseline, in progress), Table 2 (vs SOTA), Table 3 (router comparison)
+- [ ] **Review figures** — open `evaluations/accv2026/paper_results/figures/*.png` and check quality
+- [ ] **Write Introduction** — motivation, TDS claim, preview of main results
+- [ ] **Write Section 3: TDS** — formal definition, Fig 3 (TDS ranking bar), dataset ranking table
+- [ ] **Write Section 4: InfoRates Routers** — FDE, Spectral, Cascade, Knapsack
+- [ ] **Write Section 5: Experiments** — Table 1 from `paper_table_fixed_budget.csv`, Figs 1–2, Fig 8–9
+- [ ] **Write Section 6: Conclusion**
+- [ ] **VideoMamba AUTSL** — document as finding (K400→sign language domain gap), not a failure
 
 ---
 
-## Phase 2 — Post-Training Analyses
+## Phase 2 — Post-Training Analyses — COMPLETE ✅
 
-```bash
-bash scripts/accv2026/run_post_completion_analyses.sh
-```
+All scripts ran successfully. Results in `evaluations/accv2026/paper_results/`.
 
-Results written to `evaluations/accv2026/paper_results/`.
+| Script | Status | Output |
+|--------|--------|--------|
+| `08_compile_paper_results.py` | ✅ | `paper_table_fixed_budget.csv` (56 rows), `paper_table_tds_metrics.csv`, `paper_fig_budget_curves.csv` |
+| `09_plot_paper_figures.py` | ✅ | `fig1–fig5.{pdf,png}` |
+| `10_per_class_temporal_analysis.py` | ✅ | `per_class_cross_model_ssv2.csv`, per-class figures |
+| `12_confidence_cascade.py` | ✅ | `confidence_cascade/cascade_global_summary.csv` |
+| `13_knapsack_confidence.py` | ✅ | `knapsack_confidence/knapsack_global_results.csv` |
+| `14_plot_routing_comparison.py` | ✅ | `fig8_routing_comparison.{pdf,png}` |
+| `15_baseline_comparison.py` | ✅ | `fig9_main_comparison.{pdf,png}`, `paper_table_main_comparison.csv` |
+
+**All figures saved as PDF (LaTeX) + PNG 300 DPI (review/slides).**
 
 ---
 
