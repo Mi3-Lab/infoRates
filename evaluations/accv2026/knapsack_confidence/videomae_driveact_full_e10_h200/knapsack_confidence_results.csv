@@ -1,0 +1,20 @@
+method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
+Fixed-4f,4.0,0.4017857142857143,fixed,,,VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Fixed-8f,8.0,0.5602678571428571,fixed,,,VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Fixed-16f,16.0,0.7410714285714286,fixed,,,VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Fixed-32f,32.0,0.7254464285714286,fixed,,,VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-proxy@avg8f,8.0,0.4955357142857143,knapsack_proxy,-0.0647321428571428,"{'4': 138, '8': 241, '16': 69, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-learned@avg8f,8.0,0.7,knapsack_learned,0.13973214285714286,"{'4': 38, '8': 33, '16': 19, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Oracle-knapsack@avg8f,8.0,0.6888888888888889,oracle_knapsack,0.1286210317460318,"{'4': 64, '8': 14, '16': 2, '32': 10}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-proxy@avg10f,10.0,0.5491071428571429,knapsack_proxy,-0.01116071428571419,"{'4': 130, '8': 141, '16': 177, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-learned@avg10f,10.0,0.7111111111111111,knapsack_learned,0.15084325396825404,"{'4': 35, '8': 15, '16': 40, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Oracle-knapsack@avg10f,10.0,0.7,oracle_knapsack,0.13973214285714286,"{'4': 57, '8': 16, '16': 0, '32': 17}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-proxy@avg12f,12.0,0.6227678571428571,knapsack_proxy,0.0625,"{'4': 100, '8': 74, '16': 274, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-learned@avg12f,12.0,0.7666666666666667,knapsack_learned,0.20639880952380962,"{'4': 28, '8': 3, '16': 59, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Oracle-knapsack@avg12f,12.0,0.7222222222222222,oracle_knapsack,0.16195436507936511,"{'4': 52, '8': 13, '16': 2, '32': 23}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-proxy@avg14f,14.0,0.6450892857142857,knapsack_proxy,-0.0959821428571429,"{'4': 80, '8': 58, '16': 277, '32': 33}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-learned@avg14f,14.0,0.7777777777777778,knapsack_learned,0.03670634920634919,"{'4': 13, '8': 3, '16': 74, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Oracle-knapsack@avg14f,14.0,0.7222222222222222,oracle_knapsack,-0.018849206349206393,"{'4': 47, '8': 12, '16': 1, '32': 30}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-proxy@avg16f,16.0,0.6450892857142857,knapsack_proxy,-0.0959821428571429,"{'4': 80, '8': 56, '16': 224, '32': 88}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Knapsack-learned@avg16f,16.0,0.8,knapsack_learned,0.05892857142857144,"{'4': 0, '8': 0, '16': 90, '32': 0}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200
+Oracle-knapsack@avg16f,16.0,0.7444444444444445,oracle_knapsack,0.003373015873015861,"{'4': 40, '8': 12, '16': 2, '32': 36}",VideoMAE,DriveAct,videomae_driveact_full_e10_h200

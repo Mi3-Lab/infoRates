@@ -1,20 +1,20 @@
 method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
-Fixed-4f,4.0,0.18669314796425024,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Fixed-8f,8.0,0.30883813306852037,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Fixed-16f,16.0,0.5203574975173784,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Fixed-32f,32.0,0.5143992055610725,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-proxy@avg8f,8.0,0.23932472691161866,knapsack_proxy,-0.06951340615690171,"{'4': 712, '8': 117, '16': 89, '32': 89}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-learned@avg8f,8.0,0.3069306930693069,knapsack_learned,-0.001907439999213445,"{'4': 72, '8': 94, '16': 36, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Oracle-knapsack@avg8f,8.0,0.2871287128712871,oracle_knapsack,-0.021709420197233265,"{'4': 152, '8': 24, '16': 1, '32': 25}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-proxy@avg10f,9.998013902681231,0.2671300893743793,knapsack_proxy,-0.04170804369414105,"{'4': 617, '8': 136, '16': 101, '32': 153}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-learned@avg10f,10.0,0.3712871287128713,knapsack_learned,0.06244899564435091,"{'4': 65, '8': 54, '16': 83, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Oracle-knapsack@avg10f,10.0,0.3118811881188119,oracle_knapsack,0.00304305505029151,"{'4': 139, '8': 23, '16': 0, '32': 40}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-proxy@avg12f,12.0,0.30685203574975173,knapsack_proxy,-0.0019860973187686426,"{'4': 505, '8': 166, '16': 126, '32': 210}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-learned@avg12f,12.0,0.41089108910891087,knapsack_learned,0.1020529560403905,"{'4': 56, '8': 17, '16': 129, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Oracle-knapsack@avg12f,12.0,0.3415841584158416,oracle_knapsack,0.03274602534732124,"{'4': 128, '8': 19, '16': 0, '32': 55}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-proxy@avg14f,13.998013902681231,0.33763654419066536,knapsack_proxy,-0.182720953326713,"{'4': 410, '8': 185, '16': 138, '32': 274}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-learned@avg14f,14.0,0.4603960396039604,knapsack_learned,-0.05996145791341795,"{'4': 33, '8': 1, '16': 168, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Oracle-knapsack@avg14f,14.0,0.3613861386138614,oracle_knapsack,-0.158971358903517,"{'4': 115, '8': 16, '16': 2, '32': 69}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-proxy@avg16f,16.0,0.3644488579940417,knapsack_proxy,-0.15590863952333667,"{'4': 332, '8': 172, '16': 168, '32': 335}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Knapsack-learned@avg16f,16.0,0.4603960396039604,knapsack_learned,-0.05996145791341795,"{'4': 30, '8': 1, '16': 148, '32': 23}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
-Oracle-knapsack@avg16f,16.0,0.37623762376237624,oracle_knapsack,-0.14411987375500213,"{'4': 100, '8': 18, '16': 0, '32': 84}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Fixed-4f,4.0,0.1303921568627451,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Fixed-8f,8.0,0.2019607843137255,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Fixed-16f,16.0,0.35490196078431374,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Fixed-32f,32.0,0.3519607843137255,fixed,,,R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-proxy@avg8f,8.0,0.18137254901960784,knapsack_proxy,-0.020588235294117657,"{'4': 570, '8': 203, '16': 228, '32': 19}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-learned@avg8f,8.0,0.2696078431372549,knapsack_learned,0.0676470588235294,"{'4': 126, '8': 15, '16': 63, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Oracle-knapsack@avg8f,8.0,0.27450980392156865,oracle_knapsack,0.07254901960784316,"{'4': 158, '8': 19, '16': 1, '32': 26}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-proxy@avg10f,10.0,0.18823529411764706,knapsack_proxy,-0.013725490196078438,"{'4': 506, '8': 208, '16': 205, '32': 101}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-learned@avg10f,10.0,0.3088235294117647,knapsack_learned,0.10686274509803922,"{'4': 102, '8': 0, '16': 102, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Oracle-knapsack@avg10f,10.0,0.28921568627450983,oracle_knapsack,0.08725490196078434,"{'4': 146, '8': 16, '16': 1, '32': 41}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-proxy@avg12f,12.0,0.20490196078431372,knapsack_proxy,0.002941176470588225,"{'4': 438, '8': 209, '16': 195, '32': 178}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-learned@avg12f,12.0,0.36764705882352944,knapsack_learned,0.16568627450980394,"{'4': 68, '8': 0, '16': 136, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Oracle-knapsack@avg12f,12.0,0.3088235294117647,oracle_knapsack,0.10686274509803922,"{'4': 134, '8': 13, '16': 1, '32': 56}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-proxy@avg14f,14.0,0.2235294117647059,knapsack_proxy,-0.13137254901960785,"{'4': 372, '8': 195, '16': 204, '32': 249}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-learned@avg14f,14.0,0.3872549019607843,knapsack_learned,0.032352941176470584,"{'4': 34, '8': 0, '16': 170, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Oracle-knapsack@avg14f,14.0,0.3284313725490196,oracle_knapsack,-0.026470588235294135,"{'4': 120, '8': 11, '16': 3, '32': 70}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-proxy@avg16f,16.0,0.24411764705882352,knapsack_proxy,-0.11078431372549022,"{'4': 312, '8': 172, '16': 216, '32': 320}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Knapsack-learned@avg16f,16.0,0.4166666666666667,knapsack_learned,0.061764705882352944,"{'4': 0, '8': 0, '16': 204, '32': 0}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100
+Oracle-knapsack@avg16f,16.0,0.3382352941176471,oracle_knapsack,-0.016666666666666663,"{'4': 104, '8': 14, '16': 1, '32': 85}",R2plus1D-18,EPIC,r2plus1d_18_epic_kitchens_full_e10_a100

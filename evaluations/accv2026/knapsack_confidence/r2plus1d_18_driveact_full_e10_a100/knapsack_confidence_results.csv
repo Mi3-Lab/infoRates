@@ -1,0 +1,20 @@
+method,avg_frames,accuracy,type,vs_fixed,budget_dist,model,dataset,eval_dir
+Fixed-4f,4.0,0.37723214285714285,fixed,,,R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Fixed-8f,8.0,0.49776785714285715,fixed,,,R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Fixed-16f,16.0,0.625,fixed,,,R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Fixed-32f,32.0,0.6183035714285714,fixed,,,R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-proxy@avg8f,8.0,0.46651785714285715,knapsack_proxy,-0.03125,"{'4': 100, '8': 298, '16': 50, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-learned@avg8f,8.0,0.6666666666666666,knapsack_learned,0.16889880952380948,"{'4': 44, '8': 24, '16': 22, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Oracle-knapsack@avg8f,8.0,0.6555555555555556,oracle_knapsack,0.1577876984126984,"{'4': 66, '8': 13, '16': 0, '32': 11}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-proxy@avg10f,10.0,0.5044642857142857,knapsack_proxy,0.006696428571428548,"{'4': 98, '8': 189, '16': 161, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-learned@avg10f,10.0,0.6555555555555556,knapsack_learned,0.1577876984126984,"{'4': 37, '8': 12, '16': 41, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Oracle-knapsack@avg10f,10.0,0.6555555555555556,oracle_knapsack,0.1577876984126984,"{'4': 59, '8': 13, '16': 1, '32': 17}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-proxy@avg12f,12.0,0.5491071428571429,knapsack_proxy,0.051339285714285754,"{'4': 78, '8': 107, '16': 263, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-learned@avg12f,12.0,0.6555555555555556,knapsack_learned,0.1577876984126984,"{'4': 24, '8': 9, '16': 57, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Oracle-knapsack@avg12f,12.0,0.6555555555555556,oracle_knapsack,0.1577876984126984,"{'4': 54, '8': 12, '16': 0, '32': 24}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-proxy@avg14f,14.0,0.5982142857142857,knapsack_proxy,-0.0267857142857143,"{'4': 32, '8': 68, '16': 346, '32': 2}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-learned@avg14f,14.0,0.6777777777777778,knapsack_learned,0.05277777777777781,"{'4': 15, '8': 0, '16': 75, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Oracle-knapsack@avg14f,14.0,0.6555555555555556,oracle_knapsack,0.030555555555555558,"{'4': 49, '8': 9, '16': 2, '32': 30}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-proxy@avg16f,16.0,0.5982142857142857,knapsack_proxy,-0.0267857142857143,"{'4': 32, '8': 68, '16': 290, '32': 58}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Knapsack-learned@avg16f,16.0,0.7111111111111111,knapsack_learned,0.08611111111111114,"{'4': 0, '8': 0, '16': 90, '32': 0}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
+Oracle-knapsack@avg16f,16.0,0.6555555555555556,oracle_knapsack,0.030555555555555558,"{'4': 42, '8': 11, '16': 0, '32': 37}",R2plus1D-18,DriveAct,r2plus1d_18_driveact_full_e10_a100
