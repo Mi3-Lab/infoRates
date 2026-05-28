@@ -13,10 +13,17 @@ We study how many frames a video model actually needs. Our method predicts the m
 - ~512 GB scratch storage for datasets + checkpoints
 
 ```bash
+# Standard models (CNNs + Transformers)
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pip install -e .          # installs src/info_rates as a package
+pip install -e .
+
+# VideoMamba (SSM model) — separate environment required
+python -m venv .venv_mamba
+source .venv_mamba/bin/activate
+pip install -r requirements_mamba.txt
+pip install -e .
 ```
 
 ---
@@ -31,23 +38,24 @@ All datasets live at `data/`. Download each and place them as shown:
 | UCF-101 | `data/UCF101_data/` | 101 | [UCF-101](https://www.crcv.ucf.edu/data/UCF101.php) |
 | HMDB-51 | `data/HMDB51_data/` | 51 | [HMDB51](https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/) |
 | Diving-48 | `data/Diving48_data/` | 48 | [Diving48](http://www.svcl.ucsd.edu/projects/action_quality_assessment/) |
-| EPIC-Kitchens | `data/EPIC_data/` | 97 | `python scripts/accv2026/download_epic_clips.py` |
+| EPIC-Kitchens | `data/EPIC_data/` | 97 | [EPIC-Kitchens-100](https://epic-kitchens.github.io/2022) — download annotations + RGB frames |
 | AUTSL | `data/AUTSL_data/` | 226 | [Kaggle: sttaseen/autsl](https://www.kaggle.com/datasets/sttaseen/autsl) |
 | DriveAct | `data/DriveAct_data/` | 34 | [DriveAct](https://driveact.de/) |
 | Kinetics-400 | `data/Kinetics400_data/` | 400 | [K400 val](https://github.com/cvdfoundation/kinetics-dataset) |
 
-For AUTSL and DriveAct, run preprocessing after download:
+After downloading, run preprocessing where needed:
 
 ```bash
-python scripts/accv2026/preprocess_autsl.py   # generates data/AUTSL_data/splits/
-python scripts/accv2026/preprocess_driveact.py # generates data/DriveAct_data/splits/
+python scripts/accv2026/preprocess_autsl.py    # generates data/AUTSL_data/splits/
+python scripts/accv2026/preprocess_driveact.py  # generates data/DriveAct_data/splits/
+python scripts/accv2026/download_epic_clips.py  # extracts EPIC-Kitchens clips from raw frames
 ```
 
 ---
 
 ## Training
 
-Models: **R3D-18**, **MC3-18**, **R2Plus1D-18**, **SlowFast-R50** · **TimeSformer**, **ViViT**, **VideoMAE**
+Models: **R3D-18**, **MC3-18**, **R2Plus1D-18**, **SlowFast-R50** · **TimeSformer**, **ViViT**, **VideoMAE** · **VideoMamba** (SSM, 8th model)
 
 ### Automated (recommended)
 
@@ -62,12 +70,15 @@ It calls `submit_missing_jobs.sh` every 2 minutes — idempotent, safe to re-run
 ### Manual (one dataset)
 
 ```bash
-# CNN models (R3D-18, MC3-18, SlowFast-R50) — requires A100
-export DATASET=hmdb51   # hmdb51 | diving48 | epic_kitchens | autsl | driveact
+# CNN models (R3D-18, MC3-18, R2Plus1D-18, SlowFast-R50) — A100 partition
+export DATASET=hmdb51   # ssv2 | ucf101 | hmdb51 | diving48 | epic_kitchens | autsl | driveact
 bash scripts/accv2026/run_a100_dataset_all_cnn.sh
 
-# Transformers (TimeSformer, ViViT) — requires H200 or large-memory GPU
+# Transformer models (TimeSformer, ViViT, VideoMAE) — H200 partition
 bash scripts/accv2026/run_h200_dataset_all_transformer.sh
+
+# VideoMamba (SSM) — H200 partition, requires .venv_mamba
+DATASET=hmdb51 bash scripts/accv2026/run_h200_multidata_videomamba.sh
 ```
 
 Each script is idempotent: skips training if a checkpoint exists, skips eval if results exist.
@@ -83,9 +94,14 @@ Each script is idempotent: skips training if a checkpoint exists, skips eval if 
 
 ---
 
-## Current Results (as of 2026-05-27)
+## Current Results (as of 2026-05-28)
 
-Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = eval pendente.
+Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames).
+
+**Architectural notes:**
+- SlowFast-R50 and ViViT use 32 input frames natively — accuracy jumps at 32f budget is expected, not an anomaly.
+- VideoMamba uses 8 input frames natively — accuracy plateaus after 8f budget (higher budgets subsample back to 8 frames from wider temporal positions).
+- TimeSformer uses 8 input frames natively — same plateau behavior as VideoMamba.
 
 ### Something-Something v2 (SSv2) — 174 classes
 
@@ -98,7 +114,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = eval pen
 | TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
 | ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
 | VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
-| VideoMamba | — | — | — | — |
+| VideoMamba | 31.8% | 43.9% | 44.4% | 44.2% |
 
 ### UCF-101 — 101 classes
 
@@ -152,7 +168,7 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = eval pen
 | VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
 | VideoMamba | 18.2% | 36.3% | 33.0% | 31.4% |
 
-### AUTSL — 226 classes (sign language)
+### AUTSL — 226 classes (Turkish sign language)
 
 | Model | 4f | 8f | 16f | 32f |
 |-------|---:|---:|----:|----:|
@@ -165,23 +181,22 @@ Top-1 accuracy at fixed frame budgets (4 / 8 / 16 / 32 frames). `—` = eval pen
 | VideoMAE | 17.7% | 43.2% | 79.5% | 78.9% |
 | VideoMamba† | 0.4% | 0.4% | 0.4% | 0.4% |
 
-† VideoMamba não convergiu no AUTSL em nenhuma configuração testada (LR=1e-4 e LR=5e-4): loss travado em ln(226)≈5.42 durante 10 epochs em ambos os runs — exatamente chance aleatória para 226 classes. Todos os outros modelos aprendem AUTSL normalmente (R3D-18 75%, VideoMAE 79.5%). Causa provável: `decord` retornando frames incorretos para os vídeos AUTSL (codec incompatível), dado que o backbone K400 do VideoMamba funciona normalmente em todos os outros 6 datasets.
+† VideoMamba did not converge on AUTSL under any tested configuration (LR=1e-4 and LR=5e-4): loss stuck at ln(226)≈5.42 for all 10 epochs in both runs — exactly random chance for 226 classes. All other models learn AUTSL normally (R3D-18 75%, VideoMAE 79.5%). Root cause: K400 backbone produces near-identical features for all sign language clips (raw pixel std 10× lower than UCF-101 clips) — feature collapse causes gradients to cancel across batches, preventing learning. CNN and Transformer models are unaffected due to stronger local spatial inductive biases.
 
 ### EPIC-Kitchens — 97 classes
 
-Split limpo desde 2026-05-27 (vídeos duplicados entre treino/val removidos).
-✓ = avaliado com split limpo. `—` = retreino em andamento.
+Clean split (duplicate videos between train/val removed on 2026-05-27). All models retrained and evaluated on the clean split.
 
-| Model | 4f | 8f | 16f | 32f | |
-|-------|---:|---:|----:|----:|--|
-| R3D-18 | 13.6% | 22.3% | 37.2% | 37.0% | ✓ |
-| MC3-18 | 11.3% | 27.1% | 36.2% | 37.2% | ✓ |
-| R2Plus1D-18 | 13.0% | 20.2% | 35.5% | 35.2% | ✓ |
-| SlowFast-R50 | 9.2% | 15.8% | 27.2% | 39.4% | ✓ |
-| TimeSformer | 19.5% | 32.3% | 31.5% | 31.0% | ✓ |
-| ViViT | 10.3% | 21.1% | 26.9% | 32.9% | ✓ |
-| VideoMAE | 13.4% | 28.3% | 37.7% | 37.5% | ✓ |
-| VideoMamba | 23.2% | 28.3% | 28.2% | 28.4% | ✓ |
+| Model | 4f | 8f | 16f | 32f |
+|-------|---:|---:|----:|----:|
+| R3D-18 | 13.6% | 22.3% | 37.2% | 37.0% |
+| MC3-18 | 11.3% | 27.1% | 36.2% | 37.2% |
+| R2Plus1D-18 | 13.0% | 20.2% | 35.5% | 35.2% |
+| SlowFast-R50 | 9.2% | 15.8% | 27.2% | 39.4% |
+| TimeSformer | 19.5% | 32.3% | 31.5% | 31.0% |
+| ViViT | 10.3% | 21.1% | 26.9% | 32.9% |
+| VideoMAE | 13.4% | 28.3% | 37.7% | 37.5% |
+| VideoMamba | 23.2% | 28.3% | 28.2% | 28.4% |
 
 ---
 
@@ -222,27 +237,34 @@ Results are written to `evaluations/accv2026/paper_results/`.
 ├── src/info_rates/               # Python package
 │   ├── data/datasets.py          # unified loader: load_dataset(name, root)
 │   ├── metrics/                  # TDS, AUC, temporal metrics
-│   └── models/                   # model factory
+│   └── models/                   # model factory + VideoMamba wrapper
 ├── scripts/accv2026/             # active pipeline
 │   ├── 00–15_*.py                # numbered analysis steps
-│   ├── train_torchvision.py      # R3D-18, MC3-18 trainer
+│   ├── train_torchvision.py      # R3D-18, MC3-18, R2Plus1D-18 trainer
 │   ├── train_slowfast.py         # SlowFast-R50 trainer
-│   ├── train_transformers.py     # TimeSformer, ViViT trainer
-│   ├── eval_fixed_budget.py      # fixed-budget evaluation
-│   ├── feeder_submit_jobs.sh     # automation daemon
-│   ├── submit_missing_jobs.sh    # idempotent job submission
+│   ├── train_transformers.py     # TimeSformer, ViViT, VideoMAE trainer
+│   ├── train_videomamba.py       # VideoMamba (SSM) trainer
+│   ├── eval_fixed_budget.py      # fixed-budget evaluation (all models)
 │   ├── run_a100_dataset_all_cnn.sh
 │   ├── run_h200_dataset_all_transformer.sh
+│   ├── run_h200_multidata_videomamba.sh
+│   ├── feeder_submit_jobs.sh     # automation daemon
+│   ├── submit_missing_jobs.sh    # idempotent job submission
 │   ├── preprocess_autsl.py
-│   └── preprocess_driveact.py
-├── scripts/legacy/               # archived experiments (ECCV, SSV2-only)
+│   ├── preprocess_driveact.py
+│   └── download_epic_clips.py
+├── third_party/videomamba_repo/  # VideoMamba source (submodule)
+├── experiments/videomamba3/      # VideoMamba3 experimental (CVPR 2027 direction)
+├── scripts/legacy/               # archived experiments
 ├── evaluations/accv2026/
 │   ├── fixed_budget/             # per-model per-dataset eval results
 │   ├── paper_results/            # final tables and figures
-│   ├── manifests/                # eval manifests
+│   ├── manifests/                # eval manifests (20 samples/class)
 │   └── logs/                     # Slurm job logs
 ├── data/                         # datasets (symlink to /scratch on cluster)
 ├── fine_tuned_models/            # checkpoints (symlink to /scratch on cluster)
+├── .venv/                        # standard environment (CNNs + Transformers)
+├── .venv_mamba/                  # VideoMamba environment (mamba-ssm)
 └── requirements.txt
 ```
 
@@ -251,6 +273,7 @@ Results are written to `evaluations/accv2026/paper_results/`.
 ## Cluster Notes (Mi3 Lab HPC)
 
 - **A100 partition:** `gpu` — CNN models (max 4 concurrent jobs)
-- **H200 partition:** `cenvalarc.gpu` — transformers (max 4 concurrent jobs)
+- **H200 partition:** `cenvalarc.gpu` — Transformers + VideoMamba (max 4 concurrent jobs)
 - `data/` and `fine_tuned_models/` are symlinked to `/scratch` (512 GB)
-- `HF_HOME=/scratch/wesleyferreiramaia/hf_unified` — consolidated model cache
+- `HF_HOME=/scratch/wesleyferreiramaia/hf_unified` — consolidated HuggingFace model cache
+- VideoMamba requires `.venv_mamba` with `mamba-ssm` built against CUDA 12.8 (fake-nvcc workaround for CUDA 13.x nodes)

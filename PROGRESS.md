@@ -1,55 +1,54 @@
 # InfoRates — Research Progress & Roadmap
 
-**ACCV 2026** · Mi3 Lab · Wesley Maia  
-Last updated: 2026-05-27 (tarde) — **46/56 runs complete** (7 modelos × 7 datasets + VideoMamba 8 datasets)
+**ACCV 2026** · Mi3 Lab · Wesley Maia
+Last updated: 2026-05-28 — **55/57 runs complete** (7 models × 7 datasets + VideoMamba 8 datasets)
 
 ---
 
-## Research Purpose (não perder o fio)
+## Research Purpose
 
-**Pergunta central:** Quantos frames um modelo de vídeo realmente precisa para classificar corretamente um vídeo?
+**Central question:** How many frames does a video model actually need to correctly classify a video?
 
-**Hipótese:** A demanda temporal varia por dataset, por classe, e por modelo. Um budget fixo desperdiça compute em vídeos simples e falha em vídeos complexos. Nosso método aloca frames de forma adaptativa por vídeo, reduzindo FLOPs sem perder acurácia.
+**Hypothesis:** Temporal demand varies by dataset, class, and model. A fixed frame budget wastes compute on simple videos and fails on complex ones. Our method adaptively allocates frames per video, reducing FLOPs without sacrificing accuracy.
 
-### Três Contribuições do Paper
+### Three Paper Contributions
 
-1. **TDS Score (Temporal Demand Score)** — métrica que quantifica o quanto um dataset depende de informação temporal. Calculado como a queda de acurácia ao reduzir frames de 32→4. Permite comparar datasets em uma escala comum.
+1. **TDS Score (Temporal Demand Score)** — metric quantifying how much a dataset depends on temporal information. Computed as the accuracy drop when reducing frames from 32→4. Enables cross-dataset comparison on a common scale.
 
-2. **InfoRates Adaptive Router** — dado um vídeo de entrada e um budget computacional global (ex: 8 frames por vídeo em média), aloca mais frames para vídeos difíceis e menos para vídeos fáceis. Três variantes testadas:
+2. **InfoRates Adaptive Router** — given a video and a global compute budget (e.g., 8 frames/video on average), allocates more frames to hard videos and fewer to easy ones. Four variants:
    - **FDE Router** (Feature Diversity Estimation)
-   - **Spectral Router** (frequência temporal do vídeo)
-   - **Confidence Cascade** (early-exit por confiança)
-   - **Knapsack Allocator** (otimização combinatorial por budget global)
+   - **Spectral Router** (temporal frequency of the video)
+   - **Confidence Cascade** (early-exit by model confidence)
+   - **Knapsack Allocator** (combinatorial optimization under global budget)
 
-3. **Cross-dataset temporal analysis** — primeiro estudo sistemático com 7 datasets × 5 arquiteturas sob budgets fixos. Mostra que a demanda temporal é uma propriedade do dataset, não do modelo.
+3. **Cross-dataset temporal analysis** — first systematic study with 7 datasets × 8 architectures under fixed budgets. Shows temporal demand is a property of the dataset, not the model.
 
-### Claim Principal para o Paper
+### Main Paper Claim
 
 > *"Not all videos need 32 frames. Our method identifies per-video temporal demand and allocates frames accordingly, matching full-budget accuracy at X% of the compute on Y% of videos."*
 
 ---
 
-## Status Atual (2026-05-27 tarde)
+## Phase 1 Status — Fine-tuning + Fixed-Budget Evaluation
 
-### Fase 1: Fine-tuning + Fixed-Budget Evaluation
-
-**Objetivo:** Treinar todos os 7 modelos em todos os 7 datasets (+ VideoMamba em 8 datasets).
-Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
+**Target:** 7 models × 7 datasets = 49 runs + VideoMamba × 8 datasets = 8 additional runs
 
 | Dataset | R3D-18 | MC3-18 | R2Plus1D | SlowFast | TSF | ViViT | VideoMAE | VideoMamba | Status |
 |---------|--------|--------|----------|----------|-----|-------|----------|------------|--------|
-| SSv2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔄 eval (job 72616) | 7/8 |
-| UCF-101 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| HMDB-51 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| DriveAct | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| Diving-48 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
-| AUTSL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 7/8 (VideoMamba não converge — feature collapse K400→ASL) |
-| EPIC-Kitchens | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETO** |
+| SSv2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
+| UCF-101 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
+| HMDB-51 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
+| DriveAct | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
+| Diving-48 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
+| AUTSL | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 7/8 — VideoMamba feature collapse (K400→sign language domain gap) |
+| EPIC-Kitchens | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **COMPLETE** |
 
-### Resultados — Top-1 por Budget
+---
 
-| Dataset | Modelo | 4f | 8f | 16f | 32f |
-|---------|--------|---:|---:|----:|----:|
+## Fixed-Budget Results — Top-1 Accuracy by Frame Budget
+
+| Dataset | Model | 4f | 8f | 16f | 32f |
+|---------|-------|---:|---:|----:|----:|
 | SSv2 | R3D-18 | 9.8% | 19.7% | 37.1% | 36.9% |
 | SSv2 | MC3-18 | 8.2% | 18.8% | 33.6% | 34.5% |
 | SSv2 | R2Plus1D-18 | 12.6% | 24.3% | 42.6% | 42.1% |
@@ -57,6 +56,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | SSv2 | TimeSformer | 31.8% | 42.3% | 41.3% | 41.7% |
 | SSv2 | ViViT | 8.4% | 17.5% | 30.5% | 38.3% |
 | SSv2 | VideoMAE | 21.0% | 39.5% | 52.3% | 51.9% |
+| SSv2 | VideoMamba | 31.8% | 43.9% | 44.4% | 44.2% |
 | UCF-101 | R3D-18 | 59.5% | 72.6% | 81.2% | 81.4% |
 | UCF-101 | MC3-18 | 72.9% | 80.9% | 85.4% | 85.1% |
 | UCF-101 | R2Plus1D-18 | 70.0% | 81.6% | 88.6% | 89.0% |
@@ -64,6 +64,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | UCF-101 | TimeSformer | 90.0% | 91.0% | 91.2% | 90.9% |
 | UCF-101 | ViViT | 75.3% | 86.9% | 92.5% | 94.3% |
 | UCF-101 | VideoMAE | 81.4% | 91.4% | 95.4% | 95.5% |
+| UCF-101 | VideoMamba | 85.0% | 88.4% | 88.2% | 87.8% |
 | HMDB-51 | R3D-18 | 49.2% | 67.1% | 80.3% | 80.1% |
 | HMDB-51 | MC3-18 | 63.5% | 71.2% | 78.6% | 78.2% |
 | HMDB-51 | R2Plus1D-18 | 46.2% | 63.2% | 73.1% | 74.6% |
@@ -71,6 +72,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | HMDB-51 | TimeSformer | 73.0% | 79.9% | 80.0% | 79.8% |
 | HMDB-51 | ViViT | 52.4% | 66.1% | 75.4% | 80.2% |
 | HMDB-51 | VideoMAE | 51.5% | 73.6% | 84.0% | 84.4% |
+| HMDB-51 | VideoMamba | 61.7% | 69.8% | 68.6% | 69.7% |
 | DriveAct | R3D-18 | 47.8% | 56.2% | 68.3% | 67.2% |
 | DriveAct | MC3-18 | 55.1% | 65.8% | 69.0% | 68.5% |
 | DriveAct | R2Plus1D-18 | 37.7% | 49.8% | 62.5% | 61.8% |
@@ -78,6 +80,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | DriveAct | TimeSformer | 64.7% | 67.6% | 68.8% | 66.5% |
 | DriveAct | ViViT | 48.9% | 55.8% | 62.5% | 67.4% |
 | DriveAct | VideoMAE | 40.2% | 56.0% | 74.1% | 72.5% |
+| DriveAct | VideoMamba | 50.9% | 57.8% | 58.0% | 56.7% |
 | Diving-48 | R3D-18 | 5.9% | 14.4% | 28.8% | 28.8% |
 | Diving-48 | MC3-18 | 8.2% | 19.5% | 31.6% | 33.4% |
 | Diving-48 | R2Plus1D-18 | 8.6% | 16.8% | 35.3% | 34.7% |
@@ -85,6 +88,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | Diving-48 | TimeSformer | 23.6% | 38.0% | 36.9% | 38.0% |
 | Diving-48 | ViViT | 7.9% | 19.9% | 35.1% | 53.0% |
 | Diving-48 | VideoMAE | 8.6% | 27.6% | 48.6% | 49.9% |
+| Diving-48 | VideoMamba | 18.2% | 36.3% | 33.0% | 31.4% |
 | AUTSL | R3D-18 | 4.7% | 24.5% | 75.0% | 74.4% |
 | AUTSL | MC3-18 | 4.1% | 37.5% | 63.7% | 63.7% |
 | AUTSL | R2Plus1D-18 | 8.4% | 30.2% | 75.9% | 75.0% |
@@ -92,6 +96,7 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | AUTSL | TimeSformer | 52.0% | 66.8% | 66.2% | 67.0% |
 | AUTSL | ViViT | 8.4% | 25.5% | 61.2% | 74.6% |
 | AUTSL | VideoMAE | 17.6% | 43.2% | 79.5% | 78.9% |
+| AUTSL | VideoMamba | 0.4% | 0.4% | 0.4% | 0.4% |
 | EPIC-Kitchens | R3D-18 | 13.6% | 22.3% | 37.2% | 37.0% |
 | EPIC-Kitchens | MC3-18 | 11.3% | 27.1% | 36.2% | 37.2% |
 | EPIC-Kitchens | R2Plus1D-18 | 13.0% | 20.2% | 35.5% | 35.2% |
@@ -101,124 +106,101 @@ Target: **7 modelos × 7 datasets = 49 runs** + **VideoMamba × 8 = 8 runs**
 | EPIC-Kitchens | VideoMAE | 13.4% | 28.3% | 37.7% | 37.5% |
 | EPIC-Kitchens | VideoMamba | 23.2% | 28.3% | 28.2% | 28.4% |
 
-### Achados Relevantes
+---
 
-- **TimeSformer satura rápido:** HMDB-51 73%→80% em só 8f. UCF-101 já 90% com 4f. critical_frame_budget = 4–8f.
-- **SlowFast precisa de muitos frames:** HMDB-51 35%→79% (4→32f), Diving-48 5.8%→50.5%. Alta demanda temporal — comportamento arquitetural (model_frames=32).
-- **AUTSL (sign language):** jump brutal 24.5% (8f) → 75.0% (16f) → plateau. Janela temporal mínima de 16f obrigatória.
-- **Diving-48 é o dataset mais exigente:** ViViT 7.9%→53.0%, SlowFast 5.8%→50.5%. Enorme ganho com mais frames.
-- **SSv2 vs UCF-101:** SSv2 TDS muito maior — motions sutis vs. ações grosseiras — confirma hipótese.
-- **EPIC-Kitchens (split limpo):** Todos os modelos convergem para ~35-37% em 16f (R3D-18 37.2%, VideoMAE 37.7%, TimeSformer 31.5%). VideoMAE NÃO é superior em EPIC — resultado anterior de 78% era inflado por data leakage. Dataset uniformemente difícil para todos os modelos.
-- **VideoMamba plateau após 8f:** comportamento arquitetural — model_frames=8, budgets maiores são subsampled de volta a 8f de posições temporais diferentes.
-- **Latência:** CNN (R3D/MC3) são 6-25x mais rápidas que Transformers. MC3-18: ~1.6ms/sample; ViViT: ~41ms/sample. TimeSformer domina eficiência em budget baixo (4-8f), CNN dominam em budget alto (16-32f). Arquivo: `evaluations/accv2026/paper_results/latency_summary.csv`.
+## Key Findings
 
-### Jobs Rodando no Cluster (2026-05-28)
-
-| Job ID | Partição | Dataset/Modelo | Status |
-|--------|----------|----------------|--------|
-| 72616 | H200 (cenvalarc.gpu) | VideoMamba SSV2 eval (fix dataset-name bug) | rodando |
-
-**Completos (2026-05-27 a 2026-05-28):**
-- ✅ R3D-18 EPIC (split limpo): 13.6/22.3/37.2/37.0%
-- ✅ MC3-18 EPIC (split limpo): 11.3/27.1/36.2/37.2%
-- ✅ R2Plus1D-18 EPIC (split limpo, resize fix 224→112): 13.0/20.2/35.5/35.2%
-- ✅ TimeSformer EPIC (retrain clean): 19.5/32.3/31.5/31.0%
-- ✅ ViViT EPIC (retrain clean): 10.3/21.1/26.9/32.9%
-- ✅ SlowFast-R50 EPIC (retrain clean): 9.2/15.8/27.2/39.4%
-- ✅ VideoMAE EPIC (retrain clean): 13.4/28.3/37.7/37.5%
-- ✅ VideoMamba SSV2 treino: best val_acc=52.2% (ep5), eval com bug (job 72616 corrige)
-- ❌ VideoMamba AUTSL: não converge — feature collapse K400→língua de sinais (raw pixel std 10× menor que UCF-101)
-
-**Bugs encontrados e corrigidos:**
-- EPIC split contaminado (train/val leak) → corrigido 2026-05-27 01:09; modelos contaminados retreinados
-- R2Plus1D eval com model-frames=8 (deveria ser 16) → eval refeita
-- R2Plus1D eval com resize=224 (treinado em 112px) → eval refeita com resize=112
-- VideoMAE EPIC resultado ~78% era inflado por split contaminado → resultado real: ~37.7%
-
-**Anomalia aberta:**
-- VideoMamba AUTSL: loss=ln(226) em todos os epochs com qualquer LR. Hipótese: `decord` retorna frames incorretos para vídeos AUTSL (codec incompatível). Todos os outros 6 datasets funcionam normalmente.
+- **TimeSformer saturates fast:** HMDB-51 73%→80% in just 8f. UCF-101 already 90% at 4f. critical_frame_budget = 4–8f.
+- **SlowFast needs many frames:** HMDB-51 35%→79% (4→32f), Diving-48 5.8%→50.5%. Architectural — model_frames=32.
+- **AUTSL (sign language):** sharp jump 4.7% (4f) → 75.0% (16f) → plateau. Minimum 16-frame temporal window required.
+- **Diving-48 is the most temporally demanding dataset:** ViViT 7.9%→53.0%, SlowFast 5.8%→50.5%. Largest gain from more frames.
+- **SSv2 vs UCF-101:** SSv2 has much higher TDS — subtle motions vs. coarse actions — confirms hypothesis.
+- **EPIC-Kitchens (clean split):** All models converge to ~28–37% at 16f. VideoMAE is NOT superior on EPIC — previous 78% was inflated by data leakage (train/val video overlap). Dataset is uniformly hard for all models.
+- **VideoMamba plateau after 8f:** architectural — model_frames=8; higher budgets subsample back to 8 frames from different temporal positions.
+- **VideoMamba AUTSL (0.4%):** loss stuck at ln(226)≈5.42 throughout all 10 epochs with both LR=1e-4 and LR=5e-4 — exactly random chance for 226 classes. Root cause: K400 backbone produces near-identical features for all sign language clips (raw pixel std 10× lower than UCF-101). Feature collapse → gradients cancel across batches → no learning. CNN and Transformer models learn AUTSL fine because their local spatial inductive biases can detect hand shape even from K400 initialization.
+- **Latency:** CNNs (R3D/MC3) are 6–25× faster than Transformers. MC3-18: ~1.6ms/sample; ViViT: ~41ms/sample. File: `evaluations/accv2026/paper_results/latency_summary.csv`.
 
 ---
 
-## Fase 2: Análises Pós-Treinamento (após todos os jobs terminarem)
+## Bugs Found and Fixed
+
+| Bug | Impact | Fix |
+|-----|--------|-----|
+| EPIC-Kitchens train/val video overlap | Inflated results for TSF/ViViT/SlowFast/R2Plus1D (e.g. VideoMAE 78%→37%) | Split rebuilt 2026-05-27; contaminated models retrained |
+| R2Plus1D EPIC eval `--model-frames 8` (should be 16) | Results 3.1–6.1% instead of ~35% | Reeval with `--model-frames 16` |
+| R2Plus1D EPIC eval `--resize 224` (trained at 112px) | Spatial mismatch → 11.8% instead of ~35% | Reeval with `--resize 112` |
+| VideoMAE EPIC `--model-frames 8` in old result (78%) | Contaminated + wrong frames; inflated | Retrained on clean split; correct eval |
+| SSv2 manifest using `videos/` path (empty dir) | VideoMamba SSV2 eval: 100% skipped | Manifest rebuilt with `videos_full/` paths |
+| VideoMamba eval `--dataset-name ssv2` (manifest has `somethingv2`) | Manifest filter returns empty → crash | Fixed to `--dataset-name somethingv2` |
+| VideoMamba eval `--split val` (SSv2/UCF-101 use `validation`) | iter_manifest filter returns empty → crash | Fixed to `--split validation` for SSv2/UCF-101 |
+
+---
+
+## Running Jobs
+
+| Job ID | Partition | Task | Status |
+|--------|-----------|------|--------|
+| 72710 | H200 | VideoMamba SSV2 eval (manifest + split fix) | running |
+
+---
+
+## TODO
+
+- [x] **VideoMamba SSV2** — 31.8% / 43.9% / 44.4% / 44.2% (job 72710 complete)
+- [ ] **Run post-training analyses** — `bash scripts/accv2026/run_post_completion_analyses.sh` (all models done except VideoMamba SSV2)
+  - [ ] `04_compute_temporal_demand.py` — TDS score per dataset
+  - [ ] `05_compute_temporal_metrics.py` — AUC and critical_frame_budget per model
+  - [ ] `07_dataset_temporal_demand.py` — dataset-level TDS ranking
+  - [ ] `08_compile_paper_results.py` — paper tables
+  - [ ] `09_plot_paper_figures.py` — figures 1–9
+  - [ ] `10_per_class_temporal_analysis.py` — per-class temporal analysis
+  - [ ] `06_fde_adaptive_routing.py` — FDE router evaluation
+  - [ ] `11_spectral_router.py` — spectral router
+  - [ ] `12_confidence_cascade.py` — confidence cascade analysis
+  - [ ] `13_knapsack_confidence.py` — knapsack frame allocator
+  - [ ] `14_plot_routing_comparison.py` — routing comparison figures
+  - [ ] `15_baseline_comparison.py` — multi-dataset baseline table
+- [ ] **Investigate VideoMamba AUTSL** — optional; feature collapse is a valid finding; if needed, test with ImageNet pretrained backbone or domain-adapted weights
+- [ ] **Paper writing** — Table 1 (fixed-budget baseline, in progress), Table 2 (vs SOTA), Table 3 (router comparison)
+
+---
+
+## Phase 2 — Post-Training Analyses
 
 ```bash
 bash scripts/accv2026/run_post_completion_analyses.sh
 ```
 
-### Checklist
-
-- [ ] `02_make_manifests.py` — manifests de avaliação (20 amostras/classe)
-- [ ] `04_compute_temporal_demand.py` — TDS score por dataset
-- [ ] `05_compute_temporal_metrics.py` — AUC da curva budget×acurácia, critical_frame_budget
-- [ ] `07_dataset_temporal_demand.py` — ranking de datasets por demanda temporal
-- [ ] `08_compile_paper_results.py` — tabelas do paper (Table 1, Table 2)
-- [ ] `09_plot_paper_figures.py` — figuras 1–9 do paper
-- [ ] `10_per_class_temporal_analysis.py` — análise por classe (quais classes precisam de mais frames?)
-- [ ] `06_fde_adaptive_routing.py` — avalia o FDE router vs. fixed budget
-- [ ] `11_spectral_router.py` — router baseado em frequência temporal
-- [ ] `12_confidence_cascade.py` — early-exit por confiança do modelo
-- [ ] `13_knapsack_confidence.py` — alocação ótima de frames por budget global
-- [ ] `14_plot_routing_comparison.py` — comparação entre os 4 routers
-- [ ] `15_baseline_comparison.py` — tabela multi-dataset vs. literatura
+Results written to `evaluations/accv2026/paper_results/`.
 
 ---
 
-## Fase 3: Paper Writing
+## VideoMamba3 Experiment (CVPR 2027 direction)
 
-### Estrutura do Paper (ACCV 2026 format — 14 páginas)
+Applies 3 innovations from Mamba-3 (ICLR 2026, arXiv 2603.15569) to video understanding:
+1. **Trapezoidal discretization** — 2nd-order integration, more temporally stable
+2. **Complex states via RoPE** — complex-valued states without 4× parameter overhead
+3. **MIMO low-rank state update** — matrix product vs. outer product (higher capacity)
 
-```
-1. Introduction          — motivação, claim, preview do resultado principal
-2. Related Work          — adaptive inference, early-exit, temporal modeling
-3. Temporal Demand Score — definição formal do TDS, propriedades
-4. InfoRates Method      — os 4 routers + unified framework
-5. Experiments
-   5.1 Setup             — 7 datasets, 7 modelos, budgets 4/8/16/32
-   5.2 Fixed-budget baseline — Table 1 (a preencher com resultados finais)
-   5.3 TDS analysis      — Fig 1: budget curves, Fig 2: TDS ranking
-   5.4 Router comparison — Fig 3: FDE vs Spectral vs Cascade vs Knapsack
-   5.5 Per-class analysis — Fig 4: which classes benefit most
-   5.6 Cross-model analysis — é a demanda temporal do dataset ou do modelo?
-6. Conclusion
-```
+**Ablation (job 72151 — 1 epoch, 512 samples, 2f, 112px):**
 
-### Figuras Prioritárias (já geradas com dados parciais)
+| Variant | Val acc | Speed | Memory |
+|---------|---------|-------|--------|
+| complex | **50.0%** | 1.6 vid/s | 57MB |
+| trapezoidal | 35.2% | 2.7 vid/s | 57MB |
+| mimo | 29.7% | 1.3 vid/s | 60MB |
 
-- `fig1`: curvas budget×acurácia por dataset (confirmar com dados finais)
-- `fig2`: cross-dataset TDS ranking
-- `fig9`: comparação principal — InfoRates vs. fixed 32f
+**Key idea for CVPR 2027:** Use TDS score as a prior for task-adaptive VideoMamba3 configuration — high-TDS datasets (AUTSL, Diving-48) → longer scan / complex variant; low-TDS datasets (UCF-101) → trapezoidal (faster). This is a novel contribution because TDS was not available before this work.
 
-### Tabelas do Paper
-
-- **Table 1** — Fixed-budget baseline: 5 modelos × 7 datasets × 4 budgets ← **em construção**
-- **Table 2** — Multi-dataset comparison vs. SOTA methods
-- **Table 3** — Router comparison: FDE vs Spectral vs Cascade vs Knapsack
+**Status:** ablation done, mid-scale UCF-101 training started. Full multi-dataset training planned after ACCV 2026 submission.
 
 ---
 
-## Próximas Etapas Imediatas
+## Infrastructure
 
-1. **Aguardar SlowFast + ViViT EPIC** (jobs 72182, 72220) — ~4h restantes
-2. **Investigar VideoMamba AUTSL** — verificar se `decord` decodifica os vídeos AUTSL corretamente (testar carregar 1 clip manualmente em `.venv_mamba`)
-3. **Rodar análises pós-treinamento** assim que EPIC estiver completo — `bash scripts/accv2026/run_post_completion_analyses.sh`
-4. **Analisar TDS ranking** — confirmar hipótese: Diving-48 > AUTSL > SSv2 > HMDB-51 > UCF-101
-
----
-
-## Perguntas em Aberto (para seção de experiments)
-
-- O TDS score é consistente entre modelos diferentes no mesmo dataset?
-- O router de confiança generaliza para datasets fora da distribuição de treino?
-- Qual o tradeoff compute-vs-acurácia dos 4 routers em budget fixo global?
-- A análise por classe revela alguma categoria semântica com alta demanda temporal?
-
----
-
-## Infraestrutura
-
-- **Cluster:** Mi3 Lab HPC — A100 (gpu), H200 (cenvalarc.gpu), máx 4 jobs/partição
-- **Storage:** `data/` e `fine_tuned_models/` → symlinks para `/scratch/wesleyferreiramaia/infoRates/`
-- **HF cache:** `/scratch/wesleyferreiramaia/hf_unified/` (consolidado, ~205GB)
-- **W&B:** projeto `inforates-accv2026`
-- **Deadline ACCV 2026:** verificar datas oficiais em accv2026.org
+- **Cluster:** Mi3 Lab HPC — A100 (gpu partition), H200 (cenvalarc.gpu partition), max 4 concurrent jobs per partition
+- **Storage:** `data/` and `fine_tuned_models/` → symlinks to `/scratch/wesleyferreiramaia/infoRates/`
+- **HF cache:** `/scratch/wesleyferreiramaia/hf_unified/` (~205GB)
+- **VideoMamba env:** `.venv_mamba` (PyTorch 2.8.0+cu128, mamba-ssm with fake-nvcc workaround for CUDA 13.x)
+- **W&B:** project `inforates-accv2026`
+- **ACCV 2026 deadline:** check accv2026.org for official dates
