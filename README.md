@@ -10,7 +10,7 @@
 
 ---
 
-> *Not all videos need 32 frames.* We show that temporal demand is a measurable, dataset-level property — and use it to allocate frames adaptively per video, matching full-budget accuracy at a fraction of the compute.
+> Every action class has a *temporal frequency* — sample below it and you get aliasing: different actions become indistinguishable. We provide the first systematic characterization of temporal aliasing frequencies across 7 diverse datasets and 8 architectures, introducing the **Temporal Demand Score (TDS)** as a principled, model-independent measure of a dataset's Nyquist rate.
 
 <p align="center">
   <img src="assets/fig9_main_comparison.png" width="85%" alt="InfoRates vs fixed-budget baseline across 7 datasets"/>
