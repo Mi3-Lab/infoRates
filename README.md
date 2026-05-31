@@ -10,7 +10,7 @@
 
 ---
 
-> Every action class has a *temporal frequency* — sample below it and you get aliasing: different actions become indistinguishable. We provide the first systematic characterization of temporal aliasing frequencies across 7 diverse datasets and 8 architectures, introducing the **Temporal Demand Score (TDS)** as a principled, model-independent measure of a dataset's Nyquist rate.
+> Every action class has a *temporal frequency* — sample below it and you get aliasing: different actions become indistinguishable. We provide the first systematic characterization of temporal aliasing frequencies across 7 diverse datasets and 8 architectures (CNNs, Transformers, and SSMs), introducing the **Temporal Demand Score (TDS)** as a principled, model-independent measure of a dataset's Nyquist rate. We further show that **aliasing behavior is architecture-dependent**: VideoMamba (SSM) aliases 4–16× less than CNNs on the same dataset, while TimeSformer's divided attention is 4× more robust than ViViT's factorized attention.
 
 <p align="center">
   <img src="assets/fig9_main_comparison.png" width="85%" alt="InfoRates vs fixed-budget baseline across 7 datasets"/>
