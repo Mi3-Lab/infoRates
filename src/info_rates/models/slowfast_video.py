@@ -120,6 +120,13 @@ def create_slowfast_model(num_labels: int, pretrained: bool = True) -> SlowFastV
         except Exception as e:
             print(f"[SlowFast] WARNING: Could not load pretrained weights: {e}")
 
+    # Make spatial pooling resolution-agnostic (hardcoded 7×7 only works at 224px)
+    # Replace AvgPool3d(kernel=[T,7,7]) with AdaptiveAvgPool3d(1) — works at any resolution
+    pool_block = model.blocks[5]
+    if hasattr(pool_block, "pool"):
+        pool_block.pool[0] = nn.AdaptiveAvgPool3d(1)
+        pool_block.pool[1] = nn.AdaptiveAvgPool3d(1)
+
     # Replace classification head with target num_labels
     # PyTorchVideo SlowFast head is model.blocks[-1].proj
     head = model.blocks[-1]

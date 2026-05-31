@@ -1,0 +1,6 @@
+Dataset,Stride=1 (100% cov),Stride=16 (100% cov),Loss (percentage points),TDS Rank
+AUTSL,75.0,6.5,91.3,1
+DIVING48,28.8,12.8,55.6,1
+EPIC_KITCHENS,37.2,24.4,34.3,1
+DRIVEACT,68.3,44.4,35.0,1
+HMDB51,80.3,59.2,26.3,1

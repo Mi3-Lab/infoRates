@@ -162,8 +162,18 @@ DATASET=ssv2 bash scripts/accv2026/run_h200_multidata_videomamba.sh
 
 ## Evaluation
 
+**Phase 1 (Fixed-budget baseline):** Complete — 8 models × 7 datasets × 4 budgets [4/8/16/32 frames]
+
+**Phase 2 (Coverage × Stride aliasing sweep):** Running — 56 jobs auto-submitting, real-time monitoring:
+
 ```bash
-# Fixed-budget evaluation for a single checkpoint
+# View W&B live results
+https://wandb.ai/mi3lab/inforates-accv2026
+
+# Monitor job queue
+watch -n 5 'squeue -u $USER --format="%.10i %.22j %.8T %20K %P"'
+
+# Single model evaluation
 python scripts/accv2026/eval_fixed_budget.py \
     --manifest  evaluations/accv2026/manifests/ssv2_val_20_per_class.csv \
     --checkpoint fine_tuned_models/accv2026_videomae_ssv2_full_e5_h200 \
@@ -171,7 +181,10 @@ python scripts/accv2026/eval_fixed_budget.py \
     --model-frames 16 \
     --output-dir evaluations/accv2026/fixed_budget/my_run
 
-# Full analysis pipeline (tables + figures)
+# Coverage×Stride sweep for 1 model+dataset
+python scripts/accv2026/sweep_coverage_stride.py --model r3d_18 --dataset ucf101
+
+# Full analysis pipeline (post-sweep)
 bash scripts/accv2026/run_post_completion_analyses.sh --all
 ```
 

@@ -57,6 +57,9 @@ def parse_args():
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from")
+    parser.add_argument("--input-size", type=int, default=None,
+                        help="Override spatial resolution (default: model native, e.g. 224). "
+                             "Use for spatial aliasing ablation (e.g. --input-size 112).")
     parser.add_argument("--no-wandb", action="store_true")
     parser.add_argument("--wandb-project", default="inforates-accv2026")
     parser.add_argument("--wandb-run-name", default=None)
@@ -267,13 +270,14 @@ def main() -> None:
 
     model_info = ModelFactory.get_model_info(args.model)
     num_frames = model_info["default_frames"]
-    input_size = model_info["input_size"]
+    input_size = args.input_size if args.input_size is not None else model_info["input_size"]
 
     class_names, train_files, val_files = prepare_data(args.dataset, args.data_root, args.max_train_samples, args.max_val_samples)
     if is_main:
         print(f"Classes: {len(class_names)} | Train: {len(train_files)} | Val: {len(val_files)}")
+        print(f"Spatial resolution: {input_size}px (native: {model_info['input_size']}px)")
 
-    processor = ModelFactory.load_processor(args.model)
+    processor = ModelFactory.load_processor(args.model, input_size=args.input_size)
     train_loader = make_loader(train_files, processor, num_frames, input_size, args, args.ddp, train=True)
     val_loader = make_loader(val_files, processor, num_frames, input_size, args, args.ddp, train=False)
 
@@ -291,6 +295,7 @@ def main() -> None:
         model, _ = ModelFactory.load_model(
             args.model, num_labels=len(class_names),
             checkpoint=pretrained_src, device=str(device),
+            input_size=args.input_size,
         )
 
     if args.ddp:

@@ -123,28 +123,63 @@ def build_videomamba(
     num_classes: int,
     num_frames: int = 8,
     pretrained_path: str | Path | None = None,
+    img_size: int = 224,
 ) -> VideoMambaModel:
     """Instantiate VideoMamba middle with a fresh classification head.
 
-    If `pretrained_path` is given, loads K400 weights via the repo's
-    `load_state_dict` helper (which deletes the original head), then
-    replaces the head with a new Linear(embed_dim, num_classes).
+    If `pretrained_path` is given, loads K400 weights (trained at 224px).
+    When img_size != 224, loads at native 224px first (so vm_load works),
+    then bicubic-interpolates pos_embed and copies weights to target-size model.
     """
+    import torch.nn.functional as F
+
     _add_videomamba_to_path()
     from models.videomamba import videomamba_middle, load_state_dict as vm_load  # noqa: PLC0415
 
-    model_raw = videomamba_middle(num_classes=num_classes, num_frames=num_frames)
+    if pretrained_path is not None and img_size != 224:
+        # Step 1: load checkpoint at native 224px (vm_load requires matching shapes)
+        model_224 = videomamba_middle(num_classes=num_classes, num_frames=num_frames)
+        ckpt = torch.load(str(pretrained_path), map_location="cpu")
+        ckpt = _remap_bimamba_keys(ckpt)
+        vm_load(model_224, ckpt, center=True)
+        model_224.head = nn.Linear(EMBED_DIM, num_classes)
+        nn.init.trunc_normal_(model_224.head.weight, std=0.02)
+        nn.init.zeros_(model_224.head.bias)
 
+        # Step 2: interpolate pos_embed 224px → img_size
+        pos = model_224.pos_embed.data              # [1, 197, D]
+        cls_tok = pos[:, :1, :]                     # [1, 1, D]
+        spatial  = pos[:, 1:, :]                    # [1, 196, D]
+        D = spatial.shape[-1]
+        h_old = w_old = 14                          # 224 // 16
+        h_new = w_new = img_size // 16
+        spatial = spatial.reshape(1, h_old, w_old, D).permute(0, 3, 1, 2)
+        spatial = F.interpolate(spatial.float(), size=(h_new, w_new),
+                                mode="bicubic", align_corners=False)
+        spatial = spatial.permute(0, 2, 3, 1).reshape(1, h_new * w_new, D)
+        interp_pos = torch.cat([cls_tok, spatial], dim=1)           # [1, N_new+1, D]
+        print(f"[VideoMamba] pos_embed interpolated: 224px→{img_size}px "
+              f"(14×14→{h_new}×{h_new} patches)")
+
+        # Step 3: build target-size model and copy all weights
+        model_target = videomamba_middle(num_classes=num_classes, num_frames=num_frames,
+                                         img_size=img_size)
+        state = model_224.state_dict()
+        state["pos_embed"] = interp_pos
+        model_target.load_state_dict(state, strict=True)
+        return VideoMambaModel(model_target)
+
+    # Native 224px (or no pretrained)
+    model_raw = videomamba_middle(num_classes=num_classes, num_frames=num_frames,
+                                  img_size=img_size)
     if pretrained_path is not None:
         ckpt = torch.load(str(pretrained_path), map_location="cpu")
         ckpt = _remap_bimamba_keys(ckpt)
         vm_load(model_raw, ckpt, center=True)
-        # vm_load deletes head.weight/bias and loads strict=False; rebuild head
         model_raw.head = nn.Linear(EMBED_DIM, num_classes)
         nn.init.trunc_normal_(model_raw.head.weight, std=0.02)
         nn.init.zeros_(model_raw.head.bias)
         print(f"[VideoMamba] Pretrained weights loaded from {pretrained_path}")
-
     return VideoMambaModel(model_raw)
 
 

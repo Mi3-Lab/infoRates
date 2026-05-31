@@ -302,6 +302,7 @@ def save_checkpoint(
     model,
     class_names: list[str],
     extra: dict | None = None,
+    input_size: int = 224,
 ) -> None:
     save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -316,7 +317,7 @@ def save_checkpoint(
         "num_labels":   len(class_names),
         "class_names":  class_names,
         "num_frames":   8,
-        "input_size":   224,
+        "input_size":   input_size,
         "embed_dim":    576,
         "depth":        32,
     }
@@ -353,6 +354,9 @@ def parse_args():
                    help="Skip K400 pretrained weights (random init)")
     p.add_argument("--resume-from", default=None,
                    help="Checkpoint dir to resume training from")
+    p.add_argument("--input-size", type=int, default=224,
+                   help="Spatial resolution for training (default: 224). "
+                        "Use for spatial aliasing ablation (e.g. --input-size 112).")
     p.add_argument("--no-wandb", action="store_true")
     p.add_argument("--wandb-project", default="inforates-accv2026")
     p.add_argument("--wandb-run-name", default=None)
@@ -383,7 +387,9 @@ def main() -> None:
     if is_main:
         print(f"Classes: {len(class_names)} | Train: {len(train_files)} | Val: {len(val_files)}")
 
-    processor    = VideoMambaProcessor(size=224)
+    if is_main:
+        print(f"Spatial resolution: {args.input_size}px (native: 224px)")
+    processor    = VideoMambaProcessor(size=args.input_size)
     train_loader = make_loader(train_files, processor, num_frames=8, args=args, use_ddp=args.ddp, train=True)
     val_loader   = make_loader(val_files,   processor, num_frames=8, args=args, use_ddp=args.ddp, train=False)
 
@@ -400,6 +406,7 @@ def main() -> None:
             num_classes=len(class_names),
             num_frames=8,
             pretrained_path=pretrained,
+            img_size=args.input_size,
         )
         model = model.to(device)
 
@@ -433,14 +440,15 @@ def main() -> None:
                 wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
 
             epoch_ckpt = f"{args.save_path}_epoch{epoch}"
-            save_checkpoint(epoch_ckpt, model, class_names, extra={"epoch": epoch, "val_acc": val_acc})
+            save_checkpoint(epoch_ckpt, model, class_names, extra={"epoch": epoch, "val_acc": val_acc}, input_size=args.input_size)
             print(f"  -> Saved: {epoch_ckpt}")
 
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_epoch = epoch
                 save_checkpoint(args.save_path, model, class_names,
-                                extra={"epoch": epoch, "val_acc": val_acc, "is_best": True})
+                                extra={"epoch": epoch, "val_acc": val_acc, "is_best": True},
+                                input_size=args.input_size)
                 print(f"  -> New best! Saved to {args.save_path} (epoch {epoch}, val_acc={val_acc:.4f})")
 
     if is_main:
