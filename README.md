@@ -27,9 +27,34 @@ InfoRates characterizes each dataset's **Temporal Demand Score (TDS)** — how m
 </p>
 
 **Key findings:**
-- TDS is a *dataset* property, not a model property — the ranking is consistent across all 8 architectures tested
-- AUTSL (sign language) and Diving-48 demand the most frames; UCF-101 is mostly appearance-driven
-- Our adaptive routers (FDE, Spectral, Confidence Cascade, Knapsack) save 30–50% of frame compute on low-TDS datasets with no accuracy drop
+
+**Finding 1 — Temporal aliasing is architecture-dependent** (stride 1→16, 100% coverage on SSv2/AUTSL):
+
+| Model | Family | AUTSL loss | Diving-48 loss | SSv2 loss |
+|-------|--------|:----------:|:--------------:|:---------:|
+| VideoMamba | SSM | **+0pp** | +5pp | +14pp |
+| TimeSformer | Transformer | +16pp | +2pp | +13pp |
+| MC3-18 | CNN | +56pp | +12pp | +27pp |
+| R3D-18 | CNN | +68pp | +16pp | +28pp |
+| R2Plus1D | CNN | +67pp | +19pp | +31pp |
+| ViViT | Transformer | +62pp | +36pp | +31pp |
+| SlowFast | CNN-dual | **+78pp** | +40pp | +43pp |
+
+VideoMamba (SSM) aliases 4–16× less than CNNs on the same dataset. ViViT aliases comparably to CNNs despite being Transformer-based — factorized attention is not robust to sparse sampling.
+
+**Finding 2 — TDS ranks are consistent across architectures**: AUTSL (sign language, +60pp) > Diving-48 (+29pp) > SSv2 (+26pp) > UCF-101 (+16pp)
+
+**Finding 3 — Spatial aliasing is also architecture-dependent** (E6, SSv2 at 5 resolutions):
+
+| Model | 96px | 112px | 160px | 224px | 336px |
+|-------|-----:|------:|------:|------:|------:|
+| R3D-18 (native 112px) | — | **37.1%** | 30.3% | 17.2% | — |
+| R2Plus1D (native 112px) | 40.1% | **42.6%** | 36.2% | 20.8% | 5.9% |
+| VideoMAE (native 224px) | 48.9% | 49.2% | 51.5% | **52.3%** | 51.9% |
+| ViViT (native 224px) | 36.4% | 37.1% | 38.1% | **38.3%** | 38.0% |
+| VideoMamba (native 224px) | 37.5% | 39.3% | 42.5% | **43.9%** | 43.8% |
+
+CNNs alias sharply above their native resolution; Transformers and SSMs are spatially robust across the tested range.
 
 ---
 
