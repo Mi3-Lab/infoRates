@@ -302,14 +302,8 @@ def main() -> None:
                 import wandb
                 wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
 
-            # Save per-epoch checkpoint so a crash doesn't lose all progress
+            # Per-epoch checkpoints disabled to preserve disk quota
             raw_model = model.module if hasattr(model, "module") else model
-            epoch_ckpt = f"{args.save_path}_epoch{epoch}"
-            save_torchvision_video_checkpoint(
-                epoch_ckpt, raw_model, model_name=args.model,
-                class_names=class_names, num_frames=args.num_frames, input_size=args.input_size,
-                extra={"epoch": epoch, "val_acc": val_acc},
-            )
             print(f"  -> Saved epoch checkpoint: {epoch_ckpt}")
 
             if val_acc > best_acc:

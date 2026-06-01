@@ -1,27 +1,10 @@
-% ── Core architectures ──────────────────────────────────────────────────────
-@article{bertasius2021timesformer,
-  author  = {Bertasius, Gedas and Wang, Heng and Torresani, Lorenzo},
-  title   = {Is Space-Time Attention All You Need for Video Understanding?},
-  journal = {arXiv preprint arXiv:2102.05095},
-  year    = {2021}
-}
+% =============================================================================
+% InfoRates / ACCV 2026 bibliography — complete reference set
+% =============================================================================
 
-@article{tong2022videomae,
-  author  = {Tong, Zhan and Song, Yizhi and Wang, Jue and Wang, Limin},
-  title   = {{VideoMAE}: Masked Autoencoders Are Data-Efficient Learners for Self-Supervised Video Pre-Training},
-  journal = {NeurIPS},
-  year    = {2022}
-}
-
-@inproceedings{arnab2021vivit,
-  author    = {Arnab, Anurag and Dehghani, Mostafa and Heigold, Georg and Sun, Chen and Lucic, Mario and Schmid, Cordelia},
-  title     = {{ViViT}: A Video Vision Transformer},
-  booktitle = {ICCV},
-  year      = {2021}
-}
-
+% ── Core CNN architectures ───────────────────────────────────────────────────
 @inproceedings{tran2015c3d,
-  title     = {Learning Spatiotemporal Features with 3D Convolutional Networks},
+  title     = {Learning Spatiotemporal Features with {3D} Convolutional Networks},
   author    = {Tran, Du and Bourdev, Lubomir and Fergus, Rob and Torresani, Lorenzo and Paluri, Manohar},
   booktitle = {ICCV},
   year      = {2015}
@@ -41,11 +24,11 @@
   year      = {2018}
 }
 
-@inproceedings{feichtenhofer2020x3d,
-  title     = {{X3D}: Expanding Architectures for Efficient Video Recognition},
-  author    = {Feichtenhofer, Christoph},
-  booktitle = {CVPR},
-  year      = {2020}
+@inproceedings{tran2019video,
+  title     = {Video Classification with Channel-Separated Convolutional Networks},
+  author    = {Tran, Du and Wang, Heng and Torresani, Lorenzo and Feiszli, Matt},
+  booktitle = {ICCV},
+  year      = {2019}
 }
 
 @inproceedings{feichtenhofer2019slowfast,
@@ -55,15 +38,84 @@
   year      = {2019}
 }
 
-% R3D-18 and MC3-18 (Tran et al. 2018 covers these; cite for MCx variant)
-@inproceedings{tran2019video,
-  title     = {Video Classification with Channel-Separated Convolutional Networks},
-  author    = {Tran, Du and Wang, Heng and Torresani, Lorenzo and Feiszli, Matt},
-  booktitle = {ICCV},
-  year      = {2019}
+@inproceedings{feichtenhofer2020x3d,
+  title     = {{X3D}: Expanding Architectures for Efficient Video Recognition},
+  author    = {Feichtenhofer, Christoph},
+  booktitle = {CVPR},
+  year      = {2020}
 }
 
-% ── Video SSM / Mamba ───────────────────────────────────────────────────────
+@inproceedings{wang2018nonlocal,
+  title     = {Non-Local Neural Networks},
+  author    = {Wang, Xiaolong and Girshick, Ross and Gupta, Abhinav and He, Kaiming},
+  booktitle = {CVPR},
+  year      = {2018}
+}
+
+% ── Multi-scale / hierarchical video Transformers ────────────────────────────
+@inproceedings{fan2021mvit,
+  title     = {Multiscale Vision Transformers},
+  author    = {Fan, Haoqi and Xiong, Bo and Mangalam, Karttikeya and Li, Yanghao and Yan, Zhicheng and Malik, Jitendra and Feichtenhofer, Christoph},
+  booktitle = {ICCV},
+  year      = {2021},
+  pages     = {6824--6835}
+}
+
+@inproceedings{liu2022videoswin,
+  title     = {Video Swin Transformer},
+  author    = {Liu, Ze and Ning, Jia and Cao, Yue and Wei, Yixuan and Zhang, Zheng and Lin, Stephen and Hu, Han},
+  booktitle = {CVPR},
+  year      = {2022},
+  pages     = {3202--3211}
+}
+
+% ── Attention-based video Transformers ───────────────────────────────────────
+@inproceedings{bertasius2021timesformer,
+  title     = {Is Space-Time Attention All You Need for Video Understanding?},
+  author    = {Bertasius, Gedas and Wang, Heng and Torresani, Lorenzo},
+  booktitle = {ICML},
+  year      = {2021}
+}
+
+@inproceedings{arnab2021vivit,
+  title     = {{ViViT}: A Video Vision Transformer},
+  author    = {Arnab, Anurag and Dehghani, Mostafa and Heigold, Georg and Sun, Chen and Lucic, Mario and Schmid, Cordelia},
+  booktitle = {ICCV},
+  year      = {2021}
+}
+
+@inproceedings{dosovitskiy2021vit,
+  title     = {An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale},
+  author    = {Dosovitskiy, Alexey and Beyer, Lucas and Kolesnikov, Alexander and Weissenborn, Dirk and Zhai, Xiaohua and Unterthiner, Thomas and Dehghani, Mostafa and Minderer, Matthias and Heigold, Georg and Gelly, Sylvain and Uszkoreit, Jakob and Houlsby, Neil},
+  booktitle = {ICLR},
+  year      = {2021}
+}
+
+% ── Masked-autoencoder pre-training ──────────────────────────────────────────
+@inproceedings{he2022mae,
+  title     = {Masked Autoencoders Are Scalable Vision Learners},
+  author    = {He, Kaiming and Chen, Xinlei and Xie, Saining and Li, Yanghao and Doll{\'a}r, Piotr and Girshick, Ross},
+  booktitle = {CVPR},
+  year      = {2022},
+  pages     = {16000--16009}
+}
+
+@inproceedings{tong2022videomae,
+  title     = {{VideoMAE}: Masked Autoencoders Are Data-Efficient Learners for Self-Supervised Video Pre-Training},
+  author    = {Tong, Zhan and Song, Yizhi and Wang, Jue and Wang, Limin},
+  booktitle = {NeurIPS},
+  year      = {2022}
+}
+
+@inproceedings{wang2023videomaev2,
+  title     = {{VideoMAE V2}: Scaling Video Masked Autoencoders with Dual Masking},
+  author    = {Wang, Limin and Huang, Bingkun and Zhao, Zhiyu and Tong, Zhan and He, Yinan and Wang, Yi and Wang, Yali and Qiao, Yu},
+  booktitle = {CVPR},
+  year      = {2023},
+  pages     = {14549--14560}
+}
+
+% ── Video State-Space Models (SSMs) ─────────────────────────────────────────
 @article{gu2023mamba,
   title   = {Mamba: Linear-Time Sequence Modeling with Selective State Spaces},
   author  = {Gu, Albert and Dao, Tri},
@@ -71,14 +123,21 @@
   year    = {2023}
 }
 
-@article{li2024videomamba,
-  title   = {{VideoMamba}: State Space Model for Efficient Video Understanding},
-  author  = {Li, Kunchang and Li, Xinhao and Wang, Yi and He, Yinan and Wang, Yali and Wang, Limin and Qiao, Yu},
-  journal = {arXiv preprint arXiv:2403.06977},
-  year    = {2024}
+@inproceedings{dao2024mamba2,
+  title     = {Transformers are {SSM}s: Generalized Models and Efficient Algorithms Through Structured State Space Duality},
+  author    = {Dao, Tri and Gu, Albert},
+  booktitle = {ICML},
+  year      = {2024}
 }
 
-% ── Temporal sampling and adaptive methods ───────────────────────────────────
+@inproceedings{li2024videomamba,
+  title     = {{VideoMamba}: State Space Model for Efficient Video Understanding},
+  author    = {Li, Kunchang and Li, Xinhao and Wang, Yi and He, Yinan and Wang, Yali and Wang, Limin and Qiao, Yu},
+  booktitle = {ECCV},
+  year      = {2024}
+}
+
+% ── Temporal sampling, efficiency, and adaptive inference ────────────────────
 @inproceedings{wang2016tsn,
   title     = {Temporal Segment Networks: Towards Good Practices for Deep Action Recognition},
   author    = {Wang, Limin and Xiong, Yuanjun and Wang, Zhe and Qiao, Yu and Lin, Dahua and Tang, Xiaoou and Van Gool, Luc},
@@ -128,6 +187,15 @@
   year      = {2021}
 }
 
+% ── Robustness of video recognition ─────────────────────────────────────────
+@inproceedings{schiappa2023robustness,
+  title     = {A Large-Scale Robustness Analysis of Video Action Recognition Models},
+  author    = {Schiappa, Madeline C. and Biyani, Naman and Kamtam, Prudvi and Vyas, Shruti and Palangi, Hamid and Vineet, Vibhav and Rawat, Yogesh S.},
+  booktitle = {CVPR},
+  year      = {2023},
+  pages     = {14698--14708}
+}
+
 % ── Signal processing and aliasing ──────────────────────────────────────────
 @article{shannon1949communication,
   title     = {Communication in the Presence of Noise},
@@ -142,12 +210,12 @@
 
 @article{vanrullen2007wagon,
   title   = {The Continuous Wagon Wheel Illusion Depends on, But Is Not Identical to Neuronal Adaptation},
+  author  = {VanRullen, Rufin},
   journal = {Vision Research},
   volume  = {47},
   number  = {16},
   pages   = {2143--2149},
-  year    = {2007},
-  author  = {Rufin VanRullen}
+  year    = {2007}
 }
 
 @inproceedings{zhang2019antialiased,
@@ -164,17 +232,25 @@
   year    = {2014}
 }
 
+@inproceedings{farneback2003two,
+  title     = {Two-Frame Motion Estimation Based on Polynomial Expansion},
+  author    = {Farneb{\"a}ck, Gunnar},
+  booktitle = {Scandinavian Conference on Image Analysis (SCIA)},
+  pages     = {363--370},
+  year      = {2003}
+}
+
 % ── Datasets ─────────────────────────────────────────────────────────────────
 @article{soomro2012ucf101,
-  author  = {Soomro, Khurram and Zamir, Amir Roshan and Shah, Mubarak},
   title   = {{UCF101}: A Dataset of 101 Human Actions Classes From Videos in the Wild},
+  author  = {Soomro, Khurram and Zamir, Amir Roshan and Shah, Mubarak},
   journal = {arXiv preprint arXiv:1212.0402},
   year    = {2012}
 }
 
 @article{kay2017kinetics,
-  author  = {Kay, Will and Carreira, Jo{\~a}o and Simonyan, Karen and others},
   title   = {The Kinetics Human Action Video Dataset},
+  author  = {Kay, Will and Carreira, Jo{\~a}o and Simonyan, Karen and others},
   journal = {arXiv preprint arXiv:1705.06950},
   year    = {2017}
 }
@@ -188,7 +264,7 @@
 
 @inproceedings{kuehne2011hmdb,
   title     = {{HMDB}: A Large Video Database for Human Motion Recognition},
-  author    = {Kuehne, Hildegard and Jhuang, Hueihan and Garrote, Estíbaliz and Poggio, Tomaso and Serre, Thomas},
+  author    = {Kuehne, Hildegard and Jhuang, Hueihan and Garrote, Est{\'i}baliz and Poggio, Tomaso and Serre, Thomas},
   booktitle = {ICCV},
   year      = {2011}
 }
@@ -200,11 +276,13 @@
   year      = {2018}
 }
 
-@inproceedings{sincan2020autsl,
-  title     = {{AUTSL}: A Large Scale Multi-Modal Turkish Sign Language Dataset and Baseline Methods},
-  author    = {Sincan, Ozge Mercanoglu and Keles, Hacer Yalim},
-  booktitle = {IEEE Access},
-  year      = {2020}
+@article{sincan2020autsl,
+  title   = {{AUTSL}: A Large Scale Multi-Modal Turkish Sign Language Dataset and Baseline Methods},
+  author  = {Sincan, Ozge Mercanoglu and Keles, Hacer Yalim},
+  journal = {IEEE Access},
+  volume  = {8},
+  pages   = {181340--181355},
+  year    = {2020}
 }
 
 @inproceedings{martin2019driveact,
@@ -218,20 +296,33 @@
   title   = {Rescaling Egocentric Vision: Collection, Pipeline and Challenges for {EPIC-Kitchens-100}},
   author  = {Damen, Dima and Doughty, Hazel and Farinella, Giovanni Maria and others},
   journal = {IJCV},
+  volume  = {130},
+  pages   = {33--55},
   year    = {2022}
 }
 
-% ── Applications ─────────────────────────────────────────────────────────────
-@INPROCEEDINGS{5771372,
-  author    = {Baltrušaitis, Tadas and others},
-  booktitle = {IEEE FG},
-  title     = {Real-time Inference of Mental States from Facial Expressions and Upper Body Gestures},
-  year      = {2011}
+% ── Survey ───────────────────────────────────────────────────────────────────
+@article{zhu2020comprehensive,
+  title   = {A Comprehensive Study of Deep Video Action Recognition},
+  author  = {Zhu, Yi and Li, Xinyu and Liu, Chunhui and Zolfaghari, Mohammadreza and Xiong, Yuanjun and Wu, Chongruo and Zhang, Zhi and Tighe, Joseph and Manmatha, R. and Li, Mu},
+  journal = {arXiv preprint arXiv:2012.06567},
+  year    = {2020}
 }
 
-@INPROCEEDINGS{10484402,
-  author    = {Keshtkaran, Ensiyeh and others},
+% ── Applications ────────────────────────────────────────────────────────────
+@inproceedings{5771372,
+  author    = {Baltru{\v{s}}aitis, Tadas and McDuff, Daniel and Banda, Ntombikayise and Mahmoud, Marwa and el Kaliouby, Rana and Robinson, Peter and Picard, Rosalind},
+  booktitle = {IEEE International Conference on Automatic Face \& Gesture Recognition},
+  title     = {Real-time Inference of Mental States from Facial Expressions and Upper Body Gestures},
+  year      = {2011},
+  doi       = {10.1109/FG.2011.5771372}
+}
+
+@inproceedings{10484402,
+  author    = {Keshtkaran, Ensiyeh and von Berg, Brodie and Regan, Grant and Suter, David and Gilani, Syed Zulqarnain},
   booktitle = {WACV},
   title     = {Estimating Blood Alcohol Level Through Facial Features for Driver Impairment Assessment},
-  year      = {2024}
+  year      = {2024},
+  pages     = {4527--4536},
+  doi       = {10.1109/WACV57701.2024.00448}
 }

@@ -301,3 +301,70 @@ Results available (see Key Findings above). R3D-18, MC3-18, TimeSformer still mi
 - **H200 partition:** `cenvalarc.gpu`, max 4 concurrent
 - **VideoMamba:** `.venv_mamba` env required
 - **All checkpoints ready** — E1, E6 run on existing checkpoints, no retraining
+
+## 2026-06-01 Paper Writing — ACCV 2026 Submission
+
+**PAPER DRAFT STATUS: COMPLETE**
+
+### Deliverables
+- ✅ `paper/manuscript.tex` (39KB, ~3500 words)
+  - 6 sections: Intro (Nyquist framing), Related Work, Methodology, Results, Discussion, Conclusion
+  - 3 main paper figures (TDS, aliasing curves, spatial resolution)
+  - 5 main tables (datasets, E1 results, ANOVA, P3, E7 routing)
+  
+- ✅ `paper/supplementary.tex` (25KB, ~3500 words)
+  - 9 supplementary sections (S1-S9)
+  - 13 supplementary figures (8 heatmaps, 5 analysis)
+  - 6 supplementary tables (Levene top-10, ANOVA full, Taxonomy, E7 full, P3 full, Spectral)
+
+- ✅ `paper/main.bib` (9.1KB, 45 references)
+  - Core architectures (R3D, MC3, R2+1D, SlowFast, TimeSformer, ViViT, VideoMAE, VideoMamba)
+  - Video SSMs and adaptive methods
+  - Signal processing and perception references
+  - All 7 datasets
+
+- ✅ `paper/FIGURES_INDEX.md`
+  - Index of all 16 figures (3 main + 13 supplementary)
+  - Figure-to-section mapping
+  - Page allocation estimates
+
+- ✅ `paper/images/` (1.1MB)
+  - 16 PDF figures copied from `evaluations/accv2026/paper_figures/`
+  - Naming: `main_fig*.pdf` (paper), `sup*.pdf` (supplementary)
+
+### Key Paper Contributions
+1. **TDS (Temporal Demand Score)**: architecture-independent dataset-level metric, ranks AUTSL (52.5pp) > UCF-101 (15.9pp)
+2. **Cross-architecture characterization**: 1,400 configs, 8 models, 7 datasets show aliasing is driven by attention type, not family
+3. **Spatial aliasing reframed**: CNN collapse at non-native res is training artifact; retraining at 96px beats native 224px by +8.9pp on SSv2
+4. **E7 entropy routing**: zero-training method routes 84% videos to 4-frame inference while matching 16-frame accuracy
+
+### Pending P3 (will auto-complete during review period)
+- 40/224 checkpoints completed (18%)
+- 8 GPUs active (4 A100 + 4 L40s) via parallel submitters
+- ETA ~5-7 days to complete all resolution retraining
+
+### What Can Be Done Now
+1. LaTeX compilation (needs pdflatex/tectonic, not in cluster)
+  - Option: compile on local machine or Overleaf
+  - Alternative: use GitHub CI/CD if repo is public
+2. Double-check figure paths and captions
+3. Update author/institution/funding blocks for camera-ready
+4. Minor copyediting and hyperref link fixes
+
+### Known Issues & Notes
+- VideoMamba feature collapse on AUTSL (K400→sign language) excluded from some analyses
+- Spectral correlation modest (r=0.14-0.33) suggests optical flow alone insufficient for temporal demand
+- Tectonic LaTeX binary (14MB) available but not installed on cluster — compilation deferred
+
+### Files Ready
+```
+paper/
+  manuscript.tex       (39KB) — Main paper ready for compilation
+  supplementary.tex    (25KB) — Supplementary material ready
+  main.bib             (9.1KB) — Bibliography with 45 references
+  FIGURES_INDEX.md     (3.2KB) — Figure-to-section mapping
+  images/
+    main_fig*.pdf      (75KB) — 3 main paper figures
+    sup*.pdf           (765KB) — 13 supplementary figures
+```
+

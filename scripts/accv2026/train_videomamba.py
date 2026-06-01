@@ -439,9 +439,7 @@ def main() -> None:
                 import wandb
                 wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
 
-            epoch_ckpt = f"{args.save_path}_epoch{epoch}"
-            save_checkpoint(epoch_ckpt, model, class_names, extra={"epoch": epoch, "val_acc": val_acc}, input_size=args.input_size)
-            print(f"  -> Saved: {epoch_ckpt}")
+            # Per-epoch checkpoints disabled to preserve disk quota
 
             if val_acc > best_acc:
                 best_acc = val_acc

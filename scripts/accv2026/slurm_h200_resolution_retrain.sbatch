@@ -95,8 +95,17 @@ case "$SCRIPT" in
             --lr 2e-5 --weight-decay 0.05
         ;;
     train_videomamba)
+        # train_videomamba.py has no --model arg — build args without it
         python scripts/accv2026/train_videomamba.py \
-            "${COMMON_ARGS[@]}" \
+            --dataset   "${DATASET}" \
+            --epochs    "${EPOCHS}" \
+            --batch-size "${BATCH_SIZE}" \
+            --num-workers 16 \
+            --input-size "${INPUT_SIZE}" \
+            --save-path  "${CHECKPOINT}" \
+            --wandb-project "${WANDB_PROJECT}" \
+            --wandb-run-name "retrain-videomamba-${DATASET}-${INPUT_SIZE}px-e${EPOCHS}-j${SLURM_JOB_ID}" \
+            --wandb-tags accv2026 h200 "${DATASET}" videomamba "${INPUT_SIZE}px" resolution-ablation spatial-aliasing \
             --lr 2e-5 --weight-decay 0.05
         ;;
 esac
