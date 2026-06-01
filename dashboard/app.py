@@ -1,5 +1,5 @@
 """
-InfoRates Dashboard — ACCV 2026
+InfoRates Dashboard
 Spatiotemporal Aliasing in Video Action Recognition: A Cross-Architecture Analysis at Scale
 """
 
