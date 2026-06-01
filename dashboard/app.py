@@ -314,29 +314,47 @@ elif page == "🔲 Heatmaps":
         st.error("No sweep data.")
         st.stop()
 
+    def make_heatmap(sub, title, height=300, show_scale=False):
+        """Build a proper 5×5 coverage×stride heatmap with categorical axes."""
+        pivot = sub.pivot(index="coverage", columns="stride", values="acc")
+        # Sort axes correctly
+        pivot = pivot.sort_index(ascending=False)          # coverage: 100 top, 10 bottom
+        pivot = pivot[sorted(pivot.columns)]               # stride: 1 → 16 left to right
+        # Convert to string labels so Plotly treats as equal-width categories
+        z    = pivot.values
+        y    = [f"{c}%" for c in pivot.index]
+        x    = [f"s={s}" for s in pivot.columns]
+        text = [[f"{v:.0f}" for v in row] for row in z]
+        fig  = go.Figure(go.Heatmap(
+            z=z, x=x, y=y,
+            colorscale="RdYlGn", zmin=0, zmax=100,
+            text=text, texttemplate="%{text}",
+            textfont=dict(size=9),
+            showscale=show_scale,
+            hovertemplate="Coverage=%{y}, %{x}<br>Acc=%{z:.1f}%<extra></extra>",
+        ))
+        fig.update_layout(
+            title=dict(text=title, font=dict(size=12)),
+            height=height,
+            margin=dict(t=40, b=10, l=50, r=10),
+            xaxis=dict(side="bottom"),
+        )
+        return fig
+
     if show_all_ds:
         cols = st.columns(3)
         for i, ds in enumerate(DS_KEYS):
             sub = df_sw[(df_sw.model==sel_model) & (df_sw.dataset==ds)]
             if sub.empty: continue
-            pivot = sub.pivot(index="coverage", columns="stride", values="acc")
-            fig = px.imshow(pivot, color_continuous_scale="RdYlGn", zmin=0, zmax=100,
-                            text_auto=".0f",
-                            labels=dict(x="Stride", y="Coverage (%)"),
-                            title=DS_LABELS[ds].split(" (")[0])
-            fig.update_layout(height=280, margin=dict(t=40,b=10,l=0,r=0),
-                              coloraxis_showscale=False)
+            fig = make_heatmap(sub, DS_LABELS[ds].split(" (")[0], height=260)
             cols[i % 3].plotly_chart(fig, use_container_width=True)
     else:
         sel_ds = st.sidebar.selectbox("Dataset", DS_KEYS, format_func=lambda x: DS_LABELS[x])
         sub = df_sw[(df_sw.model==sel_model) & (df_sw.dataset==sel_ds)]
         if not sub.empty:
-            pivot = sub.pivot(index="coverage", columns="stride", values="acc")
-            fig = px.imshow(pivot, color_continuous_scale="RdYlGn", zmin=0, zmax=100,
-                            text_auto=".1f",
-                            labels=dict(x="Stride", y="Coverage (%)", color="Top-1 (%)"),
-                            title=f"{MODEL_NAMES[sel_model]} on {DS_LABELS[sel_ds]}")
-            fig.update_layout(height=420, margin=dict(t=60))
+            fig = make_heatmap(sub,
+                               f"{MODEL_NAMES[sel_model]} on {DS_LABELS[sel_ds]}",
+                               height=400, show_scale=True)
             st.plotly_chart(fig, use_container_width=True)
 
     # Side-by-side comparison: TimeSformer vs ViViT (key finding)
@@ -350,10 +368,8 @@ elif page == "🔲 Heatmaps":
         if sub.empty:
             col.warning(f"No data for {MODEL_NAMES[mk]}")
             continue
-        pivot = sub.pivot(index="coverage", columns="stride", values="acc")
-        fig = px.imshow(pivot, color_continuous_scale="RdYlGn", zmin=0, zmax=100,
-                        text_auto=".0f", title=f"{MODEL_NAMES[mk]} ({FAMILIES[mk]})")
-        fig.update_layout(height=300, margin=dict(t=50,b=10), coloraxis_showscale=False)
+        fig = make_heatmap(sub, f"{MODEL_NAMES[mk]} ({FAMILIES[mk]})", height=320)
+        fig.update_layout(margin=dict(t=50, b=10))
         col.plotly_chart(fig, use_container_width=True)
 
 

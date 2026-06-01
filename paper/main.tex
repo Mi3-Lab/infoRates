@@ -165,9 +165,10 @@ architectures (Sec.~\ref{sec:results_tds}).
 evaluation configurations across 8 models $\times$ 7 datasets reveal that the
 \emph{attention mechanism type}---not architecture family---determines aliasing
 behavior (Sec.~\ref{sec:results_temporal}).
-\item \textbf{Spatial aliasing analysis (\Esix{}/P3)}: We prove CNN spatial
-aliasing is a training artifact; retraining CNNs at target resolution restores
-and often exceeds native-resolution accuracy (Sec.~\ref{sec:results_spatial}).
+\item \textbf{Spatial aliasing analysis (\Esix{}/P3)}: We demonstrate that
+\emph{CNN} spatial aliasing is a training artifact; retraining CNN families at the
+target resolution restores and often exceeds native-resolution accuracy on 77\% of
+completed model-dataset pairs (Sec.~\ref{sec:results_spatial}).
 \item \textbf{Entropy-based adaptive routing (\Eseven{})}: A zero-training
 routing method reduces average inference frames by 52\% while matching
 dense-sampling accuracy (Sec.~\ref{sec:results_routing}).
@@ -915,8 +916,8 @@ aliasing in video action recognition.
 Evaluating 8 architectures across 7 diverse datasets (1,400 configurations),
 our findings establish that aliasing behavior is governed by attention mechanism type
 rather than architecture family; that the \TDS{} metric captures dataset-level
-temporal frequency demand consistently across models; that CNN spatial aliasing is a
-training artifact with a free regularization bonus at lower resolution; and that
+temporal frequency demand consistently across models; that \emph{CNN} spatial aliasing is a training artifact correctable by resolution-aware
+retraining, with a free regularization bonus on background-noisy datasets; and that
 entropy-based routing reduces average inference cost by 52\% with no accuracy penalty.
 These results provide principled, actionable guidance for designing efficient video
 recognition systems tailored to the temporal Nyquist constraints of each application domain.
