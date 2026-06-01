@@ -32,7 +32,7 @@ InfoRates characterizes each dataset's **Temporal Demand Score (TDS)** — how m
 
 | Model | Family | AUTSL loss | Diving-48 loss | SSv2 loss |
 |-------|--------|:----------:|:--------------:|:---------:|
-| VideoMamba | SSM | **+0pp** | +5pp | +14pp |
+| VideoMamba | SSM | †collapse | +5pp | +14pp |
 | TimeSformer | Transformer | +16pp | +2pp | +13pp |
 | MC3-18 | CNN | +56pp | +12pp | +27pp |
 | R3D-18 | CNN | +68pp | +16pp | +28pp |
@@ -40,7 +40,9 @@ InfoRates characterizes each dataset's **Temporal Demand Score (TDS)** — how m
 | ViViT | Transformer | +62pp | +36pp | +31pp |
 | SlowFast | CNN-dual | **+78pp** | +40pp | +43pp |
 
-VideoMamba (SSM) aliases 4–16× less than CNNs on the same dataset. ViViT aliases comparably to CNNs despite being Transformer-based — factorized attention is not robust to sparse sampling.
+† VideoMamba AUTSL = **feature collapse** (K400→sign language domain gap): 0.4% at ALL strides. This is not temporal robustness — the model never learned AUTSL.
+
+On valid datasets (SSv2, HMDB, Diving, DriveAct, EPIC): **VideoMamba (avg 8pp) and TimeSformer (avg 9pp) are equally robust** — both 3–5× more robust than CNNs (avg 24–46pp) and ViViT (avg 34pp). The key contrast: **ViViT aliases as badly as CNNs despite being a Transformer** — factorized space-time attention decouples temporal reasoning, making the time dimension vulnerable to sparse sampling.
 
 **Finding 2 — TDS ranks are consistent across architectures**: AUTSL (sign language, +60pp) > Diving-48 (+29pp) > SSv2 (+26pp) > UCF-101 (+16pp)
 
@@ -187,30 +189,26 @@ DATASET=ssv2 bash scripts/accv2026/run_h200_multidata_videomamba.sh
 
 ## Evaluation
 
-**Phase 1 (Fixed-budget baseline):** Complete — 8 models × 7 datasets × 4 budgets [4/8/16/32 frames]
+**Experiment status (31 May 2026):**
 
-**Phase 2 (Coverage × Stride aliasing sweep):** Running — 56 jobs auto-submitting, real-time monitoring:
+| Experiment | Status | Progress |
+|-----------|--------|----------|
+| E1: Temporal aliasing (coverage×stride sweep) | 🔄 83% | 1162/1400 configs · UCF-101 fix deployed |
+| E6: Spatial resolution sweep (5 pts per model) | 🔄 87% | 7/8 models done on SSv2 |
+| P3: Retraining at 5 resolutions | 🔄 20% | 44/224 checkpoints |
 
 ```bash
-# View W&B live results
-https://wandb.ai/mi3lab/inforates-accv2026
+# W&B live results
+# https://wandb.ai/mi3lab/inforates-accv2026
 
 # Monitor job queue
-watch -n 5 'squeue -u $USER --format="%.10i %.22j %.8T %20K %P"'
-
-# Single model evaluation
-python scripts/accv2026/eval_fixed_budget.py \
-    --manifest  evaluations/accv2026/manifests/ssv2_val_20_per_class.csv \
-    --checkpoint fine_tuned_models/accv2026_videomae_ssv2_full_e5_h200 \
-    --budgets 4 8 16 32 \
-    --model-frames 16 \
-    --output-dir evaluations/accv2026/fixed_budget/my_run
+squeue -u $USER --format="%.10i %.22j %.8T %P"
 
 # Coverage×Stride sweep for 1 model+dataset
-python scripts/accv2026/sweep_coverage_stride.py --model r3d_18 --dataset ucf101
+python scripts/accv2026/sweep_coverage_stride.py --model r3d_18 --dataset ssv2
 
-# Full analysis pipeline (post-sweep)
-bash scripts/accv2026/run_post_completion_analyses.sh --all
+# Spatial resolution sweep for 1 model+dataset
+python scripts/accv2026/sweep_spatial_resolution.py --model timesformer --dataset ssv2
 ```
 
 Figures are saved as **PDF** (for LaTeX) and **PNG at 300 DPI** (for review/slides) in `evaluations/accv2026/paper_results/figures/`.
