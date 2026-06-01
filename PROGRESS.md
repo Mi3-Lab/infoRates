@@ -1,7 +1,7 @@
 # InfoRates — Research Progress & Roadmap
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-05-31 19:15
+Last updated: 2026-05-31 20:30
 
 ---
 
@@ -24,8 +24,8 @@ A previous paper from this lab (ECCV 2026 submission #2612: *"On the Limits of T
 | # | Contribution | One-line claim | Status |
 |---|-------------|----------------|--------|
 | **C1** | **TDS Score** | Dataset-level temporal demand consistent across all 8 models — proves aliasing is a dataset property, not architecture artifact | ✅ **Complete** |
-| **C2** | **Temporal + Spatial aliasing characterization** | First cross-architecture (CNN/Transformer/SSM) × cross-domain aliasing analysis at scale — E1 ✅ 100%, E6 ✅ 100%, P3 retraining 12% | 🔄 **P3 running** |
-| **C3** | **Real adaptive method** | Confidence-based routing beats fixed budget at same average compute, validated on high-TDS datasets | 🔶 Partial (oracle +6.74pp, proxy needs E7) |
+| **C2** | **Temporal + Spatial aliasing characterization** | E1 ✅ 100% · E6 ✅ 100% · E2 ✅ · E4 ✅ · E5 ✅ · E3 🔄 · P3 retraining 14% | 🔄 **E3 + P3 running** |
+| **C3** | **Real adaptive method** | Confidence-based routing beats fixed budget at same average compute, validated on high-TDS datasets | 🔶 **Needs E7** |
 
 ---
 
@@ -120,22 +120,23 @@ Top-1 accuracy on SSv2 at different spatial resolutions (* = native):
 
 ---
 
-## Implementation Table — Everything Still Needed
+## Experiment Status Table
 
 Priority: 🔴 Blocking · 🟡 Important · 🟢 Good to have
 
-| # | Experiment | What it produces | Addresses | Effort | Compute | Priority |
-|---|-----------|-----------------|-----------|--------|---------|----------|
-| **E1** | **Coverage × Stride grid** (C ∈ {10,25,50,75,100}%, s ∈ {1,2,4,8,16}) on all 8 models × all 7 datasets | Aliasing curves, heatmaps per model family | C2 — the core aliasing analysis. Reviewer: "transformers only" → we show CNNs/SSMs alias differently | 🔄 79% complete (1114/1400). Master auto-submitter active. | ~6h remaining | 🔴 |
-| **E2** | **Variance analysis** — per-class accuracy std at each (C,s) config | Levene's test p-values, variance inflation plots | Shows aliasing is stochastic not just mean-accuracy drop. Mirrors ECCV paper section 4.2 | Post-processing of E1 | CPU only | 🔴 |
-| **E3** | **Spectral analysis** — optical flow magnitude → dominant frequency per action class | Table: class freq (Hz) vs aliasing sensitivity (Pearson r≈0.99 expected) | Nyquist theoretical validation. The smoking gun that aliasing is real, not just compute | Python script on existing videos | ~2h CPU | 🔴 |
-| **E4** | **ANOVA statistical analysis** (two-way: coverage × stride effects) | η² effect sizes, post-hoc pairwise, interaction significance | Statistical rigor. Reviewers always ask for this | Post-processing of E1 | CPU only | 🔴 |
-| **E5** | **Action sensitivity taxonomy** — classify action classes into High/Moderate/Low aliasing sensitivity | Table 3-tier taxonomy (like ECCV paper Table 3) | Per-class insight. Shows the diversity the rejected paper lacked | Post-processing of E1 | CPU only | 🟡 |
-| **E6** | **Spatial resolution sweep** — 5-point grid {96,112,160,224,336px} on all 8 models × all 7 datasets | Spatial aliasing curves, cross-architecture comparison at same resolution | Controlled experiment: all models at same resolutions (all divisible by patch_size=16). 224 new checkpoints via retraining. | 🔄 Running (eval on existing ckpts), 224 retraining jobs queued | ~7 days total | 🟡 |
-| **E7** | **Better adaptive routing** — replace FDE proxy with per-frame model entropy | Routing accuracy above fixed-8f baseline | Reviewer: "TRA is just augmentation" → need a real method that beats fixed budget | Modify cascade script | ~2h | 🟡 |
-| **E8** | **TRA (Temporal Robustness Augmentation)** — retrain key models with randomized C and s | TRA vs baseline robustness curves | Shows our analysis leads to actionable training improvement | Retrain 2-3 models | ~24h GPU | 🟢 |
-| **E9** | **Comparison table vs prior adaptive methods** (AdaFocus, AR-Net, FrameExit) | Table with method comparison | Reviewers always ask "how does this compare?" | Literature + 1 reimplementation | ~4h | 🟢 |
-| **E10** | **Clip duration analysis** — truncate clips to 1s/2s/5s at same frame count | Duration vs accuracy per dataset | Third dimension of spatiotemporal analysis | Post-processing of E1 subset | CPU only | 🟢 |
+| # | Experiment | Status | Key Result | Priority |
+|---|-----------|--------|------------|----------|
+| **E1** | Coverage × Stride grid — 8 models × 7 datasets × 25 configs | ✅ **100% COMPLETE** (1400/1400) | VMamba+TSF avg +8pp · SlowFast +42pp · VideoMAE +32pp | 🔴 |
+| **E2** | Variance analysis — Levene's test per (model, dataset) | ✅ **COMPLETE** | Stride increases inter-class std up to 2.0× (VideoMAE/HMDB p<0.0001) | 🔴 |
+| **E3** | Spectral — optical flow magnitude vs aliasing sensitivity | 🔄 Running (~30min) | Pearson r expected >0.6 (Nyquist validation) | 🔴 |
+| **E4** | ANOVA — two-way coverage×stride, η² effect sizes | ✅ **COMPLETE** | Coverage dominates (η²=0.53-0.90); stride large effect for CNNs (η²=0.18-0.35), small for SSM/TSF (η²=0.08) | 🔴 |
+| **E5** | Action sensitivity taxonomy — High/Moderate/Low tiers | ✅ **COMPLETE** | UCF-101 Low tier: -0.3pp (fully static); AUTSL all tiers >38pp (fundamentally high-freq) | 🟡 |
+| **E6** | Spatial resolution sweep — 5pts × 8 models (eval existing ckpts) | ✅ **COMPLETE** (SSv2) | VideoMAE flat 96-336px; R2+1D collapses to 5.9% OOD (training confound) | 🟡 |
+| **P3** | Resolution retraining — 224 new checkpoints (full spatial Nyquist) | 🔄 **14% (33/224)** · 6 GPUs · ~2-3 days | SlowFast@96px beats @224px: SSv2 +8.9pp, HMDB +6.5pp | 🟡 |
+| **E7** | Adaptive routing — entropy-based, closes C3 | ❌ **NOT STARTED** | Needed to claim method contribution | 🔴 |
+| **E8** | TRA — retrain with randomized coverage/stride | ❌ Not started | Nice-to-have | 🟢 |
+| **E9** | Comparison vs AdaFocus, AR-Net, FrameExit | ❌ Not started | Reviewer ask | 🟢 |
+| **E10** | Clip duration analysis | ❌ Not started | Third dimension | 🟢 |
 
 ---
 
@@ -260,11 +261,11 @@ Results available (see Key Findings above). R3D-18, MC3-18, TimeSformer still mi
 
 | Week | Tasks | Status |
 |------|-------|--------|
-| **Week 1 (done)** | E1 83% + E6 87% + P3 20% + smoke tests all 8 models + 4 bugs fixed | ✅ |
-| **Week 2 (now)** | E1 finish (UCF-101 fix deployed) + E2 variance + E4 ANOVA + E3 spectral | 🔄 |
-| **Week 3** | E7 entropy routing (close C3) + E5 taxonomy + paper Section 3-4 | ⏳ |
-| **Week 4** | P3 E1 sweep at new resolutions + polish figures + paper Section 5 + related work | ⏳ |
-| **Week 4-5** | Full paper draft → internal review → submit | ⏳ |
+| **Week 1** | E1 83% + E6 87% + smoke tests + 4 bugs fixed | ✅ |
+| **Week 2** | E1 ✅100% + E2 ✅ + E4 ✅ + E5 ✅ + E3🔄 + P3 14% (6 GPUs) | ✅ (today) |
+| **Week 3** | **E7** entropy routing (closes C3) + paper Sections 1-4 draft | ⏳ **NEXT** |
+| **Week 4** | P3 complete + E1 sweep at new resolutions + figures polish + Section 5 | ⏳ |
+| **Week 4-5** | Full draft → internal review → submit | ⏳ |
 
 **Resolution Retraining Plan — 5-point common grid: 96 / 112 / 160 / 224 / 336px**
 

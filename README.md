@@ -58,6 +58,31 @@ On valid datasets (SSv2, HMDB, Diving, DriveAct, EPIC): **VideoMamba (avg 8pp) a
 
 CNNs alias sharply above their native resolution; Transformers and SSMs are spatially robust across the tested range.
 
+**Finding 4 — VideoMAE aliases temporally like a CNN (+32pp avg) despite being a Transformer:**
+MAE pre-training teaches spatial reconstruction (robust to spatial masking) but NOT temporal robustness — skipping frames is different from masking patches. VideoMAE clips at stride 4→8 just like CNNs.
+
+**Finding 5 — Statistical validation (E2/E4):**
+- **ANOVA η²**: Stride explains 7–35% of accuracy variance (large for CNNs, small for SSM/TSF). Coverage explains 52–90%.
+- **Levene's test**: Stride significantly increases inter-class std up to 2.0× (p<0.001) — aliasing is not just mean drop, it increases class disparity.
+
+**Finding 6 — Action taxonomy (E5):**
+UCF-101 "Low" sensitivity classes: −0.3pp at stride=16 (completely static actions). AUTSL "Low" tier still loses 38pp (entire dataset is high-frequency). Quantifies the within-dataset heterogeneity.
+
+---
+
+## Experiment Status
+
+| Experiment | Status | Key finding |
+|-----------|--------|------------|
+| **E1** Coverage×Stride (8 models × 7 datasets × 25 configs) | ✅ 1400/1400 | Full aliasing curves; VideoMAE +32pp surprises |
+| **E2** Variance / Levene | ✅ Complete | Stride increases inter-class std up to 2.0× |
+| **E3** Spectral (optical flow ↔ aliasing) | 🔄 Running | Nyquist validation via Pearson r |
+| **E4** ANOVA η² effect sizes | ✅ Complete | Coverage dominates; stride η²=0.08 (SSM) vs 0.35 (SlowFast) |
+| **E5** Action sensitivity taxonomy | ✅ Complete | High/Moderate/Low tiers for all 7 datasets |
+| **E6** Spatial resolution sweep | ✅ Complete (SSv2) | VideoMAE flat 96–336px; CNNs brittle OOD |
+| **P3** Resolution retraining | 🔄 14% (33/224) | SlowFast@96px > @224px: SSv2 +8.9pp |
+| **E7** Adaptive routing (C3) | ❌ Next | Closes method contribution |
+
 ---
 
 ## Results
