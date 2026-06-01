@@ -126,17 +126,19 @@ Priority: 🔴 Blocking · 🟡 Important · 🟢 Good to have
 
 | # | Experiment | Status | Key Result | Priority |
 |---|-----------|--------|------------|----------|
-| **E1** | Coverage × Stride grid — 8 models × 7 datasets × 25 configs | ✅ **100% COMPLETE** (1400/1400) | VMamba+TSF avg +8pp · SlowFast +42pp · VideoMAE +32pp | 🔴 |
-| **E2** | Variance analysis — Levene's test per (model, dataset) | ✅ **COMPLETE** | Stride increases inter-class std up to 2.0× (VideoMAE/HMDB p<0.0001) | 🔴 |
-| **E3** | Spectral — optical flow magnitude vs aliasing sensitivity | 🔄 Running (~30min) | Pearson r expected >0.6 (Nyquist validation) | 🔴 |
-| **E4** | ANOVA — two-way coverage×stride, η² effect sizes | ✅ **COMPLETE** | Coverage dominates (η²=0.53-0.90); stride large effect for CNNs (η²=0.18-0.35), small for SSM/TSF (η²=0.08) | 🔴 |
-| **E5** | Action sensitivity taxonomy — High/Moderate/Low tiers | ✅ **COMPLETE** | UCF-101 Low tier: -0.3pp (fully static); AUTSL all tiers >38pp (fundamentally high-freq) | 🟡 |
-| **E6** | Spatial resolution sweep — 5pts × 8 models (eval existing ckpts) | ✅ **COMPLETE** (SSv2) | VideoMAE flat 96-336px; R2+1D collapses to 5.9% OOD (training confound) | 🟡 |
-| **P3** | Resolution retraining — 224 new checkpoints (full spatial Nyquist) | 🔄 **14% (33/224)** · 6 GPUs · ~2-3 days | SlowFast@96px beats @224px: SSv2 +8.9pp, HMDB +6.5pp | 🟡 |
-| **E7** | Adaptive routing — entropy-based, closes C3 | ❌ **NOT STARTED** | Needed to claim method contribution | 🔴 |
-| **E8** | TRA — retrain with randomized coverage/stride | ❌ Not started | Nice-to-have | 🟢 |
-| **E9** | Comparison vs AdaFocus, AR-Net, FrameExit | ❌ Not started | Reviewer ask | 🟢 |
-| **E10** | Clip duration analysis | ❌ Not started | Third dimension | 🟢 |
+| **E1** | Coverage × Stride grid — 8 models × 7 datasets × 25 configs | ✅ **COMPLETE** | VMamba+TSF avg +8pp · SlowFast +42pp · VideoMAE +32pp | 🔴 |
+| **E2** | Variance / Levene's test | ✅ **COMPLETE** | Stride increases inter-class std up to 2.0× (p<0.0001) | 🔴 |
+| **E3** | Spectral — optical flow ↔ aliasing | ✅ **COMPLETE** | r=0.14-0.33 (DriveAct r=0.33, UCF r=0.03) | 🔴 |
+| **E4** | ANOVA — η² effect sizes | ✅ **COMPLETE** | η²(stride): 0.08 SSM/TSF vs 0.35 SlowFast | 🔴 |
+| **E5** | Action sensitivity taxonomy | ✅ **COMPLETE** | UCF Low: -0.3pp (static); AUTSL all tiers >38pp | 🟡 |
+| **E6** | Spatial resolution sweep | ✅ **COMPLETE** (SSv2) | VideoMAE flat 96-336px; CNNs brittle OOD | 🟡 |
+| **E7** | Entropy routing — confidence-based adaptive | ✅ **COMPLETE** | +8-19pp vs cheap; 57-60% videos routed cheap at avg 7-8f | 🔴 |
+| **P3** | Resolution retraining — 224 new checkpoints | 🔄 **14% (33/224)** · 6 GPUs | SlowFast@96px > @224px: +8.9pp SSv2 | 🟡 |
+| **Figures** | 5 main + 13 supplementary figures | ✅ **COMPLETE** | `evaluations/accv2026/paper_figures/` PDF+PNG 300dpi | 🔴 |
+| **Paper** | Draft Sections 1-5 | ❌ **NEXT — CRITICAL** | Deadline ~4 weeks | 🔴 |
+| **E8** | TRA retrain (1 model proof-of-concept) | ❌ When P3 frees slots | +2-5pp expected; TimeSformer/SSv2 target | 🟢 |
+| **E9** | Comparison vs AdaFocus, AR-Net, FrameExit | ✅ **COMPLETE** | E7 51.9% SSv2 > Oracle 47.3% > Fixed-8f 42.3% > FrameExit 39.7% (avg 7.7f) | 🟡 |
+| **E10** | Clip duration analysis | ✅ **COMPLETE** | Longer clips → **less** aliasing (r=−0.3 to −0.8); short clips alias more | 🟢 |
 
 ---
 

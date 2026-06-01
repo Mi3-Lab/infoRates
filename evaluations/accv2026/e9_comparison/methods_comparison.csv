@@ -1,0 +1,207 @@
+method,method_type,model,dataset,avg_frames,accuracy,note
+AdaFocus†,literature,ResNet50,SSV2,8.0,0.547,"Wang et al. ICCV 2021, ~50% FLOPs"
+AdaFocus†,literature,ResNet50,UCF101,8.0,0.936,Wang et al. ICCV 2021
+AR-Net†,literature,ResNet50,SSV2,8.0,0.486,"Meng et al. ECCV 2020, adaptive resolution"
+AR-Net†,literature,ResNet50,UCF101,8.0,0.917,"Meng et al. ECCV 2020, adaptive resolution"
+E7-Entropy (ours),ours_e7,r3d_18,UCF101,4.071287128712871,0.8163366336633663,"τ=0.10, 99% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,SSV2,7.686106870229008,0.3462595419847328,"τ=0.50, 69% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,HMDB51,7.552542372881356,0.8022598870056498,"τ=0.60, 70% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,Diving48,7.262449528936743,0.2759084791386272,"τ=0.50, 73% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,Autsl,7.368039837030331,0.7329108193752829,"τ=0.65, 72% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,Driveact,7.910714285714286,0.6607142857142857,"τ=0.60, 67% cheap"
+E7-Entropy (ours),ours_e7,r3d_18,Epic_Kitchens,7.823529411764706,0.3666666666666666,"τ=0.60, 68% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,UCF101,4.706930693069307,0.8559405940594059,"τ=0.25, 94% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,SSV2,7.909618320610687,0.3242748091603053,"τ=0.40, 67% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,HMDB51,6.901694915254238,0.7853107344632768,"τ=0.55, 76% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,Diving48,4.161507402422611,0.3176312247644683,"τ=0.15, 99% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,Autsl,7.658669081032142,0.6339972838388411,"τ=0.50, 70% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,Driveact,6.919642857142857,0.6941964285714286,"τ=0.45, 76% cheap"
+E7-Entropy (ours),ours_e7,mc3_18,Epic_Kitchens,4.0,0.3647058823529411,"τ=0.10, 100% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,UCF101,4.350495049504951,0.8900990099009901,"τ=0.30, 97% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,SSV2,7.480916030534351,0.4076335877862595,"τ=0.55, 71% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,HMDB51,6.901694915254238,0.7333333333333333,"τ=0.65, 76% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,Diving48,7.06864064602961,0.3633916554508748,"τ=0.50, 74% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,Autsl,7.905839746491625,0.7415119963784518,"τ=0.85, 67% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,Driveact,6.383928571428571,0.5959821428571429,"τ=0.60, 80% cheap"
+E7-Entropy (ours),ours_e7,r2plus1d_18,Epic_Kitchens,7.976470588235294,0.3480392156862745,"τ=0.50, 67% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,UCF101,4.166336633663367,0.8792079207920792,"τ=0.30, 99% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,SSV2,7.565190839694656,0.3499236641221374,"τ=0.30, 70% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,HMDB51,7.728813559322034,0.7627118644067796,"τ=0.75, 69% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,Diving48,7.730820995962315,0.4656796769851951,"τ=0.55, 69% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,Autsl,7.639655952919873,0.5952919873245812,"τ=0.30, 70% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,Driveact,7.883928571428571,0.6741071428571429,"τ=0.65, 68% cheap"
+E7-Entropy (ours),ours_e7,slowfast_r50,Epic_Kitchens,7.623529411764705,0.3735294117647059,"τ=0.50, 70% cheap"
+E7-Entropy (ours),ours_e7,timesformer,UCF101,4.873267326732673,0.9133663366336634,"τ=0.55, 93% cheap"
+E7-Entropy (ours),ours_e7,timesformer,SSV2,7.085190839694657,0.4250381679389313,"τ=0.55, 74% cheap"
+E7-Entropy (ours),ours_e7,timesformer,HMDB51,5.003389830508475,0.8056497175141243,"τ=0.40, 92% cheap"
+E7-Entropy (ours),ours_e7,timesformer,Diving48,4.7913862718707945,0.3889636608344549,"τ=0.35, 93% cheap"
+E7-Entropy (ours),ours_e7,timesformer,Autsl,6.357627885921231,0.6706654594839294,"τ=0.55, 80% cheap"
+E7-Entropy (ours),ours_e7,timesformer,Driveact,5.392857142857143,0.6852678571428571,"τ=0.45, 88% cheap"
+E7-Entropy (ours),ours_e7,timesformer,Epic_Kitchens,7.882352941176471,0.3235294117647059,"τ=0.35, 68% cheap"
+E7-Entropy (ours),ours_e7,vivit,UCF101,6.572277227722772,0.9425742574257424,"τ=0.95, 79% cheap"
+E7-Entropy (ours),ours_e7,vivit,SSV2,7.949923664122138,0.3218320610687022,"τ=0.45, 67% cheap"
+E7-Entropy (ours),ours_e7,vivit,HMDB51,7.322033898305085,0.8011299435028248,"τ=0.80, 72% cheap"
+E7-Entropy (ours),ours_e7,vivit,Diving48,7.423956931359354,0.4885598923283983,"τ=0.65, 71% cheap"
+E7-Entropy (ours),ours_e7,vivit,Autsl,7.691263014938887,0.6722498868266183,"τ=0.60, 69% cheap"
+E7-Entropy (ours),ours_e7,vivit,Driveact,7.5625,0.6428571428571429,"τ=0.75, 70% cheap"
+E7-Entropy (ours),ours_e7,vivit,Epic_Kitchens,7.91764705882353,0.3127450980392157,"τ=0.40, 67% cheap"
+E7-Entropy (ours),ours_e7,videomae,UCF101,4.05940594059406,0.9594059405940594,"τ=0.10, 100% cheap"
+E7-Entropy (ours),ours_e7,videomae,SSV2,7.872977099236641,0.5187786259541984,"τ=0.55, 68% cheap"
+E7-Entropy (ours),ours_e7,videomae,HMDB51,6.4271186440677965,0.847457627118644,"τ=0.55, 80% cheap"
+E7-Entropy (ours),ours_e7,videomae,Diving48,7.391655450874832,0.5262449528936743,"τ=0.65, 72% cheap"
+E7-Entropy (ours),ours_e7,videomae,Autsl,7.767315527387958,0.7947034857401539,"τ=0.60, 69% cheap"
+E7-Entropy (ours),ours_e7,videomae,Driveact,7.696428571428571,0.6897321428571429,"τ=0.65, 69% cheap"
+E7-Entropy (ours),ours_e7,videomae,Epic_Kitchens,6.023529411764706,0.3784313725490196,"τ=0.50, 83% cheap"
+E7-Entropy (ours),ours_e7,videomamba,UCF101,5.152475247524753,0.8846534653465347,"τ=0.70, 90% cheap"
+E7-Entropy (ours),ours_e7,videomamba,SSV2,7.982900763358779,0.443969465648855,"τ=0.50, 67% cheap"
+E7-Entropy (ours),ours_e7,videomamba,HMDB51,6.752542372881356,0.6983050847457627,"τ=0.50, 77% cheap"
+E7-Entropy (ours),ours_e7,videomamba,Diving48,7.908479138627187,0.3741588156123822,"τ=0.65, 67% cheap"
+E7-Entropy (ours),ours_e7,videomamba,Driveact,5.526785714285714,0.5758928571428571,"τ=0.50, 87% cheap"
+E7-Entropy (ours),ours_e7,videomamba,Epic_Kitchens,4.7176470588235295,0.284313725490196,"τ=0.20, 94% cheap"
+Fixed-4f,fixed,R3D-18,SSV2,4.0,0.0980152671755725,
+Fixed-8f,fixed,R3D-18,SSV2,8.0,0.1969465648854962,
+Fixed-16f,fixed,R3D-18,SSV2,16.0,0.3712977099236641,
+FrameExit(4→16)@8f,frameexit,R3D-18,SSV2,9.9,0.2403053435114504,
+Oracle-knapsack@8f,oracle_knapsack,R3D-18,SSV2,8.0,0.250381679389313,
+Oracle-knapsack@12f,oracle_knapsack,R3D-18,SSV2,12.0,0.2839694656488549,
+Oracle-knapsack@16f,oracle_knapsack,R3D-18,SSV2,16.0,0.3312977099236641,
+Fixed-4f,fixed,MC3-18,SSV2,4.0,0.0818320610687022,
+Fixed-8f,fixed,MC3-18,SSV2,8.0,0.1883969465648855,
+Fixed-16f,fixed,MC3-18,SSV2,16.0,0.3358778625954198,
+FrameExit(4→16)@8f,frameexit,MC3-18,SSV2,9.9,0.2222900763358778,
+Oracle-knapsack@8f,oracle_knapsack,MC3-18,SSV2,8.0,0.2106870229007633,
+Oracle-knapsack@12f,oracle_knapsack,MC3-18,SSV2,12.0,0.2381679389312977,
+Oracle-knapsack@16f,oracle_knapsack,MC3-18,SSV2,16.0,0.2641221374045801,
+Fixed-4f,fixed,R2+1D-18,SSV2,4.0,0.1258015267175572,
+Fixed-8f,fixed,R2+1D-18,SSV2,8.0,0.2433587786259542,
+Fixed-16f,fixed,R2+1D-18,SSV2,16.0,0.4256488549618321,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,SSV2,10.0,0.2879389312977099,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,SSV2,8.0,0.3145038167938931,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,SSV2,12.0,0.3465648854961832,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,SSV2,16.0,0.3847328244274809,
+Fixed-4f,fixed,TimeSformer,SSV2,4.0,0.3184732824427481,
+Fixed-8f,fixed,TimeSformer,SSV2,8.0,0.4229007633587786,
+Fixed-16f,fixed,TimeSformer,SSV2,16.0,0.412824427480916,
+FrameExit(4→16)@8f,frameexit,TimeSformer,SSV2,9.9,0.3835114503816794,
+Oracle-knapsack@8f,oracle_knapsack,TimeSformer,SSV2,8.0,0.4732824427480916,
+Oracle-knapsack@12f,oracle_knapsack,TimeSformer,SSV2,12.0,0.4793893129770992,
+Oracle-knapsack@16f,oracle_knapsack,TimeSformer,SSV2,16.0,0.4854961832061069,
+Fixed-4f,fixed,ViViT,SSV2,4.0,0.0839694656488549,
+Fixed-8f,fixed,ViViT,SSV2,8.0,0.1749618320610687,
+Fixed-16f,fixed,ViViT,SSV2,16.0,0.3053435114503817,
+FrameExit(4→16)@8f,frameexit,ViViT,SSV2,10.0,0.1978625954198473,
+Oracle-knapsack@8f,oracle_knapsack,ViViT,SSV2,8.0,0.2458015267175572,
+Oracle-knapsack@12f,oracle_knapsack,ViViT,SSV2,12.0,0.2793893129770992,
+Oracle-knapsack@16f,oracle_knapsack,ViViT,SSV2,16.0,0.3282442748091603,
+Fixed-4f,fixed,SlowFast,SSV2,4.0,0.065648854961832,
+Fixed-8f,fixed,SlowFast,SSV2,8.0,0.15206106870229,
+Fixed-16f,fixed,SlowFast,SSV2,16.0,0.3334351145038168,
+FrameExit(4→16)@8f,frameexit,SlowFast,SSV2,9.8,0.1908396946564885,
+Oracle-knapsack@8f,oracle_knapsack,SlowFast,SSV2,8.0,0.2091603053435114,
+Oracle-knapsack@12f,oracle_knapsack,SlowFast,SSV2,12.0,0.2610687022900763,
+Oracle-knapsack@16f,oracle_knapsack,SlowFast,SSV2,16.0,0.3236641221374046,
+Fixed-4f,fixed,VideoMAE,SSV2,4.0,0.210381679389313,
+Fixed-8f,fixed,VideoMAE,SSV2,8.0,0.3948091603053435,
+Fixed-16f,fixed,VideoMAE,SSV2,16.0,0.5233587786259541,
+FrameExit(4→16)@8f,frameexit,VideoMAE,SSV2,10.0,0.3969465648854962,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,SSV2,8.0,0.4030534351145038,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,SSV2,12.0,0.4442748091603053,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,SSV2,16.0,0.4854961832061069,
+Fixed-4f,fixed,R2+1D-18,UCF101,4.0,0.7,
+Fixed-8f,fixed,R2+1D-18,UCF101,8.0,0.8163366336633663,
+Fixed-16f,fixed,R2+1D-18,UCF101,16.0,0.8856435643564357,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,UCF101,10.0,0.8658415841584158,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,UCF101,8.0,0.8539603960396039,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,UCF101,12.0,0.8638613861386139,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,UCF101,16.0,0.8811881188118812,
+Fixed-4f,fixed,SlowFast,UCF101,4.0,0.500990099009901,
+Fixed-8f,fixed,SlowFast,UCF101,8.0,0.6623762376237624,
+Fixed-16f,fixed,SlowFast,UCF101,16.0,0.8128712871287128,
+FrameExit(4→16)@8f,frameexit,SlowFast,UCF101,10.0,0.7485148514851485,
+Oracle-knapsack@8f,oracle_knapsack,SlowFast,UCF101,8.0,0.6831683168316832,
+Oracle-knapsack@12f,oracle_knapsack,SlowFast,UCF101,12.0,0.7178217821782178,
+Oracle-knapsack@16f,oracle_knapsack,SlowFast,UCF101,16.0,0.7623762376237624,
+Fixed-4f,fixed,VideoMAE,UCF101,4.0,0.8143564356435643,
+Fixed-8f,fixed,VideoMAE,UCF101,8.0,0.913861386138614,
+Fixed-16f,fixed,VideoMAE,UCF101,16.0,0.9544554455445544,
+FrameExit(4→16)@8f,frameexit,VideoMAE,UCF101,9.9,0.9549504950495048,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,UCF101,8.0,0.948019801980198,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,UCF101,12.0,0.948019801980198,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,UCF101,16.0,0.9554455445544554,
+Fixed-4f,fixed,R2+1D-18,HMDB51,4.0,0.4621468926553672,
+Fixed-8f,fixed,R2+1D-18,HMDB51,8.0,0.631638418079096,
+Fixed-16f,fixed,R2+1D-18,HMDB51,16.0,0.7310734463276836,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,HMDB51,10.0,0.63954802259887,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,HMDB51,8.0,0.6836158192090396,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,HMDB51,12.0,0.711864406779661,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,HMDB51,16.0,0.7344632768361582,
+Fixed-4f,fixed,SlowFast,HMDB51,4.0,0.351412429378531,
+Fixed-8f,fixed,SlowFast,HMDB51,8.0,0.447457627118644,
+Fixed-16f,fixed,SlowFast,HMDB51,16.0,0.6508474576271186,
+FrameExit(4→16)@8f,frameexit,SlowFast,HMDB51,9.9,0.5502824858757062,
+Oracle-knapsack@8f,oracle_knapsack,SlowFast,HMDB51,8.0,0.536723163841808,
+Oracle-knapsack@12f,oracle_knapsack,SlowFast,HMDB51,12.0,0.5932203389830508,
+Oracle-knapsack@16f,oracle_knapsack,SlowFast,HMDB51,16.0,0.6440677966101694,
+Fixed-4f,fixed,VideoMAE,HMDB51,4.0,0.5152542372881356,
+Fixed-8f,fixed,VideoMAE,HMDB51,8.0,0.735593220338983,
+Fixed-16f,fixed,VideoMAE,HMDB51,16.0,0.8395480225988701,
+FrameExit(4→16)@8f,frameexit,VideoMAE,HMDB51,10.0,0.7751412429378531,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,HMDB51,8.0,0.8305084745762712,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,HMDB51,12.0,0.8418079096045198,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,HMDB51,16.0,0.864406779661017,
+Fixed-4f,fixed,R2+1D-18,Diving48,4.0,0.0861372812920592,
+Fixed-8f,fixed,R2+1D-18,Diving48,8.0,0.1682368775235531,
+Fixed-16f,fixed,R2+1D-18,Diving48,16.0,0.3526244952893674,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,Diving48,10.0,0.2382234185733512,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,Diving48,8.0,0.2885906040268456,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,Diving48,12.0,0.348993288590604,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,Diving48,16.0,0.4161073825503356,
+Fixed-4f,fixed,SlowFast,Diving48,4.0,0.0578734858681022,
+Fixed-8f,fixed,SlowFast,Diving48,8.0,0.1453566621803499,
+Fixed-16f,fixed,SlowFast,Diving48,16.0,0.2637954239569313,
+FrameExit(4→16)@8f,frameexit,SlowFast,Diving48,9.6,0.1493943472409152,
+Oracle-knapsack@8f,oracle_knapsack,SlowFast,Diving48,8.0,0.1812080536912751,
+Oracle-knapsack@12f,oracle_knapsack,SlowFast,Diving48,12.0,0.2281879194630872,
+Oracle-knapsack@16f,oracle_knapsack,SlowFast,Diving48,16.0,0.2818791946308724,
+Fixed-4f,fixed,VideoMAE,Diving48,4.0,0.0861372812920592,
+Fixed-8f,fixed,VideoMAE,Diving48,8.0,0.2759084791386272,
+Fixed-16f,fixed,VideoMAE,Diving48,16.0,0.4858681022880215,
+FrameExit(4→16)@8f,frameexit,VideoMAE,Diving48,9.9,0.3068640646029609,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,Diving48,8.0,0.3557046979865771,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,Diving48,12.0,0.4093959731543624,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,Diving48,16.0,0.4697986577181208,
+Fixed-4f,fixed,R2+1D-18,EPIC,4.0,0.1303921568627451,
+Fixed-8f,fixed,R2+1D-18,EPIC,8.0,0.2019607843137255,
+Fixed-16f,fixed,R2+1D-18,EPIC,16.0,0.3549019607843137,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,EPIC,10.0,0.2617647058823529,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,EPIC,8.0,0.2745098039215686,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,EPIC,12.0,0.3088235294117647,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,EPIC,16.0,0.3382352941176471,
+Fixed-4f,fixed,VideoMAE,EPIC,4.0,0.134313725490196,
+Fixed-8f,fixed,VideoMAE,EPIC,8.0,0.2833333333333333,
+Fixed-16f,fixed,VideoMAE,EPIC,16.0,0.3774509803921568,
+FrameExit(4→16)@8f,frameexit,VideoMAE,EPIC,9.9,0.2666666666666666,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,EPIC,8.0,0.3480392156862745,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,EPIC,12.0,0.3774509803921568,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,EPIC,16.0,0.392156862745098,
+Fixed-4f,fixed,R2+1D-18,AUTSL,4.0,0.0844273426889995,
+Fixed-8f,fixed,R2+1D-18,AUTSL,8.0,0.3021729289271163,
+Fixed-16f,fixed,R2+1D-18,AUTSL,16.0,0.7593933906745134,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,AUTSL,9.9,0.4291534631054776,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,AUTSL,8.0,0.3947963800904977,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,AUTSL,12.0,0.4728506787330316,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,AUTSL,16.0,0.5542986425339367,
+Fixed-4f,fixed,R2+1D-18,DriveAct,4.0,0.3772321428571428,
+Fixed-8f,fixed,R2+1D-18,DriveAct,8.0,0.4977678571428571,
+Fixed-16f,fixed,R2+1D-18,DriveAct,16.0,0.625,
+FrameExit(4→16)@8f,frameexit,R2+1D-18,DriveAct,9.9,0.5357142857142857,
+Oracle-knapsack@8f,oracle_knapsack,R2+1D-18,DriveAct,8.0,0.6555555555555556,
+Oracle-knapsack@12f,oracle_knapsack,R2+1D-18,DriveAct,12.0,0.6555555555555556,
+Oracle-knapsack@16f,oracle_knapsack,R2+1D-18,DriveAct,16.0,0.6555555555555556,
+Fixed-4f,fixed,VideoMAE,DriveAct,4.0,0.4017857142857143,
+Fixed-8f,fixed,VideoMAE,DriveAct,8.0,0.5602678571428571,
+Fixed-16f,fixed,VideoMAE,DriveAct,16.0,0.7410714285714286,
+FrameExit(4→16)@8f,frameexit,VideoMAE,DriveAct,9.9,0.6205357142857143,
+Oracle-knapsack@8f,oracle_knapsack,VideoMAE,DriveAct,8.0,0.6888888888888889,
+Oracle-knapsack@12f,oracle_knapsack,VideoMAE,DriveAct,12.0,0.7222222222222222,
+Oracle-knapsack@16f,oracle_knapsack,VideoMAE,DriveAct,16.0,0.7444444444444445,

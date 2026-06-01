@@ -1,0 +1,7 @@
+method,method_type,accuracy,avg_frames
+AdaFocus†,literature,0.547,8.0
+E7-Entropy (ours),ours_e7,0.5187786259541984,7.691603053435115
+AR-Net†,literature,0.486,8.0
+Oracle-knapsack@8f,oracle_knapsack,0.4732824427480916,8.0
+Fixed-8f,fixed,0.4229007633587786,8.0
+FrameExit(4→16)@8f,frameexit,0.3969465648854962,9.928571428571429

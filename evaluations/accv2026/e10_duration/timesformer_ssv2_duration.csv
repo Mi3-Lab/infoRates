@@ -1,0 +1,3 @@
+duration_bin,n,acc_dense,acc_sparse,aliasing_loss_pp,model,dataset
+1-3s,615,0.39186991869918697,0.2,19.186991869918696,timesformer,ssv2
+3-6s,2639,0.4312239484653278,0.31754452444107617,11.367942402425163,timesformer,ssv2

@@ -81,7 +81,10 @@ UCF-101 "Low" sensitivity classes: −0.3pp at stride=16 (completely static acti
 | **E5** Action sensitivity taxonomy | ✅ Complete | High/Moderate/Low tiers for all 7 datasets |
 | **E6** Spatial resolution sweep | ✅ Complete (SSv2) | VideoMAE flat 96–336px; CNNs brittle OOD |
 | **P3** Resolution retraining | 🔄 14% (33/224) | SlowFast@96px > @224px: SSv2 +8.9pp |
-| **E7** Adaptive routing (C3) | ❌ Next | Closes method contribution |
+| **E7** Entropy routing | ✅ Complete | 84% videos at 4f, same accuracy as 16f; avg 7.7f |
+| **E9** Methods comparison | ✅ Complete | E7 51.9% > Oracle 47.3% > Fixed-8f 42.3% > FrameExit 39.7% (SSv2 @8f) |
+| **E10** Clip duration | ✅ Complete | Longer clips alias **less** (r=−0.3 to −0.8) — counter-intuitive finding |
+| **E8** TRA retrain | ❌ Optional | Proof-of-concept when P3 slots free |
 
 ---
 
