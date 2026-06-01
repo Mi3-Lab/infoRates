@@ -77,12 +77,12 @@ We introduce the \textbf{Temporal Demand Score (\TDS{})}, a dataset-level metric
 derived from the mean architecture-agnostic accuracy drop under temporal subsampling,
 which ranks 7 datasets consistently across all 8 models.
 On the spatial dimension, CNNs retrained at lower resolution
-outperform their native-resolution counterparts on 77\% of model-dataset pairs
+outperform their native-resolution counterparts on 77\% of completed model-dataset pairs
 (SlowFast@96px $+8.9$pp on SSv2), demonstrating that spatial aliasing in CNNs
-is a \emph{training artifact}, not an architectural constraint.
-Finally, an entropy-based routing method routes 84\% of videos to cheap 4-frame
-inference while matching 16-frame accuracy, outperforming FrameExit~\cite{ghodrati2021frameexit}
-by $+4.2$pp at equal compute.
+is a \emph{training artifact} correctable by resolution-aware retraining.
+Finally, an entropy-based routing method routes an average of 77\% of videos to cheap
+4-frame inference while matching 16-frame accuracy (up to 84\% for TimeSformer),
+outperforming FrameExit~\cite{ghodrati2021frameexit} by $+4.2$pp at equal compute.
 \keywords{Temporal Aliasing \and Spatial Aliasing \and Video Action Recognition \and
           Cross-Architecture \and Temporal Demand Score \and Adaptive Routing}
 \end{abstract}
@@ -285,21 +285,22 @@ $10^{-4}$ (CNNs).
 
 \begin{table}[t]
 \centering
-\caption{\TDS{} = mean accuracy drop (stride=1$\to$16, cov=100\%) averaged over 8
-architectures; feature-collapsed models excluded.}
+\caption{\TDS{} = mean accuracy drop (stride=1$\to$16, cov=100\%) per Eq.~\ref{eq:tds},
+  excluding feature-collapsed models. AUTSL uses $n{=}7$ (VideoMamba excluded: K400$\to$sign-language domain gap).
+  Datasets sorted by \TDS{}.}
 \label{tab:datasets}
 \scriptsize\tabtight
-\begin{tabular}{l r r l r}
+\begin{tabular}{l r r l r r}
 \toprule
-Dataset & Classes & Videos & Domain & \TDS{} \\
+Dataset & Classes & Videos & Domain & \TDS{} & $n$ \\
 \midrule
-AUTSL~\cite{sincan2020autsl}      & 226 & 4,418 & Sign language    & \textbf{52.5pp} \\
-Diving-48~\cite{li2018diving48}   &  48 &   743 & Fine-grained     & 29.1pp \\
-SSv2~\cite{goyal2017ssv2}         & 174 & 3,464 & Causal/temporal  & 26.1pp \\
-HMDB-51~\cite{kuehne2011hmdb}     &  51 &   885 & Sports           & 24.2pp \\
-EPIC-Kitchens~\cite{damen2022epic}&  89 & 1,020 & Egocentric       & 20.6pp \\
-DriveAct~\cite{martin2019driveact}&  33 &   448 & In-vehicle       & 18.2pp \\
-UCF-101~\cite{soomro2012ucf101}   & 101 & 2,020 & Appearance       & 15.9pp \\
+AUTSL~\cite{sincan2020autsl}      & 226 & 4,418 & Sign language    & \textbf{58.3pp} & 7 \\
+SSv2~\cite{goyal2017ssv2}         & 174 & 3,464 & Causal/temporal  & 27.6pp          & 8 \\
+DriveAct~\cite{martin2019driveact}&  33 &   448 & In-vehicle       & 21.9pp          & 8 \\
+Diving-48~\cite{li2018diving48}   &  48 &   743 & Fine-grained     & 19.2pp          & 8 \\
+HMDB-51~\cite{kuehne2011hmdb}     &  51 &   885 & Sports           & 16.6pp          & 8 \\
+EPIC-Kitchens~\cite{damen2022epic}&  89 & 1,020 & Egocentric       &  9.7pp          & 8 \\
+UCF-101~\cite{soomro2012ucf101}   & 101 & 2,020 & Appearance       &  4.9pp          & 8 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -309,7 +310,23 @@ UCF-101~\cite{soomro2012ucf101}   & 101 & 2,020 & Appearance       & 15.9pp \\
 We decouple \textit{temporal coverage} $\mathcal{C}$ (fraction of clip observed)
 from \textit{temporal stride} $s$ (sampling density), forming a 5$\times$5 grid:
 $\mathcal{C}\in\{10,25,50,75,100\}\%$ and $s\in\{1,2,4,8,16\}$.
-This yields $8\times7\times25=\mathbf{1{,}400}$ evaluation configurations.
+This yields $8\times7\times25=\mathbf{1{,}400}$ model--dataset--configuration triples;
+the ``1,400 evaluation configurations'' reported in the abstract refers to these triples,
+not clip counts (each configuration is evaluated over $\approx$20 clips per class).
+
+\paragraph{Coverage implementation.}
+Coverage is applied from the \emph{beginning} of each clip: the first
+$\lfloor T\cdot\mathcal{C}/100\rfloor$ frames form the candidate pool,
+and $s$ controls sampling density within that window.
+This simulates a sensor that observes only a leading fraction of the action
+and gives the sharpest, most interpretable measurement of ``how early in the clip
+does the model have enough temporal context.''
+An alternative---random window placement---would confound temporal structure
+with missing-data effects, making coverage and stride effects harder to disentangle.
+We acknowledge that this choice is conservative for datasets where key events
+occur at clip boundaries (e.g., action completion in SSv2); supplementary S1
+shows that the coverage effect on SSv2 is qualitatively similar across window
+positions when checked on a 10\% random subset.
 
 \subsection{Spatial Resolution Protocol (\texorpdfstring{$\mathcal{E}_6$}{E6})}
 
@@ -359,9 +376,9 @@ No retraining is required; only \Eone{} inference is reused.
 \label{sec:results_tds}
 
 Figure~\ref{fig:tds_spectral} (left) shows the \TDS{} ranking across 7 datasets.
-AUTSL reaches 52.5pp---the highest temporal demand---because sign language requires
+AUTSL reaches 58.3pp---the highest temporal demand---because sign language requires
 dense sampling to discriminate fine handshape transitions.
-UCF-101 (15.9pp) is primarily appearance-driven: object identity alone suffices for
+UCF-101 (4.9pp) is primarily appearance-driven: object identity alone suffices for
 classification, making temporal subsampling largely irrelevant.
 
 Crucially, this ranking is \emph{identical} regardless of model family:
@@ -382,8 +399,8 @@ decoupling it from action-relevant temporal demand (Table~\ref{tab:spectral}).
   \centering
   \includegraphics[width=\columnwidth]{images/main_fig3_tds_spectral.pdf}
   \caption{\textbf{Left}: \TDS{} ranking---mean accuracy drop from stride=1 to 16
-    averaged over 8 architectures. AUTSL (52.5pp) demands the densest sampling;
-    UCF-101 (15.9pp) is appearance-dominated. This ranking is consistent across
+    averaged over 8 architectures. AUTSL (58.3pp) demands the densest sampling;
+    UCF-101 (4.9pp) is appearance-dominated. This ranking is consistent across
     all 8 architectures (Spearman $\rho=0.97$).
     \textbf{Right}: Pearson correlation between optical-flow magnitude and per-class
     aliasing loss. AUTSL and DriveAct show moderate-significant correlation;
@@ -439,11 +456,11 @@ frame dropout.
   \centering
   \includegraphics[width=\textwidth]{images/main_fig1_aliasing_curves.pdf}
   \caption{Accuracy vs.\ stride (cov=100\%) for three representative datasets.
-    \textbf{AUTSL} (\TDS{}=52.5pp): TimeSformer and VideoMamba remain stable;
+    \textbf{AUTSL} (\TDS{}=58.3pp): TimeSformer and VideoMamba remain stable;
     all other models cliff above stride=4.
-    \textbf{SSv2} (\TDS{}=26.1pp): clear two-tier separation between robust
+    \textbf{SSv2} (\TDS{}=27.6pp): clear two-tier separation between robust
     (TSF, VMamba) and fragile models.
-    \textbf{UCF-101} (\TDS{}=15.9pp): minimal sensitivity across all architectures.
+    \textbf{UCF-101} (\TDS{}=4.9pp): minimal sensitivity across all architectures.
     These three datasets cover the full \TDS{} range, validating the metric.}
   \label{fig:aliasing_curves}
 \end{figure*}
@@ -668,17 +685,24 @@ VideoMAE loses only $-3.4$pp at 96px vs.\ native 224px.
   \label{fig:spatial}
 \end{figure}
 
-\paragraph{Retraining eliminates spatial aliasing (P3).}
-Table~\ref{tab:p3} shows that CNNs retrained at non-native resolutions not only
+\paragraph{CNN spatial aliasing is a training artifact (P3).}
+Table~\ref{tab:p3} shows that \emph{CNNs} retrained at non-native resolutions not only
 recover but often \emph{surpass} native-resolution accuracy.
-On 37 completed checkpoints (R3D-18, MC3-18, R2+1D, SlowFast at 96px and 160px),
+On 40 completed CNN checkpoints (R3D-18, MC3-18, R2+1D, SlowFast at 96px and 160px),
 77\% beat the native-resolution baseline.
 The improvements are largest on datasets with complex backgrounds:
 EPIC-Kitchens (+20.9pp for R3D-18@96px) and DriveAct (+12.2pp)---backgrounds
 are a confounding factor that vanishes when there are fewer pixels to overfit.
+This finding is currently established for \textbf{CNN families only}; P3 retraining
+for Transformers and VideoMamba is in progress (184/224 checkpoints remaining).
+Transformers are already known to be spatially robust under cross-resolution
+\emph{evaluation} (\Esix{}: VideoMAE $-3.4$pp at 96px vs.\ native), so the P3
+results for non-CNN models will primarily serve to characterize the regularization
+effect across architectures rather than to establish the artifact claim.
 
 AUTSL shows the opposite pattern: R3D-18@96px loses 5.5pp vs.\ native,
-confirming that handshape discrimination has a true spatial Nyquist limit.
+confirming that handshape discrimination requires sufficient spatial resolution
+and approaches the true information-theoretic Nyquist limit for that domain.
 
 \begin{table}[t]
 \centering
@@ -728,29 +752,37 @@ on SSv2 under the entropy routing protocol.
   \label{fig:routing}
 \end{figure*}
 
-Table~\ref{tab:routing} compares our method against literature baselines at average frame
-budget $\leq8$.
+Table~\ref{tab:routing} compares our method at average frame budget $\leq8$.
+\textbf{Important caveat}: AdaFocus~\cite{wang2021adafocus} and AR-Net~\cite{meng2020arnet}
+use ResNet-50 as their backbone, while our method uses TimeSformer, making direct accuracy
+comparison indirect.
+The most apples-to-apples comparison is with FrameExit~\cite{ghodrati2021frameexit}, which
+also uses TimeSformer: our method achieves 42.5\% vs.\ 38.4\% ($+4.2$pp) at \emph{fewer}
+average frames (7.7 vs.\ 9.9).
+The oracle--system gap ($47.3\% - 42.5\% = 4.8$pp) represents headroom that a learned
+threshold or per-dataset calibration could partially close (see supplementary S5 for
+per-dataset threshold analysis).
 
 \begin{table}[t]
 \centering
-\caption{Routing comparison: accuracy at avg $\leq$8 frames on SSv2.
-  $\dagger$~Literature with ResNet-50 backbone (different model, shown for context).
-  Ours uses TimeSformer; all other ``ours'' entries are architecture-agnostic.}
+\caption{Routing comparison on SSv2 at avg $\leq$8 frames.
+  $\dagger$~ResNet-50 backbone, shown for context only (not directly comparable).
+  Fair comparison: E7-Entropy vs.\ FrameExit (same TimeSformer backbone).}
 \label{tab:routing}
 \scriptsize\tabtight
 \begin{tabular}{l c c c}
 \toprule
-Method & Avg frames & Top-1 & Backbone \\
+Method & Avg frames & SSv2 Top-1 & Backbone \\
 \midrule
 AdaFocus~\cite{wang2021adafocus}$\dagger$ & 8.0 & 54.7\% & ResNet-50 \\
 AR-Net~\cite{meng2020arnet}$\dagger$      & 8.0 & 48.6\% & ResNet-50 \\
 \midrule
+Oracle upper bound      & 7.7  & 47.3\% & TimeSformer \\
 Fixed 16f (dense)       & 16.0 & 42.3\% & TimeSformer \\
 Fixed 8f                & 8.0  & 42.3\% & TimeSformer \\
+\textbf{E7-Entropy (ours)} & \textbf{7.7} & \textbf{42.5\%} & TimeSformer \\
 Fixed 4f (cheap)        & 4.0  & 41.5\% & TimeSformer \\
 FrameExit~\cite{ghodrati2021frameexit} & 9.9 & 38.4\% & TimeSformer \\
-\textbf{E7-Entropy (ours)} & \textbf{7.7} & \textbf{42.5\%} & TimeSformer \\
-Oracle upper bound      & 7.7  & 47.3\% & TimeSformer \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -845,28 +877,34 @@ Practitioners should therefore not assume that ``Transformer'' implies ``tempora
 robust''; the attention factorization strategy must be explicitly considered.
 
 \paragraph{SSM as a new robustness paradigm.}
-VideoMamba's robustness---8pp average loss, matching TimeSformer---establishes SSMs
-as a competitive robustness paradigm beyond Transformers.
+VideoMamba's robustness---5.6pp average loss, matching TimeSformer on 6 valid
+datasets---establishes SSMs as a competitive robustness paradigm beyond Transformers.
 The selective scan mechanism processes video tokens sequentially, accumulating a
-compressed state that persists across the sequence.
-Dropping a frame introduces only a local perturbation to the state, not a global
-information loss.
-This is in contrast to attention-based models where dropped tokens create ``holes''
-in the attention matrix that may affect all downstream representations.
-Future work should explore whether SSM-based architectures can be further specialized
-to handle temporal aliasing robustly on high-\TDS{} domains (e.g., AUTSL), potentially
-through domain-specific pretraining that closes the K400$\to$sign language gap.
+compressed state that persists across the sequence; dropping a frame introduces only
+a local perturbation to the state, not a global information loss.
+\textbf{Important scope note:} this robustness claim currently holds on 6 of 7 datasets.
+The highest-\TDS{} dataset (AUTSL) is excluded because VideoMamba collapses to chance
+(0.4\%) due to a K400$\to$sign-language domain gap, \emph{not} a temporal aliasing
+effect. A lightweight domain-adaptation experiment (e.g., fine-tuning only the
+classification head on AUTSL) would be required to assess SSM robustness on
+high-TDS sign-language data, and we leave this for future work.
 
 \paragraph{Limitations.}
-Spectral correlation is moderate ($r=0.14$--$0.33$), suggesting that optical-flow
-magnitude is an incomplete proxy for temporal demand; action phase structure and
-temporal ordering (e.g., SSv2 causality) are not captured by flow alone.
-P3 retraining for Transformers and VideoMamba is ongoing (37/224 checkpoints completed);
-current spatial aliasing findings are based on CNN families (R3D, MC3, R2+1D, SlowFast).
-VideoMamba's domain gap on AUTSL precludes SSM temporal aliasing analysis on the
-highest-\TDS{} dataset.
-Our entropy routing assumes a fixed two-tier budget (4f/16f); extending to continuous
-or multi-level frame budgets is a natural next step.
+\emph{Spectral validation} (Sec.~\ref{sec:results_tds}): flow-magnitude correlation is
+moderate ($r=0.14$--$0.33$) and should be interpreted as exploratory evidence rather than
+definitive causal validation.
+Action phase structure, temporal ordering (SSv2), and egomotion-confounded flow
+(EPIC-Kitchens, $r{\approx}0$) are not captured by raw flow magnitude;
+egomotion-compensated flow is not attempted.
+\emph{Clip duration} (Sec.~\ref{sec:taxonomy}): the duration--aliasing correlation
+($r=-0.3$ to $-0.8$) is reported without controls for class distribution or
+dataset-specific length distributions; the SSv2 3--6s bin reversal is noted but
+unexplained. This analysis should be read as exploratory.
+\emph{P3 spatial retraining}: CNN-family findings (40/224 completed checkpoints);
+Transformer and SSM spatial retraining is ongoing.
+\emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could
+improve the oracle gap (4.8pp). The two-tier budget (4f/16f) is fixed;
+continuous or multi-tier budgets are a natural extension.
 
 % =========================================================
 \section{Conclusion}

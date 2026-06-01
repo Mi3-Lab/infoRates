@@ -9,8 +9,6 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from pathlib import Path
-import re
-
 st.set_page_config(
     page_title="InfoRates — Spatiotemporal Aliasing",
     page_icon="🎬",
@@ -19,14 +17,10 @@ st.set_page_config(
 )
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-ROOT       = Path(__file__).parent.parent
-SWEEP_BASE = ROOT / "evaluations/accv2026/coverage_stride_sweep"
-E7_BASE    = ROOT / "evaluations/accv2026/e7_routing"
-E9_BASE    = ROOT / "evaluations/accv2026/e9_comparison"
-E10_BASE   = ROOT / "evaluations/accv2026/e10_duration"
-E3_BASE    = ROOT / "evaluations/accv2026/e3_spectral"
-ANOVA_BASE = ROOT / "evaluations/accv2026/e4_anova"
-P3_LOG_BASE = ROOT / "evaluations/accv2026/logs"
+# Streamlit Cloud: data is bundled in dashboard/data/
+# Local cluster:  also try the full evaluations/ tree
+_HERE = Path(__file__).parent
+DATA  = _HERE / "data"   # bundled CSVs (committed to git)
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 MODEL_KEYS = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
@@ -52,12 +46,9 @@ DS_LABELS = {
 # ── Cached data loaders ───────────────────────────────────────────────────────
 @st.cache_data
 def load_sweeps():
-    rows = []
-    for f in SWEEP_BASE.glob("*_*/sweep_summary.csv"):
-        try: rows.append(pd.read_csv(f))
-        except: pass
-    if not rows: return pd.DataFrame()
-    df = pd.concat(rows, ignore_index=True)
+    f = DATA / "sweep_summary.csv"
+    if not f.exists(): return pd.DataFrame()
+    df = pd.read_csv(f)
     df["acc"] = df["top1"] * 100
     df["model_name"] = df["model"].map(MODEL_NAMES)
     df["family"] = df["model"].map(FAMILIES)
@@ -83,14 +74,9 @@ def compute_tds(df_sweep):
 
 @st.cache_data
 def load_e7_routing():
-    rows = []
-    for f in E7_BASE.glob("*_*_routing.csv"):
-        try:
-            df = pd.read_csv(f)
-            rows.append(df)
-        except: pass
-    if not rows: return pd.DataFrame()
-    df = pd.concat(rows, ignore_index=True)
+    f = DATA / "routing_curves.csv"
+    if not f.exists(): return pd.DataFrame()
+    df = pd.read_csv(f)
     df["acc_pct"] = df["accuracy"] * 100
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
     df["family"] = df["model"].map(FAMILIES)
@@ -99,7 +85,7 @@ def load_e7_routing():
 
 @st.cache_data
 def load_e7_summary():
-    f = E7_BASE / "e7_summary.csv"
+    f = DATA / "routing_summary.csv"
     if not f.exists(): return pd.DataFrame()
     df = pd.read_csv(f)
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
@@ -112,7 +98,7 @@ def load_e7_summary():
 
 @st.cache_data
 def load_e9_comparison():
-    f = E9_BASE / "methods_comparison.csv"
+    f = DATA / "methods_comparison.csv"
     if not f.exists(): return pd.DataFrame()
     df = pd.read_csv(f)
     df["acc_pct"] = df["accuracy"] * 100
@@ -121,12 +107,9 @@ def load_e9_comparison():
 
 @st.cache_data
 def load_e10_duration():
-    rows = []
-    for f in E10_BASE.glob("*.csv"):
-        try: rows.append(pd.read_csv(f))
-        except: pass
-    if not rows: return pd.DataFrame()
-    df = pd.concat(rows, ignore_index=True)
+    f = DATA / "clip_duration.csv"
+    if not f.exists(): return pd.DataFrame()
+    df = pd.read_csv(f)
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
     df["family"] = df["model"].map(FAMILIES)
     return df
@@ -134,7 +117,7 @@ def load_e10_duration():
 
 @st.cache_data
 def load_e3_spectral():
-    f = E3_BASE / "flow_aliasing_correlation.csv"
+    f = DATA / "spectral_correlation.csv"
     if not f.exists(): return pd.DataFrame()
     df = pd.read_csv(f)
     df["ds_label"] = df["dataset"].map(DS_LABELS).fillna(df["dataset"])
@@ -143,7 +126,7 @@ def load_e3_spectral():
 
 @st.cache_data
 def load_anova():
-    f = ANOVA_BASE / "anova_results.csv"
+    f = DATA / "anova_results.csv"
     if not f.exists(): return pd.DataFrame()
     df = pd.read_csv(f)
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
@@ -152,20 +135,9 @@ def load_anova():
 
 @st.cache_data
 def load_p3():
-    rows = []
-    for log in P3_LOG_BASE.glob("retrain-res-*.out"):
-        try:
-            content = log.read_text(errors="ignore")
-            m = re.search(r"=== Resolution Retrain: (\S+) / (\S+) @ (\d+)px", content)
-            if not m: continue
-            model_k, dataset, res = m.group(1), m.group(2), int(m.group(3))
-            val_accs = re.findall(r"val_acc=([\d.]+)", content)
-            if val_accs:
-                acc = max(float(v) * 100 for v in val_accs)
-                rows.append({"model": model_k, "dataset": dataset, "res": res, "acc": acc})
-        except: pass
-    if not rows: return pd.DataFrame()
-    df = pd.DataFrame(rows).drop_duplicates(subset=["model", "dataset", "res"])
+    f = DATA / "p3_results.csv"
+    if not f.exists(): return pd.DataFrame()
+    df = pd.read_csv(f)
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
     return df
 

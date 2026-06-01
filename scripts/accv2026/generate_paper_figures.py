@@ -106,7 +106,7 @@ def savefig(fig, name, folder=OUT_MAIN):
 print("Generating Fig 1: E1 aliasing curves...")
 fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), sharey=False)
 show_datasets = ["autsl", "ssv2", "ucf101"]
-tds_labels = {"autsl": "AUTSL (TDS#1, +60pp)", "ssv2": "SSv2 (TDS#3, +26pp)", "ucf101": "UCF-101 (TDS#7, +16pp)"}
+tds_labels = {"autsl": "AUTSL (TDS#1, +58.3pp)", "ssv2": "SSv2 (TDS#2, +27.6pp)", "ucf101": "UCF-101 (TDS#7, +4.9pp)"}
 
 for ax, ds in zip(axes, show_datasets):
     for model in MODELS:
