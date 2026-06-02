@@ -853,10 +853,11 @@ elif page == "🎯 Architecture Recommender":
     )
 
     engine = st.sidebar.radio("Engine", [
-        "🦙 Groq (Llama-3.3-70B)",
+        "🦙 Groq (Llama-3.3-70B) — free",
         "⚙️ RAG (no API, instant)",
-    ], index=1)
-    st.sidebar.caption("All engines use the same empirical data. Try both to compare quality.")
+        "🔬 Hybrid (RAG + Groq) — rich analysis",
+    ], index=2)
+    st.sidebar.caption("Groq: fast. RAG: offline. Hybrid: combines both for depth.")
 
     # ── Build data context for the AI ────────────────────────────────────────
     def build_data_context():
@@ -1101,11 +1102,45 @@ elif page == "🎯 Architecture Recommender":
 
         with st.chat_message("assistant"):
             with st.spinner("Analyzing..."):
-                if "RAG" in engine:
+                if engine.startswith("⚙️"):  # Pure RAG
                     answer = rag_recommend(prompt, df_sw, TDS)
                     st.markdown(answer)
                     msgs.append({"role": "assistant", "content": answer})
-                else:
+
+                elif engine.startswith("🔬"):  # Hybrid: RAG + Groq
+                    # Step 1: Get raw data from RAG
+                    rag_data = rag_recommend(prompt, df_sw, TDS)
+
+                    # Step 2: Enrich with Groq interpretation
+                    data_ctx = build_data_context()
+                    system_prompt = f"""You are an expert AI analyst for InfoRates (spatiotemporal aliasing in video action recognition).
+
+{data_ctx}
+
+A user has asked a recommendation question. Below is a data-driven analysis with MEASURED ACCURACIES.
+Your job: enhance this analysis with deeper insights about WHY these results occur, trade-offs, and practical implications.
+
+DATA ANALYSIS FROM MEASUREMENTS:
+{rag_data}
+
+Now provide a RICH ANALYSIS that:
+1. Confirms/contextualizes the measured data
+2. Explains the mechanisms behind the results
+3. Discusses trade-offs (speed vs accuracy, cost vs quality)
+4. Provides implementation guidance
+Use markdown, be specific, cite the data above."""
+
+                    answer, err = call_llm("🦙", system_prompt,  # Force Groq for Hybrid
+                                           [{"role":m["role"],"content":m["content"]} for m in msgs])
+                    if err:
+                        st.error(f"**Groq error:** {err}")
+                        msg_out = rag_data  # Fallback to RAG data
+                    else:
+                        st.markdown(answer)
+                        msg_out = answer
+                    msgs.append({"role": "assistant", "content": msg_out})
+
+                else:  # Pure Groq
                     data_ctx = build_data_context()
                     system_prompt = f"""You are an expert AI assistant for the InfoRates research project on spatiotemporal aliasing in video action recognition.
 {data_ctx}
@@ -1119,7 +1154,7 @@ Be specific, cite actual numbers, use markdown. Keep it concise."""
                     answer, err = call_llm(engine, system_prompt,
                                            [{"role":m["role"],"content":m["content"]} for m in msgs])
                     if err:
-                        st.error(f"**{engine.split()[1]} error:** {err}")
+                        st.error(f"**Groq error:** {err}")
                         msg_out = f"[Error: {err}]"
                     else:
                         st.markdown(answer)
