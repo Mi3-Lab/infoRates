@@ -1,42 +1,65 @@
 #!/usr/bin/env bash
-# P3 submitter for gpu (A100) partition — CNNs only, max 4 concurrent
-# Runs in parallel with submit_p3_cenvalarc.sh
+# P3 daemon for gpu (A100) — CNNs only, max 4 concurrent
+# Runs until ALL checkpoints exist. Never exits early.
 set -uo pipefail
 cd /data/wesleyferreiramaia/infoRates
+
 MAX=4
 DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
+MODELS=(r3d_18 mc3_18 r2plus1d_18)
+RESOLUTIONS=(96 160 224 336)
+TOTAL=$(( ${#MODELS[@]} * ${#DATASETS[@]} * ${#RESOLUTIONS[@]} ))   # 84
 
-log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPU | $*"; }
-n() { squeue -u wesleyferreiramaia -p gpu --noheader 2>/dev/null | wc -l; }
-wait_slot() {
-    while true; do
-        [[ $(n) -lt $MAX ]] && return
-        log "$(($(n)))/$MAX — waiting ($1)..."
-        sleep 20
+log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPU | $*"; }
+n_gpu(){ squeue -u wesleyferreiramaia -p gpu --noheader 2>/dev/null | wc -l; }
+
+done_count() {
+    local n=0
+    for m in "${MODELS[@]}"; do
+        for ds in "${DATASETS[@]}"; do
+            for r in "${RESOLUTIONS[@]}"; do
+                [[ -f "fine_tuned_models/accv2026_${m}_${ds}_${r}px_e10_h200/config.json" ]] && ((n++)) || true
+            done
+        done
     done
+    echo $n
 }
-submit() {
-    local label=$1 model=$2 dataset=$3 res=$4
+
+try_submit() {
+    local model=$1 dataset=$2 res=$3
     local ckpt="fine_tuned_models/accv2026_${model}_${dataset}_${res}px_e10_h200"
-    [[ -f "${ckpt}/config.json" ]] && { log "SKIP $label"; return; }
-    wait_slot "$label"
+    [[ -f "${ckpt}/config.json" ]] && return 0          # already done
+    [[ $(n_gpu) -ge $MAX ]]        && return 1          # no slot
     local result
     result=$(sbatch --partition=gpu --gres=gpu:1 \
         --export=MODEL=${model},DATASET=${dataset},INPUT_SIZE=${res} \
         scripts/accv2026/slurm_h200_resolution_retrain.sbatch 2>&1)
-    log "[$label] $result"
+    log "[${model}/${dataset}@${res}px] $result"
     sleep 2
+    return 0
 }
 
-log "=== P3/gpu submitter: CNNs (r3d, mc3, r2plus1d) → A100 ==="
+log "=== P3/gpu DAEMON started — will run until ${TOTAL} checkpoints exist ==="
 
-# CNNs: native=112px → train at 96, 160, 224, 336
-for model in r3d_18 mc3_18 r2plus1d_18; do
-    for res in 96 160 224 336; do
-        for ds in "${DATASETS[@]}"; do
-            submit "$model/$ds@${res}px" "$model" "$ds" "$res"
+while true; do
+    done=$(done_count)
+    log "Progress: ${done}/${TOTAL} done | queue=$(n_gpu)/${MAX}"
+
+    [[ $done -ge $TOTAL ]] && { log "=== ALL ${TOTAL} GPU CHECKPOINTS DONE — exiting ==="; exit 0; }
+
+    # Try to fill all available slots
+    submitted=0
+    for model in "${MODELS[@]}"; do
+        for res in "${RESOLUTIONS[@]}"; do
+            for ds in "${DATASETS[@]}"; do
+                ckpt="fine_tuned_models/accv2026_${model}_${ds}_${res}px_e10_h200"
+                [[ -f "${ckpt}/config.json" ]] && continue
+                if [[ $(n_gpu) -lt $MAX ]]; then
+                    try_submit "$model" "$ds" "$res" && ((submitted++)) || true
+                fi
+            done
         done
     done
-done
 
-log "=== P3/gpu DONE ==="
+    [[ $submitted -eq 0 ]] && sleep 60 || sleep 5
+done

@@ -144,3 +144,4 @@ evaluations/accv2026/videomamba3/
 evaluations/accv2026/fixed_budget/*videomamba3*/
 scripts/accv2026/*videomamba3*
 scripts/accv2026/*mamba3*
+secrets.toml
