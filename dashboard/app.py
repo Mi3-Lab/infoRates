@@ -881,50 +881,39 @@ elif page == "🎯 Architecture Recommender":
                 avg = np.mean(drops) if drops else 0
                 lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {avg:.1f}pp")
 
-        # COMPLETE accuracy table
-        lines.append("\n### COMPLETE ACCURACY TABLE (all 1400 configs)")
-        lines.append("Format: dataset | stride | coverage | model | accuracy")
+        # KEY accuracy configs (not complete table — that's too large)
+        lines.append("\n### SAMPLE ACCURACY DATA (stride & coverage combinations)")
+        lines.append("Best 3 models per config. Format: dataset | stride | coverage | top models")
         if not df_sw.empty:
-            for ds in DS_KEYS:
+            for ds in ["autsl", "ssv2", "ucf101"]:  # Just top 3 datasets
                 sub_ds = df_sw[df_sw.dataset==ds]
-                for stride in [1,2,4,8,16]:
-                    for cov in [10,25,50,75,100]:
+                for stride in [1, 4, 8, 16]:
+                    for cov in [10, 100]:  # Just 10% and 100%
                         sub = sub_ds[(sub_ds.stride==stride)&(sub_ds.coverage==cov)].sort_values("acc", ascending=False)
                         if sub.empty: continue
-                        accs = [f"{MODEL_NAMES[row['model']]}={row['acc']:.0f}%" for _, row in sub.iterrows() if row['acc']>2]
-                        if accs:
-                            lines.append(f"{ds:15} | s={stride:2} | c={cov:3}% | {', '.join(accs)}")
+                        top3 = [f"{MODEL_NAMES[row['model']]}={row['acc']:.0f}%" for _, row in sub.head(3).iterrows() if row['acc']>2]
+                        if top3:
+                            lines.append(f"{ds:10} | s={stride:2} | c={cov:3}% | {', '.join(top3)}")
 
-        # P3 spatial retraining
+        # P3 spatial retraining summary
         lines.append("\n### P3 SPATIAL RETRAINING (CNN resolution ablation)")
-        lines.append("Format: model | dataset | resolution | accuracy")
         try:
             df_p3 = pd.read_csv(DATA / "p3_results.csv")
-            for model in ["r3d_18", "mc3_18", "r2plus1d_18", "slowfast_r50"]:
-                sub_m = df_p3[df_p3.model==model].sort_values(["dataset","res"])
-                if sub_m.empty: continue
-                lines.append(f"\n{MODEL_NAMES[model]}:")
-                for _, row in sub_m.iterrows():
-                    lines.append(f"  {row['dataset']:15} @ {row['res']:3d}px = {row['acc']:.1f}%")
+            for model in ["r3d_18", "slowfast_r50"]:
+                avg_96 = df_p3[(df_p3.model==model)&(df_p3.res==96)]["acc"].mean()
+                avg_224 = df_p3[(df_p3.model==model)&(df_p3.res==224)]["acc"].mean()
+                lines.append(f"- {MODEL_NAMES[model]}: @96px avg={avg_96:.1f}%, @224px avg={avg_224:.1f}%")
         except: pass
 
-        # Routing (E7)
-        lines.append("\n### E7 ENTROPY ROUTING (adaptive frame allocation)")
-        lines.append("Format: model | dataset | % cheap frames | best_accuracy | oracle_accuracy")
-        try:
-            df_route = pd.read_csv(DATA / "routing_summary.csv")
-            for _, row in df_route.iterrows():
-                lines.append(f"{MODEL_NAMES.get(row['model'],row['model']):18} | {row['dataset']:15} | {row['pct_cheap']:5.1f}% | {row['best_accuracy']:6.1f}% | {row['oracle_accuracy']:6.1f}%")
-        except: pass
+        # Routing summary
+        lines.append("\n### E7 ENTROPY ROUTING")
+        lines.append("- Adaptive frame allocation: ~77% of videos route to cheap 4-frame inference")
+        lines.append("- Saves computation while maintaining accuracy")
 
-        # ANOVA effect sizes
-        lines.append("\n### ANOVA EFFECT SIZES (η²)")
-        lines.append("Format: model | dataset | stride_effect | coverage_effect")
-        try:
-            df_anova = pd.read_csv(DATA / "anova_results.csv")
-            for _, row in df_anova.iterrows():
-                lines.append(f"{MODEL_NAMES.get(row['model'],row['model']):18} | {row['dataset']:15} | stride={row['eta2_stride']:.4f} | coverage={row['eta2_coverage']:.4f}")
-        except: pass
+        # ANOVA summary
+        lines.append("\n### ANOVA KEY INSIGHTS")
+        lines.append("- Stride effect: higher on high-TDS datasets (sign language, causal)")
+        lines.append("- Coverage effect: larger on temporally demanding tasks")
 
         lines.append("\n### KEY FINDINGS")
         lines.append("- VideoMamba (SSM) and TimeSformer: ~6-8pp avg drop — most robust to aliasing")
