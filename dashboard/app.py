@@ -155,7 +155,7 @@ df_p3   = load_p3()
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("🎬 InfoRates")
-st.sidebar.caption("ACCV 2026 · Spatiotemporal Aliasing")
+st.sidebar.caption("Spatiotemporal Aliasing")
 
 page = st.sidebar.radio("", [
     "🏠 Overview & TDS",
@@ -183,7 +183,7 @@ def model_select(key, default_all=True):
 # =============================================================================
 if page == "🏠 Overview & TDS":
     st.title("InfoRates — Spatiotemporal Aliasing Analysis")
-    st.markdown("**ACCV 2026** · 8 architectures · 7 datasets · 1,400 eval configs")
+    st.markdown("8 architectures · 7 datasets · 1,400 eval configs")
 
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")

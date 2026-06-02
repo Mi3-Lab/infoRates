@@ -22,9 +22,10 @@ INPUT_SIZE="${INPUT_SIZE:?INPUT_SIZE must be set}"   # e.g. 112 or 224
 # Batch sizes safe for L40s (48GB) and H200 (141GB) — whichever is assigned
 # L40s = 48GB, H200 = 141GB. These values work on L40s; H200 can go higher.
 if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" ]]; then
-    BATCH_SIZE=128   # CNN: safe on L40s (48GB), fast on H200
+    BATCH_SIZE=64    # CNN: torch.compile @ 224px needs 64 for A100 (40GB), 128 needs H200 (141GB)
     EPOCHS=10
     SCRIPT="train_torchvision"
+    export TORCH_COMPILE_DISABLE=1  # Disable torch.compile for P3 — avoids OOM on A100
 elif [[ "$MODEL" == "slowfast_r50" ]]; then
     BATCH_SIZE=32    # SlowFast dual-path: heavier memory, safe on L40s
     EPOCHS=10

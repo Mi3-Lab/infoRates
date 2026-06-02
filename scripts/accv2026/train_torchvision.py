@@ -275,7 +275,7 @@ def main() -> None:
             if is_main:
                 print(f"[Resume] Checkpoint not found at {resume_path}, starting from scratch")
 
-    if torch.cuda.is_available() and not args.ddp:
+    if torch.cuda.is_available() and not args.ddp and not os.environ.get("TORCH_COMPILE_DISABLE"):
         try:
             model = torch.compile(model, mode="reduce-overhead", fullgraph=False)
             if is_main:
