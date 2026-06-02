@@ -304,7 +304,6 @@ def main() -> None:
 
             # Per-epoch checkpoints disabled to preserve disk quota
             raw_model = model.module if hasattr(model, "module") else model
-            print(f"  -> Saved epoch checkpoint: {epoch_ckpt}")
 
             if val_acc > best_acc:
                 best_acc = val_acc

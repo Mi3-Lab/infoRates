@@ -211,28 +211,59 @@ if page == "🏠 Overview & TDS":
 
     st.divider()
 
-    # Architecture summary table at stride=16, cov=100%
-    st.subheader("Cross-Architecture Aliasing Summary (stride=1 → stride=16, coverage=100%)")
+    # Interactive accuracy explorer — any stride × coverage
+    st.subheader("Accuracy Explorer — any stride × coverage")
     if not df_sw.empty:
+        c_sel1, c_sel2 = st.columns(2)
+        with c_sel1:
+            sel_cov = st.select_slider("Coverage", options=[10,25,50,75,100], value=100,
+                                        key="ov_cov", help="Fraction of clip observed")
+        with c_sel2:
+            sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
+                                        key="ov_str", help="Sampling density")
+
+        # Bar chart: accuracy at chosen config per model, grouped by dataset
+        sub_ov = df_sw[(df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]
+        if not sub_ov.empty:
+            fig_ov = go.Figure()
+            ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
+            for mk in MODEL_KEYS:
+                sub_m = sub_ov[sub_ov.model==mk].copy()
+                sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
+                if sub_m.empty: continue
+                sub_m = sub_m[sub_m.acc > 1]  # exclude collapse
+                fig_ov.add_trace(go.Bar(
+                    x=sub_m["ds_short"], y=sub_m["acc"],
+                    name=MODEL_NAMES[mk],
+                    marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
+                    hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
+                ))
+            fig_ov.update_layout(
+                barmode="group", height=380,
+                title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}",
+                yaxis_title="Top-1 (%)", xaxis_title="",
+                legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
+            )
+            st.plotly_chart(fig_ov, use_container_width=True)
+
+        # Compact summary table for current config
+        st.subheader(f"Summary table — coverage={sel_cov}%, stride={sel_str}")
         rows = []
-        sub = df_sw[df_sw.coverage == 100]
         for mk in MODEL_KEYS:
             row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk]}
-            drops, accs = [], []
+            accs = []
             for ds in DS_KEYS:
-                s1  = sub[(sub.model==mk)&(sub.dataset==ds)&(sub.stride==1)]["acc"]
-                s16 = sub[(sub.model==mk)&(sub.dataset==ds)&(sub.stride==16)]["acc"]
-                if s1.empty or s16.empty: continue
-                if s1.values[0] > 5:
-                    drops.append(s1.values[0] - s16.values[0])
-                    accs.append(s1.values[0])
-                row[DS_LABELS[ds].split(" (")[0]] = f"{s1.values[0]:.0f}/{-(s1.values[0]-s16.values[0]):.0f}"
-            row["Avg base acc"] = f"{np.mean(accs):.1f}%" if accs else "—"
-            row["Avg drop (pp)"] = f"{np.mean(drops):.1f}" if drops else "—"
+                val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
+                            (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
+                if val.empty: row[ds_short[ds]] = "—"; continue
+                v = val.values[0]
+                row[ds_short[ds]] = f"—†" if v < 2 else f"{v:.1f}%"
+                if v > 2: accs.append(v)
+            row["Avg"] = f"{np.mean(accs):.1f}%" if accs else "—"
             rows.append(row)
         df_tbl = pd.DataFrame(rows)
         st.dataframe(df_tbl, use_container_width=True)
-        st.caption("Format: base@s1 / drop(pp). Feature-collapsed cells excluded.")
+        st.caption("†Feature-collapsed (VideoMamba/AUTSL). Change sliders above to explore any configuration.")
 
 
 # =============================================================================
@@ -800,74 +831,257 @@ elif page == "🖼 Spatial Aliasing (P3)":
 # 🎯 ARCHITECTURE RECOMMENDER
 # =============================================================================
 elif page == "🎯 Architecture Recommender":
-    st.title("Architecture & Sensor Recommender")
-    st.caption("Get a principled recommendation for your specific deployment scenario based on measured aliasing data.")
+    st.title("🎯 Architecture Recommender")
+    st.caption(
+        "Describe your activity recognition task in plain English. "
+        "Get a recommendation for architecture, frame rate, and observation window "
+        "— backed by 1,400 empirical measurement configurations."
+    )
 
-    col_in, col_out = st.columns([1, 1.5])
+    engine = st.sidebar.radio("Engine", [
+        "🦙 Groq (Llama-3.3-70B) — free",
+        "🔵 Gemini Flash — free",
+        "⚙️ RAG (no API, instant)",
+    ], index=2)
+    st.sidebar.caption("All engines use the same empirical data. Try all to compare quality.")
 
-    with col_in:
-        st.subheader("Your Scenario")
-        sel_domain = st.selectbox("Target domain", list(DS_LABELS.values()))
-        sel_ds_k = [k for k,v in DS_LABELS.items() if v == sel_domain][0]
+    # ── Build data context for the AI ────────────────────────────────────────
+    def build_data_context():
+        lines = ["## InfoRates Empirical Data Summary\n"]
+        lines.append("### TDS (Temporal Demand Score) per dataset")
+        lines.append("Higher = more temporally demanding (needs denser sampling).")
+        for ds, tds_v in sorted(TDS.items(), key=lambda x: -x[1]):
+            lines.append(f"- {DS_LABELS[ds]}: TDS={tds_v:.1f}pp")
 
-        src_fps  = st.number_input("Source video FPS", value=30, step=5, min_value=1)
-        inf_fps  = st.slider("Inference FPS (frames sampled)", 1, 30, 8)
-        spatial  = st.checkbox("Inference at non-native spatial resolution?", value=False)
-        latency  = st.selectbox("Deployment tier", ["Edge (< 20ms/clip)", "Server (< 100ms)", "Offline"])
-
-        effective_stride = max(1, round(src_fps / inf_fps))
-        # Snap to grid
-        for s in [1,2,4,8,16]:
-            if effective_stride <= s:
-                effective_stride = s
-                break
-        st.metric("Effective stride", effective_stride,
-                  f"{src_fps}/{inf_fps} FPS → stride={effective_stride}")
-
-    with col_out:
-        st.subheader("Recommendation")
-        tds_val = TDS.get(sel_ds_k, 0)
-
-        # TDS tier
-        if tds_val > 35:
-            st.error(f"**TDS = {tds_val:.1f}pp — HIGH temporal demand**  \n"
-                     "Dense sampling is essential. Use SSM or divided-attention Transformer.")
-        elif tds_val > 18:
-            st.warning(f"**TDS = {tds_val:.1f}pp — MODERATE temporal demand**  \n"
-                       "Moderate aliasing at stride > 8. Prefer SSM/TimeSformer for safety margin.")
-        else:
-            st.success(f"**TDS = {tds_val:.1f}pp — LOW temporal demand**  \n"
-                       "Appearance-dominated. Any architecture works; optimize for compute/latency.")
-
-        # Expected accuracy at chosen stride from real data
+        lines.append("\n### Architecture aliasing robustness (avg accuracy drop stride=1→16)")
+        lines.append("Format: Model (family) — avg drop across datasets (lower is more robust)")
         if not df_sw.empty:
-            sub_rec = df_sw[(df_sw.dataset == sel_ds_k) &
-                            (df_sw.coverage == 100) &
-                            (df_sw.stride == effective_stride)].sort_values("acc", ascending=False)
-            if not sub_rec.empty:
-                st.subheader(f"Expected Top-1 accuracy at stride={effective_stride}")
-                fig = px.bar(sub_rec, x="model_name", y="acc", color="family",
-                             color_discrete_map=FAM_COLOR,
-                             text="acc", labels={"model_name":"","acc":"Top-1 (%)"},
-                             height=300, category_orders={"model_name": sub_rec["model_name"].tolist()})
-                fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
-                fig.update_layout(margin=dict(t=20,b=40), showlegend=True,
-                                  xaxis_tickangle=-30)
-                st.plotly_chart(fig, use_container_width=True)
+            for mk in MODEL_KEYS:
+                sub = df_sw[(df_sw.model==mk)&(df_sw.coverage==100)]
+                drops = []
+                for ds in DS_KEYS:
+                    s1  = sub[(sub.stride==1)&(sub.dataset==ds)]["acc"]
+                    s16 = sub[(sub.stride==16)&(sub.dataset==ds)]["acc"]
+                    if s1.empty or s16.empty or s1.values[0]<5: continue
+                    drops.append(s1.values[0]-s16.values[0])
+                avg = np.mean(drops) if drops else 0
+                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {avg:.1f}pp avg drop")
 
-        # Guidance cards
-        st.subheader("Deployment guidance")
-        if effective_stride >= 8 and tds_val > 18:
-            st.error("⚠️ stride≥8 on moderate/high-TDS domain: expect significant aliasing. "
-                     "Increase FPS or switch to VideoMamba/TimeSformer.")
-        if spatial:
-            st.warning("🖼️ Non-native resolution: Transformers (ViViT, VideoMAE, TimeSformer) and VideoMamba "
-                       "are robust across 96–336px. CNNs require retraining at target resolution.")
-        if latency.startswith("Edge"):
-            st.info("⚡ Edge: R3D-18 or MC3-18 offer best latency/accuracy. "
-                    "Use entropy routing to skip dense inference on ~84% of videos.")
-        elif latency.startswith("Server"):
-            st.info("🖥️ Server: TimeSformer or VideoMamba for temporal-critical datasets. "
-                    "VideoMAE for highest accuracy on appearance datasets.")
+        lines.append("\n### Key findings from paper")
+        lines.append("- VideoMamba (SSM) and TimeSformer (divided attention): ~6-8pp avg drop — most robust")
+        lines.append("- ViViT (factorized attention): ~34pp drop — behaves like a CNN despite being Transformer")
+        lines.append("- VideoMAE: ~32pp drop — spatially robust but temporally fragile")
+        lines.append("- CNNs (R3D, MC3, R2+1D): 18-28pp drop — moderate, benefit from lower-res retraining")
+        lines.append("- SlowFast: ~42pp drop — most fragile, cliffs at stride=4 on demanding datasets")
+        lines.append("- AUTSL (sign language): TDS=58.3pp — any stride>4 causes major accuracy loss")
+        lines.append("- UCF-101 (appearance): TDS=4.9pp — stride barely matters, any FPS works")
+        lines.append("- CNN retraining at 96px often BEATS native resolution (background regularization)")
+        lines.append("- Transformer retraining at low res HURTS (patch tokens lose semantic content below ~112px)")
+        lines.append("- EPIC-Kitchens exception: even Transformers gain from lower resolution (egocentric noise)")
+
+        lines.append("\n### Stride-to-FPS mapping")
+        lines.append("stride = source_fps / inference_fps (e.g., 30fps source, 8fps inference → stride≈4)")
+        lines.append("Available strides in our data: 1, 2, 4, 8, 16")
+        lines.append("Available coverages: 10%, 25%, 50%, 75%, 100% of clip")
+
+        return "\n".join(lines)
+
+    # ── RAG engine: pure data-driven, no API ─────────────────────────────────
+    def rag_recommend(prompt_text, df_sweep, tds_dict):
+        """Keyword-based dataset matching + structured recommendation from real data."""
+        text = prompt_text.lower()
+
+        # Map keywords → dataset
+        keyword_map = [
+            (["sign language","sign","gesture","hand","deaf","asl","libras","autsl"],  "autsl"),
+            (["driving","driver","vehicle","car","dashcam","drowsiness","fatigue","driveact"], "driveact"),
+            (["kitchen","cooking","food","eat","chef","egocentric","first person","epic"], "epic_kitchens"),
+            (["diving","swimming","gymnastics","sport","fine.grained","precise"],        "diving48"),
+            (["something","manipulation","push","pull","pick","causal","physics","ssv2"],"ssv2"),
+            (["sport","action","human","general","hmdb","exercise","workout"],           "hmdb51"),
+            (["appearance","object","scene","recognition","classify","ucf"],             "ucf101"),
+        ]
+        matched_ds = "ssv2"  # default
+        match_score = 0
+        for keywords, ds in keyword_map:
+            score = sum(1 for kw in keywords if kw in text)
+            if score > match_score:
+                match_score, matched_ds = score, ds
+
+        tds_v = tds_dict.get(matched_ds, 20)
+
+        # FPS/stride extraction
+        fps_match = None
+        import re
+        fps_nums = re.findall(r"(\d+)\s*fps", text)
+        if fps_nums: fps_match = int(fps_nums[0])
+
+        # Get best architectures at stride=1 vs stride=8 for matched dataset
+        if not df_sweep.empty:
+            sub = df_sweep[(df_sweep.dataset==matched_ds)&(df_sweep.coverage==100)]
+            acc_s1  = {mk: sub[(sub.model==mk)&(sub.stride==1)]["acc"].values[0]
+                       for mk in MODEL_KEYS
+                       if not sub[(sub.model==mk)&(sub.stride==1)]["acc"].empty
+                       and sub[(sub.model==mk)&(sub.stride==1)]["acc"].values[0]>2}
+            acc_s8  = {mk: sub[(sub.model==mk)&(sub.stride==8)]["acc"].values[0]
+                       for mk in MODEL_KEYS
+                       if not sub[(sub.model==mk)&(sub.stride==8)]["acc"].empty
+                       and sub[(sub.model==mk)&(sub.stride==8)]["acc"].values[0]>2}
         else:
-            st.info("☁️ Offline: VideoMAE gives highest raw accuracy. Use full 16-frame dense sampling.")
+            acc_s1, acc_s8 = {}, {}
+
+        best_s1 = sorted(acc_s1.items(), key=lambda x: -x[1])[:3] if acc_s1 else []
+        drops   = {mk: acc_s1.get(mk,0) - acc_s8.get(mk,0) for mk in acc_s1 if mk in acc_s8}
+        robust  = sorted(drops.items(), key=lambda x: x[1])[:2]  # smallest drop
+
+        # Determine stride recommendation
+        if tds_v > 35:
+            rec_stride, rec_fps_note = 2, "≤ 15fps (stride≤2 to stay above Nyquist)"
+        elif tds_v > 18:
+            rec_stride, rec_fps_note = 4, "8–15fps (stride 4 is borderline safe)"
+        else:
+            rec_stride, rec_fps_note = 8, "4–8fps sufficient (appearance-dominated)"
+
+        labels_short = {k: v.split(" (")[0] for k,v in {
+            "autsl":"AUTSL (Sign Language)","diving48":"Diving-48 (Fine-grained)",
+            "ssv2":"SSv2 (Causal)","hmdb51":"HMDB-51 (Sports)",
+            "driveact":"DriveAct (In-vehicle)","epic_kitchens":"EPIC-Kitchens (Egocentric)",
+            "ucf101":"UCF-101 (Appearance)"}.items()}
+
+        lines = []
+        lines.append(f"## Recommendation for: *{prompt_text[:80]}*\n")
+        lines.append(f"**Matched domain:** {labels_short.get(matched_ds, matched_ds)} (TDS = {tds_v:.1f}pp)")
+        if match_score == 0:
+            lines.append("*⚠️ No strong keyword match — defaulted to SSv2 (causal actions). Refine your description.*")
+        lines.append("")
+
+        tier = "🔴 HIGH" if tds_v>35 else "🟡 MODERATE" if tds_v>18 else "🟢 LOW"
+        lines.append(f"### {tier} temporal demand")
+        if tds_v > 35:
+            lines.append("Dense sampling is **critical**. Sparse frames cause >30pp accuracy loss.")
+        elif tds_v > 18:
+            lines.append("Moderate aliasing risk. Stride > 8 causes noticeable degradation.")
+        else:
+            lines.append("Low aliasing risk. Appearance features are sufficient; temporal order matters less.")
+
+        lines.append(f"\n### Recommended sampling: **{rec_fps_note}**")
+        lines.append(f"Target stride ≤ {rec_stride} to stay above the Nyquist rate for this domain.")
+        if fps_match:
+            eff = max(1, fps_match // 8)
+            lines.append(f"At your {fps_match}fps source → sample every ~{eff} frame (stride≈{eff}).")
+
+        lines.append("\n### Architecture ranking for this domain")
+        if best_s1:
+            lines.append(f"**Best absolute accuracy** (dense, stride=1):")
+            for mk, acc in best_s1:
+                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {acc:.1f}%")
+        if robust:
+            lines.append(f"\n**Most robust to sparse sampling** (smallest accuracy drop stride=1→8):")
+            for mk, drop in robust:
+                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): only {drop:.1f}pp drop")
+
+        lines.append("\n### Spatial resolution")
+        lines.append("- **CNNs**: retrain at your deployment resolution for best results (lower res often HELPS)")
+        lines.append("- **Transformers/SSMs**: robust across 96–336px without retraining")
+        if matched_ds == "autsl":
+            lines.append("- ⚠️ AUTSL exception: handshapes need ≥112px — do not downsample below this")
+
+        return "\n".join(lines)
+
+    # ── LLM call helper ──────────────────────────────────────────────────────
+    def call_llm(engine_choice, system_prompt, messages):
+        import os
+        try:
+            if "Groq" in engine_choice:
+                from groq import Groq
+                key = os.environ.get("GROQ_API_KEY", st.secrets.get("GROQ_API_KEY",""))
+                if not key: return None, "GROQ_API_KEY not set. Get a free key at console.groq.com"
+                client = Groq(api_key=key)
+                resp = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile", max_tokens=1024,
+                    messages=[{"role":"system","content":system_prompt}]+messages,
+                )
+                return resp.choices[0].message.content, None
+
+            elif "Gemini" in engine_choice:
+                import google.generativeai as genai
+                key = os.environ.get("GEMINI_API_KEY", st.secrets.get("GEMINI_API_KEY",""))
+                if not key: return None, "GEMINI_API_KEY not set. Get a free key at aistudio.google.com"
+                genai.configure(api_key=key)
+                model = genai.GenerativeModel("gemini-1.5-flash",
+                                               system_instruction=system_prompt)
+                history = [{"role": m["role"], "parts": [m["content"]]} for m in messages[:-1]]
+                chat = model.start_chat(history=history)
+                resp = chat.send_message(messages[-1]["content"])
+                return resp.text, None
+        except Exception as e:
+            return None, str(e)
+        return None, "Unknown engine"
+
+    # ── Chat interface ────────────────────────────────────────────────────────
+    session_key = f"msgs_{engine.split()[0]}"
+    if session_key not in st.session_state:
+        st.session_state[session_key] = []
+
+    msgs = st.session_state[session_key]
+    for msg in msgs:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    if prompt := st.chat_input("Describe your task… e.g. 'monitoring driver drowsiness at 10fps'"):
+        msgs.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analyzing..."):
+                if "RAG" in engine:
+                    answer = rag_recommend(prompt, df_sw, TDS)
+                    st.markdown(answer)
+                    msgs.append({"role": "assistant", "content": answer})
+                else:
+                    data_ctx = build_data_context()
+                    system_prompt = f"""You are an expert AI assistant for the InfoRates research project on spatiotemporal aliasing in video action recognition.
+{data_ctx}
+Given the user's activity recognition task, recommend:
+1. **Architecture** (cite TDS and avg drop data)
+2. **Frame rate / stride** (Nyquist reasoning)
+3. **Observation window / clip duration**
+4. **Spatial resolution** (CNN vs Transformer behavior)
+5. **Expected accuracy** from empirical measurements
+Be specific, cite actual numbers, use markdown. Keep it concise."""
+                    answer, err = call_llm(engine, system_prompt,
+                                           [{"role":m["role"],"content":m["content"]} for m in msgs])
+                    if err:
+                        st.error(f"**{engine.split()[1]} error:** {err}")
+                        msg_out = f"[Error: {err}]"
+                    else:
+                        st.markdown(answer)
+                        msg_out = answer
+                    msgs.append({"role": "assistant", "content": msg_out})
+
+        # Empirical chart after every response
+        if msgs and not df_sw.empty:
+            with st.expander("📊 Aliasing curves for reference"):
+                sel_ds_ai = st.selectbox("Dataset", DS_KEYS, format_func=lambda x: DS_LABELS[x], key="ai_ds")
+                sub_ai = df_sw[(df_sw.dataset==sel_ds_ai)&(df_sw.coverage==100)]
+                fig_ai = go.Figure()
+                for mk in MODEL_KEYS:
+                    grp = sub_ai[sub_ai.model==mk].sort_values("stride")
+                    if grp.empty or grp["acc"].max()<2: continue
+                    fig_ai.add_trace(go.Scatter(
+                        x=grp["stride"], y=grp["acc"], mode="lines+markers",
+                        name=MODEL_NAMES[mk],
+                        line=dict(color=FAM_COLOR.get(FAMILIES[mk],"#999"),width=2),
+                        marker=dict(size=7),
+                    ))
+                fig_ai.update_xaxes(type="log", tickvals=[1,2,4,8,16],
+                                     ticktext=["s=1","s=2","s=4","s=8","s=16"])
+                fig_ai.update_yaxes(title="Top-1 (%)")
+                fig_ai.update_layout(height=320, legend=dict(orientation="h",y=-0.3), margin=dict(b=80))
+                st.plotly_chart(fig_ai, use_container_width=True)
+
+    if msgs:
+        if st.button("🗑️ Clear conversation"):
+            st.session_state[session_key] = []
+            st.rerun()
