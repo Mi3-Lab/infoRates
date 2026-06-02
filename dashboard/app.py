@@ -853,21 +853,22 @@ elif page == "🎯 Architecture Recommender":
     )
 
     engine = st.sidebar.radio("Engine", [
-        "🦙 Groq (Llama-3.3-70B) — free",
+        "🦙 Groq (Llama-3.3-70B)",
         "⚙️ RAG (no API, instant)",
     ], index=1)
     st.sidebar.caption("All engines use the same empirical data. Try both to compare quality.")
 
     # ── Build data context for the AI ────────────────────────────────────────
     def build_data_context():
-        lines = ["## InfoRates Empirical Data Summary\n"]
+        lines = ["## InfoRates COMPLETE Empirical Data\n"]
+
+        # TDS
         lines.append("### TDS (Temporal Demand Score) per dataset")
-        lines.append("Higher = more temporally demanding (needs denser sampling).")
         for ds, tds_v in sorted(TDS.items(), key=lambda x: -x[1]):
             lines.append(f"- {DS_LABELS[ds]}: TDS={tds_v:.1f}pp")
 
+        # Avg drops
         lines.append("\n### Architecture aliasing robustness (avg accuracy drop stride=1→16)")
-        lines.append("Format: Model (family) — avg drop across datasets (lower is more robust)")
         if not df_sw.empty:
             for mk in MODEL_KEYS:
                 sub = df_sw[(df_sw.model==mk)&(df_sw.coverage==100)]
@@ -878,30 +879,67 @@ elif page == "🎯 Architecture Recommender":
                     if s1.empty or s16.empty or s1.values[0]<5: continue
                     drops.append(s1.values[0]-s16.values[0])
                 avg = np.mean(drops) if drops else 0
-                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {avg:.1f}pp avg drop")
+                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {avg:.1f}pp")
 
-        lines.append("\n### Key findings from paper")
-        lines.append("- VideoMamba (SSM) and TimeSformer (divided attention): ~6-8pp avg drop — most robust")
-        lines.append("- ViViT (factorized attention): ~34pp drop — behaves like a CNN despite being Transformer")
-        lines.append("- VideoMAE: ~32pp drop — spatially robust but temporally fragile")
-        lines.append("- CNNs (R3D, MC3, R2+1D): 18-28pp drop — moderate, benefit from lower-res retraining")
-        lines.append("- SlowFast: ~42pp drop — most fragile, cliffs at stride=4 on demanding datasets")
-        lines.append("- AUTSL (sign language): TDS=58.3pp — any stride>4 causes major accuracy loss")
-        lines.append("- UCF-101 (appearance): TDS=4.9pp — stride barely matters, any FPS works")
-        lines.append("- CNN retraining at 96px often BEATS native resolution (background regularization)")
-        lines.append("- Transformer retraining at low res HURTS (patch tokens lose semantic content below ~112px)")
-        lines.append("- EPIC-Kitchens exception: even Transformers gain from lower resolution (egocentric noise)")
+        # COMPLETE accuracy table
+        lines.append("\n### COMPLETE ACCURACY TABLE (all 1400 configs)")
+        lines.append("Format: dataset | stride | coverage | model | accuracy")
+        if not df_sw.empty:
+            for ds in DS_KEYS:
+                sub_ds = df_sw[df_sw.dataset==ds]
+                for stride in [1,2,4,8,16]:
+                    for cov in [10,25,50,75,100]:
+                        sub = sub_ds[(sub_ds.stride==stride)&(sub_ds.coverage==cov)].sort_values("acc", ascending=False)
+                        if sub.empty: continue
+                        accs = [f"{MODEL_NAMES[row['model']]}={row['acc']:.0f}%" for _, row in sub.iterrows() if row['acc']>2]
+                        if accs:
+                            lines.append(f"{ds:15} | s={stride:2} | c={cov:3}% | {', '.join(accs)}")
 
-        lines.append("\n### Stride-to-FPS mapping")
-        lines.append("stride = source_fps / inference_fps (e.g., 30fps source, 8fps inference → stride≈4)")
-        lines.append("Available strides in our data: 1, 2, 4, 8, 16")
-        lines.append("Available coverages: 10%, 25%, 50%, 75%, 100% of clip")
+        # P3 spatial retraining
+        lines.append("\n### P3 SPATIAL RETRAINING (CNN resolution ablation)")
+        lines.append("Format: model | dataset | resolution | accuracy")
+        try:
+            df_p3 = pd.read_csv(DATA / "p3_results.csv")
+            for model in ["r3d_18", "mc3_18", "r2plus1d_18", "slowfast_r50"]:
+                sub_m = df_p3[df_p3.model==model].sort_values(["dataset","res"])
+                if sub_m.empty: continue
+                lines.append(f"\n{MODEL_NAMES[model]}:")
+                for _, row in sub_m.iterrows():
+                    lines.append(f"  {row['dataset']:15} @ {row['res']:3d}px = {row['acc']:.1f}%")
+        except: pass
+
+        # Routing (E7)
+        lines.append("\n### E7 ENTROPY ROUTING (adaptive frame allocation)")
+        lines.append("Format: model | dataset | % cheap frames | best_accuracy | oracle_accuracy")
+        try:
+            df_route = pd.read_csv(DATA / "routing_summary.csv")
+            for _, row in df_route.iterrows():
+                lines.append(f"{MODEL_NAMES.get(row['model'],row['model']):18} | {row['dataset']:15} | {row['pct_cheap']:5.1f}% | {row['best_accuracy']:6.1f}% | {row['oracle_accuracy']:6.1f}%")
+        except: pass
+
+        # ANOVA effect sizes
+        lines.append("\n### ANOVA EFFECT SIZES (η²)")
+        lines.append("Format: model | dataset | stride_effect | coverage_effect")
+        try:
+            df_anova = pd.read_csv(DATA / "anova_results.csv")
+            for _, row in df_anova.iterrows():
+                lines.append(f"{MODEL_NAMES.get(row['model'],row['model']):18} | {row['dataset']:15} | stride={row['eta2_stride']:.4f} | coverage={row['eta2_coverage']:.4f}")
+        except: pass
+
+        lines.append("\n### KEY FINDINGS")
+        lines.append("- VideoMamba (SSM) and TimeSformer: ~6-8pp avg drop — most robust to aliasing")
+        lines.append("- ViViT (factorized attention): ~34pp drop — anomaly for Transformer")
+        lines.append("- SlowFast: ~42pp drop — most fragile")
+        lines.append("- CNNs: 18-28pp drop, benefit from lower-res retraining (77% improvement rate)")
+        lines.append("- Transformers: sensitive to spatial resolution below 112px (patch token loss)")
+        lines.append("- EPIC-Kitchens: exception — even Transformers improve at lower res (egocentric noise)")
+        lines.append("- E7 entropy routing: ~77% of videos route to cheap 4-frame inference")
 
         return "\n".join(lines)
 
     # ── RAG engine: pure data-driven, no API ─────────────────────────────────
     def rag_recommend(prompt_text, df_sweep, tds_dict):
-        """Keyword-based dataset matching + structured recommendation from real data."""
+        """Keyword-based dataset matching + structured recommendation from REAL DATA."""
         text = prompt_text.lower()
 
         # Map keywords → dataset
@@ -923,29 +961,58 @@ elif page == "🎯 Architecture Recommender":
 
         tds_v = tds_dict.get(matched_ds, 20)
 
-        # FPS/stride extraction
-        fps_match = None
+        # Extract stride, coverage, fps from text
         import re
+        stride_match = None
+        coverage_match = None
+        fps_match = None
+
+        stride_nums = re.findall(r"stride\s*[=:]?\s*(\d+)", text)
+        if stride_nums: stride_match = int(stride_nums[0])
+
+        coverage_nums = re.findall(r"coverage\s*[=:]?\s*(\d+)", text)
+        if coverage_nums: coverage_match = int(coverage_nums[0])
+
         fps_nums = re.findall(r"(\d+)\s*fps", text)
         if fps_nums: fps_match = int(fps_nums[0])
 
-        # Get best architectures at stride=1 vs stride=8 for matched dataset
-        if not df_sweep.empty:
-            sub = df_sweep[(df_sweep.dataset==matched_ds)&(df_sweep.coverage==100)]
-            acc_s1  = {mk: sub[(sub.model==mk)&(sub.stride==1)]["acc"].values[0]
-                       for mk in MODEL_KEYS
-                       if not sub[(sub.model==mk)&(sub.stride==1)]["acc"].empty
-                       and sub[(sub.model==mk)&(sub.stride==1)]["acc"].values[0]>2}
-            acc_s8  = {mk: sub[(sub.model==mk)&(sub.stride==8)]["acc"].values[0]
-                       for mk in MODEL_KEYS
-                       if not sub[(sub.model==mk)&(sub.stride==8)]["acc"].empty
-                       and sub[(sub.model==mk)&(sub.stride==8)]["acc"].values[0]>2}
-        else:
-            acc_s1, acc_s8 = {}, {}
+        # Default to stride=1, coverage=100 if not specified; use user values if they are
+        query_stride = stride_match if stride_match else 1
+        query_coverage = coverage_match if coverage_match else 100
 
-        best_s1 = sorted(acc_s1.items(), key=lambda x: -x[1])[:3] if acc_s1 else []
-        drops   = {mk: acc_s1.get(mk,0) - acc_s8.get(mk,0) for mk in acc_s1 if mk in acc_s8}
-        robust  = sorted(drops.items(), key=lambda x: x[1])[:2]  # smallest drop
+        # Get REAL accuracies from data at specified stride/coverage
+        real_accs_user_config = {}
+        best_s1 = []
+        robust = []
+
+        if not df_sweep.empty:
+            # At user-specified config (stride/coverage)
+            sub_user = df_sweep[(df_sweep.dataset==matched_ds)&
+                               (df_sweep.coverage==query_coverage)&
+                               (df_sweep.stride==query_stride)]
+            if not sub_user.empty:
+                for mk in MODEL_KEYS:
+                    v = sub_user[sub_user.model==mk]["acc"]
+                    if not v.empty and v.values[0] > 2:
+                        real_accs_user_config[mk] = v.values[0]
+                best_user = sorted(real_accs_user_config.items(), key=lambda x: -x[1])[:3]
+
+            # Also get stride=1 and stride=8 for comparisons
+            sub_s1 = df_sweep[(df_sweep.dataset==matched_ds)&(df_sweep.coverage==100)&(df_sweep.stride==1)]
+            sub_s8 = df_sweep[(df_sweep.dataset==matched_ds)&(df_sweep.coverage==100)&(df_sweep.stride==8)]
+
+            acc_s1  = {mk: sub_s1[sub_s1.model==mk]["acc"].values[0]
+                       for mk in MODEL_KEYS
+                       if not sub_s1[sub_s1.model==mk]["acc"].empty
+                       and sub_s1[sub_s1.model==mk]["acc"].values[0]>2}
+            acc_s8  = {mk: sub_s8[sub_s8.model==mk]["acc"].values[0]
+                       for mk in MODEL_KEYS
+                       if not sub_s8[sub_s8.model==mk]["acc"].empty
+                       and sub_s8[sub_s8.model==mk]["acc"].values[0]>2}
+
+            best_s1 = sorted(acc_s1.items(), key=lambda x: -x[1])[:3] if acc_s1 else []
+            drops   = {mk: acc_s1.get(mk,0) - acc_s8.get(mk,0) for mk in acc_s1 if mk in acc_s8}
+            robust  = sorted(drops.items(), key=lambda x: x[1])[:2]
 
         # Determine stride recommendation
         if tds_v > 35:
@@ -964,6 +1031,8 @@ elif page == "🎯 Architecture Recommender":
         lines = []
         lines.append(f"## Recommendation for: *{prompt_text[:80]}*\n")
         lines.append(f"**Matched domain:** {labels_short.get(matched_ds, matched_ds)} (TDS = {tds_v:.1f}pp)")
+        if stride_match or coverage_match:
+            lines.append(f"**Your config:** stride={query_stride}, coverage={query_coverage}%")
         if match_score == 0:
             lines.append("*⚠️ No strong keyword match — defaulted to SSv2 (causal actions). Refine your description.*")
         lines.append("")
@@ -983,9 +1052,15 @@ elif page == "🎯 Architecture Recommender":
             eff = max(1, fps_match // 8)
             lines.append(f"At your {fps_match}fps source → sample every ~{eff} frame (stride≈{eff}).")
 
-        lines.append("\n### Architecture ranking for this domain")
+        lines.append("\n### Architecture ranking for YOUR config (stride={}, coverage={}%)".format(query_stride, query_coverage))
+        if real_accs_user_config:
+            lines.append(f"**MEASURED ACCURACY** from empirical data:")
+            for mk, acc in sorted(real_accs_user_config.items(), key=lambda x: -x[1]):
+                lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): **{acc:.1f}%**")
+            lines.append("")
+
         if best_s1:
-            lines.append(f"**Best absolute accuracy** (dense, stride=1):")
+            lines.append(f"**Best absolute accuracy** (stride=1, coverage=100% — dense baseline):")
             for mk, acc in best_s1:
                 lines.append(f"- {MODEL_NAMES[mk]} ({FAMILIES[mk]}): {acc:.1f}%")
         if robust:
