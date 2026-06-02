@@ -263,7 +263,15 @@ if page == "🏠 Overview & TDS":
             rows.append(row)
         df_tbl = pd.DataFrame(rows)
         st.dataframe(df_tbl, use_container_width=True)
-        st.caption("†Feature-collapsed (VideoMamba/AUTSL). Change sliders above to explore any configuration.")
+        # Warn about degenerate extreme configs
+        if sel_cov == 10 and sel_str == 16:
+            st.warning(
+                "**Extreme config:** coverage=10% + stride=16 → frame pool has only ~1–3 frames, "
+                "so the model receives the same frame repeated up to 8×. "
+                "This measures **single-frame accuracy**, not temporal reasoning. "
+                "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
+            )
+        st.caption("†Feature-collapsed (VideoMamba/AUTSL). Change sliders to explore any of the 25 grid configurations.")
 
 
 # =============================================================================
@@ -1008,12 +1016,28 @@ elif page == "🎯 Architecture Recommender":
                 key = os.environ.get("GEMINI_API_KEY", st.secrets.get("GEMINI_API_KEY",""))
                 if not key: return None, "GEMINI_API_KEY not set. Get a free key at aistudio.google.com"
                 genai.configure(api_key=key)
-                model = genai.GenerativeModel("gemini-1.5-flash",
-                                               system_instruction=system_prompt)
-                history = [{"role": m["role"], "parts": [m["content"]]} for m in messages[:-1]]
-                chat = model.start_chat(history=history)
-                resp = chat.send_message(messages[-1]["content"])
-                return resp.text, None
+                # Try models in order — newest free models first
+                gemini_models = [
+                    "gemini-2.0-flash",
+                    "gemini-2.0-flash-lite",
+                    "gemini-2.5-flash-preview-05-20",
+                    "gemini-1.5-flash",
+                ]
+                last_err = None
+                for model_name in gemini_models:
+                    try:
+                        model = genai.GenerativeModel(model_name,
+                                                       system_instruction=system_prompt)
+                        history = [{"role": m["role"], "parts": [m["content"]]} for m in messages[:-1]]
+                        chat = model.start_chat(history=history)
+                        resp = chat.send_message(messages[-1]["content"])
+                        return resp.text, None
+                    except Exception as e:
+                        last_err = e
+                        if "not found" in str(e).lower() or "404" in str(e):
+                            continue  # try next model
+                        break       # other error, stop
+                return None, f"Gemini error: {last_err}"
         except Exception as e:
             return None, str(e)
         return None, "Unknown engine"
