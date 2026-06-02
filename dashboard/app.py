@@ -848,10 +848,9 @@ elif page == "🎯 Architecture Recommender":
 
     engine = st.sidebar.radio("Engine", [
         "🦙 Groq (Llama-3.3-70B) — free",
-        "🔵 Gemini Flash — free",
         "⚙️ RAG (no API, instant)",
-    ], index=2)
-    st.sidebar.caption("All engines use the same empirical data. Try all to compare quality.")
+    ], index=1)
+    st.sidebar.caption("All engines use the same empirical data. Try both to compare quality.")
 
     # ── Build data context for the AI ────────────────────────────────────────
     def build_data_context():
@@ -1011,33 +1010,6 @@ elif page == "🎯 Architecture Recommender":
                 )
                 return resp.choices[0].message.content, None
 
-            elif "Gemini" in engine_choice:
-                import google.generativeai as genai
-                key = os.environ.get("GEMINI_API_KEY", st.secrets.get("GEMINI_API_KEY",""))
-                if not key: return None, "GEMINI_API_KEY not set. Get a free key at aistudio.google.com"
-                genai.configure(api_key=key)
-                # Try models in order — newest free models first
-                gemini_models = [
-                    "gemini-2.0-flash",
-                    "gemini-2.0-flash-lite",
-                    "gemini-2.5-flash-preview-05-20",
-                    "gemini-1.5-flash",
-                ]
-                last_err = None
-                for model_name in gemini_models:
-                    try:
-                        model = genai.GenerativeModel(model_name,
-                                                       system_instruction=system_prompt)
-                        history = [{"role": m["role"], "parts": [m["content"]]} for m in messages[:-1]]
-                        chat = model.start_chat(history=history)
-                        resp = chat.send_message(messages[-1]["content"])
-                        return resp.text, None
-                    except Exception as e:
-                        last_err = e
-                        if "not found" in str(e).lower() or "404" in str(e):
-                            continue  # try next model
-                        break       # other error, stop
-                return None, f"Gemini error: {last_err}"
         except Exception as e:
             return None, str(e)
         return None, "Unknown engine"
