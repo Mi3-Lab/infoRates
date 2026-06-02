@@ -222,18 +222,23 @@ if page == "🏠 Overview & TDS":
             sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
                                         key="ov_str", help="Sampling density")
 
-        # Bar chart: accuracy at chosen config per model, grouped by dataset
+        # Bar chart: accuracy at chosen config per model, grouped by dataset (fixed order)
         sub_ov = df_sw[(df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]
         if not sub_ov.empty:
             fig_ov = go.Figure()
             ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
+            ds_short_list = [ds_short[ds] for ds in DS_KEYS]  # Fixed order
             for mk in MODEL_KEYS:
                 sub_m = sub_ov[sub_ov.model==mk].copy()
                 sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
                 if sub_m.empty: continue
-                sub_m = sub_m[sub_m.acc > 1]  # exclude collapse
+                # Reindex to fixed dataset order, fill missing with NaN
+                accs_ordered = []
+                for ds_name in ds_short_list:
+                    val = sub_m[sub_m["ds_short"]==ds_name]["acc"]
+                    accs_ordered.append(val.values[0] if not val.empty and val.values[0] > 1 else None)
                 fig_ov.add_trace(go.Bar(
-                    x=sub_m["ds_short"], y=sub_m["acc"],
+                    x=ds_short_list, y=accs_ordered,
                     name=MODEL_NAMES[mk],
                     marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
                     hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
@@ -243,6 +248,7 @@ if page == "🏠 Overview & TDS":
                 title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}",
                 yaxis_title="Top-1 (%)", xaxis_title="",
                 legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
+                xaxis=dict(categoryorder="array", categoryarray=ds_short_list),  # Lock order
             )
             st.plotly_chart(fig_ov, use_container_width=True)
 
