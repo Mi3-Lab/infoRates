@@ -1130,7 +1130,7 @@ Now provide a RICH ANALYSIS that:
 4. Provides implementation guidance
 Use markdown, be specific, cite the data above."""
 
-                    answer, err = call_llm("🦙", system_prompt,  # Force Groq for Hybrid
+                    answer, err = call_llm("🦙 Groq (Llama-3.3-70B) — free", system_prompt,  # Force Groq for Hybrid
                                            [{"role":m["role"],"content":m["content"]} for m in msgs])
                     if err:
                         st.error(f"**Groq error:** {err}")
