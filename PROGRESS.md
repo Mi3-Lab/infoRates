@@ -131,9 +131,44 @@ supplementary.tex (~450 linhas)
 
 ---
 
-## Próximos Passos
+## Dataset Expansion — 3 adicionais recomendados (2026-06-03)
 
+**Decisão:** Expandir de 7 para 10 datasets para validar **TDS como propriedade universal** e testar **aplicações práticas** (autonomous evacuation systems).
+
+| Dataset | Domínio | TDS esperado | Aplicação | Tamanho |
+|---------|---------|--------------|-----------|---------|
+| **FLAME** | Emergency (fire/smoke) | ~70pp | Safety-critical: automatic vehicle evacuation | ~1.9K vídeos |
+| **Ego4D** | Egocentric long-form | ~15pp | Episodic memory: SSM recurrence under stress | ~1.4M vídeos |
+| **UCF-Crime** | Surveillance anomalies | ~50pp | Real-world deployment: edge cameras | ~1.9K vídeos |
+
+**Por quê estes 3:**
+- **FLAME:** Stress-test condições extremas (visibilidade <10%); valida se CNN/Transformer split mantém em degradação severa
+- **Ego4D:** Vídeos muito longos (30+ min) força VideoMamba (SSM) a provar vantagem episódic memory real
+- **UCF-Crime:** Vigilância real com câmeras de baixo FPS — valida TDS em deployment crítico
+
+**Narrativa unificada do paper:**
+- **C1 (TDS):** Validado cross 10 datasets, confirmando que é propriedade dataset, não arquitetura
+- **C2 (Temporal aliasing):** Atenção-type governs aliasing até em condições extremas (FLAME)
+- **C3 (Spatial robustness):** Complementa validação cross-domain
+- **C4 (Routing):** Adaptativo routing em cenários críticos (surveillance, emergency)
+
+**Timeline:** ~2 meses de processamento (paralelo com escrita + compilation)
+
+**Impact:** 10 datasets + 8 architectures = narrativa muito mais forte para ACCV
+
+---
+
+## Próximos Passos (Prioridade)
+
+### Curto prazo (próx. 1-2 semanas):
 1. **Compilar PDF** — via Overleaf ou `pdflatex` local (não há compilador no cluster)
-2. **Verificar figuras** — `paper/images/main_fig5_spatial_resolution.pdf` precisa refletir dados corretos (8 modelos, SSv2, sem retraining)
-3. **P3 retraining** (quando cluster liberar) — rodar com `--partition=cenvalarc.gpu`, batch=64, para dados limpos; se terminar antes da deadline, pode adicionar tabela ao supplementary
-4. **Polimento final** — abstract word count, page count, references check
+2. **Verificar figuras** — `paper/images/main_fig5_spatial_resolution.pdf` reflete dados corretos (8 modelos, SSv2, sem retraining)
+3. **Polimento draft** — abstract word count, page count, references check
+
+### Médio prazo (quando cluster liberar):
+4. **P3 retraining 336px** — rodar com `--partition=cenvalarc.gpu`, batch=64, daemon pronto em `scripts/accv2026/submit_p3_336px_2gpu.sh`
+5. **Começar processamento FLAME** — dataset menor, prioridade 1 para autonomous evacuation validation
+
+### Longo prazo (pós-deadline ACCV):
+6. **Ego4D + UCF-Crime** — processar em paralelo enquanto paper está em review
+7. **Atualizar paper com 10 datasets** — versão estendida para journal (aceitação esperada ACCV → versão journal com datasets extras)
