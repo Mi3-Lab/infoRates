@@ -22,23 +22,42 @@ INPUT_SIZE="${INPUT_SIZE:?INPUT_SIZE must be set}"   # e.g. 112 or 224
 # Batch sizes safe for L40s (48GB) and H200 (141GB) — whichever is assigned
 # L40s = 48GB, H200 = 141GB. These values work on L40s; H200 can go higher.
 if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" ]]; then
-    BATCH_SIZE=64    # CNN: torch.compile @ 224px needs 64 for A100 (40GB), 128 needs H200 (141GB)
     EPOCHS=10
     SCRIPT="train_torchvision"
-    export TORCH_COMPILE_DISABLE=1  # Disable torch.compile for P3 — avoids OOM on A100
+    export TORCH_COMPILE_DISABLE=1  # Disable torch.compile for P3
+    # Batch size: depends on GPU type (A100=40GB, L40=48GB, H200=141GB)
+    if [[ "$INPUT_SIZE" -le 160 ]]; then
+        BATCH_SIZE=64
+    else  # 224px or 336px
+        # Try to detect GPU type from environment or use conservative default
+        if [[ "$SLURM_JOB_PARTITION" == "gpu" ]]; then
+            BATCH_SIZE=48    # A100: 40GB, batch=48 is tight @ 336px
+        else
+            BATCH_SIZE=64    # H200/L40: batch=64 is safe
+        fi
+    fi
 elif [[ "$MODEL" == "slowfast_r50" ]]; then
-    BATCH_SIZE=32    # SlowFast dual-path: heavier memory, safe on L40s
     EPOCHS=10
     SCRIPT="train_slowfast"
+    # SlowFast is memory-intensive due to dual-path
+    if [[ "$INPUT_SIZE" -le 160 ]]; then
+        BATCH_SIZE=48
+    else  # 224px or 336px
+        if [[ "$SLURM_JOB_PARTITION" == "gpu" ]]; then
+            BATCH_SIZE=24    # A100: very tight @ 336px
+        else
+            BATCH_SIZE=32    # H200/L40: safer
+        fi
+    fi
 elif [[ "$MODEL" == "videomamba" ]]; then
-    BATCH_SIZE=32    # SSM: safe on L40s
+    BATCH_SIZE=48    # SSM: safe on L40s
     EPOCHS=10
     SCRIPT="train_videomamba"
     source .venv_mamba/bin/activate
     export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
 else
     # timesformer, vivit, videomae
-    BATCH_SIZE=32    # Transformers: safe on L40s (48GB)
+    BATCH_SIZE=48    # Transformers: safe on L40s (48GB)
     EPOCHS=10
     SCRIPT="train_transformers"
 fi

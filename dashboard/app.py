@@ -165,7 +165,7 @@ page = st.sidebar.radio("", [
     "🌀 Spectral Analysis",
     "⏱ Clip Duration",
     "🔀 Routing & Efficiency",
-    "🖼 Spatial Aliasing (P3)",
+    "🖼 Spatial Resolution",
     "🎯 Architecture Recommender",
 ])
 
@@ -189,7 +189,8 @@ if page == "🏠 Overview & TDS":
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")
     c2.metric("Datasets", "7", "4 semantic domains")
     c3.metric("Eval configs", "1,400", "coverage × stride grid")
-    c4.metric("P3 checkpoints", f"{len(df_p3)}/224", "resolution retraining")
+    n_res = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
+    c4.metric("Spatial configs", f"{n_res}", "cross-resolution evaluation")
     st.divider()
 
     # TDS bar chart from real data
@@ -751,24 +752,33 @@ elif page == "🔀 Routing & Efficiency":
 
 
 # =============================================================================
-# 🖼 SPATIAL ALIASING (P3)
+# 🖼 SPATIAL RESOLUTION
 # =============================================================================
-elif page == "🖼 Spatial Aliasing (P3)":
-    st.title("Spatial Aliasing & Resolution Retraining (P3)")
+elif page == "🖼 Spatial Resolution":
+    st.title("Spatial Aliasing — Cross-Resolution Evaluation")
+    st.markdown(
+        "Each model is evaluated at 5 resolutions (96–336px) **without retraining**. "
+        "The same attention-type split that governs temporal robustness also governs spatial robustness."
+    )
 
     if df_p3.empty:
-        st.warning("P3 logs not found or no completed checkpoints.")
+        st.warning("Spatial resolution results not found.")
         st.stop()
 
-    st.sidebar.subheader("Settings")
-    sel_ds_p3 = st.sidebar.selectbox("Dataset", sorted(df_p3["dataset"].unique()),
-                                      format_func=lambda x: DS_LABELS.get(x, x), key="p3_ds")
-    sel_mods_p3 = st.sidebar.multiselect("Models", sorted(df_p3["model_name"].dropna().unique()),
-                                          default=sorted(df_p3["model_name"].dropna().unique()), key="p3_mods")
+    # Sidebar filters
+    st.sidebar.subheader("Filters")
+    sel_ds_p3 = st.sidebar.selectbox(
+        "Dataset", sorted(df_p3["dataset"].unique()),
+        format_func=lambda x: DS_LABELS.get(x, x), key="p3_ds"
+    )
+    sel_mods_p3 = st.sidebar.multiselect(
+        "Models", sorted(df_p3["model_name"].dropna().unique()),
+        default=sorted(df_p3["model_name"].dropna().unique()), key="p3_mods"
+    )
 
     sub = df_p3[(df_p3.dataset == sel_ds_p3) & df_p3.model_name.isin(sel_mods_p3)]
 
-    # Get native E1 accuracy for each model
+    # Native accuracy = sweep at stride=1, coverage=100% (each model's own training resolution)
     native_acc = {}
     if not df_sw.empty:
         e1_sub = df_sw[(df_sw.dataset == sel_ds_p3) & (df_sw.coverage == 100) & (df_sw.stride == 1)]
@@ -776,69 +786,137 @@ elif page == "🖼 Spatial Aliasing (P3)":
             row = e1_sub[e1_sub.model == mk]
             if not row.empty:
                 native_acc[mk] = row["acc"].values[0]
+    # Native resolution per model (training resolution)
+    NATIVE_RES = {
+        "r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112, "slowfast_r50": 224,
+        "timesformer": 224, "vivit": 224, "videomae": 224, "videomamba": 224,
+    }
 
+    # ── Main chart: accuracy vs resolution ──
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Retrained accuracy vs resolution")
+        st.subheader("Accuracy vs. resolution")
         fig = go.Figure()
         for mdl_name, grp in sub.groupby("model_name"):
-            mk = {v:k for k,v in MODEL_NAMES.items()}.get(mdl_name)
-            color = FAM_COLOR.get(FAMILIES.get(mk,"CNN"), "#999")
+            mk = {v: k for k, v in MODEL_NAMES.items()}.get(mdl_name)
+            fam = FAMILIES.get(mk, "CNN")
+            color = FAM_COLOR.get(fam, "#999")
+            dash = "solid" if fam in ("Transformer", "SSM") else "dot"
             grp = grp.sort_values("res")
             fig.add_trace(go.Scatter(
                 x=grp["res"], y=grp["acc"],
-                mode="lines+markers", name=f"{mdl_name} (retrained)",
-                line=dict(color=color, width=2), marker=dict(size=9),
-                hovertemplate=f"<b>{mdl_name}</b><br>%{{x}}px → %{{y:.1f}}%",
+                mode="lines+markers", name=mdl_name,
+                line=dict(color=color, width=2.5, dash=dash),
+                marker=dict(size=9),
+                hovertemplate=f"<b>{mdl_name}</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
             ))
+            # Native accuracy reference (horizontal dashed line)
             if mk in native_acc:
                 nat = native_acc[mk]
+                native_res = NATIVE_RES.get(mk, 224)
                 res_range = [grp["res"].min(), grp["res"].max()]
                 fig.add_trace(go.Scatter(
                     x=res_range, y=[nat, nat],
-                    mode="lines", name=f"{mdl_name} (native)",
-                    line=dict(color=color, dash="dot", width=1),
-                    showlegend=True,
+                    mode="lines", name=f"{mdl_name} native ({native_res}px)",
+                    line=dict(color=color, dash="dash", width=1),
+                    showlegend=False,
                 ))
-        fig.update_xaxes(title="Training resolution (px)", tickvals=[96,112,160,224,336])
+                # Star marker at native resolution
+                fig.add_trace(go.Scatter(
+                    x=[native_res], y=[nat],
+                    mode="markers", name=f"native",
+                    marker=dict(symbol="star", size=14, color=color),
+                    showlegend=False,
+                    hovertemplate=f"<b>{mdl_name} native</b><br>{native_res}px → {nat:.1f}%<extra></extra>",
+                ))
+        fig.update_xaxes(title="Evaluation resolution (px)", tickvals=[96, 112, 160, 224, 336])
         fig.update_yaxes(title="Top-1 (%)")
-        fig.update_layout(height=400, legend=dict(orientation="h",y=-0.3),
-                          margin=dict(b=80), title=f"{DS_LABELS.get(sel_ds_p3,'')}")
+        fig.update_layout(
+            height=420,
+            legend=dict(orientation="h", y=-0.35),
+            margin=dict(b=90),
+            title=DS_LABELS.get(sel_ds_p3, sel_ds_p3),
+            annotations=[dict(
+                x=0.5, y=1.04, xref="paper", yref="paper",
+                text="Dashed = CNN  |  Solid = Transformer/SSM  |  Native ref = horizontal dash",
+                showarrow=False, font=dict(size=10, color="gray")
+            )]
+        )
         st.plotly_chart(fig, use_container_width=True)
 
+    # ── Delta table ──
     with col2:
-        st.subheader("Δ vs native resolution")
+        st.subheader("Δ vs. native resolution")
         rows_tbl = []
         for _, r in sub.iterrows():
-            mk = {v:k for k,v in MODEL_NAMES.items()}.get(r["model_name"])
+            mk = {v: k for k, v in MODEL_NAMES.items()}.get(r["model_name"])
             nat = native_acc.get(mk)
-            delta = r["acc"] - nat if nat else None
+            delta = r["acc"] - nat if nat is not None else None
             rows_tbl.append({
-                "Model": r["model_name"], "Res": f"{r['res']}px",
-                "Retrained": f"{r['acc']:.1f}%",
-                "Native": f"{nat:.1f}%" if nat else "—",
-                "Δ": f"{delta:+.1f}pp" if delta else "—",
-                "✓": "✅" if (delta and delta > 0) else ("❌" if delta else "—"),
+                "Model": r["model_name"],
+                "Res": f"{r['res']}px",
+                "Acc": f"{r['acc']:.1f}%",
+                "Native": f"{nat:.1f}%" if nat is not None else "—",
+                "Δ": f"{delta:+.1f}pp" if delta is not None else "—",
             })
         if rows_tbl:
-            tbl = pd.DataFrame(rows_tbl).sort_values(["Model","Res"])
+            tbl = pd.DataFrame(rows_tbl).sort_values(["Model", "Res"])
             st.dataframe(tbl.reset_index(drop=True), use_container_width=True)
 
-            n_beats = sum(1 for r in rows_tbl if r["✓"] == "✅")
-            n_total = sum(1 for r in rows_tbl if r["✓"] != "—")
-            st.metric("Beats native", f"{n_beats}/{n_total}",
-                      f"{n_beats/n_total*100:.0f}% of completed checkpoints" if n_total else "")
+    st.divider()
 
-    st.subheader("P3 completion status")
-    prog_df = pd.DataFrame({"Model": [MODEL_NAMES[k] for k in MODEL_KEYS],
-                             "Done": [len(df_p3[df_p3.model==k]) for k in MODEL_KEYS],
-                             "Total": [28]*8})
-    prog_df["Progress"] = prog_df["Done"].astype(str) + "/" + prog_df["Total"].astype(str)
-    prog_df["Pct"] = (prog_df["Done"]/prog_df["Total"]*100).round(0)
-    st.dataframe(prog_df[["Model","Progress","Pct"]].rename(columns={"Pct":"% done"}),
-                 use_container_width=True)
-    total_done = len(df_p3.drop_duplicates(["model","dataset","res"]))
-    st.progress(total_done/224, text=f"P3 overall: {total_done}/224 checkpoints ({total_done/224*100:.0f}%)")
+    # ── Architecture split summary ──
+    st.subheader("CNN vs. Transformer/SSM split across all datasets")
+    st.caption("Mean accuracy at each resolution, grouped by architecture family.")
+
+    if not df_p3.empty:
+        df_p3_fam = df_p3.copy()
+        df_p3_fam["family"] = df_p3_fam["model"].map(
+            lambda m: FAMILIES.get(m, "CNN")
+        ).map(lambda f: "CNN" if f in ("CNN", "Dual-CNN") else "Transformer / SSM")
+
+        fam_summary = (
+            df_p3_fam.groupby(["family", "res"])["acc"]
+            .agg(["mean", "std", "count"])
+            .reset_index()
+        )
+
+        fig2 = go.Figure()
+        colors = {"CNN": "#e74c3c", "Transformer / SSM": "#2980b9"}
+        for fam, grp in fam_summary.groupby("family"):
+            grp = grp.sort_values("res")
+            fig2.add_trace(go.Scatter(
+                x=grp["res"], y=grp["mean"],
+                error_y=dict(type="data", array=grp["std"].tolist(), visible=True),
+                mode="lines+markers", name=fam,
+                line=dict(color=colors.get(fam, "#999"), width=3),
+                marker=dict(size=10),
+                hovertemplate=f"<b>{fam}</b><br>%{{x}}px: %{{y:.1f}}% ± %{{error_y.array:.1f}}<extra></extra>",
+            ))
+        fig2.update_xaxes(title="Evaluation resolution (px)", tickvals=[96, 112, 160, 224, 336])
+        fig2.update_yaxes(title="Mean Top-1 (%)")
+        fig2.update_layout(
+            height=380,
+            legend=dict(orientation="h", y=-0.2),
+            title="All datasets · All models (mean ± std)"
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+        # Key stats
+        cnn_96 = fam_summary[(fam_summary.family == "CNN") & (fam_summary.res == 96)]["mean"]
+        cnn_224 = fam_summary[(fam_summary.family == "CNN") & (fam_summary.res == 224)]["mean"]
+        tr_96 = fam_summary[(fam_summary.family == "Transformer / SSM") & (fam_summary.res == 96)]["mean"]
+        tr_224 = fam_summary[(fam_summary.family == "Transformer / SSM") & (fam_summary.res == 224)]["mean"]
+
+        mc1, mc2, mc3 = st.columns(3)
+        if not cnn_96.empty and not cnn_224.empty:
+            mc1.metric("CNN: 96px vs native", f"{cnn_96.values[0]:.1f}% vs {cnn_224.values[0]:.1f}%",
+                       f"{cnn_96.values[0]-cnn_224.values[0]:+.1f}pp")
+        if not tr_96.empty and not tr_224.empty:
+            mc2.metric("Transformer/SSM: 96px vs native", f"{tr_96.values[0]:.1f}% vs {tr_224.values[0]:.1f}%",
+                       f"{tr_96.values[0]-tr_224.values[0]:+.1f}pp")
+        mc3.metric("Configs evaluated", f"{len(df_p3.drop_duplicates(['model','dataset','res']))}",
+                   "8 models × 7 datasets × 5 res")
 
 
 # =============================================================================

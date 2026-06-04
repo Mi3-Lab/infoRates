@@ -41,12 +41,11 @@ We include:
 (S4) action sensitivity taxonomy detail;
 (S5) entropy routing curves for all models;
 (S6) clip duration analysis;
-(S7) full P3 retraining results;
-(S8) full E7 routing results per model/dataset;
-and (S9) implementation details.
+(S7) spectral correlation detail;
+and (S8) implementation details.
 
-% ── S1: Full E1 heatmaps ──────────────────────────────────────────────────────
-\section{Full Coverage$\times$Stride Heatmaps (\texorpdfstring{$\mathcal{E}_1$}{E1})}
+% ── S1: Full heatmaps ─────────────────────────────────────────────────────────
+\section{Full Coverage$\times$Stride Heatmaps}
 \label{sec:sup_heatmaps}
 
 Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete
@@ -145,7 +144,7 @@ Column order (stride): 1, 2, 4, 8, 16.
 \end{figure}
 
 % ── S2: Levene variance ───────────────────────────────────────────────────────
-\section{Levene Variance Inflation Analysis (\texorpdfstring{$\mathcal{E}_2$}{E2})}
+\section{Levene Variance Inflation Analysis}
 \label{sec:sup_levene}
 
 Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 (x-axis)
@@ -194,7 +193,7 @@ VideoMAE    & UCF-101      & 0.094 & 0.121 & 1.29$\times$ & 0.0239 \\
 \end{table}
 
 % ── S3: Full ANOVA tables ─────────────────────────────────────────────────────
-\section{Full ANOVA Effect Size Tables (\texorpdfstring{$\mathcal{E}_4$}{E4})}
+\section{Full ANOVA Effect Size Tables}
 \label{sec:sup_anova}
 
 Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid
@@ -250,7 +249,7 @@ SF     & .51 & .29 & .51 & .33 & .44 & .36 & .55 & .39 & .39 & .46 & .67 & .30 &
 \end{table}
 
 % ── S4: Taxonomy ──────────────────────────────────────────────────────────────
-\section{Action Sensitivity Taxonomy (\texorpdfstring{$\mathcal{E}_5$}{E5})}
+\section{Action Sensitivity Taxonomy}
 \label{sec:sup_taxonomy}
 
 \begin{figure}[t]
@@ -291,8 +290,8 @@ UCF-101       & 101 &  1.4pp &  7.5pp & 35 & 31 \\
 \end{tabular}
 \end{table}
 
-% ── S5: E7 routing curves ─────────────────────────────────────────────────────
-\section{Entropy Routing Curves — All Models (\texorpdfstring{$\mathcal{E}_7$}{E7})}
+% ── S5: Routing curves ────────────────────────────────────────────────────────
+\section{Entropy Routing Curves — All Models}
 \label{sec:sup_routing}
 
 Figure~\ref{fig:routing_all} shows accuracy vs.\ average frames for all 8 architectures
@@ -311,12 +310,12 @@ Dashed horizontal lines indicate fixed-budget baselines (4f, 16f) and the oracle
   \label{fig:routing_all}
 \end{figure}
 
-Table~\ref{tab:routing_full} provides the full E7 routing results across all models
+Table~\ref{tab:routing_full} provides the full entropy routing results across all models
 and datasets at the optimal threshold (avg frames $\leq 8$).
 
 \begin{table}[t]
 \centering
-\caption{E7 entropy routing: best accuracy at avg $\leq8$ frames per model/dataset.
+\caption{Entropy routing: best accuracy at avg $\leq8$ frames per model/dataset.
   Values are Top-1 accuracy (\%). Bold = highest per column. † AUTSL excluded
   for VideoMamba (feature collapse).}
 \label{tab:routing_full}
@@ -340,7 +339,7 @@ VideoMamba   & †    & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 54.4 \\
 \end{table}
 
 % ── S6: Clip duration ─────────────────────────────────────────────────────────
-\section{Clip Duration Analysis (\texorpdfstring{$\mathcal{E}_{10}$}{E10})}
+\section{Clip Duration Analysis}
 \label{sec:sup_duration}
 
 \begin{figure}[t]
@@ -356,85 +355,8 @@ VideoMamba   & †    & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 54.4 \\
   \label{fig:duration}
 \end{figure}
 
-% ── S7: P3 full results ───────────────────────────────────────────────────────
-\section{Resolution Retraining Results (P3)}
-\label{sec:sup_p3}
-
-Table~\ref{tab:p3_full} provides all available P3 checkpoint results (current as of
-paper submission; ongoing retraining in progress for Transformers and VideoMamba).
-Each entry shows the best validation accuracy from 10 epochs of training.
-``Native'' accuracy is from the E1 sweep at stride=1, coverage=100\%.
-
-\textbf{Key patterns:}
-\begin{itemize}[itemsep=2pt]
-\item \textbf{96px consistently beats native for CNNs} across most datasets:
-  regularization effect is strongest on background-noisy datasets (EPIC-Kitchens,
-  DriveAct) and weaker on datasets requiring fine spatial detail (AUTSL, HMDB-51).
-\item \textbf{160px also beats native} for R3D-18 and MC3-18, suggesting the
-  regularization effect persists across a range of sub-native resolutions.
-\item \textbf{AUTSL is the exception}: sign language requires fine handshape
-  discrimination; very small resolutions ($<$96px) would likely degrade further.
-\end{itemize}
-
-\begin{table}[t]
-\centering
-\caption{P3 retraining: best Top-1 val accuracy (\%) at each resolution.
-  Native = accuracy from E1 (stride=1, cov=100\%). Bold = beats native.
-  Entries marked ``—'' not yet completed.}
-\label{tab:p3_full}
-\scriptsize\tabtight
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{ll r rrrrr}
-\toprule
-\multirow{2}{*}{Model} & \multirow{2}{*}{Dataset}
-  & \multirow{2}{*}{Native}
-  & \multicolumn{4}{c}{Retrained at resolution}\\
-\cmidrule(lr){4-7}
-  & & & 96px & 112px & 160px & 224px & 336px \\
-\midrule
-\multirow{7}{*}{R3D-18}
-  & UCF-101      & 81.2\% & \textbf{86.5\%} & — & \textbf{87.4\%} & — & — \\
-  & SSv2         & 37.1\% & \textbf{45.2\%} & — & \textbf{45.8\%} & — & — \\
-  & HMDB-51      & 80.3\% & 78.3\%           & — & 78.7\%           & — & — \\
-  & Diving-48    & 28.8\% & \textbf{31.0\%} & — & \textbf{37.2\%} & — & — \\
-  & AUTSL        & 75.0\% & 69.5\%           & — & \textbf{82.7\%} & — & — \\
-  & DriveAct     & 68.3\% & \textbf{80.5\%} & — & \textbf{83.2\%} & — & — \\
-  & EPIC-Kitchen & 37.2\% & \textbf{58.0\%} & — & \textbf{59.5\%} & — & — \\
-\midrule
-\multirow{7}{*}{MC3-18}
-  & UCF-101      & 85.4\% & 83.9\%           & — & 84.5\%           & — & — \\
-  & SSv2         & 33.6\% & \textbf{42.4\%} & — & \textbf{42.8\%} & — & — \\
-  & HMDB-51      & 78.6\% & 76.9\%           & — & 76.1\%           & — & — \\
-  & Diving-48    & 31.6\% & \textbf{40.0\%} & — & \textbf{45.7\%} & — & — \\
-  & AUTSL        & 63.7\% & 53.3\%           & — & \textbf{69.6\%} & — & — \\
-  & DriveAct     & 69.0\% & \textbf{74.9\%} & — & \textbf{79.2\%} & — & — \\
-  & EPIC-Kitchen & 36.2\% & \textbf{50.8\%} & — & 46.2\%           & — & — \\
-\midrule
-\multirow{3}{*}{R2+1D}
-  & UCF-101      & 88.6\% & \textbf{89.8\%} & — & — & — & — \\
-  & SSv2         & 42.6\% & \textbf{49.6\%} & — & — & — & — \\
-  & HMDB-51      & 73.1\% & \textbf{84.0\%} & — & — & — & — \\
-\midrule
-\multirow{7}{*}{SlowFast}
-  & UCF-101      & 87.6\% & \textbf{93.5\%} & \textbf{93.6\%} & \textbf{91.7\%} & — & — \\
-  & SSv2         & 49.5\% & \textbf{58.4\%} & —              & — & — & — \\
-  & HMDB-51      & 79.3\% & \textbf{85.8\%} & \textbf{71.0\%} & — & — & — \\
-  & Diving-48    & 50.5\% & \textbf{59.0\%} & \textbf{35.5\%} & — & — & — \\
-  & AUTSL        & 82.3\% & \textbf{82.8\%} & 63.1\%          & \textbf{84.0\%} & — & — \\
-  & DriveAct     & 72.5\% & \textbf{82.7\%} & \textbf{76.7\%} & — & — & — \\
-  & EPIC-Kitchen & 39.4\% & \textbf{62.6\%} & —              & — & — & — \\
-\midrule
-VideoMAE & UCF-101 & 95.4\% & — & — & — & — & 90.6\% \\
-\midrule
-Transformers & All & — & \multicolumn{4}{c}{\textit{In progress (training ongoing)}} & \\
-VideoMamba   & All & — & \multicolumn{4}{c}{\textit{In progress (training ongoing)}} & \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-% ── S8: Spectral correlation ──────────────────────────────────────────────────
-\section{Spectral Correlation Detail (\texorpdfstring{$\mathcal{E}_3$}{E3})}
+% ── S7: Spectral correlation ──────────────────────────────────────────────────
+\section{Spectral Correlation Detail}
 \label{sec:sup_spectral}
 
 We estimated per-class temporal frequency demand using optical-flow magnitude
@@ -485,8 +407,8 @@ EPIC-Kitchens & --0.002 & 0.985 & No \\
 \paragraph{Hardware.}
 All training experiments were conducted on an HPC cluster with NVIDIA A100 (40GB)
 and H200 NVL (141GB) GPUs using CUDA 13.2.
-E1 evaluation (1,400 configurations) was parallelized across 8 nodes using a
-custom Slurm auto-submitter.
+The temporal-sweep evaluation (1,400 configurations) was parallelized across 8 nodes
+using a custom Slurm auto-submitter.
 
 \paragraph{Training hyperparameters.}
 All models were fine-tuned for 10 epochs.

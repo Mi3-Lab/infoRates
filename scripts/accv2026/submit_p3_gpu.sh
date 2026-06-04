@@ -61,5 +61,9 @@ while true; do
         done
     done
 
-    [[ $submitted -eq 0 ]] && sleep 60 || sleep 5
+    if [[ $submitted -eq 0 ]]; then
+        sleep 30  # shorter sleep if no progress
+    else
+        sleep 2   # quick retry if we just submitted
+    fi
 done

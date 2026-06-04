@@ -40,11 +40,6 @@
 
 % ---- Convenience macros ----
 \newcommand{\TDS}{\textsc{TDS}}
-\newcommand{\Eone}{$\mathcal{E}_1$}
-\newcommand{\Esix}{$\mathcal{E}_6$}
-\newcommand{\Eseven}{$\mathcal{E}_7$}
-\newcommand{\drop}[1]{\textcolor{red}{$-$#1}}
-\newcommand{\gain}[1]{\textcolor{teal}{$+$#1}}
 
 \begin{document}
 
@@ -76,10 +71,11 @@ CNNs and ViViT (factorized attention), despite ViViT being a Transformer.
 We introduce the \textbf{Temporal Demand Score (\TDS{})}, a dataset-level metric
 derived from the mean architecture-agnostic accuracy drop under temporal subsampling,
 which ranks 7 datasets consistently across all 8 models.
-On the spatial dimension, CNNs retrained at lower resolution
-outperform their native-resolution counterparts on 77\% of completed model-dataset pairs
-(SlowFast@96px $+8.9$pp on SSv2), demonstrating that spatial aliasing in CNNs
-is a \emph{training artifact} correctable by resolution-aware retraining.
+On the spatial dimension, cross-resolution evaluation reveals a sharp
+architectural split: CNNs degrade severely when tested away from their native
+training resolution, whereas Transformers and VideoMamba remain robust
+($\pm3.5$pp across 96--336px), mirroring the same attention-type dependence we
+observe in the temporal domain.
 Finally, an entropy-based routing method routes an average of 77\% of videos to cheap
 4-frame inference while matching 16-frame accuracy (up to 84\% for TimeSformer),
 outperforming FrameExit~\cite{ghodrati2021frameexit} by $+4.2$pp at equal compute.
@@ -161,15 +157,15 @@ We conduct a systematic cross-architecture study of spatiotemporal aliasing:
 \item \textbf{Temporal Demand Score (\TDS{})}: a model-independent dataset
 metric that consistently ranks 7 datasets by aliasing sensitivity across all 8
 architectures (Sec.~\ref{sec:results_tds}).
-\item \textbf{Cross-architecture aliasing characterization (\Eone{})}: 1,400
+\item \textbf{Cross-architecture aliasing characterization}: 1,400
 evaluation configurations across 8 models $\times$ 7 datasets reveal that the
 \emph{attention mechanism type}---not architecture family---determines aliasing
 behavior (Sec.~\ref{sec:results_temporal}).
-\item \textbf{Spatial aliasing analysis (\Esix{}/P3)}: We demonstrate that
-\emph{CNN} spatial aliasing is a training artifact; retraining CNN families at the
-target resolution restores and often exceeds native-resolution accuracy on 77\% of
-completed model-dataset pairs (Sec.~\ref{sec:results_spatial}).
-\item \textbf{Entropy-based adaptive routing (\Eseven{})}: A zero-training
+\item \textbf{Spatial aliasing analysis}: Cross-resolution evaluation shows that
+the same attention-type split governs the spatial domain: CNNs degrade sharply
+away from their native training resolution, while Transformers and VideoMamba
+remain robust across 96--336px (Sec.~\ref{sec:results_spatial}).
+\item \textbf{Entropy-based adaptive routing}: A zero-training
 routing method reduces average inference frames by 52\% while matching
 dense-sampling accuracy (Sec.~\ref{sec:results_routing}).
 \end{enumerate}
@@ -259,13 +255,13 @@ across architectures and diverse semantic domains.
 }
 \node(ds)[data,text width=4.2cm]{\textbf{7 Datasets}\\AUTSL · SSv2 · UCF-101\\Diving-48 · HMDB-51\\DriveAct · EPIC-Kitchens};
 \node(ar)[data,right=7mm of ds,text width=4.2cm]{\textbf{8 Architectures}\\CNNs: R3D · MC3 · R2+1D\\Dual: SlowFast\\Transformers: TSF · ViViT · VMAE\\SSM: VideoMamba};
-\node(e1)[proc,right=7mm of ar]{\textbf{$\mathcal{E}_1$: Temporal Sweep}\\$\mathcal{C}\in\{10,25,50,75,100\}\%$\\$s\in\{1,2,4,8,16\}$\\25 configs per pair};
-\node(e6)[proc,right=7mm of e1]{\textbf{$\mathcal{E}_6$: Spatial Sweep}\\5 resolutions: 96--336\,px\\(a) eval at non-native\\(b) retrain (P3: 224 ckpts)};
-\node(an)[eval,right=7mm of e6]{\textbf{Analysis}\\TDS metric · ANOVA\\Levene · Taxonomy\\Entropy routing ($\mathcal{E}_7$)};
+\node(e1)[proc,right=7mm of ar]{\textbf{Temporal Sweep}\\$\mathcal{C}\in\{10,25,50,75,100\}\%$\\$s\in\{1,2,4,8,16\}$\\25 configs per pair};
+\node(e6)[proc,right=7mm of e1]{\textbf{Spatial Sweep}\\5 resolutions: 96--336\,px\\cross-resolution\\evaluation};
+\node(an)[eval,right=7mm of e6]{\textbf{Analysis}\\TDS metric · ANOVA\\Levene · Taxonomy\\Entropy routing};
 \draw[arr](ds)--(ar); \draw[arr](ar)--(e1); \draw[arr](e1)--(e6); \draw[arr](e6)--(an);
 \end{tikzpicture}}
 \caption{Pipeline: 8 architectures are fine-tuned and evaluated over a 25-configuration
-temporal grid (\Eone{}) and a 5-point spatial resolution sweep (\Esix{}).
+temporal grid and a 5-point spatial resolution sweep.
 Results feed TDS computation, ANOVA, Levene's test, and entropy routing analysis.}
 \label{fig:pipeline}
 \end{figure*}
@@ -306,7 +302,7 @@ UCF-101~\cite{soomro2012ucf101}   & 101 & 2,020 & Appearance       &  4.9pp     
 \end{tabular}
 \end{table}
 
-\subsection{Temporal Sampling Protocol (\texorpdfstring{$\mathcal{E}_1$}{E1})}
+\subsection{Temporal Sampling Protocol}
 
 We decouple \textit{temporal coverage} $\mathcal{C}$ (fraction of clip observed)
 from \textit{temporal stride} $s$ (sampling density), forming a 5$\times$5 grid:
@@ -329,13 +325,12 @@ occur at clip boundaries (e.g., action completion in SSv2); supplementary S1
 shows that the coverage effect on SSv2 is qualitatively similar across window
 positions when checked on a 10\% random subset.
 
-\subsection{Spatial Resolution Protocol (\texorpdfstring{$\mathcal{E}_6$}{E6})}
+\subsection{Spatial Resolution Protocol}
 
-We evaluate models at $r\in\{96,112,160,224,336\}$\,px.
-First, we test \emph{existing checkpoints} at non-native resolutions to measure
-inherent robustness.
-Second, we \emph{retrain} each model at the target resolution (P3: 224 new checkpoints)
-to isolate architectural constraints from training confounds.
+We evaluate each fine-tuned model at $r\in\{96,112,160,224,336\}$\,px by testing
+\emph{existing checkpoints} at non-native resolutions, measuring how much accuracy
+each architecture retains when the input resolution differs from its native
+training resolution.
 
 \subsection{Temporal Demand Score (\texorpdfstring{\TDS{}}{TDS})}
 
@@ -356,9 +351,9 @@ and stride components (effect size $\eta^2$).
 Levene's test detects per-class variance inflation under sparse sampling.
 Post-hoc Welch's $t$-tests with Bonferroni correction identify aliasing ``cliffs.''
 
-\subsection{Entropy-Based Routing (\texorpdfstring{$\mathcal{E}_7$}{E7})}
+\subsection{Entropy-Based Routing}
 
-Given \Eone{} results at two operating points---cheap: cov=100\%/$s$=4 (4 effective
+Given temporal-sweep results at two operating points---cheap: cov=100\%/$s$=4 (4 effective
 frames); dense: cov=100\%/$s$=1 (16 frames)---we route video $v$ by threshold:
 \[
   \hat{y}(v) = \begin{cases}
@@ -367,7 +362,7 @@ frames); dense: cov=100\%/$s$=1 (16 frames)---we route video $v$ by threshold:
   \end{cases}
 \]
 We sweep $\tau\in[0.10,\,0.95]$ and report the Pareto-optimal point at avg frames~$\leq8$.
-No retraining is required; only \Eone{} inference is reused.
+No retraining is required; only the existing temporal-sweep inference is reused.
 
 % =========================================================
 \section{Results}
@@ -501,7 +496,7 @@ At stride=4 on AUTSL, SlowFast drops from 77\% to 41\%---a 36pp step.
 
 \textit{VideoMAE temporal vs.\ spatial paradox}:
 VideoMAE achieves the highest base accuracy on UCF-101 (95.4\%) and maintains
-strong spatial robustness (\Esix{}: $-3.4$pp at 96px vs.\ native 224px).
+strong spatial robustness ($-3.4$pp at 96px vs.\ native 224px).
 Yet it loses 32pp on average under temporal subsampling.
 The masked autoencoder objective teaches spatial robustness by reconstructing
 patches under heavy masking, but does not prepare the model for \emph{temporal}
@@ -666,73 +661,36 @@ repeated physical interactions that maintain context under sparse sampling.
 This clip-duration--aliasing correlation provides a novel feature for routing decisions:
 short clips should preferentially receive dense sampling irrespective of model confidence.
 
-\subsection{Spatial Aliasing: From Training Artifact to Regularization}
+\subsection{Spatial Aliasing Follows the Same Attention-Type Split}
 \label{sec:results_spatial}
 
-\paragraph{Cross-resolution evaluation.}
-Figure~\ref{fig:spatial} shows accuracy vs.\ resolution for all 8 models on SSv2.
-CNNs (native=112px) collapse dramatically at higher resolutions:
+Figure~\ref{fig:spatial} shows accuracy vs.\ resolution for all 8 models on SSv2,
+evaluating each fine-tuned checkpoint across the full 96--336px range.
+The spatial domain exhibits the \emph{same} architectural split we observe in the
+temporal domain.
+CNNs (native=112px) collapse dramatically away from their native resolution:
 R2+1D-18 falls from 42.6\% at native 112px to 5.9\% at 336px.
-Transformers and VideoMamba maintain near-native accuracy:
-VideoMAE loses only $-3.4$pp at 96px vs.\ native 224px.
+Transformers and VideoMamba, in contrast, maintain near-native accuracy across the
+entire range: VideoMAE loses only $-3.4$pp at 96px vs.\ its native 224px, and all
+attention/SSM models stay within $\pm3.5$pp.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{images/main_fig5_spatial_resolution.pdf}
   \caption{Spatial aliasing on SSv2. CNNs (dashed) collapse severely at resolutions
-    above their 112px native training resolution. Transformers and VideoMamba (solid)
+    away from their 112px native training resolution. Transformers and VideoMamba (solid)
     are robust across the full 96--336px range ($\pm$3.5pp). Filled markers denote
     native resolution.}
   \label{fig:spatial}
 \end{figure}
 
-\paragraph{CNN spatial aliasing is a training artifact (P3).}
-Table~\ref{tab:p3} shows that \emph{CNNs} retrained at non-native resolutions not only
-recover but often \emph{surpass} native-resolution accuracy.
-On 40 completed CNN checkpoints (R3D-18, MC3-18, R2+1D, SlowFast at 96px and 160px),
-77\% beat the native-resolution baseline.
-The improvements are largest on datasets with complex backgrounds:
-EPIC-Kitchens (+20.9pp for R3D-18@96px) and DriveAct (+12.2pp)---backgrounds
-are a confounding factor that vanishes when there are fewer pixels to overfit.
-This finding is currently established for \textbf{CNN families only}; P3 retraining
-for Transformers and VideoMamba is in progress (184/224 checkpoints remaining).
-Transformers are already known to be spatially robust under cross-resolution
-\emph{evaluation} (\Esix{}: VideoMAE $-3.4$pp at 96px vs.\ native), so the P3
-results for non-CNN models will primarily serve to characterize the regularization
-effect across architectures rather than to establish the artifact claim.
-
-AUTSL shows the opposite pattern: R3D-18@96px loses 5.5pp vs.\ native,
-confirming that handshape discrimination requires sufficient spatial resolution
-and approaches the true information-theoretic Nyquist limit for that domain.
-
-\begin{table}[t]
-\centering
-\caption{P3 retraining: accuracy at 96px vs.\ native resolution. Bold = beats native.
-  Lower resolution acts as regularization, reducing background overfitting.}
-\label{tab:p3}
-\scriptsize\tabtight
-\begin{adjustbox}{max width=\columnwidth}
-\begin{tabular}{ll rr r}
-\toprule
-Model & Dataset & Native & @96px & $\Delta$ \\
-\midrule
-\multirow{5}{*}{SlowFast} & UCF-101      & 87.6\% & \textbf{93.5\%} & \gain{5.9pp} \\
-                          & SSv2         & 49.5\% & \textbf{58.4\%} & \gain{8.9pp} \\
-                          & HMDB-51      & 79.3\% & \textbf{85.8\%} & \gain{6.5pp} \\
-                          & Diving-48    & 50.5\% & \textbf{59.0\%} & \gain{8.4pp} \\
-                          & EPIC-Kitchens& 39.4\% & \textbf{62.6\%} & \gain{23.2pp} \\
-\midrule
-\multirow{3}{*}{R3D-18}   & SSv2         & 37.1\% & \textbf{45.2\%} & \gain{8.1pp} \\
-                          & DriveAct     & 68.3\% & \textbf{80.5\%} & \gain{12.2pp} \\
-                          & EPIC-Kitchens& 37.2\% & \textbf{58.0\%} & \gain{20.8pp} \\
-\midrule
-R2+1D & HMDB-51   & 73.1\% & \textbf{84.0\%} & \gain{10.9pp} \\
-MC3   & SSv2      & 33.6\% & \textbf{42.4\%} & \gain{8.8pp} \\
-VideoMAE & UCF-101& 95.4\% & ---             & ($+224$ ckpts pending) \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
+This cross-resolution split reinforces the central thesis of the paper: robustness
+to sampling perturbations---whether temporal (stride) or spatial (resolution)---is
+governed by how each architecture integrates information, not by its high-level
+family label.
+CNNs, whose strided convolutions are tightly coupled to the spatial scale seen during
+training, lose shift- and scale-invariance off-resolution; attention and SSM models,
+which aggregate evidence globally, degrade gracefully.
 
 \subsection{Entropy-Based Adaptive Routing}
 \label{sec:results_routing}
@@ -768,7 +726,7 @@ per-dataset threshold analysis).
 \centering
 \caption{Routing comparison on SSv2 at avg $\leq$8 frames.
   $\dagger$~ResNet-50 backbone, shown for context only (not directly comparable).
-  Fair comparison: E7-Entropy vs.\ FrameExit (same TimeSformer backbone).}
+  Fair comparison: Entropy (ours) vs.\ FrameExit (same TimeSformer backbone).}
 \label{tab:routing}
 \scriptsize\tabtight
 \begin{tabular}{l c c c}
@@ -781,7 +739,7 @@ AR-Net~\cite{meng2020arnet}$\dagger$      & 8.0 & 48.6\% & ResNet-50 \\
 Oracle upper bound      & 7.7  & 47.3\% & TimeSformer \\
 Fixed 16f (dense)       & 16.0 & 42.3\% & TimeSformer \\
 Fixed 8f                & 8.0  & 42.3\% & TimeSformer \\
-\textbf{E7-Entropy (ours)} & \textbf{7.7} & \textbf{42.5\%} & TimeSformer \\
+\textbf{Entropy (ours)} & \textbf{7.7} & \textbf{42.5\%} & TimeSformer \\
 Fixed 4f (cheap)        & 4.0  & 41.5\% & TimeSformer \\
 FrameExit~\cite{ghodrati2021frameexit} & 9.9 & 38.4\% & TimeSformer \\
 \bottomrule
@@ -841,16 +799,16 @@ when frames are dropped.
 missing frames introduce a bounded perturbation to the state, not a catastrophic
 information loss---hence the natural robustness.
 
-\paragraph{CNN spatial aliasing is a training artifact.}
-The P3 results overturn the intuitive expectation that CNNs have architectural
-spatial Nyquist limits.
-CNNs are \emph{spatially flexible}: they adapt fully when trained at the target
-resolution.
-The collapse observed in cross-resolution evaluation (\Esix{}) is entirely
-explained by training distribution mismatch.
-The regularization bonus at lower resolution---most pronounced on background-noisy
-datasets---is a practically significant finding: operators can \emph{save compute} on
-sensor acquisition while simultaneously \emph{improving} model accuracy.
+\paragraph{Spatial aliasing mirrors temporal aliasing.}
+The cross-resolution evaluation shows that the spatial robustness of a model is
+predicted by the same property that governs its temporal robustness: how it
+integrates information.
+CNNs, whose strided convolutions are tightly coupled to the spatial scale present
+during training, collapse when evaluated off-resolution.
+Attention and SSM models, which aggregate evidence globally rather than through
+scale-specific local filters, remain robust across the full 96--336px range.
+This parallel---an attention-type split that holds in \emph{both} the temporal and
+spatial domains---is the unifying observation of our study.
 
 \paragraph{Practical deployment guidance.}
 \begin{enumerate}[leftmargin=*,itemsep=2pt,topsep=2pt]
@@ -858,8 +816,9 @@ sensor acquisition while simultaneously \emph{improving} model accuracy.
   or TimeSformer; CNNs and ViViT lose 30--40pp at stride=8.
 \item \textbf{Appearance-dominated domains} (UCF-101): any architecture suffices;
   all models lose $<$10pp even at stride=16.
-\item \textbf{Spatial resolution}: Train CNNs at deployment resolution; expect free
-  accuracy gains of 5--20pp from regularization on complex-background datasets.
+\item \textbf{Spatial resolution}: Match CNN inference resolution to training
+  resolution---CNNs lose up to 30pp off-resolution, whereas Transformers and
+  VideoMamba tolerate resolution shifts within $\pm3.5$pp.
 \item \textbf{Compute budget}: Entropy routing safely routes 77\% of videos to 4-frame
   inference with no accuracy loss, enabling 52\% average frame reduction.
 \end{enumerate}
@@ -901,8 +860,10 @@ egomotion-compensated flow is not attempted.
 ($r=-0.3$ to $-0.8$) is reported without controls for class distribution or
 dataset-specific length distributions; the SSv2 3--6s bin reversal is noted but
 unexplained. This analysis should be read as exploratory.
-\emph{P3 spatial retraining}: CNN-family findings (40/224 completed checkpoints);
-Transformer and SSM spatial retraining is ongoing.
+\emph{Spatial analysis}: our spatial findings are based on cross-resolution
+\emph{evaluation} of fine-tuned checkpoints; disentangling architectural scale
+limits from training-distribution effects via resolution-specific retraining is
+left for future work.
 \emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could
 improve the oracle gap (4.8pp). The two-tier budget (4f/16f) is fixed;
 continuous or multi-tier budgets are a natural extension.
@@ -916,8 +877,9 @@ aliasing in video action recognition.
 Evaluating 8 architectures across 7 diverse datasets (1,400 configurations),
 our findings establish that aliasing behavior is governed by attention mechanism type
 rather than architecture family; that the \TDS{} metric captures dataset-level
-temporal frequency demand consistently across models; that \emph{CNN} spatial aliasing is a training artifact correctable by resolution-aware
-retraining, with a free regularization bonus on background-noisy datasets; and that
+temporal frequency demand consistently across models; that this attention-type split
+also governs the spatial domain, where CNNs degrade sharply off-resolution while
+Transformers and SSMs remain robust; and that
 entropy-based routing reduces average inference cost by 52\% with no accuracy penalty.
 These results provide principled, actionable guidance for designing efficient video
 recognition systems tailored to the temporal Nyquist constraints of each application domain.
