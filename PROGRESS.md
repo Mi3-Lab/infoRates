@@ -63,6 +63,11 @@ Last updated: 2026-06-03
 - TimeSformer/SSv2: 42.5% @ 7.7f médios (oracle: 47.3%)
 - Média cross-architecture: 77% dos vídeos roteados para 4-frame
 
+### Dataset Expansion (Status 2026-06-03)
+- **FLAME:** ✅ Downloaded and unzipped to `data/FLAME_data/`
+- **UCF-Crime:** ✅ Downloaded and unzipped to `data/UCFCrime_data/`
+- **Ego4D:** ⏳ Pending (Requires AWS credentials for `ego4d` CLI)
+
 ---
 
 ## Paper — Decisões Importantes

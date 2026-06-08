@@ -45,7 +45,7 @@ from info_rates.training.ddp import cleanup_ddp, setup_ddp  # noqa: E402
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="ssv2",
-                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact"],
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime"],
                         help="Dataset to train on (default: ssv2)")
     parser.add_argument("--data-root", default=None,
                         help="Dataset root (auto-detected from --dataset if omitted)")
@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument("--input-size", type=int, default=112)
     parser.add_argument("--max-train-samples", type=int, default=0)
     parser.add_argument("--max-val-samples", type=int, default=0)
-    parser.add_argument("--save-path", default="fine_tuned_models/accv2026_r3d18_ssv2")
+    parser.add_argument("--save-path", default=None, help="Custom save path (auto-generated if not provided)")
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from (sets start epoch automatically)")
@@ -95,6 +95,8 @@ _DEFAULT_DATA_ROOTS = {
     "epic_kitchens": "data/EPIC_data",
     "autsl":         "data/AUTSL_data",
     "driveact":      "data/DriveAct_data",
+    "flame":         "data/FLAME_data",
+    "ufc_crime":     "data/UCFCrime_data",
 }
 
 
@@ -150,7 +152,7 @@ def make_loader(files, processor, args, use_ddp: bool, train: bool):
         pin_memory=True,
         persistent_workers=args.num_workers > 0,
         prefetch_factor=2 if args.num_workers > 0 else None,
-        multiprocessing_context="forkserver" if args.num_workers > 0 else None,
+        multiprocessing_context="spawn" if args.num_workers > 0 else None,
     )
 
 
@@ -242,6 +244,12 @@ def evaluate(model, loader, device, show_progress: bool):
 
 def main() -> None:
     args = parse_args()
+
+    # Auto-generate save_path if not provided
+    if args.save_path is None:
+        hw_suffix = "a100"  # default, could be detected
+        args.save_path = f"fine_tuned_models/accv2026_{args.model}_{args.dataset}_full_e{args.epochs}_{hw_suffix}"
+
     local_rank = 0
     if args.ddp:
         local_rank = setup_ddp()

@@ -35,6 +35,18 @@ DATASET_DIRS = {
         "evaluations/accv2026/manifests",
         "evaluations/accv2026/metrics",
     ],
+    "flame": [
+        "data/FLAME_data/raw_archives",
+        "data/FLAME_data/videos",
+    ],
+    "ego4d": [
+        "data/Ego4D_data/annotations",
+        "data/Ego4D_data/clips",
+    ],
+    "ucf_crime": [
+        "data/UCFCrime_data/raw_archives",
+        "data/UCFCrime_data/videos",
+    ],
 }
 
 

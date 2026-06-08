@@ -386,6 +386,61 @@ def load_kinetics400(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     return class_names, [], val_files  # no train split available
 
 
+def load_from_manifest(manifest_name: str, data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Load dataset from pre-computed CSV manifest (for FLAME, UFC-Crime, etc.)."""
+    import pandas as pd
+
+    # Find manifest in repo root / evaluations/accv2026/manifests/
+    root = Path(data_root).resolve()
+    # Navigate up to repo root
+    while root.name != "infoRates" and root.parent != root:
+        root = root.parent
+    manifest_path = root / "evaluations/accv2026/manifests" / f"{manifest_name}_full.csv"
+
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
+    df = pd.read_csv(manifest_path)
+
+    # Extract unique class names and create label mapping
+    unique_labels = sorted(df["label"].unique())
+    class_names = list(unique_labels)
+    label_to_id = {label: i for i, label in enumerate(unique_labels)}
+
+    # Separate train and validation splits
+    train_files: DataSplit = [
+        (str(r["video_path"]), label_to_id[r["label"]])
+        for _, r in df.iterrows()
+        if (r["split"] == "train" or r["split"] == "training") and Path(str(r["video_path"])).exists()
+    ]
+
+    val_files: DataSplit = [
+        (str(r["video_path"]), label_to_id[r["label"]])
+        for _, r in df.iterrows()
+        if (r["split"] == "valid" or r["split"] == "validation") and Path(str(r["video_path"])).exists()
+    ]
+
+    # Fallback: if no proper splits, use all data for validation only
+    if not val_files:
+        val_files = [
+            (str(r["video_path"]), label_to_id[r["label"]])
+            for _, r in df.iterrows()
+            if Path(str(r["video_path"])).exists()
+        ]
+
+    return class_names, train_files, val_files
+
+
+def load_flame(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Load FLAME dataset from manifest."""
+    return load_from_manifest("flame", data_root)
+
+
+def load_ufc_crime(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Load UCF-Crime dataset from manifest."""
+    return load_from_manifest("ufc_crime", data_root)
+
+
 _LOADERS = {
     "ucf101":       (load_ucf101,       "data/UCF101_data"),
     "hmdb51":       (load_hmdb51,       "data/HMDB51_data"),
@@ -396,6 +451,8 @@ _LOADERS = {
     "autsl":        (load_autsl,        "data/AUTSL_data"),
     "driveact":     (load_driveact,     "data/DriveAct_data"),
     "kinetics400":  (load_kinetics400,  "data/Kinetics400_data"),
+    "flame":        (load_flame,        "data/FLAME_data"),
+    "ufc_crime":    (load_ufc_crime,    "data/UCFCrime_data"),
 }
 
 

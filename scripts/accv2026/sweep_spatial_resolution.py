@@ -49,6 +49,8 @@ DATASET_CFG = {
     "hmdb51":  dict(manifest="hmdb51_val_20_per_class.csv",      name="hmdb51",      split="val"),
     "autsl":   dict(manifest="autsl_val_20_per_class.csv",       name="autsl",       split="val"),
     "diving48":dict(manifest="diving48_val_20_per_class.csv",    name="diving48",    split="val"),
+    "flame":   dict(manifest="flame_val_20_per_class.csv",       name="flame",       split="validation"),
+    "ufc_crime":dict(manifest="ufc_crime_val_20_per_class.csv",  name="ufc_crime",   split="validation"),
 }
 
 SPECIAL_CKPTS = {

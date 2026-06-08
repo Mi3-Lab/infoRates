@@ -110,7 +110,11 @@ def save_torchvision_video_checkpoint(
     extra: dict | None = None,
 ) -> None:
     save_dir = Path(save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)
+    # Handle race condition: try to create, ignore if exists
+    try:
+        save_dir.mkdir(parents=True, exist_ok=True)
+    except (FileExistsError, OSError):
+        pass  # Directory exists or was just created by another process
     torch.save(model.model.state_dict(), save_dir / "model.pt")
     config = {
         "backend": "torchvision_video",

@@ -12,7 +12,8 @@ from typing import Optional
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 VIDEOMAMBA_REPO = ROOT / "third_party" / "videomamba_repo" / "videomamba" / "video_sm"
-for _p in (ROOT, SRC, VIDEOMAMBA_REPO):
+MAMBA_BUNDLED = ROOT / "third_party" / "videomamba_repo" / "mamba"
+for _p in (ROOT, SRC, VIDEOMAMBA_REPO, MAMBA_BUNDLED):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
@@ -50,6 +51,8 @@ _DEFAULT_DATA_ROOTS = {
     "epic_kitchens": "data/EPIC_data",
     "autsl":         "data/AUTSL_data",
     "driveact":      "data/DriveAct_data",
+    "flame":         "data/FLAME_data",
+    "ufc_crime":     "data/UCFCrime_data",
 }
 
 

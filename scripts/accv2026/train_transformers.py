@@ -41,7 +41,7 @@ BAD_VIDEOS_LOG = ROOT / "evaluations/accv2026/logs/bad_videos.tsv"
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="ssv2",
-                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact"],
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime"],
                         help="Dataset to train on (default: ssv2)")
     parser.add_argument("--data-root", default=None,
                         help="Dataset root (auto-detected from --dataset if omitted)")
@@ -89,6 +89,8 @@ _DEFAULT_DATA_ROOTS = {
     "epic_kitchens":"data/EPIC_data",
     "autsl":        "data/AUTSL_data",
     "driveact":     "data/DriveAct_data",
+    "flame":        "data/FLAME_data",
+    "ufc_crime":    "data/UCFCrime_data",
 }
 
 
