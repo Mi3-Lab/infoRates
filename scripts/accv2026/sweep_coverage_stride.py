@@ -106,10 +106,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",   required=True, choices=list(MODEL_CFG))
     parser.add_argument("--dataset", required=True, choices=list(DATASET_CFG))
-    parser.add_argument("--coverages", nargs="+", type=int, default=COVERAGES)
-    parser.add_argument("--strides",   nargs="+", type=int, default=STRIDES)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--coverages",   nargs="+", type=int, default=COVERAGES)
+    parser.add_argument("--strides",     nargs="+", type=int, default=STRIDES)
+    parser.add_argument("--batch-size",  type=int, default=32)
+    parser.add_argument("--output-dir",  default=None)
+    parser.add_argument("--input-size",  type=int, default=None,
+                        help="Override spatial resolution (default: model's native)")
     args = parser.parse_args()
 
     mcfg = MODEL_CFG[args.model]
@@ -127,14 +129,15 @@ def main():
         print(f"[ERROR] Empty manifest for {args.dataset}")
         sys.exit(1)
 
+    res_tag = f"_res{resize}" if args.input_size and args.input_size != mcfg["resize"] else ""
     out_dir = Path(args.output_dir) if args.output_dir else \
-              ROOT / "evaluations/accv2026/coverage_stride_sweep" / f"{args.model}_{args.dataset}"
+              ROOT / "evaluations/accv2026/coverage_stride_sweep" / f"{args.model}_{args.dataset}{res_tag}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Loading {args.model} checkpoint for {args.dataset}...")
     model, processor, device = load_model(args.model, args.dataset)
     model_frames = mcfg["frames"]
-    resize = mcfg["resize"]
+    resize = args.input_size if args.input_size else mcfg["resize"]
     print(f"  model_frames={model_frames}  resize={resize}  device={device}")
     print(f"  manifest: {len(manifest)} rows")
     print(f"  configs: {len(args.coverages)} coverages × {len(args.strides)} strides = {len(args.coverages)*len(args.strides)}")
