@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.7725,1600,videomae,finegym,224
+112,0.78,1600,videomae,finegym,224
+160,0.77625,1600,videomae,finegym,224
+224,0.776875,1600,videomae,finegym,224
+336,0.78125,1600,videomae,finegym,224

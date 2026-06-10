@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.401875,1600,slowfast_r50,finegym,224
+112,0.524375,1600,slowfast_r50,finegym,224
+160,0.740625,1600,slowfast_r50,finegym,224
+224,0.79875,1600,slowfast_r50,finegym,224
+336,0.74625,1600,slowfast_r50,finegym,224

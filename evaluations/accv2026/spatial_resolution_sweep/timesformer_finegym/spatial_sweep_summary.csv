@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.648125,1600,timesformer,finegym,224
+112,0.64875,1600,timesformer,finegym,224
+160,0.66,1600,timesformer,finegym,224
+224,0.660625,1600,timesformer,finegym,224
+336,0.661875,1600,timesformer,finegym,224

@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.660625,1600,vivit,finegym,224
+112,0.680625,1600,vivit,finegym,224
+160,0.6925,1600,vivit,finegym,224
+224,0.69125,1600,vivit,finegym,224
+336,0.691875,1600,vivit,finegym,224

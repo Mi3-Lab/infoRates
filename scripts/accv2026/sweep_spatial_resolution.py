@@ -53,6 +53,7 @@ DATASET_CFG = {
     "epic_kitchens":dict(manifest="epic_kitchens_val_20_per_class.csv",name="epic_kitchens",split="val"),
     "flame":        dict(manifest="flame_val_20_per_class.csv",       name="flame",         split="validation"),
     "ufc_crime":    dict(manifest="ufc_crime_val_20_per_class.csv",   name="ufc_crime",     split="validation"),
+    "finegym":      dict(manifest="finegym_val_20_per_class.csv",     name="finegym",       split="val"),
 }
 
 SPECIAL_CKPTS = {
@@ -64,6 +65,12 @@ SPECIAL_CKPTS = {
     ("vivit",     "ssv2"): "accv2026_vivit_ssv2_full_e10_h200",
     ("videomae",  "ssv2"): "accv2026_videomae_ssv2_full_e5_h200",
     ("videomamba","ssv2"): "accv2026_videomamba_ssv2_full_e10_h200",
+    # FineGym — checkpoints use short names (no _full_e10_ suffix)
+    ("slowfast_r50", "finegym"):  "accv2026_slowfast_r50_finegym",
+    ("timesformer",  "finegym"):  "accv2026_timesformer_finegym",
+    ("vivit",        "finegym"):  "accv2026_vivit_finegym",
+    ("videomae",     "finegym"):  "accv2026_videomae_finegym",
+    ("videomamba",   "finegym"):  "accv2026_videomamba_finegym",
 }
 
 
