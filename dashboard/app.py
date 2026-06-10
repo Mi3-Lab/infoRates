@@ -166,6 +166,7 @@ page = st.sidebar.radio("", [
     "⏱ Clip Duration",
     "🔀 Routing & Efficiency",
     "🖼 Spatial Resolution",
+    "🎛 Spatiotemporal Explorer",
     "🎯 Architecture Recommender",
 ])
 
@@ -917,6 +918,267 @@ elif page == "🖼 Spatial Resolution":
                        f"{tr_96.values[0]-tr_224.values[0]:+.1f}pp")
         mc3.metric("Configs evaluated", f"{len(df_p3.drop_duplicates(['model','dataset','res']))}",
                    "8 models × 7 datasets × 5 res")
+
+
+# =============================================================================
+# 🎛 SPATIOTEMPORAL EXPLORER
+# =============================================================================
+elif page == "🎛 Spatiotemporal Explorer":
+    st.title("Spatiotemporal Explorer")
+    st.markdown("Escolha **dataset, stride, coverage e resolução** e veja o accuracy de cada modelo naquele ponto exato.")
+
+    # ── Carregar dados combinados (coverage × stride × resolução) ─────────────
+    @st.cache_data
+    def load_combined_sweep():
+        sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+        if not sweep_root.exists():
+            return pd.DataFrame()
+        rows = []
+        ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
+        NATIVE = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                  "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
+        for csv in sweep_root.glob("*/sweep_summary.csv"):
+            folder = csv.parent.name
+            parts = folder.split("_res")
+            tag = parts[0]
+            res_override = int(parts[1]) if len(parts) > 1 else None
+            ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
+            if not ds:
+                continue
+            model = tag[:-(len(ds)+1)]
+            try:
+                df = pd.read_csv(csv)
+                df["model"]   = model
+                df["dataset"] = ds
+                df["res"]     = res_override if res_override else NATIVE.get(model, 224)
+                df["acc"]     = df["top1"] * 100
+                rows.append(df[["model","dataset","res","coverage","stride","acc"]])
+            except Exception:
+                continue
+        return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+    df_comb = load_combined_sweep()
+
+    # Dados que temos:
+    # df_sw  = temporal sweep  → (model, dataset, coverage, stride) @ native res
+    # df_p3  = spatial eval    → (model, dataset, res) @ stride=1, cov=100%
+    # df_comb = combined sweep → (model, dataset, res, coverage, stride)  ← em geração
+
+    NATIVE_RES = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                  "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
+    ALL_RES      = [96, 112, 160, 224, 336]
+    ALL_STRIDES  = [1, 2, 4, 8, 16]
+    ALL_COVERAGES= [10, 25, 50, 75, 100]
+
+    # ── 3 sliders no topo da página ───────────────────────────────────────────
+    st.subheader("Parâmetros")
+    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+    with c1:
+        sel_ds = st.selectbox("Dataset", DS_KEYS,
+                              format_func=lambda k: DS_LABELS.get(k, k), key="st_ds")
+    with c2:
+        sel_res = st.select_slider("Resolução (px)", ALL_RES, value=112, key="st_res")
+    with c3:
+        sel_stride = st.select_slider("Stride", ALL_STRIDES, value=1, key="st_stride")
+    with c4:
+        sel_cov = st.select_slider("Coverage (%)", ALL_COVERAGES, value=100, key="st_cov")
+
+    # ── Lookup de accuracy para cada modelo ───────────────────────────────────
+    results = []
+    for model in MODEL_KEYS:
+        native = NATIVE_RES.get(model, 224)
+        acc = None
+        source = None
+
+        # 1. Combined sweep (cobertura total)
+        if not df_comb.empty:
+            row = df_comb[
+                (df_comb.model==model) & (df_comb.dataset==sel_ds) &
+                (df_comb.res==sel_res) & (df_comb.stride==sel_stride) &
+                (df_comb.coverage==sel_cov)
+            ]
+            if not row.empty:
+                acc = row["acc"].values[0]
+                source = "combined"
+
+        # 2. Temporal sweep (só para res=native)
+        if acc is None and not df_sw.empty and sel_res == native:
+            row = df_sw[
+                (df_sw.model==model) & (df_sw.dataset==sel_ds) &
+                (df_sw.stride==sel_stride) & (df_sw.coverage==sel_cov)
+            ]
+            if not row.empty:
+                acc = row["acc"].values[0]
+                source = "temporal"
+
+        # 3. Spatial eval (só para stride=1, cov=100%)
+        if acc is None and not df_p3.empty and sel_stride==1 and sel_cov==100:
+            row = df_p3[
+                (df_p3.model==model) & (df_p3.dataset==sel_ds) & (df_p3.res==sel_res)
+            ]
+            if not row.empty:
+                acc = row["acc"].values[0]
+                source = "spatial"
+
+        # Referência: native @ stride=1, cov=100%
+        ref_acc = None
+        if not df_sw.empty:
+            ref_row = df_sw[
+                (df_sw.model==model) & (df_sw.dataset==sel_ds) &
+                (df_sw.stride==1) & (df_sw.coverage==100)
+            ]
+            if not ref_row.empty:
+                ref_acc = ref_row["acc"].values[0]
+
+        results.append({
+            "model": model,
+            "name": MODEL_NAMES[model],
+            "family": FAMILIES[model],
+            "native_res": native,
+            "acc": acc,
+            "ref": ref_acc,
+            "delta": (acc - ref_acc) if (acc is not None and ref_acc is not None) else None,
+            "source": source,
+        })
+
+    df_res = pd.DataFrame(results)
+    df_res_valid = df_res[df_res.acc.notna()].copy()
+
+    # ── Resultado principal: bar chart de todos os modelos ────────────────────
+    st.divider()
+    title_str = f"Accuracy @ stride={sel_stride} · coverage={sel_cov}% · {sel_res}px — {DS_LABELS.get(sel_ds, sel_ds)}"
+    st.subheader(title_str)
+
+    if df_res_valid.empty:
+        st.warning(
+            f"Sem dados para stride={sel_stride}, coverage={sel_cov}%, resolução={sel_res}px.\n\n"
+            "**Dados disponíveis agora:**\n"
+            f"- Qualquer stride/coverage + resolução **nativa** de cada modelo (do temporal sweep)\n"
+            f"- stride=1, coverage=100% + qualquer resolução para SSv2 (do spatial eval)\n\n"
+            "Para habilitar todos os parâmetros, execute o combined sweep:\n"
+            "```bash\nbash scripts/accv2026/submit_combined_sweep.sh\n```"
+        )
+    else:
+        # Bar chart ordenado por accuracy
+        df_plot = df_res_valid.sort_values("acc", ascending=True)
+        colors_bar = [FAM_COLOR.get(f, "#999") for f in df_plot["family"]]
+        fig_bar = go.Figure(go.Bar(
+            x=df_plot["acc"], y=df_plot["name"],
+            orientation="h",
+            marker_color=colors_bar,
+            text=[f"{a:.1f}%" for a in df_plot["acc"]],
+            textposition="outside",
+            hovertemplate="<b>%{y}</b><br>Acc: %{x:.1f}%<extra></extra>",
+        ))
+        # Linha de referência (native, stride=1, cov=100%)
+        if df_res_valid["ref"].notna().any():
+            mean_ref = df_res_valid["ref"].mean()
+            fig_bar.add_vline(x=mean_ref, line_dash="dash", line_color="gray",
+                              annotation_text=f"Ref nativa média: {mean_ref:.1f}%",
+                              annotation_position="top right")
+        fig_bar.update_layout(
+            height=380,
+            xaxis=dict(title="Top-1 Accuracy (%)", range=[0, 105]),
+            yaxis_title="",
+            margin=dict(l=10, r=60, t=20, b=40),
+            plot_bgcolor="white",
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        # Tabela compacta com Δ vs referência
+        tbl_rows = []
+        for _, r in df_res_valid.iterrows():
+            src_icons = {"temporal": "⏱ temporal", "spatial": "🖼 spatial", "combined": "🎛 combined"}
+            tbl_rows.append({
+                "Modelo": r["name"],
+                "Família": r["family"],
+                "Native px": f"{r['native_res']}px",
+                f"Acc @{sel_res}px s={sel_stride} c={sel_cov}%": f"{r['acc']:.1f}%",
+                "Ref (s=1,c=100%,native)": f"{r['ref']:.1f}%" if r['ref'] else "—",
+                "Δ": f"{r['delta']:+.1f}pp" if r['delta'] is not None else "—",
+                "Fonte": src_icons.get(r["source"], r["source"]),
+            })
+        st.dataframe(pd.DataFrame(tbl_rows), use_container_width=True, hide_index=True)
+
+    # ── Heatmap coverage × stride para o modelo selecionado ───────────────────
+    st.divider()
+    st.subheader("Heatmap Coverage × Stride — por modelo")
+    col_hm1, col_hm2 = st.columns([1, 2])
+    with col_hm1:
+        hm_model = st.selectbox("Modelo", MODEL_KEYS,
+                                format_func=lambda k: MODEL_NAMES[k], key="st_hm_model")
+        hm_res_opts = [sel_res]
+        native_hm = NATIVE_RES.get(hm_model, 224)
+        if native_hm not in hm_res_opts:
+            hm_res_opts = [native_hm] + hm_res_opts
+        hm_res = st.selectbox("Resolução heatmap", hm_res_opts, key="st_hm_res")
+
+    with col_hm2:
+        # Montar dados para heatmap
+        if not df_comb.empty:
+            hm_data = df_comb[
+                (df_comb.model==hm_model) & (df_comb.dataset==sel_ds) & (df_comb.res==hm_res)
+            ]
+            src_label = f"{hm_res}px (combined)"
+        else:
+            hm_data = pd.DataFrame()
+            src_label = ""
+
+        # Fallback: temporal sweep para resolução nativa
+        if hm_data.empty and hm_res == NATIVE_RES.get(hm_model, 224) and not df_sw.empty:
+            hm_data = df_sw[
+                (df_sw.model==hm_model) & (df_sw.dataset==sel_ds)
+            ].rename(columns={"acc": "acc"})
+            src_label = f"{hm_res}px nativa (temporal sweep)"
+
+        if hm_data.empty:
+            st.info(f"Sem dados de heatmap para {MODEL_NAMES[hm_model]} / {sel_ds} @ {hm_res}px.\n\n"
+                    "Execute `submit_combined_sweep.sh` para gerar dados multi-resolução.")
+        else:
+            pivot = hm_data.pivot_table(
+                index="coverage", columns="stride", values="acc", aggfunc="mean"
+            ).sort_index(ascending=False)
+
+            # Marcar o ponto selecionado
+            z = pivot.values.tolist()
+            text = [[f"{v:.1f}%" for v in row] for row in z]
+
+            fig_hm = go.Figure(go.Heatmap(
+                z=z,
+                x=[str(c) for c in pivot.columns],
+                y=[f"{r}%" for r in pivot.index],
+                colorscale="RdYlGn",
+                text=text, texttemplate="%{text}",
+                zmin=0, zmax=100,
+                hovertemplate="Coverage=%{y} Stride=%{x}<br>Acc=%{z:.1f}%<extra></extra>",
+            ))
+            # Destacar o ponto selecionado
+            if sel_cov in pivot.index and sel_stride in pivot.columns:
+                y_idx = list(pivot.index[::-1]).index(sel_cov)
+                x_idx = list(pivot.columns).index(sel_stride)
+                fig_hm.add_trace(go.Scatter(
+                    x=[str(sel_stride)], y=[f"{sel_cov}%"],
+                    mode="markers",
+                    marker=dict(symbol="circle-open", size=24, color="white", line=dict(width=3, color="white")),
+                    showlegend=False, hoverinfo="skip",
+                ))
+            fig_hm.update_layout(
+                height=260,
+                xaxis_title="Stride",
+                yaxis_title="Coverage (%)",
+                title=f"{MODEL_NAMES[hm_model]} / {DS_LABELS.get(sel_ds,sel_ds)} @ {src_label}",
+                margin=dict(t=50, b=40),
+            )
+            st.plotly_chart(fig_hm, use_container_width=True)
+
+    # ── Disponibilidade de dados ───────────────────────────────────────────────
+    if df_comb.empty:
+        st.caption(
+            "🔸 **Combined sweep ainda não foi executado.** "
+            "Só são mostrados pontos existentes no temporal sweep (resolução nativa) "
+            "e spatial eval (stride=1, cov=100%). "
+            "Para habilitar todos os parâmetros: `bash scripts/accv2026/submit_combined_sweep.sh`"
+        )
 
 
 # =============================================================================

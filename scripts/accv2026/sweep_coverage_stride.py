@@ -68,14 +68,25 @@ SPECIAL_CKPTS = {
 }
 
 
+SCRATCH_CKPTS = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+
+
 def get_checkpoint(model: str, dataset: str) -> Path:
     key = (model, dataset)
+    candidates = []
     if key in SPECIAL_CKPTS:
-        name = SPECIAL_CKPTS[key]
-    else:
-        suffix = MODEL_CFG[model]["ckpt_suffix"]
-        name = f"accv2026_{model}_{dataset}_full_e10_{suffix}"
-    return ROOT / "fine_tuned_models" / name
+        candidates.append(SPECIAL_CKPTS[key])
+    # H200 retrain naming (campanha atual — 224px)
+    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
+    # Fallback: nomenclatura antiga
+    suffix = MODEL_CFG[model]["ckpt_suffix"]
+    candidates.append(f"accv2026_{model}_{dataset}_full_e10_{suffix}")
+    for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
+        for name in candidates:
+            p = base / name
+            if p.exists():
+                return p
+    raise FileNotFoundError(f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}")
 
 
 def load_model(model_name: str, dataset: str):
@@ -113,10 +124,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",   required=True, choices=list(MODEL_CFG))
     parser.add_argument("--dataset", required=True, choices=list(DATASET_CFG))
-    parser.add_argument("--coverages", nargs="+", type=int, default=COVERAGES)
-    parser.add_argument("--strides",   nargs="+", type=int, default=STRIDES)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--coverages",   nargs="+", type=int, default=COVERAGES)
+    parser.add_argument("--strides",     nargs="+", type=int, default=STRIDES)
+    parser.add_argument("--batch-size",  type=int, default=32)
+    parser.add_argument("--output-dir",  default=None)
+    parser.add_argument("--input-size",  type=int, default=None,
+                        help="Override spatial resolution (default: model's native)")
     args = parser.parse_args()
 
     mcfg = MODEL_CFG[args.model]
@@ -134,14 +147,15 @@ def main():
         print(f"[ERROR] Empty manifest for {args.dataset}")
         sys.exit(1)
 
+    resize = args.input_size if args.input_size else mcfg["resize"]
+    res_tag = f"_res{resize}" if args.input_size and args.input_size != mcfg["resize"] else ""
     out_dir = Path(args.output_dir) if args.output_dir else \
-              ROOT / "evaluations/accv2026/coverage_stride_sweep" / f"{args.model}_{args.dataset}"
+              ROOT / "evaluations/accv2026/coverage_stride_sweep" / f"{args.model}_{args.dataset}{res_tag}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Loading {args.model} checkpoint for {args.dataset}...")
     model, processor, device = load_model(args.model, args.dataset)
     model_frames = mcfg["frames"]
-    resize = mcfg["resize"]
     print(f"  model_frames={model_frames}  resize={resize}  device={device}")
     print(f"  manifest: {len(manifest)} rows")
     print(f"  configs: {len(args.coverages)} coverages × {len(args.strides)} strides = {len(args.coverages)*len(args.strides)}")

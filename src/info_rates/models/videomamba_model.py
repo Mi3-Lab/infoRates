@@ -14,7 +14,13 @@ from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[3]
 VIDEOMAMBA_REPO = ROOT / "third_party" / "videomamba_repo" / "videomamba" / "video_sm"
-PRETRAINED_PATH = ROOT / "fine_tuned_models" / "videomamba_pretrained" / "videomamba_m16_k400_f8_res224.pth"
+_PRETRAINED_REL = Path("fine_tuned_models") / "videomamba_pretrained" / "videomamba_m16_k400_f8_res224.pth"
+_SCRATCH_ROOT = Path("/scratch/wesleyferreiramaia/infoRates")
+PRETRAINED_PATH = (
+    _SCRATCH_ROOT / _PRETRAINED_REL
+    if (_SCRATCH_ROOT / _PRETRAINED_REL).exists()
+    else ROOT / _PRETRAINED_REL
+)
 EMBED_DIM = 576  # medium config
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]

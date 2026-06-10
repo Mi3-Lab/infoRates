@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.6830357142857143,448,timesformer,driveact,224
+112,0.6919642857142857,448,timesformer,driveact,224
+160,0.6964285714285714,448,timesformer,driveact,224
+224,0.703125,448,timesformer,driveact,224
+336,0.6986607142857143,448,timesformer,driveact,224

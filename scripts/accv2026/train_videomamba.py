@@ -54,6 +54,7 @@ _DEFAULT_DATA_ROOTS = {
     "flame":         "data/FLAME_data",
     "ufc_crime":     "data/UCFCrime_data",
     "finegym":       "data/FineGym_data",
+    "ego4d":         "data/Ego4D_data",
 }
 
 
@@ -416,6 +417,7 @@ def main() -> None:
 
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+        model._set_static_graph()  # BiMamba reuses params bidirectionally; static graph avoids DDP "ready once" error
 
     # torch.compile disabled: SSM CUDA Graphs consume 49+ GiB private pool → OOM on FineGym
     if False and torch.cuda.is_available() and not args.ddp:

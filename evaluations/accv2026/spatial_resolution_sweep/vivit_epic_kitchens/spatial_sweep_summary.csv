@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.30196078431372547,1020,vivit,epic_kitchens,224
+112,0.3411764705882353,1020,vivit,epic_kitchens,224
+160,0.3607843137254902,1020,vivit,epic_kitchens,224
+224,0.37941176470588234,1020,vivit,epic_kitchens,224
+336,0.35980392156862745,1020,vivit,epic_kitchens,224

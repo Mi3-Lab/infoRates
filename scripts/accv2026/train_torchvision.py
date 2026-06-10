@@ -45,7 +45,7 @@ from info_rates.training.ddp import cleanup_ddp, setup_ddp  # noqa: E402
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="ssv2",
-                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime", "finegym"],
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime", "finegym", "ego4d"],
                         help="Dataset to train on (default: ssv2)")
     parser.add_argument("--data-root", default=None,
                         help="Dataset root (auto-detected from --dataset if omitted)")
@@ -98,6 +98,7 @@ _DEFAULT_DATA_ROOTS = {
     "flame":         "data/FLAME_data",
     "ufc_crime":     "data/UCFCrime_data",
     "finegym":       "data/FineGym_data",
+    "ego4d":         "data/Ego4D_data",
 }
 
 

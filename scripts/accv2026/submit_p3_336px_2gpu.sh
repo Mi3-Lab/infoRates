@@ -13,11 +13,13 @@ TOTAL=$(( ${#MODELS[@]} * ${#DATASETS[@]} ))  # 21
 log()    { echo "[$(date '+%Y-%m-%d %H:%M:%S')] 336px-2GPU | $*"; }
 n_jobs() { squeue -u wesleyferreiramaia -p cenvalarc.gpu --noheader 2>/dev/null | wc -l; }
 
+CKPT_BASE="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"
+
 done_count() {
     local n=0
     for m in "${MODELS[@]}"; do
         for ds in "${DATASETS[@]}"; do
-            [[ -f "fine_tuned_models/accv2026_${m}_${ds}_${RES}px_e10_h200/config.json" ]] && ((n++)) || true
+            [[ -f "${CKPT_BASE}/accv2026_${m}_${ds}_${RES}px_e10_h200/config.json" ]] && ((n++)) || true
         done
     done
     echo $n
@@ -25,7 +27,7 @@ done_count() {
 
 try_submit() {
     local model=$1 dataset=$2
-    local ckpt="fine_tuned_models/accv2026_${model}_${dataset}_${RES}px_e10_h200"
+    local ckpt="${CKPT_BASE}/accv2026_${model}_${dataset}_${RES}px_e10_h200"
     [[ -f "${ckpt}/config.json" ]] && return 0          # já feito
     [[ $(n_jobs) -ge $MAX ]]        && return 1          # fila cheia
     local result
@@ -49,7 +51,7 @@ while true; do
     submitted=0
     for model in "${MODELS[@]}"; do
         for ds in "${DATASETS[@]}"; do
-            ckpt="fine_tuned_models/accv2026_${model}_${ds}_${RES}px_e10_h200"
+            ckpt="${CKPT_BASE}/accv2026_${model}_${ds}_${RES}px_e10_h200"
             [[ -f "${ckpt}/config.json" ]] && continue
             if [[ $(n_jobs) -lt $MAX ]]; then
                 try_submit "$model" "$ds" && ((submitted++)) || true

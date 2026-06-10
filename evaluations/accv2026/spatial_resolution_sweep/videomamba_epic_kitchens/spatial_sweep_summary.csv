@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.11078431372549019,1020,videomamba,epic_kitchens,224
+112,0.1264705882352941,1020,videomamba,epic_kitchens,224
+160,0.20784313725490197,1020,videomamba,epic_kitchens,224
+224,0.2833333333333333,1020,videomamba,epic_kitchens,224
+336,0.24509803921568626,1020,videomamba,epic_kitchens,224

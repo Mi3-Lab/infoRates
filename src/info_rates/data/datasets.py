@@ -79,12 +79,15 @@ def load_diving48(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     """Diving48 from the pre-built manifest CSV (evaluations/accv2026/manifests/)."""
     import pandas as pd
 
-    manifest_path = Path("evaluations/accv2026/manifests/diving48_manifest.csv")
-    if not manifest_path.exists():
-        # fallback relative to data_root
-        manifest_path = Path(data_root) / "annotations" / "diving48_manifest.csv"
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Diving48 manifest not found at {manifest_path}")
+    _src_root = Path(__file__).resolve().parents[4]
+    candidates = [
+        Path("evaluations/accv2026/manifests/diving48_manifest.csv"),
+        _src_root / "evaluations/accv2026/manifests/diving48_manifest.csv",
+        Path(data_root) / "annotations" / "diving48_manifest.csv",
+    ]
+    manifest_path = next((p for p in candidates if p.exists()), None)
+    if manifest_path is None:
+        raise FileNotFoundError(f"Diving48 manifest not found. Tried: {candidates}")
 
     df = pd.read_csv(manifest_path)
     num_classes = int(df["label_id"].max()) + 1
@@ -446,6 +449,41 @@ def load_finegym(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     return load_from_manifest("finegym", data_root)
 
 
+def load_ego4d(data_root: str, val_fraction: float = 0.2, seed: int = 42) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Ego4D FHO-LTA verb-level action recognition (variable classes after filtering).
+
+    Expects action segments pre-extracted by scripts/accv2026/preprocess_ego4d.py at:
+      {data_root}/action_clips/{verb_slug}/{clip_uid}_a{idx}.mp4
+    Manifest at: {data_root}/splits/ego4d_manifest.csv (columns: video_path, label, split)
+    """
+    import pandas as pd
+
+    root = Path(data_root)
+    manifest_path = root / "splits" / "ego4d_manifest.csv"
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            f"Ego4D manifest not found: {manifest_path}\n"
+            "Run scripts/accv2026/preprocess_ego4d.py first."
+        )
+
+    df = pd.read_csv(manifest_path)
+    unique_labels = sorted(df["label"].unique())
+    class_names = list(unique_labels)
+    label_to_id = {label: i for i, label in enumerate(unique_labels)}
+
+    train_files: DataSplit = [
+        (str(r["video_path"]), label_to_id[r["label"]])
+        for _, r in df[df["split"] == "train"].iterrows()
+        if Path(str(r["video_path"])).exists()
+    ]
+    val_files: DataSplit = [
+        (str(r["video_path"]), label_to_id[r["label"]])
+        for _, r in df[df["split"] == "val"].iterrows()
+        if Path(str(r["video_path"])).exists()
+    ]
+    return class_names, train_files, val_files
+
+
 _LOADERS = {
     "ucf101":       (load_ucf101,       "data/UCF101_data"),
     "hmdb51":       (load_hmdb51,       "data/HMDB51_data"),
@@ -459,6 +497,7 @@ _LOADERS = {
     "flame":        (load_flame,        "data/FLAME_data"),
     "ufc_crime":    (load_ufc_crime,    "data/UCFCrime_data"),
     "finegym":      (load_finegym,      "data/FineGym_data"),
+    "ego4d":        (load_ego4d,        "data/Ego4D_data"),
 }
 
 

@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+driveact,val,16,50,4,448,0.10491071428571429,0.35714285714285715,0.5185162957558143,0.007812810421975363,0.01212184318137588,0.7478419214941303,16.0,16.0,37.473214285714285

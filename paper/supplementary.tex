@@ -42,7 +42,8 @@ We include:
 (S5) entropy routing curves for all models;
 (S6) clip duration analysis;
 (S7) spectral correlation detail;
-and (S8) implementation details.
+(S8) implementation details;
+and (S9) full multi-dataset spatial resolution results (all 7 datasets $\times$ 8 models).
 
 % ── S1: Full heatmaps ─────────────────────────────────────────────────────────
 \section{Full Coverage$\times$Stride Heatmaps}
@@ -400,7 +401,8 @@ EPIC-Kitchens & --0.002 & 0.985 & No \\
 \end{tabular}
 \end{table}
 
-% ── S9: Implementation details ────────────────────────────────────────────────
+% ── S8: Implementation details ────────────────────────────────────────────────
+%  (S9 follows after bibliography — added below)
 \section{Implementation Details}
 \label{sec:sup_impl}
 
@@ -434,6 +436,190 @@ enabling forward passes at arbitrary input resolutions.
 
 \paragraph{Code availability.}
 Code and evaluation scripts will be released at [anonymized for review].
+
+% ── S9: Multi-dataset spatial resolution ──────────────────────────────────────
+\section{Multi-Dataset Spatial Resolution Results}
+\label{sec:sup_spatial}
+
+Tables~\ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_epic} extend the spatial robustness
+analysis from the main paper (Section~4.3) to all 7 datasets.
+No model is retrained; the fine-tuned checkpoint at native resolution is evaluated
+at 96, 112, 160, 224, and 336px.
+\textbf{Bold} = native training resolution.
+$\Delta_\text{max}$ = largest accuracy drop from native across all tested resolutions.
+VideoMamba is excluded from AUTSL due to training collapse.
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{SSv2} (motion-heavy; repeated from main paper).}
+\label{tab:sup_sp_ssv2}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 35.9 & \textbf{37.1} & 30.3 & 17.2 &  5.8 & $-31.4$pp \\
+MC3-18      & 112px & 32.4 & \textbf{33.6} & 27.8 & 14.8 &  4.4 & $-29.2$pp \\
+R2+1D       & 112px & 40.1 & \textbf{42.6} & 36.2 & 20.8 &  5.9 & $-36.7$pp \\
+SlowFast    & 224px & 27.7 & 32.4 & 45.7 & \textbf{49.5} & 36.0 & $-21.8$pp \\
+\midrule
+TimeSformer & 224px & 39.3 & 39.4 & 41.4 & \textbf{42.3} & 42.1 & $-3.0$pp \\
+ViViT       & 224px & 36.4 & 37.1 & 38.1 & \textbf{38.3} & 38.0 & $-1.9$pp \\
+VideoMAE    & 224px & 48.9 & 49.2 & 51.5 & \textbf{52.3} & 51.9 & $-3.4$pp \\
+VideoMamba  & 224px & 37.5 & 39.3 & 42.5 & \textbf{43.9} & 43.8 & $-6.4$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{UCF-101}. CNNs peak at native 112px and collapse sharply at 336px.}
+\label{tab:sup_sp_ucf}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 79.9 & \textbf{81.2} & 75.3 & 55.1 & 20.7 & $-60.5$pp \\
+MC3-18      & 112px & 82.9 & \textbf{85.4} & 81.0 & 63.9 & 24.9 & $-60.5$pp \\
+R2+1D       & 112px & 88.0 & \textbf{88.6} & 85.1 & 64.9 & 25.0 & $-63.6$pp \\
+SlowFast    & 224px & 69.7 & 75.8 & 87.5 & \textbf{91.4} & 89.2 & $-21.7$pp \\
+\midrule
+TimeSformer & 224px & 89.1 & 89.7 & 90.7 & \textbf{91.5} & 90.9 & $-2.4$pp \\
+ViViT       & 224px & 92.0 & 93.5 & 94.7 & \textbf{95.1} & 95.0 & $-3.1$pp \\
+VideoMAE    & 224px & 95.3 & 95.7 & 96.1 & \textbf{96.4} & 96.3 & $-1.1$pp \\
+VideoMamba  & 224px & 76.7 & 78.7 & 82.6 & \textbf{83.5} & 83.8 & $-6.7$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{HMDB-51}.}
+\label{tab:sup_sp_hmdb}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 78.8 & \textbf{80.3} & 75.9 & 59.8 & 24.7 & $-55.6$pp \\
+MC3-18      & 112px & 76.7 & \textbf{78.6} & 74.2 & 51.0 & 14.5 & $-64.2$pp \\
+R2+1D       & 112px & 74.4 & \textbf{73.1} & 68.4 & 50.5 & 16.2 & $-56.9$pp \\
+SlowFast    & 224px & 59.5 & 67.2 & 80.5 & \textbf{81.6} & 79.0 & $-22.0$pp \\
+\midrule
+TimeSformer & 224px & 75.9 & 77.2 & 77.5 & \textbf{78.9} & 78.0 & $-2.9$pp \\
+ViViT       & 224px & 78.0 & 79.0 & 79.9 & \textbf{79.5} & 80.0 & $-1.6$pp \\
+VideoMAE    & 224px & 83.7 & 83.1 & 84.0 & \textbf{83.8} & 84.1 & $-0.8$pp \\
+VideoMamba  & 224px & 59.9 & 63.8 & 67.2 & \textbf{69.8} & 68.9 & $-9.9$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{Diving-48} (fine-grained dive-type recognition).}
+\label{tab:sup_sp_div}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 26.5 & \textbf{28.8} & 22.1 & 12.8 &  7.3 & $-21.5$pp \\
+MC3-18      & 112px & 30.8 & \textbf{31.6} & 27.3 & 13.7 &  7.3 & $-24.4$pp \\
+R2+1D       & 112px & 33.8 & \textbf{35.3} & 30.1 & 18.7 &  7.8 & $-27.5$pp \\
+SlowFast    & 224px & 18.4 & 25.0 & 43.3 & \textbf{50.5} & 41.6 & $-32.0$pp \\
+\midrule
+TimeSformer & 224px & 37.4 & 39.3 & 38.6 & \textbf{38.1} & 38.6 & $-0.7$pp \\
+ViViT       & 224px & 48.0 & 49.9 & 52.8 & \textbf{53.0} & 51.3 & $-5.0$pp \\
+VideoMAE    & 224px & 48.7 & 48.3 & 50.9 & \textbf{48.6} & 49.1 & $-0.3$pp \\
+VideoMamba  & 224px & 29.2 & 29.1 & 36.1 & \textbf{36.6} & 36.2 & $-7.5$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{AUTSL} (sign language recognition).
+  CNN degradation is most severe across all datasets: R3D-18 collapses from 75.0\%
+  to 2.0\% at 336px ($-73.0$pp), suggesting high sensitivity to convolutional
+  scale coupling on spatially discriminative content.
+  VideoMamba excluded (training collapse).}
+\label{tab:sup_sp_autsl}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 72.2 & \textbf{75.0} & 63.0 & 27.9 &  2.0 & $-73.0$pp \\
+MC3-18      & 112px & 59.1 & \textbf{63.7} & 52.7 & 12.2 &  1.2 & $-62.5$pp \\
+R2+1D       & 112px & 73.7 & \textbf{75.9} & 68.9 & 38.4 &  7.3 & $-68.7$pp \\
+SlowFast    & 224px & 22.5 & 32.6 & 70.0 & \textbf{79.2} & 69.0 & $-56.7$pp \\
+\midrule
+TimeSformer & 224px & 65.1 & 66.0 & 68.3 & \textbf{68.5} & 68.6 & $-3.5$pp \\
+ViViT       & 224px & 49.2 & 51.8 & 53.3 & \textbf{53.6} & 54.0 & $-4.5$pp \\
+VideoMAE    & 224px & 77.3 & 78.2 & 79.5 & \textbf{79.6} & 79.3 & $-2.2$pp \\
+VideoMamba  & --- & \multicolumn{6}{c}{excluded (training collapse on AUTSL)} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{DriveAct} (in-cabin activities).}
+\label{tab:sup_sp_drive}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 65.0 & \textbf{68.3} & 52.7 & 19.0 &  4.9 & $-63.4$pp \\
+MC3-18      & 112px & 65.2 & \textbf{69.0} & 38.4 &  6.2 &  4.5 & $-64.5$pp \\
+R2+1D       & 112px & 67.4 & \textbf{62.5} & 40.0 & 12.9 &  4.5 & $-58.0$pp \\
+SlowFast    & 224px & 31.7 & 40.2 & 65.8 & \textbf{70.1} & 58.7 & $-38.4$pp \\
+\midrule
+TimeSformer & 224px & 68.3 & 69.2 & 69.6 & \textbf{70.3} & 69.9 & $-2.0$pp \\
+ViViT       & 224px & 59.4 & 58.7 & 62.1 & \textbf{63.4} & 63.6 & $-4.7$pp \\
+VideoMAE    & 224px & 71.4 & 69.9 & 71.7 & \textbf{73.0} & 71.4 & $-3.1$pp \\
+VideoMamba  & 224px & 35.0 & 38.2 & 46.9 & \textbf{57.8} & 52.9 & $-22.8$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Spatial robustness on \textbf{EPIC-Kitchens} (egocentric cooking).}
+\label{tab:sup_sp_epic}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 33.3 & \textbf{37.2} & 26.7 &  8.6 &  3.0 & $-34.1$pp \\
+MC3-18      & 112px & 36.1 & \textbf{36.2} & 27.2 &  9.4 &  2.5 & $-33.6$pp \\
+R2+1D       & 112px & 32.8 & \textbf{35.5} & 27.6 & 11.8 &  4.6 & $-30.9$pp \\
+SlowFast    & 224px & 11.3 & 17.7 & 31.3 & \textbf{37.5} & 28.7 & $-26.2$pp \\
+\midrule
+TimeSformer & 224px & 20.5 & 19.2 & 25.6 & \textbf{31.7} & 23.5 & $-12.5$pp \\
+ViViT       & 224px & 30.2 & 34.1 & 36.1 & \textbf{37.9} & 36.0 & $-7.7$pp \\
+VideoMAE    & 224px & 30.9 & 32.6 & 36.5 & \textbf{38.6} & 39.1 & $-7.7$pp \\
+VideoMamba  & 224px & 11.1 & 12.6 & 20.8 & \textbf{28.3} & 24.5 & $-17.3$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
 
 \bibliographystyle{splncs04}
 \bibliography{main}

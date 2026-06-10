@@ -6,11 +6,12 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
 #SBATCH --time=2-00:00:00
-#SBATCH --output=evaluations/accv2026/logs/%x-%j.out
-#SBATCH --error=evaluations/accv2026/logs/%x-%j.err
+#SBATCH --output=/data/wesleyferreiramaia/infoRates/evaluations/accv2026/logs/%x-%j.out
+#SBATCH --error=/data/wesleyferreiramaia/infoRates/evaluations/accv2026/logs/%x-%j.err
 set -uo pipefail
-cd /data/wesleyferreiramaia/infoRates
-export PYTHONPATH=src
+# Data CSVs use paths relative to /scratch — must cd there for file resolution
+cd /scratch/wesleyferreiramaia/infoRates
+export PYTHONPATH=/data/wesleyferreiramaia/infoRates/src
 export TORCH_HOME="${TORCH_HOME:-/scratch/wesleyferreiramaia/infoRates/torch_cache}"
 export WANDB_MODE=online
 export WANDB_PROJECT=inforates-accv2026
@@ -20,9 +21,22 @@ DATASET="${DATASET:?DATASET must be set}"
 INPUT_SIZE=336
 EPOCHS=10
 
-source .venv/bin/activate
+# Data lives in /scratch, not /data
+SCRATCH_DATA="/scratch/wesleyferreiramaia/infoRates/data"
+declare -A DATA_ROOTS=(
+    [ucf101]="${SCRATCH_DATA}/UCF101_data"
+    [ssv2]="${SCRATCH_DATA}/Something_data"
+    [hmdb51]="${SCRATCH_DATA}/HMDB51_data"
+    [diving48]="${SCRATCH_DATA}/Diving48_data"
+    [autsl]="${SCRATCH_DATA}/AUTSL_data"
+    [driveact]="${SCRATCH_DATA}/DriveAct_data"
+    [epic_kitchens]="${SCRATCH_DATA}/EPIC_data"
+)
+DATA_ROOT="${DATA_ROOTS[$DATASET]:-${SCRATCH_DATA}}"
 
-CHECKPOINT="fine_tuned_models/accv2026_${MODEL}_${DATASET}_336px_e${EPOCHS}_h200"
+source /data/wesleyferreiramaia/infoRates/.venv/bin/activate
+
+CHECKPOINT="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/accv2026_${MODEL}_${DATASET}_336px_e${EPOCHS}_h200"
 
 echo "=== 336px 2-GPU Retrain: ${MODEL} / ${DATASET} — job ${SLURM_JOB_ID} ==="
 nvidia-smi | head -10 || true
@@ -35,11 +49,12 @@ fi
 if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" ]]; then
     # 2× L40s (48GB each) — batch=64/GPU = 128 total, DDP
     export TORCH_COMPILE_DISABLE=1
-    torchrun --nproc_per_node=2 scripts/accv2026/train_torchvision.py \
+    torchrun --nproc_per_node=2 /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_torchvision.py \
         --dataset   "${DATASET}" \
+        --data-root "${DATA_ROOT}" \
         --model     "${MODEL}" \
         --epochs    "${EPOCHS}" \
-        --batch-size 64 \
+        --batch-size 16 \
         --num-workers 8 \
         --input-size "${INPUT_SIZE}" \
         --save-path  "${CHECKPOINT}" \
@@ -50,8 +65,9 @@ if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" 
         --ddp
 
 elif [[ "$MODEL" == "slowfast_r50" ]]; then
-    torchrun --nproc_per_node=2 scripts/accv2026/train_slowfast.py \
+    torchrun --nproc_per_node=2 /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_slowfast.py \
         --dataset "${DATASET}" \
+        --data-root "${DATA_ROOT}" \
         --epochs "${EPOCHS}" \
         --batch-size 32 \
         --num-workers 8 \

@@ -44,13 +44,15 @@ MODEL_CFG = {
 }
 
 DATASET_CFG = {
-    "ssv2":    dict(manifest="somethingv2_val_20_per_class.csv", name="somethingv2", split="validation"),
-    "ucf101":  dict(manifest="ucf101_val_20_per_class.csv",      name="ucf101",      split="validation"),
-    "hmdb51":  dict(manifest="hmdb51_val_20_per_class.csv",      name="hmdb51",      split="val"),
-    "autsl":   dict(manifest="autsl_val_20_per_class.csv",       name="autsl",       split="val"),
-    "diving48":dict(manifest="diving48_val_20_per_class.csv",    name="diving48",    split="val"),
-    "flame":   dict(manifest="flame_val_20_per_class.csv",       name="flame",       split="validation"),
-    "ufc_crime":dict(manifest="ufc_crime_val_20_per_class.csv",  name="ufc_crime",   split="validation"),
+    "ssv2":         dict(manifest="somethingv2_val_20_per_class.csv", name="somethingv2",   split="validation"),
+    "ucf101":       dict(manifest="ucf101_val_20_per_class.csv",      name="ucf101",        split="val"),
+    "hmdb51":       dict(manifest="hmdb51_val_20_per_class.csv",      name="hmdb51",        split="val"),
+    "autsl":        dict(manifest="autsl_val_20_per_class.csv",       name="autsl",         split="val"),
+    "diving48":     dict(manifest="diving48_val_20_per_class.csv",    name="diving48",      split="val"),
+    "driveact":     dict(manifest="driveact_val_20_per_class.csv",    name="driveact",      split="val"),
+    "epic_kitchens":dict(manifest="epic_kitchens_val_20_per_class.csv",name="epic_kitchens",split="val"),
+    "flame":        dict(manifest="flame_val_20_per_class.csv",       name="flame",         split="validation"),
+    "ufc_crime":    dict(manifest="ufc_crime_val_20_per_class.csv",   name="ufc_crime",     split="validation"),
 }
 
 SPECIAL_CKPTS = {
@@ -65,12 +67,28 @@ SPECIAL_CKPTS = {
 }
 
 
+SCRATCH_CKPTS = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+
+
 def get_checkpoint(model: str, dataset: str) -> Path:
     key = (model, dataset)
+    candidates = []
     if key in SPECIAL_CKPTS:
-        return ROOT / "fine_tuned_models" / SPECIAL_CKPTS[key]
-    suffix = MODEL_CFG[model]["ckpt_suffix"]
-    return ROOT / "fine_tuned_models" / f"accv2026_{model}_{dataset}_full_e10_{suffix}"
+        candidates.append(SPECIAL_CKPTS[key])
+    # Native-resolution checkpoint first (full_e10): correct for ALL models.
+    # For CNNs (native=112px), full_e10_a100 is the 112px model.
+    # For Transformers/SlowFast (native=224px), full_e10_h200 is also native.
+    # The 224px_e10_h200 checkpoint is a P3-retrain checkpoint: correct only for
+    # native-224px models, but WRONG for CNNs (would load a 224px-trained model).
+    candidates.append(f"accv2026_{model}_{dataset}_full_e10_{MODEL_CFG[model]['ckpt_suffix']}")
+    # 224px retrain as last-resort fallback (only valid when native==224px)
+    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
+    for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
+        for name in candidates:
+            p = base / name
+            if p.exists():
+                return p
+    raise FileNotFoundError(f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}")
 
 
 def load_model(model_name: str, dataset: str):
