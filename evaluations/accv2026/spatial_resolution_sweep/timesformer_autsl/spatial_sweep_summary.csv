@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.650520597555455,4418,timesformer,autsl,224
+112,0.6598008148483476,4418,timesformer,autsl,224
+160,0.6831145314622001,4418,timesformer,autsl,224
+224,0.6853779990946129,4418,timesformer,autsl,224
+336,0.6858306926210955,4418,timesformer,autsl,224

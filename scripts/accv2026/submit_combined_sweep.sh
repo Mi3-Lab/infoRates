@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
-# Combined sweep: coverage × stride × TODAS as resoluções
-# Para cada modelo/dataset, roda o temporal sweep (5 strides × 5 coverages)
-# em TODAS as resoluções não-nativas.
-# A resolução nativa já existe em dashboard/data/sweep_summary.csv
-#
-# Total: 8 modelos × 4 res-extras × 7 datasets = 224 jobs
-# Cada job: 25 configs (eval-only, ~45-90 min)
-# ~2-3 dias com MAX=4 concurrent
-
+# Daemon: coverage × stride × resolução — para cada modelo/dataset, roda em
+# todas as resoluções não-nativas. Requer checkpoint 224px (do retrain daemon).
 set -uo pipefail
 cd /data/wesleyferreiramaia/infoRates
 
-# Resoluções nativas por modelo — NÃO incluir (já temos no temporal sweep)
 declare -A NATIVE_RES=(
     [r3d_18]=112 [mc3_18]=112 [r2plus1d_18]=112 [slowfast_r50]=224
     [timesformer]=224 [vivit]=224 [videomae]=224 [videomamba]=224
@@ -20,102 +12,125 @@ declare -A NATIVE_RES=(
 ALL_RES=(96 112 160 224 336)
 MODELS=(r3d_18 mc3_18 r2plus1d_18 slowfast_r50 timesformer vivit videomae videomamba)
 DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
-
-# Todos os strides e coverages (iguais ao temporal sweep original)
 COVERAGES="10 25 50 75 100"
 STRIDES="1 2 4 8 16"
 
 LOG_DIR="evaluations/accv2026/logs"
-OUT_BASE="evaluations/accv2026/coverage_stride_sweep"
-MAX=4
+OUT_BASE="/data/wesleyferreiramaia/infoRates/evaluations/accv2026/coverage_stride_sweep"
+CKPT_BASE="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"
+LOCK_DIR="/data/wesleyferreiramaia/infoRates/evaluations/accv2026/locks_combined"
+mkdir -p "$LOG_DIR" "$LOCK_DIR"
 
-log() { echo "[$(date '+%H:%M:%S')] COMB-SWEEP | $*"; }
-n_jobs() { squeue -u wesleyferreiramaia --noheader 2>/dev/null | wc -l; }
+MAX=4  # max combined-sweep concurrent
 
-# Contar total de jobs
-total=0
-for model in "${MODELS[@]}"; do
-    nat=${NATIVE_RES[$model]}
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] COMB-SWEEP | $*"; }
+
+n_comb() {
+    squeue -u wesleyferreiramaia --noheader --format="%j" 2>/dev/null \
+        | grep "^comb-" | wc -l
+}
+
+# Total: cada modelo tem 4 resoluções não-nativas × 7 datasets = 224 jobs
+TOTAL=0
+for m in "${MODELS[@]}"; do
+    nat=${NATIVE_RES[$m]}
     for res in "${ALL_RES[@]}"; do
         [[ $res -eq $nat ]] && continue
-        total=$(( total + ${#DATASETS[@]} ))
+        TOTAL=$(( TOTAL + ${#DATASETS[@]} ))
     done
 done
 
-log "=== Combined Sweep: coverage × stride × resolução ==="
-log "Total: ${total} jobs (8 modelos × 4 res-extras × 7 datasets)"
-log "Configs por job: 5 strides × 5 coverages = 25"
-log "MAX concurrent: ${MAX} | Estimativa: ~$((total * 70 / MAX / 60))h"
+has_ckpt() {
+    local m=$1 ds=$2
+    [[ -f "${CKPT_BASE}/accv2026_${m}_${ds}_224px_e10_h200/config.json" ]]
+}
 
-submitted=0
-skipped=0
+is_done() {
+    local m=$1 ds=$2 res=$3
+    local f="${OUT_BASE}/${m}_${ds}_res${res}/sweep_summary.csv"
+    [[ ! -f "$f" ]] && return 1
+    local n
+    n=$(python3 -c "import pandas as pd; df=pd.read_csv('$f'); print(len(df))" 2>/dev/null || echo 0)
+    [[ $n -ge 25 ]]
+}
 
-for model in "${MODELS[@]}"; do
-    nat=${NATIVE_RES[$model]}
-    venv="/data/wesleyferreiramaia/infoRates/.venv"
-    [[ "$model" == "videomamba" ]] && venv="/data/wesleyferreiramaia/infoRates/.venv_mamba"
+done_count() {
+    local n=0
+    for m in "${MODELS[@]}"; do
+        nat=${NATIVE_RES[$m]}
+        for res in "${ALL_RES[@]}"; do
+            [[ $res -eq $nat ]] && continue
+            for ds in "${DATASETS[@]}"; do
+                is_done "$m" "$ds" "$res" && ((n++)) || true
+            done
+        done
+    done
+    echo $n
+}
 
-    for res in "${ALL_RES[@]}"; do
-        [[ $res -eq $nat ]] && continue  # nativa já existe
+log "=== Combined Sweep Daemon: coverage × stride × resolução ==="
+log "Total: ${TOTAL} jobs | MAX=${MAX} concurrent"
 
-        for ds in "${DATASETS[@]}"; do
-            out_dir="${OUT_BASE}/${model}_${ds}_res${res}"
-            summary="${out_dir}/sweep_summary.csv"
+while true; do
+    # Limpar locks de combos completos
+    for lockfile in "${LOCK_DIR}"/*.lock; do
+        [[ -f "$lockfile" ]] || continue
+        base=$(basename "$lockfile" .lock)
+        IFS='@' read -r m ds res <<< "$base"
+        is_done "$m" "$ds" "$res" && rm -f "$lockfile" || true
+    done
 
-            if [[ -f "$summary" ]]; then
-                # Verificar se está completo (25 configs)
-                n=$(python3 -c "import pandas as pd; df=pd.read_csv('$summary'); print(len(df))" 2>/dev/null || echo 0)
-                if [[ "$n" -ge 25 ]]; then
-                    ((skipped++)) || true
+    done=$(done_count)
+    waiting_ckpt=0; pending=0
+    for m in "${MODELS[@]}"; do
+        nat=${NATIVE_RES[$m]}
+        for res in "${ALL_RES[@]}"; do
+            [[ $res -eq $nat ]] && continue
+            for ds in "${DATASETS[@]}"; do
+                is_done "$m" "$ds" "$res" && continue
+                [[ -f "${LOCK_DIR}/${m}@${ds}@${res}.lock" ]] && continue
+                has_ckpt "$m" "$ds" && ((pending++)) || ((waiting_ckpt++))
+            done
+        done
+    done
+
+    log "Progress: ${done}/${TOTAL} done | pending=${pending} | waiting_ckpt=${waiting_ckpt} | queue=$(n_comb)"
+    [[ $done -ge $TOTAL ]] && { log "=== ALL DONE ==="; exit 0; }
+
+    # Submeter novos jobs
+    for m in "${MODELS[@]}"; do
+        nat=${NATIVE_RES[$m]}
+        venv="/data/wesleyferreiramaia/infoRates/.venv"
+        [[ "$m" == "videomamba" ]] && venv="/data/wesleyferreiramaia/infoRates/.venv_mamba"
+
+        for res in "${ALL_RES[@]}"; do
+            [[ $res -eq $nat ]] && continue
+            for ds in "${DATASETS[@]}"; do
+                is_done "$m" "$ds" "$res" && continue
+                [[ -f "${LOCK_DIR}/${m}@${ds}@${res}.lock" ]] && continue
+                has_ckpt "$m" "$ds" || continue  # aguarda retrain
+
+                # Proteção extra: verificar se já há job com esse out_dir na fila
+                out_dir="${OUT_BASE}/${m}_${ds}_res${res}"
+                if find "${out_dir}" -name "*.csv" -newer "${LOCK_DIR}" 2>/dev/null | grep -q .; then
+                    touch "${LOCK_DIR}/${m}@${ds}@${res}.lock"
                     continue
                 fi
-            fi
 
-            # Aguardar slot
-            while [[ $(n_jobs) -ge $MAX ]]; do sleep 30; done
+                [[ $(n_comb) -ge $MAX ]] && break 3
 
-            JID=$(sbatch \
-                --job-name="comb-${model:0:6}-${ds:0:5}-${res}" \
-                --partition=cenvalarc.gpu \
-                --gres=gpu:1 \
-                --cpus-per-task=8 \
-                --mem=64G \
-                --time=03:00:00 \
-                --output="${LOG_DIR}/comb-sweep-${model}-${ds}-${res}px-%j.out" \
-                --error="${LOG_DIR}/comb-sweep-${model}-${ds}-${res}px-%j.err" \
-                --wrap="
-set -e
-cd /scratch/wesleyferreiramaia/infoRates
-export PYTHONPATH=/data/wesleyferreiramaia/infoRates/src
-export TORCH_HOME=/scratch/wesleyferreiramaia/infoRates/torch_cache
-export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
-export WANDB_MODE=disabled
-source ${venv}/bin/activate
-echo '=== Combined Sweep: ${model} / ${ds} @ ${res}px ==='
-nvidia-smi | grep -E 'Name|L40|H200|A100' | head -2 || true
-python /data/wesleyferreiramaia/infoRates/scripts/accv2026/sweep_coverage_stride.py \
-    --model ${model} \
-    --dataset ${ds} \
-    --input-size ${res} \
-    --coverages ${COVERAGES} \
-    --strides ${STRIDES} \
-    --output-dir /data/wesleyferreiramaia/infoRates/${out_dir}
-echo DONE
-" 2>&1 | grep -o "[0-9]*")
+                out_dir="${OUT_BASE}/${m}_${ds}_res${res}"
+                touch "${LOCK_DIR}/${m}@${ds}@${res}.lock"
 
-            if [[ -n "$JID" && "$JID" =~ ^[0-9]+$ ]]; then
-                log "[${model}/${ds}@${res}px] Job ${JID}"
-                ((submitted++)) || true
-            else
-                log "[${model}/${ds}@${res}px] FALHOU — QOS limit, tentando de novo em 60s"
-                sleep 60
-                # Re-tentar uma vez
-                JID=$(sbatch \
-                    --job-name="comb-${model:0:6}-${ds:0:5}-${res}" \
-                    --partition=cenvalarc.gpu \
-                    --gres=gpu:1 --cpus-per-task=8 --mem=64G --time=03:00:00 \
-                    --output="${LOG_DIR}/comb-sweep-${model}-${ds}-${res}px-%j.out" \
-                    --error="${LOG_DIR}/comb-sweep-${model}-${ds}-${res}px-%j.err" \
+                if JID=$(sbatch \
+                    --job-name="comb-${m:0:6}-${ds:0:5}-${res}" \
+                    --partition=gpu \
+                    --gres=gpu:1 \
+                    --cpus-per-task=8 \
+                    --mem=64G \
+                    --time=03:00:00 \
+                    --output="${LOG_DIR}/comb-sweep-${m}-${ds}-${res}px-%j.out" \
+                    --error="${LOG_DIR}/comb-sweep-${m}-${ds}-${res}px-%j.err" \
                     --wrap="
 cd /scratch/wesleyferreiramaia/infoRates
 export PYTHONPATH=/data/wesleyferreiramaia/infoRates/src
@@ -123,24 +138,24 @@ export TORCH_HOME=/scratch/wesleyferreiramaia/infoRates/torch_cache
 export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
 export WANDB_MODE=disabled
 source ${venv}/bin/activate
+echo '=== Combined Sweep: ${m} / ${ds} @ ${res}px ==='
+nvidia-smi | grep -E 'Name|L40|H200|A100' | head -2 || true
+mkdir -p ${out_dir}
 python /data/wesleyferreiramaia/infoRates/scripts/accv2026/sweep_coverage_stride.py \
-    --model ${model} --dataset ${ds} --input-size ${res} \
+    --model ${m} --dataset ${ds} --input-size ${res} \
     --coverages ${COVERAGES} --strides ${STRIDES} \
-    --output-dir /data/wesleyferreiramaia/infoRates/${out_dir}
-" 2>&1 | grep -o "[0-9]*")
-                [[ -n "$JID" ]] && log "[RETRY OK] Job ${JID}" || log "[RETRY FALHOU] Continuando..."
-            fi
-
-            sleep 3
+    --output-dir ${out_dir}
+echo DONE
+" 2>&1 | grep -o "[0-9]*"); then
+                    log "[${m}/${ds}@${res}px] Job ${JID}"
+                else
+                    log "[${m}/${ds}@${res}px] SBATCH FAILED"
+                    rm -f "${LOCK_DIR}/${m}@${ds}@${res}.lock"
+                fi
+                sleep 3
+            done
         done
     done
-done
 
-log "=== Submissão concluída: ${submitted} novos jobs, ${skipped} já existentes ==="
-log "Aguardando término..."
-until [[ $(n_jobs) -eq 0 ]]; do
-    done_count=$(find "${OUT_BASE}" -name "sweep_summary.csv" -newer "${OUT_BASE}" 2>/dev/null | wc -l || echo 0)
-    log "Progress: ${done_count}/${total} | jobs na fila: $(n_jobs)"
-    sleep 300
+    sleep 60
 done
-log "=== TUDO COMPLETO ==="

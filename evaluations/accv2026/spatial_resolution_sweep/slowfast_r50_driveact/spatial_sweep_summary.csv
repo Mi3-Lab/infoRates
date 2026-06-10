@@ -1,0 +1,6 @@
+resolution,top1,n,model,dataset,native_res
+96,0.3169642857142857,448,slowfast_r50,driveact,224
+112,0.4017857142857143,448,slowfast_r50,driveact,224
+160,0.6584821428571429,448,slowfast_r50,driveact,224
+224,0.7008928571428571,448,slowfast_r50,driveact,224
+336,0.5870535714285714,448,slowfast_r50,driveact,224

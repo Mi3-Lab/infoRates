@@ -415,6 +415,7 @@ def main() -> None:
 
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+        model._set_static_graph()  # BiMamba reuses params bidirectionally; static graph avoids DDP "ready once" error
 
     if torch.cuda.is_available() and not args.ddp:
         try:

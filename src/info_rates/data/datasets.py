@@ -79,12 +79,15 @@ def load_diving48(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     """Diving48 from the pre-built manifest CSV (evaluations/accv2026/manifests/)."""
     import pandas as pd
 
-    manifest_path = Path("evaluations/accv2026/manifests/diving48_manifest.csv")
-    if not manifest_path.exists():
-        # fallback relative to data_root
-        manifest_path = Path(data_root) / "annotations" / "diving48_manifest.csv"
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Diving48 manifest not found at {manifest_path}")
+    _src_root = Path(__file__).resolve().parents[4]
+    candidates = [
+        Path("evaluations/accv2026/manifests/diving48_manifest.csv"),
+        _src_root / "evaluations/accv2026/manifests/diving48_manifest.csv",
+        Path(data_root) / "annotations" / "diving48_manifest.csv",
+    ]
+    manifest_path = next((p for p in candidates if p.exists()), None)
+    if manifest_path is None:
+        raise FileNotFoundError(f"Diving48 manifest not found. Tried: {candidates}")
 
     df = pd.read_csv(manifest_path)
     num_classes = int(df["label_id"].max()) + 1

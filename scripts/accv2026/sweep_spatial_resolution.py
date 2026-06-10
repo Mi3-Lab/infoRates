@@ -45,7 +45,7 @@ MODEL_CFG = {
 
 DATASET_CFG = {
     "ssv2":         dict(manifest="somethingv2_val_20_per_class.csv", name="somethingv2",   split="validation"),
-    "ucf101":       dict(manifest="ucf101_val_20_per_class.csv",      name="ucf101",        split="validation"),
+    "ucf101":       dict(manifest="ucf101_val_20_per_class.csv",      name="ucf101",        split="val"),
     "hmdb51":       dict(manifest="hmdb51_val_20_per_class.csv",      name="hmdb51",        split="val"),
     "autsl":        dict(manifest="autsl_val_20_per_class.csv",       name="autsl",         split="val"),
     "diving48":     dict(manifest="diving48_val_20_per_class.csv",    name="diving48",      split="val"),
@@ -72,13 +72,19 @@ SCRATCH_CKPTS = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
 
 def get_checkpoint(model: str, dataset: str) -> Path:
     key = (model, dataset)
-    ckpt_name = SPECIAL_CKPTS.get(key) or \
-        f"accv2026_{model}_{dataset}_full_e10_{MODEL_CFG[model]['ckpt_suffix']}"
+    candidates = []
+    if key in SPECIAL_CKPTS:
+        candidates.append(SPECIAL_CKPTS[key])
+    # H200 retrain naming (224px, todas as campanhas recentes)
+    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
+    # Fallback: nomenclatura antiga
+    candidates.append(f"accv2026_{model}_{dataset}_full_e10_{MODEL_CFG[model]['ckpt_suffix']}")
     for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
-        p = base / ckpt_name
-        if p.exists():
-            return p
-    raise FileNotFoundError(f"Checkpoint not found: {ckpt_name}")
+        for name in candidates:
+            p = base / name
+            if p.exists():
+                return p
+    raise FileNotFoundError(f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}")
 
 
 def load_model(model_name: str, dataset: str):

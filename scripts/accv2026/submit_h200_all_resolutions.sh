@@ -4,97 +4,97 @@
 set -uo pipefail
 cd /data/wesleyferreiramaia/infoRates
 
-MAX_H200=6     # max jobs concurrent na H200 (3 nós × 2 GPUs = 6 jobs)
-MAX_L40S=4     # fallback para L40s se H200 lotada
-MAX_TOTAL=4
+MAX_TOTAL=4  # QOS limit: cenvalarc.gpu allows 4 running jobs per user
 
 MODELS=(r3d_18 mc3_18 r2plus1d_18 slowfast_r50 timesformer vivit videomae videomamba)
 DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
 RESOLUTIONS=(224 336)
 
 CKPT_BASE="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"
-LOCK_DIR="/tmp/h200_retrain_locks"
+# Lock dir persistente (não some entre reinicios)
+LOCK_DIR="/data/wesleyferreiramaia/infoRates/evaluations/accv2026/locks"
 mkdir -p "$LOCK_DIR"
 
-log()     { echo "[$(date '+%Y-%m-%d %H:%M:%S')] H200-ALL | $*"; }
-n_h200()  { squeue -u wesleyferreiramaia -p cenvalarc.gpu --noheader 2>/dev/null | grep "retrain-h200" | wc -l; }
-n_l40s()  { squeue -u wesleyferreiramaia -p cenvalarc.gpu --noheader 2>/dev/null | grep "retrain-336px" | wc -l; }
-n_total() { squeue -u wesleyferreiramaia --noheader 2>/dev/null | wc -l; }
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] H200-ALL | $*"; }
+
+# Conta todos os jobs na partição cenvalarc.gpu (QOS limit se aplica a TODOS)
+n_retrain() {
+    squeue -u wesleyferreiramaia --noheader --format="%P" 2>/dev/null \
+        | grep -c "^cenvalarc.gpu$" || true
+}
 
 TOTAL=$(( ${#MODELS[@]} * ${#DATASETS[@]} * ${#RESOLUTIONS[@]} ))  # 8×7×2 = 112
+
+# Checa se um checkpoint está completo: config.json existe
+# (mesmo critério que o sbatch usa para pular o job)
+is_done() {
+    local model=$1 ds=$2 res=$3
+    [[ -f "${CKPT_BASE}/accv2026_${model}_${ds}_${res}px_e10_h200/config.json" ]]
+}
 
 done_count() {
     local n=0
     for m in "${MODELS[@]}"; do
         for ds in "${DATASETS[@]}"; do
             for res in "${RESOLUTIONS[@]}"; do
-                cfg="${CKPT_BASE}/accv2026_${m}_${ds}_${res}px_e10_h200/config.json"
-                if [[ -f "$cfg" ]]; then
-                    val=$(python3 -c "import json; d=json.load(open('$cfg')); print(1 if d.get('val_acc',0)>0 and d.get('epoch',0)>=9 else 0)" 2>/dev/null || echo 0)
-                    [[ "$val" == "1" ]] && ((n++)) || true
-                fi
+                is_done "$m" "$ds" "$res" && ((n++)) || true
             done
         done
     done
     echo $n
 }
 
-is_done() {
-    local model=$1 ds=$2 res=$3
-    local cfg="${CKPT_BASE}/accv2026_${model}_${ds}_${res}px_e10_h200/config.json"
-    [[ ! -f "$cfg" ]] && return 1
-    local val
-    val=$(python3 -c "import json; d=json.load(open('$cfg')); print(1 if d.get('val_acc',0)>0 and d.get('epoch',0)>=9 else 0)" 2>/dev/null || echo 0)
-    [[ "$val" == "1" ]]
-}
+# Lock nomeado com @ como separador (evita colisão com _ em epic_kitchens, r3d_18 etc.)
+lock_name() { echo "${LOCK_DIR}/${1}@${2}@${3}.lock"; }
 
 try_submit() {
     local model=$1 ds=$2 res=$3
-    local lock="${LOCK_DIR}/${model}_${ds}_${res}.lock"
+    local lock
+    lock=$(lock_name "$model" "$ds" "$res")
 
     is_done "$model" "$ds" "$res" && return 0
-    [[ -f "$lock" ]] && return 0  # já submetido
+    [[ -f "$lock" ]] && return 0  # já submetido, aguardando
 
-    [[ $(n_total) -ge $MAX_TOTAL ]] && return 1  # fila cheia
+    [[ $(n_retrain) -ge $MAX_TOTAL ]] && return 1  # fila cheia
 
     touch "$lock"
 
     local result
-    result=$(sbatch \
-        --constraint=H200 \
+    if result=$(sbatch \
         --export=MODEL=${model},DATASET=${ds},INPUT_SIZE=${res} \
-        scripts/accv2026/slurm_h200_retrain_all.sbatch 2>&1)
-
-    log "[${model}/${ds}@${res}px → H200] $result"
+        scripts/accv2026/slurm_h200_retrain_all.sbatch 2>&1); then
+        log "[${model}/${ds}@${res}px] $result"
+    else
+        log "[${model}/${ds}@${res}px] SBATCH FAILED — $result"
+        rm -f "$lock"  # remove lock para tentar de novo na próxima iteração
+        return 1
+    fi
     sleep 2
     return 0
 }
 
 log "=== H200 ALL-RESOLUTIONS DAEMON ==="
 log "Target: ${TOTAL} jobs (8 models × 7 datasets × 2 resolutions: 224+336px)"
-log "H200: 141GB/GPU, batch=32-96 (sem collapse!)"
+log "MAX_TOTAL=${MAX_TOTAL} retrain jobs concurrent"
 
 while true; do
-    # Limpar locks de jobs já concluídos
+    # Limpar locks de jobs já concluídos (parsing seguro com @ como separador)
     for lockfile in "${LOCK_DIR}"/*.lock; do
         [[ -f "$lockfile" ]] || continue
         base=$(basename "$lockfile" .lock)
-        IFS='_' read -ra parts <<< "$base"
-        res="${parts[-1]}"
-        ds="${parts[-2]}"
-        model="${base%_${ds}_${res}}"
-        is_done "$model" "$ds" "$res" && rm -f "$lockfile" || true
+        IFS='@' read -r m ds res <<< "$base"
+        is_done "$m" "$ds" "$res" && rm -f "$lockfile" || true
     done
 
     done=$(done_count)
-    log "Progress: ${done}/${TOTAL} done | queue=$(n_total)"
+    log "Progress: ${done}/${TOTAL} done | retrain_queue=$(n_retrain)"
     [[ $done -ge $TOTAL ]] && { log "=== ALL DONE ==="; rm -f "${LOCK_DIR}"/*.lock; exit 0; }
 
     submitted=0
     for res in "${RESOLUTIONS[@]}"; do
         for model in "${MODELS[@]}"; do
             for ds in "${DATASETS[@]}"; do
-                if [[ $(n_total) -lt $MAX_TOTAL ]]; then
+                if [[ $(n_retrain) -lt $MAX_TOTAL ]]; then
                     try_submit "$model" "$ds" "$res" && ((submitted++)) || true
                 fi
             done
