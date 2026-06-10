@@ -7,7 +7,7 @@ cd /data/wesleyferreiramaia/infoRates
 MAX_TOTAL=4  # QOS limit: cenvalarc.gpu allows 4 running jobs per user
 
 MODELS=(r3d_18 mc3_18 r2plus1d_18 slowfast_r50 timesformer vivit videomae videomamba)
-DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
+DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens finegym)
 RESOLUTIONS=(96 112 160 224)
 
 CKPT_BASE="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"

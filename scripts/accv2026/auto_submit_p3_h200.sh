@@ -8,7 +8,7 @@
 set -uo pipefail
 cd /data/wesleyferreiramaia/infoRates
 MAX_H200=5   # max concurrent on cenvalarc.gpu
-DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
+DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens finegym)
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 

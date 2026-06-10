@@ -33,6 +33,7 @@ declare -A DATA_ROOTS=(
     [driveact]="${SCRATCH_DATA}/DriveAct_data"
     [epic_kitchens]="${SCRATCH_DATA}/EPIC_data"
     [ego4d]="${SCRATCH_DATA}/Ego4D_data"
+    [finegym]="${SCRATCH_DATA}/FineGym_data"
 )
 DATA_ROOT="${DATA_ROOTS[$DATASET]:-${SCRATCH_DATA}}"
 
