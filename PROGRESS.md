@@ -39,7 +39,8 @@ Last updated: 2026-06-09
 | Entropy routing (E7) | ✅ **Completo** | 42.5% SSv2 · 7.7f · +4.2pp vs FrameExit |
 | Baseline comparison vs AdaFocus/AR-Net/FrameExit | ✅ **Completo** | Tabela comparação pronta |
 | Clip duration analysis | ✅ **Completo** | Clips curtos aliam mais (r=−0.3 a −0.8) |
-| Resolution retraining (P3) | ❌ **Removido do paper** | Dados com bug de batch_size; aguarda cluster liberar |
+| Resolution retraining (96–224px, 7 datasets) | ⏳ **197/224 done** | 8 jobs running (H200+A100 daemons); ~27 remaining |
+| Resolution retraining (P3/336px investigation) | ❌ **Pausado** | Padrão anômalo (batch_size bug); investiga após 96–224px terminar |
 
 ---
 
@@ -69,10 +70,13 @@ Last updated: 2026-06-09
 - TimeSformer/SSv2: 42.5% @ 7.7f médios (oracle: 47.3%)
 - Média cross-architecture: 77% dos vídeos roteados para 4-frame
 
-### Dataset Expansion (Status 2026-06-03)
+### Dataset Expansion (Status 2026-06-10)
 - **FLAME:** ✅ Downloaded and unzipped to `data/FLAME_data/`
 - **UCF-Crime:** ✅ Downloaded and unzipped to `data/UCFCrime_data/`
-- **Ego4D:** ⏳ Pending (Requires AWS credentials for `ego4d` CLI)
+- **Ego4D:** ⏳ Downloading — Slurm job `long` partition, **12 GB** (288 clips subset, top 50 verbs)
+  - FHO-LTA: 50 verb classes, balanced subset (~50 train + 20 val per class)
+  - After download: `preprocess_ego4d.py` extracts 3–8s segments → `action_clips/{verb}/{clip_uid}_a{idx}.mp4`
+  - Training daemon: `submit_ego4d_retrain.sh` (waits for manifest, then 8×4=32 jobs)
 
 ---
 
@@ -81,7 +85,7 @@ Last updated: 2026-06-09
 | Decisão | Motivo |
 |---------|--------|
 | Remover P3 retraining do paper | Dados com bug de batch_size (336px colapsou: MC3@autsl −43pp). Dados 96-160px OK mas incompletos sem 336px e sem todos os datasets. |
-| Manter seção espacial como cross-resolution eval | 40 configs completas, limpas, padrão claro. Honesto: "on SSv2". |
+| Manter seção espacial como cross-resolution eval | 280 configs completas (8×5×7), padrão claro e universal. CNNs: até −73pp; Transformers: ≤8pp. |
 | Remover nomenclatura E1/E6/E7 | Nomenclatura interna; não faz sentido para leitores. |
 | Título: "Spatiotemporal" → "Temporal" | Paper é primariamente sobre aliasing temporal; espacial é uma seção secundária. |
 | ViViT anomaly: frágil temporal, robusto espacial | Achado genuíno — patch tokenization + attention = invariância espacial, mas fatorização temporal = fragilidade. |
@@ -107,18 +111,18 @@ main.tex (~820 linhas)
 │   ├── Cross-Architecture Temporal Aliasing (Fig 1, Fig 2, Table 3, Table 4, Table 5)
 │   ├── Statistical Validation (ANOVA + Levene)
 │   ├── Action Sensitivity Taxonomy (Table 6)
-│   ├── Spatial Resolution Robustness (Fig 5, Table 7) ← SSv2, 8 modelos × 5 res
+│   ├── Spatial Resolution Robustness (Fig 5, Table 7) ← SSv2 + cross-dataset validation (S9)
 │   └── Entropy Routing (Fig 4, Table 8, Table 9)
 ├── 5. Discussion
 │   ├── Por que attention type determina aliasing?
-│   ├── Spatial robustness mirrors temporal robustness
-│   ├── Practical deployment guidance (3 bullets)
+│   ├── Spatial robustness mirrors temporal (+ amplified on appearance-heavy domains)
+│   ├── Practical deployment guidance (4 bullets)
 │   ├── The ViViT anomaly
 │   ├── SSM as new robustness paradigm
 │   └── Limitations
 └── 6. Conclusion
 
-supplementary.tex (~450 linhas)
+supplementary.tex (~630 linhas)
 ├── S1: Full coverage×stride heatmaps (8 modelos × 7 datasets)
 ├── S2: Levene variance inflation
 ├── S3: Full ANOVA tables
@@ -126,7 +130,8 @@ supplementary.tex (~450 linhas)
 ├── S5: Entropy routing curves — all models
 ├── S6: Clip duration analysis
 ├── S7: Spectral correlation detail
-└── S8: Implementation details
+├── S8: Implementation details
+└── S9: Multi-dataset spatial resolution results (7 datasets × 8 modelos × 5 res)
 ```
 
 ---

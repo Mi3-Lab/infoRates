@@ -71,10 +71,11 @@ CNNs and ViViT (factorized attention), despite ViViT being a Transformer.
 We introduce the \textbf{Temporal Demand Score (\TDS{})}, a dataset-level metric
 derived from the mean architecture-agnostic accuracy drop under temporal subsampling,
 which ranks 7 datasets consistently across all 8 models.
-We further evaluate all 8 models across 5 spatial resolutions (96--336px) on SSv2
-without retraining, revealing the same architectural split: CNNs degrade by up to
-36pp away from their native resolution while Transformers and VideoMamba stay within
-$\pm$6pp across the full range.
+We further evaluate all 8 models across 5 spatial resolutions (96--336px) on all 7
+datasets without retraining (280 configurations), revealing the same architectural
+split---amplified on semantically demanding domains: CNNs degrade up to 73pp off-native
+(R3D-18 on sign language) while Transformers and VideoMamba stay within $\pm$8pp
+universally across all domains.
 Finally, an entropy-based routing method routes an average of 77\% of videos to cheap
 4-frame inference while matching 16-frame accuracy (up to 84\% for TimeSformer),
 outperforming FrameExit~\cite{ghodrati2021frameexit} by $+4.2$pp at equal compute.
@@ -161,9 +162,11 @@ evaluation configurations across 8 models $\times$ 7 datasets reveal that the
 \emph{attention mechanism type}---not architecture family---determines aliasing
 behavior (Sec.~\ref{sec:results_temporal}).
 \item \textbf{Spatial resolution robustness}: Evaluating all 8 models at 5
-resolutions (96--336px) on SSv2 without retraining reveals the same split:
-CNNs degrade up to 36pp off-native; Transformers and VideoMamba stay within
-$\pm$6pp (Sec.~\ref{sec:results_spatial}).
+resolutions (96--336px) across all 7 datasets without retraining (280 configurations)
+confirms the same split with amplified severity on semantically specific domains:
+CNNs degrade up to 73pp off-native (R3D-18 on sign language);
+Transformers and VideoMamba stay within $\pm$8pp universally
+(Sec.~\ref{sec:results_spatial}).
 \item \textbf{Entropy-based adaptive routing}: A zero-training
 routing method reduces average inference frames by 52\% while matching
 dense-sampling accuracy (Sec.~\ref{sec:results_routing}).
@@ -255,12 +258,12 @@ across architectures and diverse semantic domains.
 \node(ds)[data,text width=4.2cm]{\textbf{7 Datasets}\\AUTSL · SSv2 · UCF-101\\Diving-48 · HMDB-51\\DriveAct · EPIC-Kitchens};
 \node(ar)[data,right=7mm of ds,text width=4.2cm]{\textbf{8 Architectures}\\CNNs: R3D · MC3 · R2+1D\\Dual: SlowFast\\Transformers: TSF · ViViT · VMAE\\SSM: VideoMamba};
 \node(e1)[proc,right=7mm of ar]{\textbf{Temporal Sweep}\\$\mathcal{C}\in\{10,25,50,75,100\}\%$\\$s\in\{1,2,4,8,16\}$\\25 configs per pair};
-\node(e6)[proc,right=7mm of e1]{\textbf{Spatial Sweep}\\5 resolutions: 96--336\,px\\cross-resolution eval\\(SSv2, no retraining)};
+\node(e6)[proc,right=7mm of e1]{\textbf{Spatial Sweep}\\5 resolutions: 96--336\,px\\cross-resolution eval\\(all 7 datasets, no retraining)};
 \node(an)[eval,right=7mm of e6]{\textbf{Analysis}\\TDS metric · ANOVA\\Levene · Taxonomy\\Entropy routing};
 \draw[arr](ds)--(ar); \draw[arr](ar)--(e1); \draw[arr](e1)--(e6); \draw[arr](e6)--(an);
 \end{tikzpicture}}
 \caption{Pipeline: 8 architectures are evaluated over 1,400 temporal configurations
-($8{\times}7{\times}25$) and 40 cross-resolution configurations ($8{\times}5$ on SSv2).
+($8{\times}7{\times}25$) and 280 cross-resolution configurations ($8{\times}5{\times}7$ datasets).
 Results feed TDS, ANOVA, Levene's test, and entropy routing analysis.}
 \label{fig:pipeline}
 \end{figure*}
@@ -326,10 +329,11 @@ positions when checked on a 10\% random subset.
 
 \subsection{Spatial Resolution Protocol}
 
-We evaluate all 8 fine-tuned checkpoints on SSv2 at
-$r\in\{96,112,160,224,336\}$\,px \emph{without retraining}, measuring how much
-accuracy each architecture retains when the input resolution differs from its
-native training resolution (112px for CNNs, 224px for Transformers and VideoMamba).
+We evaluate all 8 fine-tuned checkpoints on \emph{all 7 datasets} at
+$r\in\{96,112,160,224,336\}$\,px \emph{without retraining}
+($8{\times}5{\times}7{=}280$ configurations total), measuring how much accuracy each
+architecture retains when the input resolution differs from its native training
+resolution (112px for CNNs, 224px for Transformers and VideoMamba).
 No model weights are modified; only the input spatial scale changes.
 
 \subsection{Temporal Demand Score (\texorpdfstring{\TDS{}}{TDS})}
@@ -720,19 +724,23 @@ VideoMamba  & 224px & 37.5 & 39.3 & 42.5 & \textbf{43.9} & 43.8 & $-6.4$pp \\
 \end{table}
 
 \textbf{Cross-dataset validation.}
-We validate the spatial robustness pattern across six additional datasets
+We validate the spatial robustness pattern across all six additional datasets
 (UCF-101, HMDB-51, Diving-48, AUTSL, DriveAct, EPIC-Kitchens;
-full results in supplementary~S9).
+full tables in supplementary~S9).
 The CNN/Transformer split holds universally---and is in fact \emph{more severe} on
-appearance-heavy tasks.
+semantically specific, appearance-heavy datasets.
 On AUTSL (sign language), R3D-18 collapses from 75.0\% at native 112px to 2.0\%
-at 336px ($-73.0$pp); on DriveAct (in-cabin activities), MC3-18 falls from 69.0\% to
-4.5\% ($-64.5$pp).
-These far exceed the $-36.6$pp observed on SSv2, suggesting that spatial content with
-high discriminative frequency (hand shape, fine-grained gesture) is especially sensitive
-to convolutional scale coupling.
+at 336px ($-73.0$pp) and R2+1D falls from 75.9\% to 7.3\% ($-68.7$pp);
+on DriveAct (in-cabin activities), MC3-18 falls from 69.0\% to 4.5\% ($-64.5$pp);
+on UCF-101, CNNs peak near 85--88\% at 112px and collapse to 20--25\% at 336px
+($-60$ to $-64$pp).
+These far exceed the worst CNN drop on SSv2 ($-36.7$pp), suggesting that
+spatial content with high discriminative frequency (hand shape, fine-grained gesture,
+instrument pose) imposes tighter spatial-frequency constraints on convolutional kernels,
+amplifying the resolution-scale mismatch.
 Transformers remain robust across all 7 datasets:
-VideoMAE deviates at most 7.7pp from native accuracy on any tested dataset.
+no Transformer model exceeds 8pp degradation in any dataset--resolution combination,
+and VideoMAE deviates at most 7.7pp from its native accuracy across all tested domains.
 
 This mirrors the temporal aliasing finding: the property that determines
 robustness is \emph{how the architecture integrates information}, not its
@@ -847,16 +855,28 @@ when frames are dropped.
 missing frames introduce a bounded perturbation to the state, not a catastrophic
 information loss---hence the natural robustness.
 
-\paragraph{Spatial robustness mirrors temporal robustness.}
-The cross-resolution results on SSv2 confirm that the same architectural property
-governs both domains.
+\paragraph{Spatial robustness mirrors temporal robustness---and amplifies with semantic specificity.}
+Cross-resolution results confirmed across all 7 datasets (280 configurations) show
+that the same architectural property governing temporal aliasing also governs spatial
+scale sensitivity.
 CNNs' strided convolutions learn features at a specific spatial scale; tested
 off-resolution, spatial frequency patterns shift relative to learned filter banks,
 causing catastrophic accuracy loss.
 Global attention and SSM recurrence aggregate tokens irrespective of their absolute
 spatial scale, producing representations that transfer across resolutions.
+
+Critically, the CNN brittleness is \emph{amplified} on semantically specific datasets:
+R3D-18 degrades 73pp on AUTSL (sign language) and MC3-18 degrades 64.5pp on DriveAct
+(in-cabin activities)---nearly double the 36.7pp worst case on SSv2.
+We attribute this amplification to discriminative-frequency coupling: datasets where
+fine-grained spatial features (handshape, gesture, body pose) are the primary
+discriminative signal impose tighter spatial-frequency constraints on convolutional
+filters, so any deviation from the training scale is especially destructive.
+Transformers and VideoMamba remain within $\pm$8pp across all 7 datasets,
+confirming that global integration decouples representation quality from absolute input scale.
+
 The ViViT result is particularly instructive: despite being a Transformer,
-ViViT is \emph{spatially robust} ($-1.9$pp maximum drop)---confirming that patch
+ViViT is \emph{spatially robust} ($-1.9$pp maximum drop on SSv2)---confirming that patch
 tokenization followed by attention is the source of spatial invariance, regardless
 of whether temporal attention is factorized or divided.
 This contrasts with the temporal domain, where ViViT's factorized attention makes it
@@ -870,8 +890,9 @@ different architectural properties.
 \item \textbf{Appearance-dominated domains} (UCF-101): any architecture suffices;
   all models lose $<$10pp even at stride=16.
 \item \textbf{Spatial resolution}: Deploy Transformers and VideoMamba at any resolution
-  in 96--336px without accuracy loss; retrain CNNs at the target resolution before
-  changing spatial scale.
+  in 96--336px with $\leq$8pp accuracy loss across all 7 tested domains;
+  CNNs must be retrained at the target resolution, especially for semantically specific
+  tasks where off-native degradation reaches 73pp.
 \item \textbf{Compute budget}: Entropy routing safely routes 77\% of videos to 4-frame
   inference with no accuracy loss, enabling 52\% average frame reduction.
 \end{enumerate}
@@ -913,10 +934,11 @@ egomotion-compensated flow is not attempted.
 ($r=-0.3$ to $-0.8$) is reported without controls for class distribution or
 dataset-specific length distributions; the SSv2 3--6s bin reversal is noted but
 unexplained. This analysis should be read as exploratory.
-\emph{Spatial evaluation}: cross-resolution results are reported on SSv2 only;
-whether the CNN/Transformer split generalizes across all 7 datasets is an open
-question. Retraining each model at the target resolution would further disentangle
-architectural limits from training-distribution effects.
+\emph{Spatial evaluation}: cross-resolution results are now confirmed across all 7 datasets
+(280 configurations), establishing the CNN/Transformer split as a universal property.
+Retraining each model at the target resolution would further disentangle architectural
+limits from training-distribution effects; evaluating beyond 336px would probe whether
+Transformer spatial robustness holds at more extreme scales.
 \emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could
 improve the oracle gap (4.8pp). The two-tier budget (4f/16f) is fixed;
 continuous or multi-tier budgets are a natural extension.
@@ -930,9 +952,10 @@ aliasing in video action recognition.
 Evaluating 8 architectures across 7 diverse datasets (1,400 configurations),
 our findings establish that aliasing behavior is governed by attention mechanism type
 rather than architecture family; that the \TDS{} metric captures dataset-level
-temporal frequency demand consistently across models; that the same architectural
-split governs spatial resolution robustness---CNNs degrade up to 36pp off-resolution
-while Transformers and VideoMamba stay within $\pm$6pp; and that
+temporal frequency demand consistently across models (Spearman $\rho{=}0.97$);
+that the same architectural split governs spatial resolution robustness universally
+across all 7 datasets---CNN degradation reaches 73pp on semantically specific domains
+while Transformers and VideoMamba stay within $\pm$8pp regardless of domain; and that
 entropy-based routing reduces average inference cost by 52\% with no accuracy penalty.
 These results provide principled, actionable guidance for designing efficient video
 recognition systems tailored to the temporal Nyquist constraints of each application domain.

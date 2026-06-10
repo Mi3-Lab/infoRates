@@ -53,6 +53,7 @@ _DEFAULT_DATA_ROOTS = {
     "driveact":      "data/DriveAct_data",
     "flame":         "data/FLAME_data",
     "ufc_crime":     "data/UCFCrime_data",
+    "ego4d":         "data/Ego4D_data",
 }
 
 

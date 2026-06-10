@@ -8,7 +8,7 @@ MAX_TOTAL=4  # QOS limit: cenvalarc.gpu allows 4 running jobs per user
 
 MODELS=(r3d_18 mc3_18 r2plus1d_18 slowfast_r50 timesformer vivit videomae videomamba)
 DATASETS=(ucf101 ssv2 hmdb51 diving48 autsl driveact epic_kitchens)
-RESOLUTIONS=(224 336)
+RESOLUTIONS=(96 112 160 224)
 
 CKPT_BASE="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"
 # Lock dir persistente (não some entre reinicios)
@@ -74,7 +74,7 @@ try_submit() {
 }
 
 log "=== H200 ALL-RESOLUTIONS DAEMON ==="
-log "Target: ${TOTAL} jobs (8 models × 7 datasets × 2 resolutions: 224+336px)"
+log "Target: ${TOTAL} jobs (8 models × 7 datasets × 4 resolutions: 96+112+160+224px)"
 log "MAX_TOTAL=${MAX_TOTAL} retrain jobs concurrent"
 
 while true; do
