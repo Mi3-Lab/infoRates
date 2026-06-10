@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 # P3 Resolution Retraining — FineGym, local GPU (RTX PRO 6000 Blackwell 97GB)
 #
-# Retrains all 8 models at 4 resolutions [96, 112, 160, 224]px.
+# Retrains all 8 models at 5 resolutions [96, 112, 160, 224, 336]px.
 # Skips if checkpoint already exists.
 # Naming convention: accv2026_{model}_finegym_{res}px_e10_h200
 # (matches cluster daemon naming so is_done() picks it up on pull)
+#
+# ── 336px batch size strategy ─────────────────────────────────────────────────
+# The cluster A100 (40GB) collapsed at 336px with batch=16-24 because BatchNorm
+# statistics become too noisy at small batch sizes. With 97GB here we can afford:
+#   CNNs           bs=128  → prevents BatchNorm collapse (need ≥64)
+#   SlowFast       bs=48   → dual-path but 97GB handles it
+#   Transformers   bs=24   → LayerNorm (robust), but 336px = 441 patches → memory
+#   VideoMamba     bs=32   → SSM linear, no O(n²) attention
 #
 # Usage:
 #   cd /mnt/datasets/infoRates
@@ -29,8 +37,8 @@ CKPT_BASE="fine_tuned_models"
 DATASET="finegym"
 EPOCHS=10
 
-# Resolutions: 4-point grid (96, 112, 160, 224) — 336px paused (batch_size study pending)
-RESOLUTIONS=(96 112 160 224)
+# Full 5-point grid; 336px uses large batches to prevent BatchNorm collapse
+RESOLUTIONS=(96 112 160 224 336)
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] P3-FineGym | $*"; }
 
@@ -44,9 +52,14 @@ run_cnn() {
     local ckpt="${CKPT_BASE}/accv2026_${model}_${DATASET}_${res}px_e${EPOCHS}_h200"
     is_done "$model" "$res" && { log "SKIP ${model}@${res}px (done)"; return 0; }
 
-    # Batch size: RTX PRO 6000 has 97GB — use large batches for fast training
+    # Batch size for CNNs (BatchNorm — never drop below 64 to prevent collapse):
+    #   96/112/160px → 256  (small input, fits easily)
+    #   224px        → 128
+    #   336px        → 128  (keep large! cluster A100 collapsed at bs=16-24)
     local bs=256
     [[ $res -ge 224 ]] && bs=128
+    # 336px: explicitly enforce bs=128 (same tier as 224px — do NOT reduce further)
+    # This is the fix for the cluster collapse: small bs → noisy BN stats → degenerate model
 
     log "START ${model} @ ${res}px  batch=${bs}"
     source "${VENV}/bin/activate"
@@ -73,8 +86,11 @@ run_slowfast() {
     local ckpt="${CKPT_BASE}/accv2026_${model}_${DATASET}_${res}px_e${EPOCHS}_h200"
     is_done "$model" "$res" && { log "SKIP ${model}@${res}px (done)"; return 0; }
 
+    # SlowFast: dual-path architecture is memory-heavy but 97GB handles well
+    # 336px: bs=48 keeps enough samples for stable training
     local bs=64
-    [[ $res -ge 224 ]] && bs=32
+    [[ $res -ge 224 ]] && bs=48
+    [[ $res -ge 336 ]] && bs=48  # explicit floor at 336px
 
     log "START ${model} @ ${res}px  batch=${bs}"
     source "${VENV}/bin/activate"
@@ -96,8 +112,12 @@ run_transformer() {
     local ckpt="${CKPT_BASE}/accv2026_${model}_${DATASET}_${res}px_e${EPOCHS}_h200"
     is_done "$model" "$res" && { log "SKIP ${model}@${res}px (done)"; return 0; }
 
+    # Transformers (TimeSformer/ViViT/VideoMAE): LayerNorm — less sensitive to batch size,
+    # but 336px → 441 patches per frame (vs 196 at 224px) — memory scales linearly
+    # 336px: bs=24 keeps ~25GB/GPU well under 97GB ceiling
     local bs=32
     [[ $res -le 112 ]] && bs=64
+    [[ $res -ge 336 ]] && bs=24
 
     log "START ${model} @ ${res}px  batch=${bs}"
     source "${VENV}/bin/activate"
@@ -123,8 +143,11 @@ run_videomamba() {
     local ckpt="${CKPT_BASE}/accv2026_${model}_${DATASET}_${res}px_e${EPOCHS}_h200"
     is_done "$model" "$res" && { log "SKIP ${model}@${res}px (done)"; return 0; }
 
+    # VideoMamba: SSM is linear in sequence length (no O(n²) attention)
+    # 336px is safe at bs=32 — plenty of room in 97GB
     local bs=48
     [[ $res -le 112 ]] && bs=64
+    [[ $res -ge 336 ]] && bs=32
 
     log "START ${model} @ ${res}px  batch=${bs}"
     # VideoMamba works under .venv on this machine
@@ -149,6 +172,7 @@ TOTAL=$(( 8 * ${#RESOLUTIONS[@]} ))
 log "=== P3 FineGym Resolution Retraining ==="
 log "8 models × ${#RESOLUTIONS[@]} resolutions = ${TOTAL} runs"
 log "Resolutions: ${RESOLUTIONS[*]}"
+log "336px batch sizes: CNNs=128, SlowFast=48, Transformers=24, VideoMamba=32"
 log "Checkpoint naming: accv2026_{model}_finegym_{res}px_e${EPOCHS}_h200"
 log ""
 
