@@ -86,7 +86,7 @@ while true; do
 
             if JID=$(sbatch \
                 --job-name="spatial-sweep-${m}-${ds}" \
-                --partition=cenvalarc.gpu \
+                --partition=gpu \
                 --gres=gpu:1 \
                 --cpus-per-task=8 \
                 --mem=64G \

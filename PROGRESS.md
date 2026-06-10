@@ -1,7 +1,7 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-03
+Last updated: 2026-06-09
 
 ---
 
@@ -21,7 +21,7 @@ Last updated: 2026-06-03
 |---|-------------|--------|-------|
 | **C1** | Temporal Demand Score (TDS) | ✅ Completo | 1,400 configs · 8 modelos · 7 datasets |
 | **C2** | Cross-architecture temporal aliasing | ✅ Completo | 1,400 configs · Spearman ρ=0.97 |
-| **C3** | Spatial resolution robustness | ✅ Completo | 40 configs · 8 modelos × 5 resoluções · SSv2 |
+| **C3** | Spatial resolution robustness | ✅ Completo | 280 configs · 8 modelos × 5 res × 7 datasets (checkpoints nativos corretos) |
 | **C4** | Entropy-based adaptive routing | ✅ Completo | +4.2pp vs FrameExit · 77% routed cheaply |
 
 ---
@@ -35,7 +35,7 @@ Last updated: 2026-06-03
 | ANOVA η² effect sizes | ✅ **Completo** | η²(stride): 0.08 SSM/TSF vs 0.35 SlowFast |
 | Levene variance inflation | ✅ **Completo** | 67% pares inflam variância; VideoMAE/HMDB 2.0× |
 | Action sensitivity taxonomy | ✅ **Completo** | UCF Low: −0.3pp; AUTSL all tiers >38pp |
-| Spatial resolution sweep (cross-res eval) | ✅ **Completo** — SSv2, 8 modelos × 5 res | CNNs −37pp; Transformers/SSM ±6pp |
+| Spatial resolution sweep (cross-res eval) | ✅ **Completo** — 280 configs · 48/48 jobs | CNNs: −73pp (R3D-18/AUTSL@336px); SSv2 −37pp; Transformers ≤7.7pp |
 | Entropy routing (E7) | ✅ **Completo** | 42.5% SSv2 · 7.7f · +4.2pp vs FrameExit |
 | Baseline comparison vs AdaFocus/AR-Net/FrameExit | ✅ **Completo** | Tabela comparação pronta |
 | Clip duration analysis | ✅ **Completo** | Clips curtos aliam mais (r=−0.3 a −0.8) |
@@ -52,12 +52,18 @@ Last updated: 2026-06-03
   - SSv2: 27.6pp · DriveAct: 21.9pp · Diving-48: 19.2pp
   - HMDB-51: 16.6pp · EPIC-Kitchens: 9.7pp · UCF-101: 4.9pp
 
-### Spatial (spatial_eval.csv)
-- 40 configs (8 modelos × 5 resoluções, SSv2 apenas, sem retraining)
-- CNNs: queda máx −37pp (R2+1D@336px)
-- Transformers+SSM: queda máx −6pp (VideoMamba@96px)
-- ViViT: robusto espacialmente (−1.9pp máx) mas frágil temporalmente (+34pp)
-  → fato novo e interessante para reviewers
+### Spatial (p3_results.csv — 280 linhas, checkpoints nativos corretos)
+- 48/48 jobs completos (VideoMamba/AUTSL = colapso confirmado: 0.4% em todas as resoluções)
+- **SSv2 (motion-heavy):** CNNs −37pp (R2+1D@336px); Transformers ≤6pp
+- **Cross-dataset — padrão MAIS SEVERO em datasets appearance-heavy:**
+  - R3D-18/AUTSL: 75.0% → 2.0% (−73.0pp) — pior drop de todos
+  - MC3-18/DriveAct: 69.0% → 4.5% (−64.5pp)
+  - R2+1D/AUTSL: 75.9% → 7.3% (−68.7pp)
+  - UCF-101 CNNs: peak ~81-88% @ 112px, colapso a 20-25% @ 336px (−60-64pp)
+- **Transformers:** VideoMAE ≤7.7pp de variação em qualquer dataset (EPIC-Kitchens pior)
+- Bug corrigido: script estava priorizando checkpoint 224px-retreinado para CNNs; corrigido para usar `full_e10_a100` (nativo 112px)
+- Dados em `dashboard/data/p3_results.csv`; tabelas completas em supplementary S9
+- ViViT: robusto espacialmente (−1.9pp SSv2) mas frágil temporalmente (+34pp)
 
 ### Routing
 - TimeSformer/SSv2: 42.5% @ 7.7f médios (oracle: 47.3%)

@@ -75,10 +75,14 @@ def get_checkpoint(model: str, dataset: str) -> Path:
     candidates = []
     if key in SPECIAL_CKPTS:
         candidates.append(SPECIAL_CKPTS[key])
-    # H200 retrain naming (224px, todas as campanhas recentes)
-    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
-    # Fallback: nomenclatura antiga
+    # Native-resolution checkpoint first (full_e10): correct for ALL models.
+    # For CNNs (native=112px), full_e10_a100 is the 112px model.
+    # For Transformers/SlowFast (native=224px), full_e10_h200 is also native.
+    # The 224px_e10_h200 checkpoint is a P3-retrain checkpoint: correct only for
+    # native-224px models, but WRONG for CNNs (would load a 224px-trained model).
     candidates.append(f"accv2026_{model}_{dataset}_full_e10_{MODEL_CFG[model]['ckpt_suffix']}")
+    # 224px retrain as last-resort fallback (only valid when native==224px)
+    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
     for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
         for name in candidates:
             p = base / name
