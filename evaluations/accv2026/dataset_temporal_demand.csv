@@ -12,3 +12,5 @@ driveact_r2p1d,DriveAct,appearance-biased,R(2+1)D,0.021912150065104115,0.0173308
 driveact_videomae,DriveAct,appearance-biased,VideoMAE,0.02191215006510412,0.017330815489041904,200,16,0.6736288265306122,0.7410714285714286
 epic_r2p1d,EPIC-Kitchens,temporal,R(2+1)D,,,0,16,0.3052521008403361,0.3549019607843137
 epic_videomae,EPIC-Kitchens,temporal,VideoMAE,,,0,16,0.3390756302521008,0.3774509803921568
+finegym_r2p1d,FineGym,temporal,R(2+1)D,,,1600,16,0.46875,0.784375
+finegym_videomae,FineGym,temporal,VideoMAE,,,1600,16,0.4875,0.776875

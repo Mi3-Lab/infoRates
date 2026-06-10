@@ -162,7 +162,7 @@ def save_slowfast_checkpoint(
         "backend": "slowfast_video",
         "model_name": "slowfast_r50",
         "num_labels": len(class_names),
-        "class_names": class_names,
+        "class_names": [str(c) for c in class_names],
         "num_frames": num_frames,
         "input_size": input_size,
         "alpha": SLOWFAST_ALPHA,

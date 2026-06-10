@@ -13,6 +13,8 @@ r3d_18,driveact,fixed_cheap(cov100_s4),0.5892857142857143,4.0
 r3d_18,driveact,fixed_dense(cov100_s1),0.6830357142857143,16.0
 r3d_18,epic_kitchens,fixed_cheap(cov100_s4),0.3568627450980392,4.0
 r3d_18,epic_kitchens,fixed_dense(cov100_s1),0.3715686274509804,16.0
+r3d_18,finegym,fixed_cheap(cov100_s4),0.45875,4.0
+r3d_18,finegym,fixed_dense(cov100_s1),0.719375,16.0
 mc3_18,ucf101,fixed_cheap(cov100_s4),0.8534653465346534,4.0
 mc3_18,ucf101,fixed_dense(cov100_s1),0.8539603960396039,16.0
 mc3_18,ssv2,fixed_cheap(cov100_s4),0.30778625954198474,4.0
@@ -27,6 +29,8 @@ mc3_18,driveact,fixed_cheap(cov100_s4),0.671875,4.0
 mc3_18,driveact,fixed_dense(cov100_s1),0.6897321428571429,16.0
 mc3_18,epic_kitchens,fixed_cheap(cov100_s4),0.36470588235294116,4.0
 mc3_18,epic_kitchens,fixed_dense(cov100_s1),0.36176470588235293,16.0
+mc3_18,finegym,fixed_cheap(cov100_s4),0.49375,4.0
+mc3_18,finegym,fixed_dense(cov100_s1),0.74625,16.0
 r2plus1d_18,ucf101,fixed_cheap(cov100_s4),0.8886138613861386,4.0
 r2plus1d_18,ucf101,fixed_dense(cov100_s1),0.8856435643564357,16.0
 r2plus1d_18,ssv2,fixed_cheap(cov100_s4),0.3789312977099237,4.0
@@ -41,6 +45,8 @@ r2plus1d_18,driveact,fixed_cheap(cov100_s4),0.5558035714285714,4.0
 r2plus1d_18,driveact,fixed_dense(cov100_s1),0.625,16.0
 r2plus1d_18,epic_kitchens,fixed_cheap(cov100_s4),0.3392156862745098,4.0
 r2plus1d_18,epic_kitchens,fixed_dense(cov100_s1),0.35490196078431374,16.0
+r2plus1d_18,finegym,fixed_cheap(cov100_s4),0.4875,4.0
+r2plus1d_18,finegym,fixed_dense(cov100_s1),0.784375,16.0
 slowfast_r50,ucf101,fixed_cheap(cov100_s4),0.8787128712871287,4.0
 slowfast_r50,ucf101,fixed_dense(cov100_s1),0.8757425742574257,16.0
 slowfast_r50,ssv2,fixed_cheap(cov100_s4),0.26534351145038165,4.0
@@ -55,6 +61,8 @@ slowfast_r50,driveact,fixed_cheap(cov100_s4),0.5691964285714286,4.0
 slowfast_r50,driveact,fixed_dense(cov100_s1),0.7254464285714286,16.0
 slowfast_r50,epic_kitchens,fixed_cheap(cov100_s4),0.3480392156862745,4.0
 slowfast_r50,epic_kitchens,fixed_dense(cov100_s1),0.3941176470588235,16.0
+slowfast_r50,finegym,fixed_cheap(cov100_s4),0.26,4.0
+slowfast_r50,finegym,fixed_dense(cov100_s1),0.79875,16.0
 timesformer,ucf101,fixed_cheap(cov100_s4),0.9108910891089109,4.0
 timesformer,ucf101,fixed_dense(cov100_s1),0.9103960396039604,16.0
 timesformer,ssv2,fixed_cheap(cov100_s4),0.41587786259541987,4.0
@@ -69,6 +77,8 @@ timesformer,driveact,fixed_cheap(cov100_s4),0.6696428571428571,4.0
 timesformer,driveact,fixed_dense(cov100_s1),0.6763392857142857,16.0
 timesformer,epic_kitchens,fixed_cheap(cov100_s4),0.31862745098039214,4.0
 timesformer,epic_kitchens,fixed_dense(cov100_s1),0.32254901960784316,16.0
+timesformer,finegym,fixed_cheap(cov100_s4),0.635625,4.0
+timesformer,finegym,fixed_dense(cov100_s1),0.660625,16.0
 vivit,ucf101,fixed_cheap(cov100_s4),0.9376237623762376,4.0
 vivit,ucf101,fixed_dense(cov100_s1),0.9425742574257425,16.0
 vivit,ssv2,fixed_cheap(cov100_s4),0.2680916030534351,4.0
@@ -83,6 +93,8 @@ vivit,driveact,fixed_cheap(cov100_s4),0.5714285714285714,4.0
 vivit,driveact,fixed_dense(cov100_s1),0.6741071428571429,16.0
 vivit,epic_kitchens,fixed_cheap(cov100_s4),0.30196078431372547,4.0
 vivit,epic_kitchens,fixed_dense(cov100_s1),0.32941176470588235,16.0
+vivit,finegym,fixed_cheap(cov100_s4),0.418125,4.0
+vivit,finegym,fixed_dense(cov100_s1),0.69125,16.0
 videomae,ucf101,fixed_cheap(cov100_s4),0.9584158415841584,4.0
 videomae,ucf101,fixed_dense(cov100_s1),0.9544554455445544,16.0
 videomae,ssv2,fixed_cheap(cov100_s4),0.4906870229007634,4.0
@@ -97,6 +109,8 @@ videomae,driveact,fixed_cheap(cov100_s4),0.609375,4.0
 videomae,driveact,fixed_dense(cov100_s1),0.7388392857142857,16.0
 videomae,epic_kitchens,fixed_cheap(cov100_s4),0.36764705882352944,4.0
 videomae,epic_kitchens,fixed_dense(cov100_s1),0.37745098039215685,16.0
+videomae,finegym,fixed_cheap(cov100_s4),0.526875,4.0
+videomae,finegym,fixed_dense(cov100_s1),0.776875,16.0
 videomamba,ucf101,fixed_cheap(cov100_s4),0.8792079207920792,4.0
 videomamba,ucf101,fixed_dense(cov100_s1),0.8836633663366337,16.0
 videomamba,ssv2,fixed_cheap(cov100_s4),0.4403053435114504,4.0
@@ -109,3 +123,5 @@ videomamba,driveact,fixed_cheap(cov100_s4),0.5647321428571429,4.0
 videomamba,driveact,fixed_dense(cov100_s1),0.5758928571428571,16.0
 videomamba,epic_kitchens,fixed_cheap(cov100_s4),0.2833333333333333,4.0
 videomamba,epic_kitchens,fixed_dense(cov100_s1),0.2833333333333333,16.0
+videomamba,finegym,fixed_cheap(cov100_s4),0.700625,4.0
+videomamba,finegym,fixed_dense(cov100_s1),0.726875,16.0

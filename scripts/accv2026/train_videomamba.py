@@ -53,6 +53,7 @@ _DEFAULT_DATA_ROOTS = {
     "driveact":      "data/DriveAct_data",
     "flame":         "data/FLAME_data",
     "ufc_crime":     "data/UCFCrime_data",
+    "finegym":       "data/FineGym_data",
 }
 
 
@@ -106,16 +107,13 @@ class VideoMambaDataset(Dataset):
             pass
 
     def _decode(self, path) -> np.ndarray:
-        import av
-        all_frames = []
-        with av.open(str(path)) as container:
-            stream = container.streams.video[0]
-            for frame in container.decode(stream):
-                all_frames.append(frame.to_ndarray(format="rgb24"))
-        if not all_frames:
-            raise RuntimeError(f"No frames decoded: {path}")
-        idxs = np.linspace(0, len(all_frames) - 1, self.num_frames).astype(int)
-        return np.stack([all_frames[i] for i in idxs])  # (T, H, W, C)
+        from decord import VideoReader, cpu
+        vr = VideoReader(str(path), ctx=cpu(0))
+        total = len(vr)
+        if total <= 0:
+            raise RuntimeError(f"Video has 0 frames: {path}")
+        idxs = np.linspace(0, total - 1, self.num_frames).astype(int)
+        return vr.get_batch(idxs).asnumpy()  # (T, H, W, C)
 
     def __getitem__(self, idx):
         attempts = min(max(1, self.max_decode_retries), max(1, len(self.files)))
@@ -201,7 +199,7 @@ def make_loader(files, processor, num_frames: int, args, use_ddp: bool, train: b
         shuffle=train and sampler is None,
         sampler=sampler,
         num_workers=args.num_workers,
-        pin_memory=True,
+        pin_memory=False,
         persistent_workers=args.num_workers > 0,
         prefetch_factor=4 if args.num_workers > 0 else None,
         multiprocessing_context="forkserver" if args.num_workers > 0 else None,
@@ -318,7 +316,7 @@ def save_checkpoint(
         "model_name":   "videomamba",
         "architecture": "SSM",
         "num_labels":   len(class_names),
-        "class_names":  class_names,
+        "class_names":  [str(c) for c in class_names],
         "num_frames":   8,
         "input_size":   input_size,
         "embed_dim":    576,
@@ -342,16 +340,17 @@ def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--dataset", default="ssv2",
                    choices=list(_DEFAULT_DATA_ROOTS.keys()),
-                   help="Dataset to train on")
+                   help="Dataset to train on (choices auto-populated from _DEFAULT_DATA_ROOTS)")
     p.add_argument("--data-root", default=None)
     p.add_argument("--epochs", type=int, default=10)
     p.add_argument("--batch-size", type=int, default=16)
-    p.add_argument("--lr", type=float, default=2e-5)
+    p.add_argument("--lr", type=float, default=5e-6)
     p.add_argument("--weight-decay", type=float, default=0.05)
     p.add_argument("--num-workers", type=int, default=6)
     p.add_argument("--max-train-samples", type=int, default=0)
     p.add_argument("--max-val-samples", type=int, default=0)
-    p.add_argument("--save-path", default="fine_tuned_models/videomamba_ssv2")
+    p.add_argument("--save-path", default=None,
+                   help="Checkpoint dir (auto-generated as accv2026_videomamba_<dataset> if omitted)")
     p.add_argument("--ddp", action="store_true")
     p.add_argument("--no-pretrained", action="store_true",
                    help="Skip K400 pretrained weights (random init)")
@@ -373,6 +372,8 @@ def parse_args():
 
 def main() -> None:
     args = parse_args()
+    if args.save_path is None:
+        args.save_path = f"fine_tuned_models/accv2026_videomamba_{args.dataset}"
     local_rank = 0
     if args.ddp:
         local_rank = setup_ddp()
@@ -416,7 +417,8 @@ def main() -> None:
     if args.ddp:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
-    if torch.cuda.is_available() and not args.ddp:
+    # torch.compile disabled: SSM CUDA Graphs consume 49+ GiB private pool → OOM on FineGym
+    if False and torch.cuda.is_available() and not args.ddp:
         try:
             model = torch.compile(model, mode="reduce-overhead", fullgraph=False)
             if is_main:

@@ -78,7 +78,12 @@ class UCFDataset(Dataset):
     def _decode_frames(self, path):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Video file not found: {path}")
-        return self._decode_frames_av(path)
+        vr = VideoReader(str(path), ctx=cpu(0))
+        total = len(vr)
+        if total <= 0:
+            raise RuntimeError(f"Video has 0 frames: {path}")
+        idxs = np.linspace(0, total - 1, self.num_frames).astype(int)
+        return vr.get_batch(idxs).asnumpy()
 
     def _decode_frames_cv2(self, path):
         cap = cv2.VideoCapture(path)

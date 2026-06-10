@@ -441,6 +441,11 @@ def load_ufc_crime(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     return load_from_manifest("ufc_crime", data_root)
 
 
+def load_finegym(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Load FineGym (Gym99) dataset from manifest."""
+    return load_from_manifest("finegym", data_root)
+
+
 _LOADERS = {
     "ucf101":       (load_ucf101,       "data/UCF101_data"),
     "hmdb51":       (load_hmdb51,       "data/HMDB51_data"),
@@ -453,6 +458,7 @@ _LOADERS = {
     "kinetics400":  (load_kinetics400,  "data/Kinetics400_data"),
     "flame":        (load_flame,        "data/FLAME_data"),
     "ufc_crime":    (load_ufc_crime,    "data/UCFCrime_data"),
+    "finegym":      (load_finegym,      "data/FineGym_data"),
 }
 
 

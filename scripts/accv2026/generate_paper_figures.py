@@ -77,11 +77,11 @@ MARKERS = {
 }
 
 MODELS   = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
-DATASETS = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
+DATASETS = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens","finegym"]
 DATASET_LABELS = {
     "ucf101": "UCF-101", "ssv2": "SSv2", "hmdb51": "HMDB-51",
     "diving48": "Diving-48", "autsl": "AUTSL", "driveact": "DriveAct",
-    "epic_kitchens": "EPIC-Kitchens",
+    "epic_kitchens": "EPIC-Kitchens", "finegym": "FineGym",
 }
 STRIDES = [1, 2, 4, 8, 16]
 BASE = Path("evaluations/accv2026/coverage_stride_sweep")

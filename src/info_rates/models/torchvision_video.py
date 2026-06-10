@@ -120,7 +120,7 @@ def save_torchvision_video_checkpoint(
         "backend": "torchvision_video",
         "model_name": model_name,
         "num_labels": len(class_names),
-        "class_names": class_names,
+        "class_names": [str(c) for c in class_names],
         "num_frames": num_frames,
         "input_size": input_size,
     }

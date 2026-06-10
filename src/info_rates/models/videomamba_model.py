@@ -21,7 +21,14 @@ IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD  = [0.229, 0.224, 0.225]
 
 
+MAMBA_BUNDLED = ROOT / "third_party" / "videomamba_repo" / "mamba"
+
+
 def _add_videomamba_to_path():
+    # Add patched mamba_ssm FIRST — it has causal_conv1d_cuda API compatibility fix
+    # (pure-Python fallback in mamba_simple.py avoids the CUDA kernel version mismatch)
+    if str(MAMBA_BUNDLED) not in sys.path:
+        sys.path.insert(0, str(MAMBA_BUNDLED))
     if str(VIDEOMAMBA_REPO) not in sys.path:
         sys.path.insert(0, str(VIDEOMAMBA_REPO))
 
@@ -89,7 +96,9 @@ class VideoMambaModel(nn.Module):
         )
 
     def forward(self, pixel_values: torch.Tensor, **kwargs) -> _LogitsOutput:
-        return _LogitsOutput(self.backbone(pixel_values))
+        # causal_conv1d CUDA kernel requires bfloat16 path (matches training autocast)
+        with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=pixel_values.is_cuda):
+            return _LogitsOutput(self.backbone(pixel_values))
 
     def save_pretrained(self, save_dir: str | Path) -> None:
         save_dir = Path(save_dir)
@@ -98,25 +107,13 @@ class VideoMambaModel(nn.Module):
         torch.save(raw.state_dict(), save_dir / "model.pth")
 
 
-def _remap_bimamba_keys(ckpt: dict) -> dict:
-    """Remap flat Mamba keys from the K400 pretrained checkpoint to BiMamba layout.
+def _extract_state(ckpt: dict) -> dict:
+    """Extract the state dict from a VideoMamba checkpoint.
 
-    Original keys: layers.N.mixer.{A_log,D,in_proj,...}
-    BiMamba keys:  layers.N.mixer.fwd.{A_log,...}  (+ .bwd copy)
-
-    The backward branch is initialised with the same weights as the forward branch
-    so fine-tuning starts from a sensible bidirectional state.
+    The K400 checkpoint already uses the correct BiMamba key format with _b suffixes
+    (e.g. layers.N.mixer.A_b_log, conv1d_b, etc). No remapping needed.
     """
-    state = ckpt.get("model", ckpt)
-    new_state = {}
-    for k, v in state.items():
-        if ".mixer." in k and not any(f".mixer.{d}." in k for d in ("fwd", "bwd")):
-            prefix, suffix = k.split(".mixer.", 1)
-            new_state[f"{prefix}.mixer.fwd.{suffix}"] = v
-            new_state[f"{prefix}.mixer.bwd.{suffix}"] = v.clone()
-        else:
-            new_state[k] = v
-    return new_state
+    return ckpt.get("model", ckpt)
 
 
 def build_videomamba(
@@ -140,7 +137,7 @@ def build_videomamba(
         # Step 1: load checkpoint at native 224px (vm_load requires matching shapes)
         model_224 = videomamba_middle(num_classes=num_classes, num_frames=num_frames)
         ckpt = torch.load(str(pretrained_path), map_location="cpu")
-        ckpt = _remap_bimamba_keys(ckpt)
+        ckpt = _extract_state(ckpt)
         vm_load(model_224, ckpt, center=True)
         model_224.head = nn.Linear(EMBED_DIM, num_classes)
         nn.init.trunc_normal_(model_224.head.weight, std=0.02)
@@ -174,7 +171,7 @@ def build_videomamba(
                                   img_size=img_size)
     if pretrained_path is not None:
         ckpt = torch.load(str(pretrained_path), map_location="cpu")
-        ckpt = _remap_bimamba_keys(ckpt)
+        ckpt = _extract_state(ckpt)
         vm_load(model_raw, ckpt, center=True)
         model_raw.head = nn.Linear(EMBED_DIM, num_classes)
         nn.init.trunc_normal_(model_raw.head.weight, std=0.02)

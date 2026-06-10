@@ -41,7 +41,7 @@ BAD_VIDEOS_LOG = ROOT / "evaluations/accv2026/logs/bad_videos.tsv"
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", default="ssv2",
-                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime"],
+                        choices=["ssv2", "ucf101", "hmdb51", "diving48", "wlasl", "wlasl100", "epic_kitchens", "autsl", "driveact", "flame", "ufc_crime", "finegym"],
                         help="Dataset to train on (default: ssv2)")
     parser.add_argument("--data-root", default=None,
                         help="Dataset root (auto-detected from --dataset if omitted)")
@@ -53,7 +53,8 @@ def parse_args():
     parser.add_argument("--num-workers", type=int, default=6)
     parser.add_argument("--max-train-samples", type=int, default=0)
     parser.add_argument("--max-val-samples", type=int, default=0)
-    parser.add_argument("--save-path", default="fine_tuned_models/accv2026_transformer_ssv2")
+    parser.add_argument("--save-path", default=None,
+                        help="Checkpoint dir (auto-generated as accv2026_<model>_<dataset> if omitted)")
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from")
@@ -91,6 +92,7 @@ _DEFAULT_DATA_ROOTS = {
     "driveact":     "data/DriveAct_data",
     "flame":        "data/FLAME_data",
     "ufc_crime":    "data/UCFCrime_data",
+    "finegym":      "data/FineGym_data",
 }
 
 
@@ -143,10 +145,10 @@ def make_loader(files, processor, num_frames: int, input_size: int, args, use_dd
         shuffle=train and sampler is None,
         sampler=sampler,
         num_workers=args.num_workers,
-        pin_memory=True,
+        pin_memory=False,
         persistent_workers=args.num_workers > 0,
         prefetch_factor=4 if args.num_workers > 0 else None,
-        multiprocessing_context="forkserver" if args.num_workers > 0 else None,
+        multiprocessing_context="spawn" if args.num_workers > 0 else None,
     )
 
 
@@ -247,7 +249,7 @@ def save_checkpoint(save_dir: str | Path, model, processor, class_names: list[st
         "model_id": model_info["model_id"],
         "architecture": model_info["architecture"],
         "num_labels": len(class_names),
-        "class_names": class_names,
+        "class_names": [str(c) for c in class_names],
         "num_frames": model_info["default_frames"],
         "input_size": model_info["input_size"],
     }
@@ -259,6 +261,8 @@ def save_checkpoint(save_dir: str | Path, model, processor, class_names: list[st
 
 def main() -> None:
     args = parse_args()
+    if args.save_path is None:
+        args.save_path = f"fine_tuned_models/accv2026_{args.model}_{args.dataset}"
     local_rank = 0
     if args.ddp:
         local_rank = setup_ddp()

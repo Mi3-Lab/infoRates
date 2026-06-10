@@ -22,7 +22,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 MODELS   = ["r3d_18", "mc3_18", "r2plus1d_18", "slowfast_r50",
             "timesformer", "vivit", "videomae", "videomamba"]
-DATASETS = ["ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens"]
+DATASETS = ["ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens", "finegym"]
 
 # Approximate FPS per dataset (for duration estimation)
 DATASET_FPS = {

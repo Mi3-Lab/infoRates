@@ -1,7 +1,7 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-03
+Last updated: 2026-06-10
 
 ---
 
@@ -19,10 +19,10 @@ Last updated: 2026-06-03
 
 | # | Contribution | Status | Dados |
 |---|-------------|--------|-------|
-| **C1** | Temporal Demand Score (TDS) | ✅ Completo | 1,400 configs · 8 modelos · 7 datasets |
-| **C2** | Cross-architecture temporal aliasing | ✅ Completo | 1,400 configs · Spearman ρ=0.97 |
+| **C1** | Temporal Demand Score (TDS) | ✅ Completo | 1,600 configs · 8 modelos · 8 datasets (+ FineGym) |
+| **C2** | Cross-architecture temporal aliasing | ✅ Completo | 1,600 configs · Spearman ρ=0.97 |
 | **C3** | Spatial resolution robustness | ✅ Completo | 40 configs · 8 modelos × 5 resoluções · SSv2 |
-| **C4** | Entropy-based adaptive routing | ✅ Completo | +4.2pp vs FrameExit · 77% routed cheaply |
+| **C4** | Entropy-based adaptive routing | ✅ Completo | +4.2pp vs FrameExit · 77% routed cheaply (8 datasets) |
 
 ---
 
@@ -30,7 +30,7 @@ Last updated: 2026-06-03
 
 | Experimento | Status | Resultado principal |
 |-------------|--------|---------------------|
-| Temporal sweep (coverage × stride) | ✅ **Completo** — 1,400/1,400 | VMamba+TSF avg 8pp; SlowFast 42pp; ViViT anomalia |
+| Temporal sweep (coverage × stride) | ✅ **Completo** — 1,600/1,600 | VMamba+TSF avg 8pp; SlowFast 42pp; ViViT anomalia; FineGym 58.1pp |
 | Spectral validation (optical flow ↔ aliasing) | ✅ **Completo** | r=0.03–0.33; AUTSL r=0.285, UCF r=0.031 |
 | ANOVA η² effect sizes | ✅ **Completo** | η²(stride): 0.08 SSM/TSF vs 0.35 SlowFast |
 | Levene variance inflation | ✅ **Completo** | 67% pares inflam variância; VideoMAE/HMDB 2.0× |
@@ -43,14 +43,20 @@ Last updated: 2026-06-03
 
 ---
 
-## Dados Verificados (2026-06-03)
+## Dados Verificados (2026-06-10)
 
 ### Temporal (sweep_summary.csv)
-- 1,400 configs completas (8 × 7 × 25), nenhuma faltando
+- 1,600 configs completas (8 × 8 × 25), nenhuma faltando
 - TDS values verificados:
+  - FineGym: **58.1pp** (n=8, mean; alta demanda temporal — ginástica) ← NOVO
   - AUTSL: 58.3pp (n=7, VideoMamba excluído por colapso)
   - SSv2: 27.6pp · DriveAct: 21.9pp · Diving-48: 19.2pp
   - HMDB-51: 16.6pp · EPIC-Kitchens: 9.7pp · UCF-101: 4.9pp
+- FineGym sweep: 200/200 configs, 8 modelos × 25 configs
+  - R3D-18: 71.9%→11.2% (-60.7pp) · MC3: 74.6%→11.2% (-63.4pp)
+  - R(2+1)D: 78.4%→12.3% (-66.1pp) · SlowFast: 79.9%→7.6% (-72.2pp)
+  - TimeSformer: 66.1%→29.7% (-36.4pp) · ViViT: 69.1%→13.6% (-55.6pp)
+  - VideoMAE: 77.7%→9.6% (-68.1pp) · VideoMamba: 72.7%→30.6% (-42.1pp)
 
 ### Spatial (spatial_eval.csv)
 - 40 configs (8 modelos × 5 resoluções, SSv2 apenas, sem retraining)

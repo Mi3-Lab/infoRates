@@ -91,6 +91,15 @@ ALL_RUNS = [
     ("ViViT",       "EPIC-Kitchens", "vivit_epic_kitchens_full_e10_h200",        "epic_kitchens_val_accv2026_vivit_epic_kitchens_full_e10_h200_fixed_budget_summary.csv"),
     ("VideoMAE",    "EPIC-Kitchens", "videomae_epic_kitchens_full_e10_h200",     "epic_kitchens_val_accv2026_videomae_epic_kitchens_full_e10_h200_fixed_budget_summary.csv"),
     ("VideoMamba",  "EPIC-Kitchens", "videomamba_epic_kitchens_full_e10_h200",   "epic_kitchens_val_accv2026_videomamba_epic_kitchens_full_e10_h200_fixed_budget_summary.csv"),
+    # ── FineGym ───────────────────────────────────────────────────────────────
+    ("R3D-18",      "FineGym", "r3d_18_finegym",       "finegym_val_accv2026_r3d_18_finegym_fixed_budget_summary.csv"),
+    ("MC3-18",      "FineGym", "mc3_18_finegym",       "finegym_val_accv2026_mc3_18_finegym_fixed_budget_summary.csv"),
+    ("R(2+1)D-18",  "FineGym", "r2plus1d_18_finegym",  "finegym_val_accv2026_r2plus1d_18_finegym_fixed_budget_summary.csv"),
+    ("SlowFast-R50","FineGym", "slowfast_r50_finegym", "finegym_val_accv2026_slowfast_r50_finegym_fixed_budget_summary.csv"),
+    ("TimeSformer", "FineGym", "timesformer_finegym",  "finegym_val_accv2026_timesformer_finegym_fixed_budget_summary.csv"),
+    ("ViViT",       "FineGym", "vivit_finegym",        "finegym_val_accv2026_vivit_finegym_fixed_budget_summary.csv"),
+    ("VideoMAE",    "FineGym", "videomae_finegym",     "finegym_val_accv2026_videomae_finegym_fixed_budget_summary.csv"),
+    ("VideoMamba",  "FineGym", "videomamba_finegym",   "finegym_val_accv2026_videomamba_finegym_fixed_budget_summary.csv"),
 ]
 
 

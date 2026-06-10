@@ -46,6 +46,7 @@ DATASET_CFG = {
     "autsl":         dict(manifest="autsl_val_20_per_class.csv",         name="autsl",        split="val"),
     "driveact":      dict(manifest="driveact_val_20_per_class.csv",      name="driveact",     split="val"),
     "epic_kitchens": dict(manifest="epic_kitchens_val_20_per_class.csv", name="epic_kitchens",split="val"),
+    "finegym":       dict(manifest="finegym_val_20_per_class.csv",       name="finegym",      split="val"),
 }
 
 # ── Special checkpoint names ──────────────────────────────────────────────
@@ -58,6 +59,12 @@ SPECIAL_CKPTS = {
     ("vivit",     "ssv2"): "accv2026_vivit_ssv2_full_e10_h200",
     ("videomae",  "ssv2"): "accv2026_videomae_ssv2_full_e5_h200",
     ("videomamba","ssv2"): "accv2026_videomamba_ssv2_full_e10_h200",
+    # FineGym — checkpoints saved with short names (no _full_e10_ suffix)
+    ("slowfast_r50", "finegym"):  "accv2026_slowfast_r50_finegym",
+    ("timesformer",  "finegym"):  "accv2026_timesformer_finegym",
+    ("vivit",        "finegym"):  "accv2026_vivit_finegym",
+    ("videomae",     "finegym"):  "accv2026_videomae_finegym",
+    ("videomamba",   "finegym"):  "accv2026_videomamba_finegym",
 }
 
 
