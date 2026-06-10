@@ -719,6 +719,23 @@ VideoMamba  & 224px & 37.5 & 39.3 & 42.5 & \textbf{43.9} & 43.8 & $-6.4$pp \\
 \end{adjustbox}
 \end{table}
 
+\textbf{Cross-dataset validation.}
+We validate this pattern across six additional datasets
+(UCF-101, HMDB-51, Diving-48, AUTSL, DriveAct, EPIC-Kitchens;
+full results in supplementary~S9).
+The CNN/Transformer split holds on every dataset.
+A dataset-dependent refinement emerges on \emph{appearance-heavy} tasks:
+CNNs trained at native 112px can \emph{gain} from super-native inference resolution
+before eventually collapsing at 336px.
+On AUTSL (sign recognition), MC3-18 improves from 31.3\% at native 112px to 75.1\%
+at 224px ($+43.8$pp); on DriveAct (in-cabin activities), R3D-18 improves from 40.2\%
+to 73.4\% ($+33.3$pp).
+The 336px collapse remains consistent: MC3-18 falls to 9.2\% on DriveAct.
+Transformers are flat across all 7 datasets: VideoMAE deviates at most 2.2pp
+from native accuracy regardless of dataset.
+This confirms that the relevant factor is the interaction between \emph{spatial content
+demand} and architectural inductive bias, not the dataset domain alone.
+
 This mirrors the temporal aliasing finding: the property that determines
 robustness is \emph{how the architecture integrates information}, not its
 family label.
