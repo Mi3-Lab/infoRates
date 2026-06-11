@@ -204,7 +204,7 @@ df_retrained_spatial = load_retrained_spatial()   # loaded at startup so cache i
 st.sidebar.title("🎬 InfoRates")
 st.sidebar.caption("Spatiotemporal Aliasing")
 
-page = st.sidebar.radio("", [
+page = st.sidebar.radio("Navigation", [
     "🏠 Overview & TDS",
     "📊 Aliasing Curves",
     "🔲 Heatmaps",
@@ -979,6 +979,7 @@ elif page == "🖼 Spatial Resolution":
     st.subheader("CNN vs. Transformer/SSM — retrained vs. no retraining (all datasets)")
 
     col_a, col_b = st.columns(2)
+    clrs = {"CNN": "#e74c3c", "Transformer / SSM": "#2980b9"}
 
     def family_summary(df_src, res_col):
         if df_src.empty: return pd.DataFrame()
@@ -996,7 +997,6 @@ elif page == "🖼 Spatial Resolution":
         if not df_retrained.empty:
             fs_r = family_summary(df_retrained, "train_res")
             fig_r = go.Figure()
-            clrs = {"CNN": "#e74c3c", "Transformer / SSM": "#2980b9"}
             for fam, grp in fs_r.groupby("family"):
                 grp = grp.sort_values("train_res")
                 fig_r.add_trace(go.Scatter(
