@@ -9,8 +9,9 @@
 #SBATCH --output=evaluations/accv2026/logs/%x-%j.out
 #SBATCH --error=evaluations/accv2026/logs/%x-%j.err
 set -uo pipefail
-cd /data/wesleyferreiramaia/infoRates
-export PYTHONPATH=src
+# CWD must be /scratch so relative paths in manifests (data/AUTSL_data/...) resolve correctly
+cd /scratch/wesleyferreiramaia/infoRates
+export PYTHONPATH=/data/wesleyferreiramaia/infoRates/src
 export TORCH_HOME="${TORCH_HOME:-/scratch/wesleyferreiramaia/infoRates/torch_cache}"
 export WANDB_MODE=online
 export WANDB_PROJECT=inforates-accv2026
@@ -50,7 +51,14 @@ elif [[ "$MODEL" == "slowfast_r50" ]]; then
         fi
     fi
 elif [[ "$MODEL" == "videomamba" ]]; then
-    BATCH_SIZE=48    # SSM: safe on L40s
+    # Batch: 64 for small res (≤112px), 48 for 160/224px, 32 for 336px
+    if [[ "$INPUT_SIZE" -le 112 ]]; then
+        BATCH_SIZE=64
+    elif [[ "$INPUT_SIZE" -le 224 ]]; then
+        BATCH_SIZE=48
+    else
+        BATCH_SIZE=32
+    fi
     EPOCHS=10
     SCRIPT="train_videomamba"
     source .venv_mamba/bin/activate
@@ -66,7 +74,8 @@ if [[ "$MODEL" != "videomamba" ]]; then
     source .venv/bin/activate
 fi
 
-CHECKPOINT="fine_tuned_models/accv2026_${MODEL}_${DATASET}_${INPUT_SIZE}px_e${EPOCHS}_h200"
+VERSION_SUFFIX="${VERSION_SUFFIX:-}"  # optional: "_v2", "_v3", etc.
+CHECKPOINT="fine_tuned_models/accv2026_${MODEL}_${DATASET}_${INPUT_SIZE}px_e${EPOCHS}${VERSION_SUFFIX}_h200"
 
 echo "=== Resolution Retrain: ${MODEL} / ${DATASET} @ ${INPUT_SIZE}px — job ${SLURM_JOB_ID} ==="
 echo "    Script: ${SCRIPT}.py | Batch: ${BATCH_SIZE} | Epochs: ${EPOCHS}"
@@ -115,7 +124,6 @@ case "$SCRIPT" in
             --lr 2e-5 --weight-decay 0.05
         ;;
     train_videomamba)
-        # train_videomamba.py has no --model arg — build args without it
         python scripts/accv2026/train_videomamba.py \
             --dataset   "${DATASET}" \
             --epochs    "${EPOCHS}" \
@@ -126,7 +134,8 @@ case "$SCRIPT" in
             --wandb-project "${WANDB_PROJECT}" \
             --wandb-run-name "retrain-videomamba-${DATASET}-${INPUT_SIZE}px-e${EPOCHS}-j${SLURM_JOB_ID}" \
             --wandb-tags accv2026 h200 "${DATASET}" videomamba "${INPUT_SIZE}px" resolution-ablation spatial-aliasing \
-            --lr 2e-5 --weight-decay 0.05
+            --lr 2e-5 --weight-decay 0.05 \
+            --warmup-epochs 2 --lr-scheduler cosine
         ;;
 esac
 
