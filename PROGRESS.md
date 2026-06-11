@@ -1,7 +1,7 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-10
+Last updated: 2026-06-11
 
 ---
 
@@ -39,7 +39,10 @@ Last updated: 2026-06-10
 | Entropy routing (E7) | ✅ **Completo** | 42.5% SSv2 · 7.7f · +4.2pp vs FrameExit |
 | Baseline comparison vs AdaFocus/AR-Net/FrameExit | ✅ **Completo** | Tabela comparação pronta |
 | Clip duration analysis | ✅ **Completo** | Clips curtos aliam mais (r=−0.3 a −0.8) |
-| Resolution retraining (96–224px, 7 datasets) | ⏳ **197/224 done** | 8 jobs running (H200+A100 daemons); ~27 remaining |
+| Resolution retraining (96–224px, 7 datasets) | ✅ **256/280 done** | 256 checkpoints 96–224px prontos; 24 faltando = todos 336px |
+| Stride×Coverage×Resolution sweep (C3b) | ⏳ **Em progresso** | Daemon rodando; sweep de 224 configs (8×7×4 res); análise em `analyze_trainres_sweep.py` |
+| VideoMamba H200 reruns | ⏳ **Pending (143025–143027)** | ucf101@160px (15ep), diving48@224px (10ep), autsl@336px (10ep) |
+| SlowFast/ssv2@112px (PyAV fix) | ⏳ **Running (143001)** | Epoch 3/10 @ 45.8%; completa ~05:00 AM |
 | Resolution retraining (P3/336px investigation) | ❌ **Pausado** | Padrão anômalo (batch_size bug); investiga após 96–224px terminar |
 
 ---

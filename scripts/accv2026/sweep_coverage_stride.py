@@ -71,7 +71,26 @@ SPECIAL_CKPTS = {
 SCRATCH_CKPTS = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
 
 
-def get_checkpoint(model: str, dataset: str) -> Path:
+def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
+    """Resolve checkpoint path.
+
+    If train_res is given, loads the resolution-specific retrained checkpoint
+    (e.g., accv2026_r3d_18_ucf101_96px_e10_h200) instead of the native one.
+    """
+    if train_res is not None:
+        candidates = [
+            f"accv2026_{model}_{dataset}_{train_res}px_e10_h200",
+            f"accv2026_{model}_{dataset}_{train_res}px_e20_h200",
+        ]
+        for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
+            for name in candidates:
+                p = base / name
+                if p.exists():
+                    return p
+        raise FileNotFoundError(
+            f"Train-res checkpoint not found for {model}/{dataset}@{train_res}px. Tried: {candidates}"
+        )
+
     key = (model, dataset)
     candidates = []
     if key in SPECIAL_CKPTS:
@@ -89,8 +108,8 @@ def get_checkpoint(model: str, dataset: str) -> Path:
     raise FileNotFoundError(f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}")
 
 
-def load_model(model_name: str, dataset: str):
-    ckpt = get_checkpoint(model_name, dataset)
+def load_model(model_name: str, dataset: str, train_res: int = None):
+    ckpt = get_checkpoint(model_name, dataset, train_res)
     if not ckpt.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt}")
 
@@ -129,7 +148,9 @@ def main():
     parser.add_argument("--batch-size",  type=int, default=32)
     parser.add_argument("--output-dir",  default=None)
     parser.add_argument("--input-size",  type=int, default=None,
-                        help="Override spatial resolution (default: model's native)")
+                        help="Override spatial resolution for inference (default: model's native)")
+    parser.add_argument("--train-res",   type=int, default=None,
+                        help="Load resolution-specific retrained checkpoint (e.g. 96, 112, 160, 224)")
     args = parser.parse_args()
 
     mcfg = MODEL_CFG[args.model]
@@ -147,14 +168,28 @@ def main():
         print(f"[ERROR] Empty manifest for {args.dataset}")
         sys.exit(1)
 
-    resize = args.input_size if args.input_size else mcfg["resize"]
-    res_tag = f"_res{resize}" if args.input_size and args.input_size != mcfg["resize"] else ""
+    # Resolution for inference: explicit --input-size > --train-res > model native
+    if args.input_size:
+        resize = args.input_size
+    elif args.train_res:
+        resize = args.train_res
+    else:
+        resize = mcfg["resize"]
+
+    # Output directory tag
+    if args.train_res:
+        res_tag = f"_trainres{args.train_res}"
+    elif args.input_size and args.input_size != mcfg["resize"]:
+        res_tag = f"_res{resize}"
+    else:
+        res_tag = ""
+
     out_dir = Path(args.output_dir) if args.output_dir else \
               ROOT / "evaluations/accv2026/coverage_stride_sweep" / f"{args.model}_{args.dataset}{res_tag}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loading {args.model} checkpoint for {args.dataset}...")
-    model, processor, device = load_model(args.model, args.dataset)
+    print(f"Loading {args.model} checkpoint for {args.dataset} (train_res={args.train_res})...")
+    model, processor, device = load_model(args.model, args.dataset, args.train_res)
     model_frames = mcfg["frames"]
     print(f"  model_frames={model_frames}  resize={resize}  device={device}")
     print(f"  manifest: {len(manifest)} rows")

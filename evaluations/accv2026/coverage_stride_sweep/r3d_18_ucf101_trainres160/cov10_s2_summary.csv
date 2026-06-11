@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+ucf101,val,16,10,2,2020,0.6306930693069307,0.8465346534653465,0.44502803712327144,0.009110647993332863,0.0026444615189926608,0.2951027324907297,16.0,16.0,181.19752475247526

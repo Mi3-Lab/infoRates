@@ -32,6 +32,15 @@ from info_rates.data.something import (
     list_classes,
 )
 from info_rates.models.timesformer import UCFDataset
+
+
+class RobustUCFDataset(UCFDataset):
+    """UCFDataset using PyAV — avoids decord C-level crashes on corrupt SSV2 videos."""
+
+    def _decode_frames(self, path):
+        return self._decode_frames_av(path)
+
+
 from info_rates.models.slowfast_video import (
     SlowFastVideoProcessor,
     create_slowfast_model,
@@ -118,8 +127,8 @@ def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: i
 
 
 def make_loader(files, processor, args, use_ddp: bool, train: bool):
-    # UCFDataset decodes `num_frames` from the video; SlowFast adapts internally
-    dataset = UCFDataset(files, processor, num_frames=SLOWFAST_FAST_FRAMES, size=args.input_size)
+    # RobustUCFDataset uses PyAV to avoid decord C-level crashes on corrupt SSV2 videos
+    dataset = RobustUCFDataset(files, processor, num_frames=SLOWFAST_FAST_FRAMES, size=args.input_size)
     sampler = DistributedSampler(dataset, shuffle=train) if use_ddp else None
     return DataLoader(
         dataset,
