@@ -5,7 +5,7 @@ set -uo pipefail
 
 SBATCH=/data/wesleyferreiramaia/infoRates/scripts/accv2026/slurm_trainres_sweep.sbatch
 LOCKS=/data/wesleyferreiramaia/infoRates/evaluations/accv2026/locks/trainres_sweep
-MAX_JOBS=5        # QOS empirical limit = 6; leave 1 free slot
+MAX_JOBS=7        # gpu(4 max) + cenvalarc.gpu(4 max) = 8; leave 1 free → 7
 USER=wesleyferreiramaia
 
 mkdir -p "$LOCKS"

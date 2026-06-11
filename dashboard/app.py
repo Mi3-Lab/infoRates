@@ -782,29 +782,36 @@ elif page == "🖼 Spatial Resolution":
 
     @st.cache_data
     def load_retrained_spatial():
-        sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+        import json, re
+        ckpt_root = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+        ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
+        mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
         rows = []
-        ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
-        NATIVE = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
-                  "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-        for csv in sweep_root.glob("*_trainres*/sweep_summary.csv"):
-            folder = csv.parent.name
-            tag, res_str = folder.rsplit("_trainres", 1)
-            try: train_res = int(res_str)
-            except ValueError: continue
-            ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
+        for d in ckpt_root.glob("accv2026_*_e10_h200"):
+            name = d.name
+            inner = name[len("accv2026_"):-len("_e10_h200")]
+            m = re.search(r'_(\d+)px$', inner)
+            if not m: continue
+            train_res = int(m.group(1))
+            middle = inner[:m.start()]
+            ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
             if not ds: continue
-            model = tag[:-(len(ds)+1)]
-            if model not in NATIVE: continue
-            try:
-                df = pd.read_csv(csv)
-                # stride=1, cov=100% only — fair comparison with cross-res baseline
-                pt = df[(df["coverage"]==100) & (df["stride"]==1)]
-                if pt.empty: continue
-                rows.append({"model": model, "dataset": ds,
-                             "train_res": train_res, "acc": float(pt["top1"].values[0])*100})
-            except Exception:
-                continue
+            model = middle[:-(len(ds)+1)]
+            if model not in mdl_keys: continue
+            # CNNs write val_acc to config.json; Transformers/SSM write it to accv_meta.json
+            val_acc = None
+            for fname in ("accv_meta.json", "config.json"):
+                fpath = d / fname
+                if not fpath.exists(): continue
+                try:
+                    cfg = json.loads(fpath.read_text())
+                    val_acc = cfg.get("val_acc")
+                    if val_acc is not None: break
+                except Exception:
+                    continue
+            if val_acc is None: continue
+            rows.append({"model": model, "dataset": ds,
+                         "train_res": train_res, "acc": float(val_acc) * 100})
         return pd.DataFrame(rows)
 
     df_retrained = load_retrained_spatial()
@@ -814,8 +821,8 @@ elif page == "🖼 Spatial Resolution":
     mc1, mc2, mc3 = st.columns(3)
     mc1.metric("Retrained (96–224px)", f"{n_retrained}", "model × dataset × resolution")
     mc2.metric("Cross-res (no retrain)", f"{n_crossres}", "model × dataset × resolution")
-    mc3.metric("Retraining in progress", f"{224 - n_retrained}" if n_retrained < 224 else "✅ Complete",
-               "of 224 combinations")
+    n_total_expected = 8 * 7 * 5  # 8 models × 7 datasets × 5 resolutions (96/112/160/224/336)
+    mc3.metric("Total retrained", f"{n_retrained}", f"of {n_total_expected} (96–336px)")
 
     st.divider()
 
