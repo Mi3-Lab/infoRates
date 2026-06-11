@@ -144,8 +144,18 @@ def load_p3():
 
 @st.cache_data
 def load_retrained_spatial():
-    import json, re
+    # On Streamlit Cloud /scratch/ does not exist — read the bundled CSV instead.
+    # On the cluster, prefer the live checkpoints (newer v2 results) and fall back
+    # to the CSV so the Cloud version always works.
+    csv_path = DATA / "retrained_spatial.csv"
     ckpt_root = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+
+    if not ckpt_root.exists():
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
+        return pd.DataFrame()
+
+    import json, re
     ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
     mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
 
