@@ -829,19 +829,20 @@ elif page == "🖼 Spatial Resolution":
             fam = FAMILIES.get(mk, "CNN")
             color = FAM_COLOR.get(fam, "#999")
 
-            if not df_retrained.empty:
-                sub_r = df_retrained[
-                    (df_retrained.model == mk) & (df_retrained.dataset == sel_ds_p3)
-                ].sort_values("train_res")
-                if not sub_r.empty:
-                    fig.add_trace(go.Scatter(
-                        x=sub_r["train_res"], y=sub_r["acc"],
-                        mode="lines+markers", name=mdl_name,
-                        legendgroup=mdl_name,
-                        line=dict(color=color, width=2.5),
-                        marker=dict(size=9, symbol="circle"),
-                        hovertemplate=f"<b>{mdl_name} (retrained)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
-                    ))
+            sub_r = df_retrained[
+                (df_retrained.model == mk) & (df_retrained.dataset == sel_ds_p3)
+            ].sort_values("train_res") if not df_retrained.empty else pd.DataFrame()
+
+            has_retrained = not sub_r.empty
+            if has_retrained:
+                fig.add_trace(go.Scatter(
+                    x=sub_r["train_res"], y=sub_r["acc"],
+                    mode="lines+markers", name=mdl_name,
+                    legendgroup=mdl_name,
+                    line=dict(color=color, width=2.5),
+                    marker=dict(size=9, symbol="circle"),
+                    hovertemplate=f"<b>{mdl_name} (retrained)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
+                ))
 
             if not df_p3.empty:
                 sub_p = df_p3[
@@ -850,9 +851,9 @@ elif page == "🖼 Spatial Resolution":
                 if not sub_p.empty:
                     fig.add_trace(go.Scatter(
                         x=sub_p["res"], y=sub_p["acc"],
-                        mode="lines+markers", name=f"{mdl_name} (no retrain)",
+                        mode="lines+markers", name=mdl_name if not has_retrained else f"{mdl_name} (no retrain)",
                         legendgroup=mdl_name,
-                        showlegend=False,
+                        showlegend=not has_retrained,
                         line=dict(color=color, width=1.5, dash="dot"),
                         marker=dict(size=6, symbol="x"),
                         hovertemplate=f"<b>{mdl_name} (no retrain)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
