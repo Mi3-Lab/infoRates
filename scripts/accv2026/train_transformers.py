@@ -58,6 +58,9 @@ def parse_args():
     parser.add_argument("--ddp", action="store_true")
     parser.add_argument("--no-pretrained", action="store_true")
     parser.add_argument("--resume-from", default=None, help="Checkpoint dir to resume from")
+    parser.add_argument("--pretrained-from", default=None,
+                        help="Start weights from a local checkpoint (e.g. 224px model) instead of HF hub. "
+                             "Pos embeddings are bicubic-interpolated to --input-size automatically.")
     parser.add_argument("--input-size", type=int, default=None,
                         help="Override spatial resolution (default: model native, e.g. 224). "
                              "Use for spatial aliasing ablation (e.g. --input-size 112).")
@@ -252,7 +255,8 @@ def save_checkpoint(save_dir: str | Path, model, processor, class_names: list[st
         "num_labels": len(class_names),
         "class_names": [str(c) for c in class_names],
         "num_frames": model_info["default_frames"],
-        "input_size": model_info["input_size"],
+        "input_size": model_info["input_size"],   # native resolution
+        "train_input_size": extra.get("train_input_size", model_info["input_size"]) if extra else model_info["input_size"],
     }
     if extra:
         meta.update(extra)
@@ -298,7 +302,12 @@ def main() -> None:
         if is_main:
             print(f"[Resume] Loaded from {resume_path}, starting at epoch {start_epoch}")
     else:
-        pretrained_src = None if args.no_pretrained else model_info["model_id"]
+        if args.pretrained_from:
+            pretrained_src = args.pretrained_from
+            if is_main:
+                print(f"[Pretrained] Loading from local checkpoint: {pretrained_src}")
+        else:
+            pretrained_src = None if args.no_pretrained else model_info["model_id"]
         model, _ = ModelFactory.load_model(
             args.model, num_labels=len(class_names),
             checkpoint=pretrained_src, device=str(device),
@@ -340,7 +349,8 @@ def main() -> None:
                 best_acc = val_acc
                 best_epoch = epoch
                 save_checkpoint(args.save_path, model, processor, class_names, args.model, model_info,
-                                extra={"epoch": epoch, "val_acc": val_acc, "is_best": True})
+                                extra={"epoch": epoch, "val_acc": val_acc, "is_best": True,
+                                       "train_input_size": input_size})
                 print(f"  -> New best! Saved to {args.save_path} (epoch {epoch}, val_acc={val_acc:.4f})")
 
     if is_main:

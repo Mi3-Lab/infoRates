@@ -285,7 +285,7 @@ $10^{-4}$ (CNNs).
 \begin{table}[t]
 \centering
 \caption{\TDS{} = mean accuracy drop (stride=1$\to$16, cov=100\%) per Eq.~\ref{eq:tds},
-  excluding feature-collapsed models. AUTSL uses $n{=}7$ (VideoMamba excluded: K400$\to$sign-language domain gap).
+  excluding feature-collapsed models. AUTSL uses $n{=}7$ (VideoMamba excluded: stride sweep not re-run with fine-tuned model).
   Datasets sorted by \TDS{}.}
 \label{tab:datasets}
 \scriptsize\tabtight
@@ -468,7 +468,7 @@ frame dropout.
 \begin{table*}[t]
 \centering
 \caption{Full temporal aliasing table: accuracy at stride=1 (\%) / drop from stride=1 to 16 (pp).
-  Rows sorted by average drop. $\dagger$~VideoMamba/AUTSL: feature collapse (K400$\to$sign language domain gap), excluded from TDS.}
+  Rows sorted by average drop. $\dagger$~VideoMamba/AUTSL: fine-tuned on AUTSL, preliminary 20.2\%@224px; stride sweep pending with H200-retrained checkpoint (excluded from TDS).}
 \label{tab:e1_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -476,7 +476,7 @@ frame dropout.
 \toprule
 Model (family) & UCF-101 & SSv2 & HMDB-51 & Diving-48 & AUTSL & DriveAct & EPIC-Kit. & Avg drop \\
 \midrule
-VideoMamba (SSM)        & 88.4/\textcolor{teal}{$+$0.8} & 43.9/$+$14.1 & 69.8/$+$3.6 & 36.5/$+$4.6 & 0.4/$\dagger$ & 57.6/$+$9.2 & 28.3/$+$1.6 & \textbf{8pp} \\
+VideoMamba (SSM)        & 88.4/\textcolor{teal}{$+$0.8} & 43.9/$+$14.1 & 69.8/$+$3.6 & 36.5/$+$4.6 & 20.2/$\dagger$ & 57.6/$+$9.2 & 28.3/$+$1.6 & \textbf{8pp} \\
 TimeSformer (div.~attn) & 91.0/$+$0.0 & 42.3/$+$12.8 & 79.9/$+$4.0 & 38.2/$+$2.0 & 66.8/$+$16.0 & 67.6/$+$8.5 & 32.3/$+$2.9 & \textbf{8pp} \\
 \midrule
 MC3-18 (CNN-mix)        & 85.4/$+$2.9 & 33.6/$+$26.7 & 78.6/$+$9.7  & 31.6/$+$12.4 & 63.7/$+$55.5 & 69.0/$+$13.8 & 36.2/$+$8.6 & 21pp \\
@@ -506,10 +506,12 @@ patches under heavy masking, but does not prepare the model for \emph{temporal}
 gaps, which differ fundamentally from spatially masked patches.
 
 \textit{VideoMamba/AUTSL domain gap}:
-VideoMamba achieves 0.4\% accuracy on AUTSL at all strides, far below random
-(1/226=0.4\%)---a feature collapse caused by the K400$\to$sign language domain
-gap.
-This is not a temporal aliasing effect; it is a catastrophic forgetting artifact.
+The K400-pretrained VideoMamba collapses to chance (0.4\%) on AUTSL at all strides
+due to the sign-language domain gap.
+After fine-tuning on AUTSL, the model achieves a preliminary 20.2\% at 224px
+(H200 retraining with corrected batch size in progress); a full stride sweep
+with the fine-tuned model is pending.
+This collapse is not a temporal aliasing effect; it is a domain gap artifact.
 On the 6 other datasets, VideoMamba shows the smallest aliasing loss (avg 5.5pp),
 validating SSMs as the most temporally robust paradigm.
 
@@ -527,7 +529,7 @@ models show sharp gradients along the stride axis---is consistent across dataset
     across the coverage$\times$stride grid. Models are sorted left-to-right by mean
     aliasing robustness. VideoMamba and TimeSformer maintain a flat high-accuracy
     plateau; SlowFast and ViViT show dramatic stride-driven collapse (red gradient
-    along rows). Note: VideoMamba excludes AUTSL (feature collapse).}
+    along rows). Note: VideoMamba excludes AUTSL (stride sweep uses K400-pretrained model; fine-tuned analysis pending).}
   \label{fig:heatmap}
 \end{figure*}
 
@@ -576,7 +578,7 @@ datasets, confirming that their robustness is not dataset-specific.
 \centering
 \caption{Full ANOVA $\eta^2$ breakdown: $\eta^2_\text{stride}$ / $\eta^2_\text{cov}$ per model and dataset.
   Bold = stride effect $>$0.35 (large). All entries significant at $p{<}0.05$.
-  VMamba/AUTSL excluded (feature collapse).}
+  VMamba/AUTSL excluded (K400-pretrained model; fine-tuned analysis pending).}
 \label{tab:anova_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -916,12 +918,11 @@ datasets---establishes SSMs as a competitive robustness paradigm beyond Transfor
 The selective scan mechanism processes video tokens sequentially, accumulating a
 compressed state that persists across the sequence; dropping a frame introduces only
 a local perturbation to the state, not a global information loss.
-\textbf{Important scope note:} this robustness claim currently holds on 6 of 7 datasets.
-The highest-\TDS{} dataset (AUTSL) is excluded because VideoMamba collapses to chance
-(0.4\%) due to a K400$\to$sign-language domain gap, \emph{not} a temporal aliasing
-effect. A lightweight domain-adaptation experiment (e.g., fine-tuning only the
-classification head on AUTSL) would be required to assess SSM robustness on
-high-TDS sign-language data, and we leave this for future work.
+\textbf{Important scope note:} the stride-sweep robustness claim holds on 6 of 7 datasets;
+the AUTSL stride sweep was conducted with the K400-pretrained model (0.4\%), which
+collapses due to a domain gap rather than temporal aliasing.
+Fine-tuning VideoMamba on AUTSL yields a preliminary 20.2\%, and a full stride sweep
+with the H200-retrained checkpoint will extend this analysis to 7 datasets.
 
 \paragraph{Limitations.}
 \emph{Spectral validation} (Sec.~\ref{sec:results_tds}): flow-magnitude correlation is

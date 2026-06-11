@@ -51,11 +51,17 @@ elif [[ "$MODEL" == "slowfast_r50" ]]; then
         fi
     fi
 elif [[ "$MODEL" == "videomamba" ]]; then
-    # Batch: 64 for small res (≤112px), 48 for 160/224px, 32 for 336px
+    # Detect GPU memory at runtime to set safe batch size
+    GPU_MEM_MIB=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 || echo 0)
     if [[ "$INPUT_SIZE" -le 112 ]]; then
         BATCH_SIZE=64
     elif [[ "$INPUT_SIZE" -le 224 ]]; then
-        BATCH_SIZE=48
+        # L40S=44GB OOMs at batch=48 — use 16; H200=141GB handles 48
+        if [[ "$GPU_MEM_MIB" -gt 80000 ]]; then
+            BATCH_SIZE=48
+        else
+            BATCH_SIZE=16
+        fi
     else
         BATCH_SIZE=32
     fi
@@ -119,9 +125,21 @@ case "$SCRIPT" in
             --wandb-tags accv2026 h200 "${DATASET}" slowfast "${INPUT_SIZE}px" resolution-ablation
         ;;
     train_transformers)
+        # For sub-native resolutions, start from the already-adapted 224px checkpoint
+        # (same model+dataset). This avoids learning AUTSL from scratch at 96px which
+        # collapses to ~22% due to insufficient spatial information at init.
+        NATIVE_CKPT="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/accv2026_${MODEL}_${DATASET}_224px_e10_h200"
+        if [[ "${INPUT_SIZE}" != "224" && -d "${NATIVE_CKPT}" && -f "${NATIVE_CKPT}/accv_meta.json" ]]; then
+            PRETRAINED_ARG="--pretrained-from ${NATIVE_CKPT}"
+            echo "[Init] Starting from 224px checkpoint: ${NATIVE_CKPT}"
+        else
+            PRETRAINED_ARG=""
+            echo "[Init] Starting from HuggingFace pretrained (${MODEL_ID:-HF hub})"
+        fi
         python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_transformers.py \
             "${COMMON_ARGS[@]}" \
-            --lr 2e-5 --weight-decay 0.05
+            --lr 2e-5 --weight-decay 0.05 \
+            ${PRETRAINED_ARG}
         ;;
     train_videomamba)
         python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_videomamba.py \

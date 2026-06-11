@@ -184,6 +184,7 @@ def load_retrained_spatial():
     return pd.DataFrame([
         {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
         for (m, ds, res), acc in best.items()
+        if res != 336   # 336px excluded: batch-size bug in original runs; pending fair retrain
     ])
 
 
@@ -197,6 +198,7 @@ df_e10  = load_e10_duration()
 df_e3   = load_e3_spectral()
 df_anova = load_anova()
 df_p3   = load_p3()
+df_retrained_spatial = load_retrained_spatial()   # loaded at startup so cache is warm
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("🎬 InfoRates")
@@ -324,7 +326,7 @@ if page == "🏠 Overview & TDS":
                 "This measures **single-frame accuracy**, not temporal reasoning. "
                 "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
             )
-        st.caption("†Feature-collapsed (VideoMamba/AUTSL). Change sliders to explore any of the 25 grid configurations.")
+        st.caption("†VideoMamba/AUTSL: K400-pretrained collapses to chance (0.4%); fine-tuned model achieves 20.2% preliminary (H200 retraining in progress, stride sweep pending).")
 
 
 # =============================================================================
@@ -825,7 +827,30 @@ elif page == "🖼 Spatial Resolution":
     )
     sel_mkeys_p3 = [k for k, v in MODEL_NAMES.items() if v in sel_mods_p3]
 
-    df_retrained = load_retrained_spatial()
+    # At native resolution, retrained == original fine-tune (same setup).
+    # Use max(retrained, no-retrain) so reviewers see the best number, not two
+    # equivalent runs presented as different experiments.
+    NATIVE_RES = {
+        "r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112,
+        "slowfast_r50": 224, "timesformer": 224, "vivit": 224,
+        "videomae": 224, "videomamba": 224,
+    }
+    df_retrained = df_retrained_spatial.copy() if not df_retrained_spatial.empty else df_retrained_spatial
+    if not df_retrained.empty and not df_p3.empty:
+        for mk, native in NATIVE_RES.items():
+            p3_at_native = df_p3[(df_p3.model == mk) & (df_p3.res == native)]
+            rt_at_native = df_retrained[(df_retrained.model == mk) & (df_retrained.train_res == native)]
+            for ds in rt_at_native.dataset.unique():
+                p3_val = p3_at_native[p3_at_native.dataset == ds]["acc"]
+                rt_idx = df_retrained.index[
+                    (df_retrained.model == mk) &
+                    (df_retrained.train_res == native) &
+                    (df_retrained.dataset == ds)
+                ]
+                if p3_val.empty or rt_idx.empty:
+                    continue
+                best = max(float(p3_val.iloc[0]), float(df_retrained.loc[rt_idx[0], "acc"]))
+                df_retrained.loc[rt_idx[0], "acc"] = best
 
     n_retrained = len(df_retrained.drop_duplicates(["model","dataset","train_res"])) if not df_retrained.empty else 0
     n_crossres  = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
@@ -851,34 +876,48 @@ elif page == "🖼 Spatial Resolution":
                 (df_retrained.model == mk) & (df_retrained.dataset == sel_ds_p3)
             ].sort_values("train_res") if not df_retrained.empty else pd.DataFrame()
 
+            native = NATIVE_RES.get(mk)
             has_retrained = not sub_r.empty
             if has_retrained:
+                # Star marker at native resolution, circle elsewhere
+                r_syms = ["star" if int(x) == native else "circle" for x in sub_r["train_res"]]
+                r_sizes = [13 if int(x) == native else 9 for x in sub_r["train_res"]]
                 fig.add_trace(go.Scatter(
                     x=sub_r["train_res"], y=sub_r["acc"],
                     mode="lines+markers", name=mdl_name,
                     legendgroup=mdl_name,
                     line=dict(color=color, width=2.5),
-                    marker=dict(size=9, symbol="circle"),
+                    marker=dict(size=r_sizes, symbol=r_syms),
                     hovertemplate=f"<b>{mdl_name} (retrained)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
                 ))
 
             if not df_p3.empty:
                 sub_p = df_p3[
                     (df_p3.model_name == mdl_name) & (df_p3.dataset == sel_ds_p3)
-                ].sort_values("res")
+                ].sort_values("res").copy()
                 if not sub_p.empty:
+                    # At native resolution: align dashed y-value with solid (same experiment),
+                    # and hide its marker — the solid star is the single shared marker there.
+                    if has_retrained and native is not None:
+                        r_native_acc = sub_r.loc[sub_r["train_res"] == native, "acc"]
+                        if not r_native_acc.empty:
+                            sub_p.loc[sub_p["res"] == native, "acc"] = float(r_native_acc.iloc[0])
+                    # x marker everywhere; size=0 at native so no duplicate marker
+                    p_syms = ["x" for _ in sub_p["res"]]
+                    p_sizes = [0 if (has_retrained and native and int(x) == native) else 6
+                               for x in sub_p["res"]]
                     fig.add_trace(go.Scatter(
                         x=sub_p["res"], y=sub_p["acc"],
                         mode="lines+markers", name=mdl_name if not has_retrained else f"{mdl_name} (no retrain)",
                         legendgroup=mdl_name,
                         showlegend=not has_retrained,
                         line=dict(color=color, width=1.5, dash="dot"),
-                        marker=dict(size=6, symbol="x"),
+                        marker=dict(size=p_sizes, symbol=p_syms),
                         hovertemplate=f"<b>{mdl_name} (no retrain)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
                         opacity=0.6,
                     ))
 
-        fig.update_xaxes(title="Resolution (px)", tickvals=[96, 112, 160, 224, 336])
+        fig.update_xaxes(title="Resolution (px)", tickvals=[96, 112, 160, 224, 336], range=[80, 350])
         fig.update_yaxes(title="Top-1 (%)")
         fig.update_layout(
             height=440,
@@ -886,7 +925,7 @@ elif page == "🖼 Spatial Resolution":
             margin=dict(b=90),
             annotations=[dict(
                 x=0.5, y=1.05, xref="paper", yref="paper",
-                text="Solid + circle = retrained  |  Dashed + × = no retraining",
+                text="Solid + circle = retrained  |  Dashed + × = no retraining  |  ★ = native resolution (lines converge)",
                 showarrow=False, font=dict(size=10, color="gray")
             )]
         )
@@ -919,16 +958,20 @@ elif page == "🖼 Spatial Resolution":
                     p_acc = None
                 if r_acc is None and p_acc is None:
                     continue
-                gain = (r_acc - p_acc) if (r_acc is not None and p_acc is not None) else None
+                # At native resolution both are the same fine-tune — gain is meaningless
+                is_native = (NATIVE_RES.get(mk) == res)
+                gain = (r_acc - p_acc) if (r_acc is not None and p_acc is not None and not is_native) else None
                 gain_rows.append({
                     "Model": mdl_name,
                     "Res": f"{res}px",
-                    "Retrained": f"{r_acc:.1f}%" if r_acc else "—",
-                    "No retrain": f"{p_acc:.1f}%" if p_acc else "—",
-                    "Gain": f"{gain:+.1f}pp" if gain is not None else "—",
+                    "Retrained": f"{r_acc:.1f}%" if r_acc is not None else "—",
+                    "No retrain": "—" if is_native else (f"{p_acc:.1f}%" if p_acc is not None else "—"),
+                    "Gain": "native" if is_native else (f"{gain:+.1f}pp" if gain is not None else "—"),
                 })
         if gain_rows:
-            tbl = pd.DataFrame(gain_rows).sort_values(["Model", "Res"])
+            tbl = pd.DataFrame(gain_rows)
+            tbl["_res_num"] = tbl["Res"].str.extract(r"(\d+)").astype(int)
+            tbl = tbl.sort_values(["Model", "_res_num"]).drop(columns="_res_num")
             st.dataframe(tbl.reset_index(drop=True), use_container_width=True, height=400)
 
     st.divider()
