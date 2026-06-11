@@ -243,7 +243,7 @@ if page == "🏠 Overview & TDS":
 
     # TDS bar chart from real data
     st.subheader("Temporal Demand Score (TDS)")
-    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding.")
+    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding. VideoMamba/AUTSL excluded: stride sweep was run with K400-pretrained model (collapses to 0.4%); fine-tuned model achieves 20.2% but stride sweep is pending re-run.")
 
     if TDS:
         tds_df = pd.DataFrame([
@@ -310,6 +310,12 @@ if page == "🏠 Overview & TDS":
             for ds in DS_KEYS:
                 val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
                             (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
+                # VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%).
+                # Fine-tuned model achieves 20.2% — inject directly until stride sweep is re-run.
+                if mk == "videomamba" and ds == "autsl":
+                    row[ds_short[ds]] = "20.2%†"
+                    accs.append(20.2)
+                    continue
                 if val.empty: row[ds_short[ds]] = "—"; continue
                 v = val.values[0]
                 row[ds_short[ds]] = f"—†" if v < 2 else f"{v:.1f}%"
@@ -326,7 +332,7 @@ if page == "🏠 Overview & TDS":
                 "This measures **single-frame accuracy**, not temporal reasoning. "
                 "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
             )
-        st.caption("†VideoMamba/AUTSL: K400-pretrained collapses to chance (0.4%); fine-tuned model achieves 20.2% preliminary (H200 retraining in progress, stride sweep pending).")
+        st.caption("†VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%); fine-tuned model achieves 20.2% preliminary — stride sweep pending with H200-retrained checkpoint.")
 
 
 # =============================================================================
