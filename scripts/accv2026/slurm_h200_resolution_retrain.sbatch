@@ -61,7 +61,7 @@ elif [[ "$MODEL" == "videomamba" ]]; then
     fi
     EPOCHS=10
     SCRIPT="train_videomamba"
-    source .venv_mamba/bin/activate
+    source /data/wesleyferreiramaia/infoRates/.venv_mamba/bin/activate
     export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
 else
     # timesformer, vivit, videomae
@@ -71,7 +71,7 @@ else
 fi
 
 if [[ "$MODEL" != "videomamba" ]]; then
-    source .venv/bin/activate
+    source /data/wesleyferreiramaia/infoRates/.venv/bin/activate
 fi
 
 VERSION_SUFFIX="${VERSION_SUFFIX:-}"  # optional: "_v2", "_v3", etc.
@@ -102,13 +102,13 @@ COMMON_ARGS=(
 
 case "$SCRIPT" in
     train_torchvision)
-        python scripts/accv2026/train_torchvision.py \
+        python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_torchvision.py \
             "${COMMON_ARGS[@]}" \
             --lr 1e-4 --weight-decay 0.05 --num-frames 16
         ;;
     train_slowfast)
         # SlowFast has a separate training script
-        python scripts/accv2026/train_slowfast.py \
+        python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_slowfast.py \
             --dataset "${DATASET}" \
             --epochs "${EPOCHS}" \
             --batch-size "${BATCH_SIZE}" \
@@ -119,12 +119,12 @@ case "$SCRIPT" in
             --wandb-tags accv2026 h200 "${DATASET}" slowfast "${INPUT_SIZE}px" resolution-ablation
         ;;
     train_transformers)
-        python scripts/accv2026/train_transformers.py \
+        python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_transformers.py \
             "${COMMON_ARGS[@]}" \
             --lr 2e-5 --weight-decay 0.05
         ;;
     train_videomamba)
-        python scripts/accv2026/train_videomamba.py \
+        python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_videomamba.py \
             --dataset   "${DATASET}" \
             --epochs    "${EPOCHS}" \
             --batch-size "${BATCH_SIZE}" \

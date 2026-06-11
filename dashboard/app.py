@@ -142,6 +142,51 @@ def load_p3():
     return df
 
 
+@st.cache_data
+def load_retrained_spatial():
+    import json, re
+    ckpt_root = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+    ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
+    mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
+
+    def read_val_acc(d: Path):
+        for fname in ("accv_meta.json", "config.json"):
+            fpath = d / fname
+            if not fpath.exists(): continue
+            try:
+                cfg = json.loads(fpath.read_text())
+                v = cfg.get("val_acc")
+                if v is not None: return float(v)
+            except Exception: continue
+        return None
+
+    best: dict = {}
+    for pattern in ("accv2026_*_e10_h200", "accv2026_*_e10_v2_h200"):
+        is_v2 = "_v2_" in pattern
+        for d in ckpt_root.glob(pattern):
+            name = d.name
+            suffix = "_e10_v2_h200" if is_v2 else "_e10_h200"
+            inner = name[len("accv2026_"):-len(suffix)]
+            m = re.search(r'_(\d+)px$', inner)
+            if not m: continue
+            train_res = int(m.group(1))
+            middle = inner[:m.start()]
+            ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
+            if not ds: continue
+            model = middle[:-(len(ds)+1)]
+            if model not in mdl_keys: continue
+            val_acc = read_val_acc(d)
+            if val_acc is None: continue
+            key = (model, ds, train_res)
+            if key not in best or is_v2:
+                best[key] = val_acc
+
+    return pd.DataFrame([
+        {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
+        for (m, ds, res), acc in best.items()
+    ])
+
+
 # ── Load everything ───────────────────────────────────────────────────────────
 df_sw   = load_sweeps()
 TDS     = compute_tds(df_sw) if not df_sw.empty else {}
@@ -779,52 +824,6 @@ elif page == "🖼 Spatial Resolution":
         default=all_model_names, key="p3_mods"
     )
     sel_mkeys_p3 = [k for k, v in MODEL_NAMES.items() if v in sel_mods_p3]
-
-    @st.cache_data
-    def load_retrained_spatial():
-        import json, re
-        ckpt_root = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
-        ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
-        mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
-
-        def read_val_acc(d: Path):
-            for fname in ("accv_meta.json", "config.json"):
-                fpath = d / fname
-                if not fpath.exists(): continue
-                try:
-                    cfg = json.loads(fpath.read_text())
-                    v = cfg.get("val_acc")
-                    if v is not None: return float(v)
-                except Exception: continue
-            return None
-
-        # Collect all checkpoints; _v2 beats _v1 for same (model, dataset, res)
-        best: dict = {}  # (model, ds, res) → val_acc
-        for pattern in ("accv2026_*_e10_h200", "accv2026_*_e10_v2_h200"):
-            is_v2 = "_v2_" in pattern
-            for d in ckpt_root.glob(pattern):
-                name = d.name
-                suffix = "_e10_v2_h200" if is_v2 else "_e10_h200"
-                inner = name[len("accv2026_"):-len(suffix)]
-                m = re.search(r'_(\d+)px$', inner)
-                if not m: continue
-                train_res = int(m.group(1))
-                middle = inner[:m.start()]
-                ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
-                if not ds: continue
-                model = middle[:-(len(ds)+1)]
-                if model not in mdl_keys: continue
-                val_acc = read_val_acc(d)
-                if val_acc is None: continue
-                key = (model, ds, train_res)
-                # Always overwrite with v2 if available; otherwise keep v1
-                if key not in best or is_v2:
-                    best[key] = val_acc
-
-        return pd.DataFrame([
-            {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
-            for (m, ds, res), acc in best.items()
-        ])
 
     df_retrained = load_retrained_spatial()
 
