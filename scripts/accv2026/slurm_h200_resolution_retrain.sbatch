@@ -15,6 +15,8 @@ export PYTHONPATH=/data/wesleyferreiramaia/infoRates/src
 export TORCH_HOME="${TORCH_HOME:-/scratch/wesleyferreiramaia/infoRates/torch_cache}"
 export WANDB_MODE=online
 export WANDB_PROJECT=inforates-accv2026
+# W&B logs go to /data to avoid consuming scratch quota
+export WANDB_DIR=/data/wesleyferreiramaia/infoRates/wandb_logs
 
 MODEL="${MODEL:?MODEL must be set}"
 DATASET="${DATASET:?DATASET must be set}"

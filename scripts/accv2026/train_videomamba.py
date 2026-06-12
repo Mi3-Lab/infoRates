@@ -19,6 +19,7 @@ for _p in (ROOT, SRC, VIDEOMAMBA_REPO, MAMBA_BUNDLED):
 
 import cv2
 import numpy as np
+import random
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -120,8 +121,11 @@ class VideoMambaDataset(Dataset):
     def __getitem__(self, idx):
         attempts = min(max(1, self.max_decode_retries), max(1, len(self.files)))
         last_error = None
-        for offset in range(attempts):
-            path, label = self._resolve((idx + offset) % len(self.files))
+        for i in range(attempts):
+            # First attempt uses the requested index; retries jump to random indices
+            # to avoid sequential clusters of corrupt videos (common in SSv2 webm).
+            try_idx = idx if i == 0 else random.randint(0, len(self.files) - 1)
+            path, label = self._resolve(try_idx)
             try:
                 frames = self._decode(path)
                 break
@@ -195,6 +199,11 @@ def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: i
 def make_loader(files, processor, num_frames: int, args, use_ddp: bool, train: bool) -> DataLoader:
     ds = VideoMambaDataset(files, processor, num_frames=num_frames)
     sampler = DistributedSampler(ds, shuffle=train) if use_ddp else None
+    # SSv2 has many corrupt webm files; persistent workers carry corrupted Decord state
+    # across batches causing cascading decode failures. Disable persistence for safety.
+    ssv2_mode = getattr(args, "dataset", "") == "ssv2"
+    persistent = args.num_workers > 0 and not ssv2_mode
+    prefetch = 2 if ssv2_mode else (4 if args.num_workers > 0 else None)
     return DataLoader(
         ds,
         batch_size=args.batch_size,
@@ -202,8 +211,8 @@ def make_loader(files, processor, num_frames: int, args, use_ddp: bool, train: b
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
-        persistent_workers=args.num_workers > 0,
-        prefetch_factor=4 if args.num_workers > 0 else None,
+        persistent_workers=persistent,
+        prefetch_factor=prefetch if args.num_workers > 0 else None,
         multiprocessing_context="forkserver" if args.num_workers > 0 else None,
     )
 

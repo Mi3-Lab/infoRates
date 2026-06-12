@@ -78,17 +78,37 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
     (e.g., accv2026_r3d_18_ucf101_96px_e10_h200) instead of the native one.
     """
     if train_res is not None:
-        candidates = [
-            f"accv2026_{model}_{dataset}_{train_res}px_e10_h200",
-            f"accv2026_{model}_{dataset}_{train_res}px_e20_h200",
-        ]
+        # Search for best checkpoint: prefer highest version with valid metadata.
+        # Naming: accv2026_{model}_{dataset}_{res}px_e10[_v{N}]_h200
+        import glob as _glob
+        transformer_models = {"timesformer", "vivit", "videomae", "videomamba"}
+        best_path = None
+        best_ver = -1
         for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
-            for name in candidates:
-                p = base / name
-                if p.exists():
-                    return p
+            pattern = str(base / f"accv2026_{model}_{dataset}_{train_res}px_e*_*h200*")
+            for p_str in _glob.glob(pattern):
+                p = Path(p_str)
+                if not p.is_dir():
+                    continue
+                # Check has valid metadata
+                if model in transformer_models:
+                    if not (p / "accv_meta.json").exists():
+                        continue
+                else:
+                    cfg = p / "config.json"
+                    if not cfg.exists() or '"backend"' not in cfg.read_text():
+                        continue
+                # Extract version number
+                import re as _re
+                ver_m = _re.search(r"_v(\d+)_h200", p.name)
+                ver = int(ver_m.group(1)) if ver_m else 0
+                if ver > best_ver:
+                    best_ver = ver
+                    best_path = p
+        if best_path is not None:
+            return best_path
         raise FileNotFoundError(
-            f"Train-res checkpoint not found for {model}/{dataset}@{train_res}px. Tried: {candidates}"
+            f"Train-res checkpoint not found for {model}/{dataset}@{train_res}px"
         )
 
     key = (model, dataset)
