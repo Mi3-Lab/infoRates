@@ -111,7 +111,8 @@ class VideoMambaDataset(Dataset):
 
     def _decode(self, path) -> np.ndarray:
         from decord import VideoReader, cpu
-        vr = VideoReader(str(path), ctx=cpu(0))
+        # num_threads=1 prevents VP8/VP9 webm EAGAIN errors from FFmpeg thread pool.
+        vr = VideoReader(str(path), ctx=cpu(0), num_threads=1)
         total = len(vr)
         if total <= 0:
             raise RuntimeError(f"Video has 0 frames: {path}")

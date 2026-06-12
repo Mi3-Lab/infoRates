@@ -24,7 +24,7 @@ RESOLUTIONS=(48 96 112 160 224)
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
-log() { echo "[$(ts)] $*" | tee -a "$LOG"; }
+log() { echo "[$(ts)] $*" >> "$LOG"; echo "[$(ts)] $*"; }
 
 # ── Checkpoint detection ───────────────────────────────────────────────────
 # Naming: accv2026_{model}_{dataset}_{res}px_e10[_v{N}]_h200
@@ -55,7 +55,13 @@ sweep_done() {
     [[ $n -ge 26 ]]  # header + 25 data rows
 }
 
-# ── Count active sweep jobs ────────────────────────────────────────────────
+# ── Count ALL active jobs (training + sweep) to respect QOS=7 limit ───────
+count_all_jobs() {
+    local n
+    n=$(squeue -u wesleyferreiramaia --noheader --format="%.10i" 2>/dev/null | wc -l)
+    echo "${n:-0}"
+}
+
 count_sweep_jobs() {
     local n
     n=$(squeue -u wesleyferreiramaia --name=res-sweep --noheader --format="%.10i" 2>/dev/null | wc -l)
@@ -207,20 +213,24 @@ while true; do
 
                 pending_count=$((pending_count + 1))
 
-                # Submit if under job limit
-                n_sweep=$(count_sweep_jobs)
-                if [[ $n_sweep -lt $MAX_SWEEP_JOBS ]]; then
+                # Submit only if total jobs (training+sweep) < QOS limit of 7
+                n_total=$(count_all_jobs)
+                if [[ $n_total -lt 6 ]]; then
                     mkdir -p "$dir"
-                    touch "$lock"
                     jid=$(sbatch \
                         --output="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.out" \
                         --error="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.err" \
                         --export="ALL,MODEL=${model},DATASET=${dataset},TRAIN_RES=${res}" \
-                        "$SBATCH_SCRIPT" 2>/dev/null | awk '{print $NF}')
-                    log "  Submitted sweep ${model}/${dataset}@${res}px → job ${jid}"
-                    submitted_jobs+=("$jid")
-                    submitted_this_round=$((submitted_this_round + 1))
-                    sleep 2
+                        "$SBATCH_SCRIPT" 2>&1 | awk '{print $NF}')
+                    if [[ "$jid" =~ ^[0-9]+$ ]]; then
+                        touch "$lock"
+                        log "  Submitted sweep ${model}/${dataset}@${res}px → job ${jid}"
+                        submitted_jobs+=("$jid")
+                        submitted_this_round=$((submitted_this_round + 1))
+                        sleep 2
+                    else
+                        log "  [WARN] sbatch failed for ${model}/${dataset}@${res}px: ${jid}"
+                    fi
                 fi
             done
         done
