@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results
 
-RESOLUTIONS = [96, 112, 160, 224]
+RESOLUTIONS = [48, 96, 112, 160, 224]
 
 DATASET_CFG = {
     "ssv2":          dict(manifest="somethingv2_val_20_per_class.csv",  name="somethingv2",    split="validation"),
@@ -51,9 +51,23 @@ CKPT_BASES = [
 ]
 
 
+def _ckpt_version(name: str) -> int:
+    """Parse version from checkpoint name suffix. 'v3_h200' → 3, 'h200' → 1."""
+    try:
+        after_e10 = name.split("_e10_", 1)[1]
+    except IndexError:
+        return 1
+    if after_e10.startswith("v") and "_" in after_e10:
+        ver_part = after_e10.split("_")[0]
+        if len(ver_part) > 1 and ver_part[1:].isdigit():
+            return int(ver_part[1:])
+    return 1
+
+
 def find_p3_checkpoints(dataset: str | None = None, model: str | None = None) -> list[dict]:
-    """Find all P3-retrained checkpoints matching the filters."""
-    found = []
+    """Find P3-retrained checkpoints, keeping the highest version per (model, dataset, resolution)."""
+    # keyed by (model, dataset, res) → best candidate
+    best: dict[tuple, dict] = {}
     for base in CKPT_BASES:
         if not base.exists():
             continue
@@ -63,7 +77,6 @@ def find_p3_checkpoints(dataset: str | None = None, model: str | None = None) ->
                 continue
             # Parse: accv2026_{model}_{dataset}_{res}px_e{epochs}_{suffix}
             parts = ckpt.name.split("_")
-            # Find the {res}px part
             res_idx = next((i for i, p in enumerate(parts) if p.endswith("px")), None)
             if res_idx is None:
                 continue
@@ -73,7 +86,6 @@ def find_p3_checkpoints(dataset: str | None = None, model: str | None = None) ->
             res = int(res_str)
             if res not in RESOLUTIONS:
                 continue
-            # model = parts[1..res_idx-2], dataset = parts[res_idx-1]
             ds = parts[res_idx - 1]
             mdl = "_".join(parts[1:res_idx - 1])
 
@@ -86,8 +98,16 @@ def find_p3_checkpoints(dataset: str | None = None, model: str | None = None) ->
             if ds not in DATASET_CFG:
                 continue
 
-            found.append({"model": mdl, "dataset": ds, "resolution": res, "ckpt": ckpt})
-    return found
+            ver = _ckpt_version(ckpt.name)
+            key = (mdl, ds, res)
+            if key not in best or ver > best[key]["version"]:
+                best[key] = {"model": mdl, "dataset": ds, "resolution": res, "ckpt": ckpt, "version": ver}
+
+    return sorted(
+        [{"model": v["model"], "dataset": v["dataset"], "resolution": v["resolution"], "ckpt": v["ckpt"]}
+         for v in best.values()],
+        key=lambda x: (x["model"], x["dataset"], x["resolution"]),
+    )
 
 
 def load_model(ckpt: Path, model_name: str):
@@ -142,7 +162,8 @@ def main():
 
         out_dir = out_root / f"{mdl}_{ds}"
         out_dir.mkdir(parents=True, exist_ok=True)
-        summary_csv = out_dir / f"res{res}_retrained_summary.csv"
+        # Include ckpt name so v1 and v3 never share the same output file.
+        summary_csv = out_dir / f"res{res}_{ckpt.name}_summary.csv"
 
         if summary_csv.exists():
             print(f"  [SKIP] {mdl}/{ds}@{res}px retrained — already evaluated")
@@ -179,7 +200,7 @@ def main():
             model=model_obj,
             processor=processor,
             budgets=[frames],
-            output_csv=out_dir / f"res{res}_retrained_samples.csv",
+            output_csv=out_dir / f"res{res}_{ckpt.name}_samples.csv",
             split=dcfg["split"],
             coverage=100,
             stride=1,

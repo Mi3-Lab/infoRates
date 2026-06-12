@@ -37,6 +37,7 @@ from info_rates.models.videomamba_model import (
     PRETRAINED_PATH,
     VideoMambaProcessor,
     build_videomamba,
+    build_videomamba_from_finetuned,
     load_videomamba_checkpoint,
 )
 from info_rates.training.ddp import cleanup_ddp, setup_ddp
@@ -363,6 +364,10 @@ def parse_args():
                    help="Skip K400 pretrained weights (random init)")
     p.add_argument("--resume-from", default=None,
                    help="Checkpoint dir to resume training from")
+    p.add_argument("--pretrained-from", default=None,
+                   help="Fine-tuned checkpoint dir to initialize weights from (epoch resets to 1). "
+                        "Use for cross-resolution transfer, e.g. AUTSL 224px → 96px, "
+                        "so BiMamba already adapted to target domain.")
     p.add_argument("--input-size", type=int, default=224,
                    help="Spatial resolution for training (default: 224). "
                         "Use for spatial aliasing ablation (e.g. --input-size 112).")
@@ -414,6 +419,14 @@ def main() -> None:
         start_epoch = meta.get("epoch", 1) + 1
         if is_main:
             print(f"[Resume] from {resume_path}, starting epoch {start_epoch}")
+    elif args.pretrained_from:
+        model = build_videomamba_from_finetuned(
+            checkpoint_dir=args.pretrained_from,
+            target_img_size=args.input_size,
+        )
+        model = model.to(device)
+        if is_main:
+            print(f"[Pretrained-from] {args.pretrained_from} → {args.input_size}px, training from epoch 1")
     else:
         pretrained = None if args.no_pretrained else PRETRAINED_PATH
         model = build_videomamba(

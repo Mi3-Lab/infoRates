@@ -34,6 +34,37 @@ TRANSFORMER_REGISTRY = {
 }
 
 
+def _interp_one(data: torch.Tensor, H_nat: int, H_tgt: int, n_nat: int, n_tgt: int):
+    """Interpolate a [1, N, D] position embedding tensor. Returns new tensor or None."""
+    if data.dim() != 3 or data.shape[0] != 1:
+        return None
+    N, D = data.shape[1], data.shape[2]
+
+    if N == n_nat + 1:
+        cls_tok = data[:, :1, :]
+        grid = data[:, 1:, :].reshape(1, H_nat, H_nat, D).permute(0, 3, 1, 2)
+        grid = F.interpolate(grid, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
+        spatial = grid.permute(0, 2, 3, 1).reshape(1, n_tgt, D)
+        return torch.cat([cls_tok, spatial], dim=1)
+    elif N == n_nat:
+        grid = data.reshape(1, H_nat, H_nat, D).permute(0, 3, 1, 2)
+        grid = F.interpolate(grid, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
+        return grid.permute(0, 2, 3, 1).reshape(1, n_tgt, D)
+    elif N % n_nat == 0:
+        T = N // n_nat
+        frames = data.reshape(T, H_nat, H_nat, D).permute(0, 3, 1, 2)
+        frames = F.interpolate(frames, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
+        return frames.permute(0, 2, 3, 1).reshape(1, T * n_tgt, D)
+    elif (N - 1) % n_nat == 0 and N > n_nat + 1:
+        cls_tok = data[:, :1, :]
+        T = (N - 1) // n_nat
+        frames = data[:, 1:, :].reshape(T, H_nat, H_nat, D).permute(0, 3, 1, 2)
+        frames = F.interpolate(frames, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
+        spatial = frames.permute(0, 2, 3, 1).reshape(1, T * n_tgt, D)
+        return torch.cat([cls_tok, spatial], dim=1)
+    return None
+
+
 def _interp_pos_embed(model, native_size: int, target_size: int) -> None:
     """Bicubic-interpolate spatial positional embeddings in-place.
 
@@ -41,6 +72,7 @@ def _interp_pos_embed(model, native_size: int, target_size: int) -> None:
       - [1, n_spatial+1, D]  — spatial with CLS token  (TimeSformer)
       - [1, n_spatial,   D]  — spatial without CLS     (some ViViT variants)
       - [1, T*n_spatial, D]  — temporal×spatial flat    (VideoMAE)
+    Also handles VideoMAE's sinusoidal PE stored as plain tensors (not nn.Parameter).
     """
     patch_size = 16
     H_nat = native_size // patch_size   # 14 for 224px
@@ -48,49 +80,30 @@ def _interp_pos_embed(model, native_size: int, target_size: int) -> None:
     n_nat = H_nat * H_nat               # 196
     n_tgt = H_tgt * H_tgt               # e.g. 36
 
+    # Pass 1: learnable positional embeddings registered as nn.Parameter
     for pname, param in list(model.named_parameters()):
         if "position_embed" not in pname.lower():
             continue
-        data = param.data.float()
-        if data.dim() != 3 or data.shape[0] != 1:
+        new = _interp_one(param.data.float(), H_nat, H_tgt, n_nat, n_tgt)
+        if new is None:
             continue
-        N, D = data.shape[1], data.shape[2]
-
-        if N == n_nat + 1:
-            # Spatial + CLS token (TimeSformer, plain ViT style)
-            cls_tok = data[:, :1, :]
-            grid = data[:, 1:, :].reshape(1, H_nat, H_nat, D).permute(0, 3, 1, 2)
-            grid = F.interpolate(grid, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
-            spatial = grid.permute(0, 2, 3, 1).reshape(1, n_tgt, D)
-            new = torch.cat([cls_tok, spatial], dim=1)
-
-        elif N == n_nat:
-            # Spatial only, no CLS (some ViViT variants)
-            grid = data.reshape(1, H_nat, H_nat, D).permute(0, 3, 1, 2)
-            grid = F.interpolate(grid, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
-            new = grid.permute(0, 2, 3, 1).reshape(1, n_tgt, D)
-
-        elif N % n_nat == 0:
-            # Temporal × spatial flat, no CLS (VideoMAE style)
-            T = N // n_nat
-            frames = data.reshape(T, H_nat, H_nat, D).permute(0, 3, 1, 2)  # [T, D, H, H]
-            frames = F.interpolate(frames, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
-            new = frames.permute(0, 2, 3, 1).reshape(1, T * n_tgt, D)
-
-        elif (N - 1) % n_nat == 0 and N > n_nat + 1:
-            # CLS + temporal × spatial flat (ViViT: 1 + T*196 tokens)
-            cls_tok = data[:, :1, :]
-            T = (N - 1) // n_nat
-            frames = data[:, 1:, :].reshape(T, H_nat, H_nat, D).permute(0, 3, 1, 2)
-            frames = F.interpolate(frames, size=(H_tgt, H_tgt), mode="bicubic", align_corners=False)
-            spatial = frames.permute(0, 2, 3, 1).reshape(1, T * n_tgt, D)
-            new = torch.cat([cls_tok, spatial], dim=1)
-
-        else:
-            continue
-
         param.data = new.to(param.dtype)
-        print(f"  [PosEmbed] {pname}: {list(data.shape)} → {list(new.shape)}")
+        print(f"  [PosEmbed] {pname}: {list(param.data.shape)} → {list(new.shape)}")
+
+    # Pass 2: fixed/sinusoidal PE stored as plain tensors on modules (e.g. VideoMAE)
+    # These are NOT returned by named_parameters() or named_buffers(), so we scan __dict__.
+    for mname, module in model.named_modules():
+        for attr_name, val in list(vars(module).items()):
+            if not isinstance(val, torch.Tensor) or isinstance(val, torch.nn.Parameter):
+                continue
+            if "position" not in attr_name.lower() and "pos_embed" not in attr_name.lower():
+                continue
+            new = _interp_one(val.float(), H_nat, H_tgt, n_nat, n_tgt)
+            if new is None:
+                continue
+            setattr(module, attr_name, new.to(val.dtype))
+            full_name = f"{mname}.{attr_name}" if mname else attr_name
+            print(f"  [PosEmbed-fixed] {full_name}: {list(val.shape)} → {list(new.shape)}")
 
 
 class ModelFactory:

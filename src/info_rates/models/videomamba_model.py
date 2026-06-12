@@ -186,6 +186,53 @@ def build_videomamba(
     return VideoMambaModel(model_raw)
 
 
+def build_videomamba_from_finetuned(
+    checkpoint_dir: str | Path,
+    target_img_size: int,
+) -> VideoMambaModel:
+    """Load a fine-tuned VideoMamba and adapt pos_embed to a different spatial resolution.
+
+    Unlike load_videomamba_checkpoint (which resumes from a saved epoch),
+    this resets training to epoch 1 with a fresh optimizer — used for
+    cross-resolution transfer (e.g. AUTSL 224px → AUTSL 96px) so that
+    the BiMamba layers already adapted to the target domain don't need
+    to re-learn from scratch at the new resolution.
+    """
+    import torch.nn.functional as F
+
+    _add_videomamba_to_path()
+    from models.videomamba import videomamba_middle  # noqa: PLC0415
+
+    checkpoint_dir = Path(checkpoint_dir)
+    meta = json.loads((checkpoint_dir / "accv_meta.json").read_text())
+    num_classes = meta["num_labels"]
+    num_frames  = meta.get("num_frames", 8)
+    src_size    = meta.get("input_size", 224)
+
+    state_dict = torch.load(checkpoint_dir / "model.pth", map_location="cpu")
+
+    if target_img_size != src_size:
+        pos     = state_dict["pos_embed"]   # [1, N+1, D]
+        cls_tok = pos[:, :1, :]
+        spatial = pos[:, 1:, :]
+        D       = spatial.shape[-1]
+        h_old   = src_size // 16
+        h_new   = target_img_size // 16
+        spatial = spatial.reshape(1, h_old, h_old, D).permute(0, 3, 1, 2)
+        spatial = F.interpolate(spatial.float(), size=(h_new, h_new),
+                                mode="bicubic", align_corners=False)
+        spatial = spatial.permute(0, 2, 3, 1).reshape(1, h_new * h_new, D)
+        state_dict["pos_embed"] = torch.cat([cls_tok, spatial], dim=1)
+        print(f"[VideoMamba] pos_embed {src_size}px→{target_img_size}px "
+              f"({h_old}×{h_old}→{h_new}×{h_new} patches)")
+
+    model_raw = videomamba_middle(num_classes=num_classes, num_frames=num_frames,
+                                   img_size=target_img_size)
+    model_raw.load_state_dict(state_dict, strict=True)
+    print(f"[VideoMamba] Initialized from fine-tuned checkpoint: {checkpoint_dir}")
+    return VideoMambaModel(model_raw)
+
+
 def load_videomamba_checkpoint(
     save_dir: str | Path,
     device: str = "cuda",

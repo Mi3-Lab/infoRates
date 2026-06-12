@@ -26,34 +26,37 @@ if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" 
     EPOCHS=10
     SCRIPT="train_torchvision"
     export TORCH_COMPILE_DISABLE=1  # Disable torch.compile for P3
-    # Batch size: depends on GPU type (A100=40GB, L40=48GB, H200=141GB)
-    if [[ "$INPUT_SIZE" -le 160 ]]; then
+    if [[ "$INPUT_SIZE" -le 48 ]]; then
+        BATCH_SIZE=128   # 48px: avoid DataLoader overhead with excessive batch
+    elif [[ "$INPUT_SIZE" -le 160 ]]; then
         BATCH_SIZE=64
-    else  # 224px or 336px
-        # Try to detect GPU type from environment or use conservative default
+    else  # 224px
         if [[ "$SLURM_JOB_PARTITION" == "gpu" ]]; then
-            BATCH_SIZE=48    # A100: 40GB, batch=48 is tight @ 336px
+            BATCH_SIZE=48
         else
-            BATCH_SIZE=64    # H200/L40: batch=64 is safe
+            BATCH_SIZE=64
         fi
     fi
 elif [[ "$MODEL" == "slowfast_r50" ]]; then
     EPOCHS=10
     SCRIPT="train_slowfast"
-    # SlowFast is memory-intensive due to dual-path
-    if [[ "$INPUT_SIZE" -le 160 ]]; then
+    if [[ "$INPUT_SIZE" -le 48 ]]; then
+        BATCH_SIZE=128   # 48px dual-path still fits large batch
+    elif [[ "$INPUT_SIZE" -le 160 ]]; then
         BATCH_SIZE=48
-    else  # 224px or 336px
+    else  # 224px
         if [[ "$SLURM_JOB_PARTITION" == "gpu" ]]; then
-            BATCH_SIZE=24    # A100: very tight @ 336px
+            BATCH_SIZE=24
         else
-            BATCH_SIZE=32    # H200/L40: safer
+            BATCH_SIZE=32
         fi
     fi
 elif [[ "$MODEL" == "videomamba" ]]; then
     # Detect GPU memory at runtime to set safe batch size
     GPU_MEM_MIB=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 || echo 0)
-    if [[ "$INPUT_SIZE" -le 112 ]]; then
+    if [[ "$INPUT_SIZE" -le 48 ]]; then
+        BATCH_SIZE=128   # 48px: 3×3=9 tokens, very low memory
+    elif [[ "$INPUT_SIZE" -le 112 ]]; then
         BATCH_SIZE=64
     elif [[ "$INPUT_SIZE" -le 224 ]]; then
         # L40S=44GB OOMs at batch=48 — use 16; H200=141GB handles 48
@@ -71,7 +74,11 @@ elif [[ "$MODEL" == "videomamba" ]]; then
     export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
 else
     # timesformer, vivit, videomae
-    BATCH_SIZE=48    # Transformers: safe on L40s (48GB)
+    if [[ "$INPUT_SIZE" -le 48 ]]; then
+        BATCH_SIZE=96    # 48px: patch_size=16 → 3×3=9 spatial tokens, low memory
+    else
+        BATCH_SIZE=48    # Transformers: safe on L40s (48GB)
+    fi
     EPOCHS=10
     SCRIPT="train_transformers"
 fi
@@ -87,10 +94,20 @@ echo "=== Resolution Retrain: ${MODEL} / ${DATASET} @ ${INPUT_SIZE}px — job ${
 echo "    Script: ${SCRIPT}.py | Batch: ${BATCH_SIZE} | Epochs: ${EPOCHS}"
 nvidia-smi | head -6 || true
 
-if [[ -f "${CHECKPOINT}/config.json" ]]; then
+# videomamba saves accv_meta.json (not config.json); check both
+SKIP_MARKER="${CHECKPOINT}/config.json"
+if [[ "$MODEL" == "videomamba" ]]; then
+    SKIP_MARKER="${CHECKPOINT}/accv_meta.json"
+fi
+if [[ -f "${SKIP_MARKER}" ]]; then
     echo "[SKIP] Checkpoint exists: ${CHECKPOINT}"
     exit 0
 fi
+
+# SSv2 webm files cause FFMPEG EAGAIN errors with high worker counts;
+# reduce to 4 to avoid RuntimeError after 8 decode attempts.
+NUM_WORKERS=16
+[[ "$DATASET" == "ssv2" ]] && NUM_WORKERS=4
 
 # Build common args
 COMMON_ARGS=(
@@ -98,7 +115,7 @@ COMMON_ARGS=(
     --model     "${MODEL}"
     --epochs    "${EPOCHS}"
     --batch-size "${BATCH_SIZE}"
-    --num-workers 16
+    --num-workers "${NUM_WORKERS}"
     --input-size "${INPUT_SIZE}"
     --save-path  "${CHECKPOINT}"
     --wandb-project "${WANDB_PROJECT}"
@@ -118,7 +135,8 @@ case "$SCRIPT" in
             --dataset "${DATASET}" \
             --epochs "${EPOCHS}" \
             --batch-size "${BATCH_SIZE}" \
-            --num-workers 16 \
+            --num-workers "${NUM_WORKERS}" \
+            --input-size "${INPUT_SIZE}" \
             --save-path "${CHECKPOINT}" \
             --wandb-project "${WANDB_PROJECT}" \
             --wandb-run-name "retrain-slowfast-${DATASET}-${INPUT_SIZE}px-e${EPOCHS}-j${SLURM_JOB_ID}" \
@@ -142,18 +160,36 @@ case "$SCRIPT" in
             ${PRETRAINED_ARG}
         ;;
     train_videomamba)
+        # For all datasets: init from the v1 224px checkpoint so BiMamba already
+        # knows the target domain. Without this, BiMamba is randomly initialized
+        # (K400 ckpt does not train the SSM layers) and 10 epochs at lr=2e-5 causes
+        # severe overfitting (train_loss drops, val_loss rises — no generalization).
+        # VMAMBA_PRETRAINED_FROM_OVERRIDE: explicit path override (e.g. use v2 160px as init).
+        VMAMBA_PRETRAINED_ARG=""
+        if [[ -n "${VMAMBA_PRETRAINED_FROM_OVERRIDE:-}" && -d "${VMAMBA_PRETRAINED_FROM_OVERRIDE}" && -f "${VMAMBA_PRETRAINED_FROM_OVERRIDE}/accv_meta.json" ]]; then
+            VMAMBA_PRETRAINED_ARG="--pretrained-from ${VMAMBA_PRETRAINED_FROM_OVERRIDE}"
+            echo "[Init] VideoMamba ${DATASET}@${INPUT_SIZE}px: OVERRIDE pretrained-from ${VMAMBA_PRETRAINED_FROM_OVERRIDE}"
+        else
+            V1_224="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/accv2026_videomamba_${DATASET}_224px_e10_h200"
+            if [[ -d "$V1_224" && -f "$V1_224/accv_meta.json" ]]; then
+                VMAMBA_PRETRAINED_ARG="--pretrained-from ${V1_224}"
+                echo "[Init] VideoMamba ${DATASET}@${INPUT_SIZE}px: initializing from v1 224px checkpoint"
+            else
+                echo "[WARN] No v1 224px checkpoint found for ${DATASET} — falling back to K400 init"
+            fi
+        fi
         python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_videomamba.py \
             --dataset   "${DATASET}" \
             --epochs    "${EPOCHS}" \
             --batch-size "${BATCH_SIZE}" \
-            --num-workers 16 \
+            --num-workers "${NUM_WORKERS}" \
             --input-size "${INPUT_SIZE}" \
             --save-path  "${CHECKPOINT}" \
             --wandb-project "${WANDB_PROJECT}" \
             --wandb-run-name "retrain-videomamba-${DATASET}-${INPUT_SIZE}px-e${EPOCHS}-j${SLURM_JOB_ID}" \
             --wandb-tags accv2026 h200 "${DATASET}" videomamba "${INPUT_SIZE}px" resolution-ablation spatial-aliasing \
             --lr 2e-5 --weight-decay 0.05 \
-            --warmup-epochs 2 --lr-scheduler cosine
+            ${VMAMBA_PRETRAINED_ARG}
         ;;
 esac
 
