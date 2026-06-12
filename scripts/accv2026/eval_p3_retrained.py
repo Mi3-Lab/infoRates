@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results
 
-RESOLUTIONS = [96, 112, 160, 224]
+RESOLUTIONS = [48, 96, 112, 160, 224, 336]
 
 DATASET_CFG = {
     "ssv2":          dict(manifest="somethingv2_val_20_per_class.csv",  name="somethingv2",    split="validation"),
@@ -60,6 +60,9 @@ def find_p3_checkpoints(dataset: str | None = None, model: str | None = None) ->
         pattern = "accv2026_*_*_*px_e10_*"
         for ckpt in sorted(base.glob(pattern)):
             if not (ckpt / "config.json").exists():
+                continue
+            # Skip epoch-level sub-checkpoints (e.g. _epoch1, _epoch2)
+            if any(p.startswith("epoch") for p in ckpt.name.split("_")):
                 continue
             # Parse: accv2026_{model}_{dataset}_{res}px_e{epochs}_{suffix}
             parts = ckpt.name.split("_")
