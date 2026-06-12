@@ -199,21 +199,23 @@ def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: i
 def make_loader(files, processor, num_frames: int, args, use_ddp: bool, train: bool) -> DataLoader:
     ds = VideoMambaDataset(files, processor, num_frames=num_frames)
     sampler = DistributedSampler(ds, shuffle=train) if use_ddp else None
-    # SSv2 has many corrupt webm files; persistent workers carry corrupted Decord state
-    # across batches causing cascading decode failures. Disable persistence for safety.
+    # SSv2 WebM files trigger Decord EAGAIN (-11) errors when multiple VideoReader
+    # instances run concurrently (FFmpeg internal thread contention). Force
+    # num_workers=1 to ensure only one Decord instance at a time.
     ssv2_mode = getattr(args, "dataset", "") == "ssv2"
-    persistent = args.num_workers > 0 and not ssv2_mode
-    prefetch = 2 if ssv2_mode else (4 if args.num_workers > 0 else None)
+    nw = 1 if ssv2_mode else args.num_workers
+    persistent = nw > 0 and not ssv2_mode
+    prefetch = 2 if (ssv2_mode and nw > 0) else (4 if nw > 0 else None)
     return DataLoader(
         ds,
         batch_size=args.batch_size,
         shuffle=train and sampler is None,
         sampler=sampler,
-        num_workers=args.num_workers,
+        num_workers=nw,
         pin_memory=True,
         persistent_workers=persistent,
-        prefetch_factor=prefetch if args.num_workers > 0 else None,
-        multiprocessing_context="forkserver" if args.num_workers > 0 else None,
+        prefetch_factor=prefetch if nw > 0 else None,
+        multiprocessing_context="forkserver" if nw > 0 else None,
     )
 
 
