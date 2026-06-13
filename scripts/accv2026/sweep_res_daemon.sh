@@ -224,15 +224,24 @@ mkdir -p evaluations/accv2026/logs
 
 declare -A submitted_this_session  # in-memory lock: reset on daemon restart
 
+recover_running_jobs  # pre-populate lock with any already-running sweeps
+
 while true; do
     n_training=$(count_training)
-    n_current=$(count_all_jobs)
     n_sweep=$(count_sweep_jobs)
-    log "Training remaining: ${n_training} | Jobs: ${n_current}/${QOS_MAX}"
+
+    # Per-partition slot counts
+    declare -A part_slots=()
+    local_total=0
+    for part in "${PARTITIONS[@]}"; do
+        n=$(count_partition_jobs "$part")
+        part_slots[$part]=$n
+        local_total=$((local_total + n))
+    done
+    log "Training remaining: ${n_training} | Sweep jobs: ${n_sweep} (cenval=${part_slots[cenvalarc.gpu]} gpu=${part_slots[gpu]}) | Total: ${local_total}"
 
     pending_count=0
     submitted_this_round=0
-    slots_used=$n_current
 
     for model in "${MODELS[@]}"; do
         for dataset in "${DATASETS[@]}"; do
@@ -246,26 +255,33 @@ while true; do
 
                 pending_count=$((pending_count + 1))
 
-                # Stop submitting as soon as local counter hits QOS_MAX
-                [[ $slots_used -ge $QOS_MAX ]] && continue
+                # Find a partition with a free slot
+                target_part=""
+                for part in "${PARTITIONS[@]}"; do
+                    if [[ ${part_slots[$part]} -lt $QOS_PER_PART ]]; then
+                        target_part="$part"
+                        break
+                    fi
+                done
+                [[ -z "$target_part" ]] && continue  # all partitions full
 
                 mkdir -p "${SWEEP_ROOT}/${model}_${dataset}_trainres${res}"
                 jid=$(sbatch \
+                    --partition="$target_part" \
                     --output="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.out" \
                     --error="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.err" \
                     --export="ALL,MODEL=${model},DATASET=${dataset},TRAIN_RES=${res}" \
                     "$SBATCH_SCRIPT" 2>&1 | awk '{print $NF}')
                 if [[ "$jid" =~ ^[0-9]+$ ]]; then
                     submitted_this_session[$key]=1
-                    slots_used=$((slots_used + 1))
-                    log "  Submitted ${model}/${dataset}@${res}px → job ${jid} [${slots_used}/${QOS_MAX}]"
+                    part_slots[$target_part]=$((${part_slots[$target_part]} + 1))
+                    log "  Submitted ${model}/${dataset}@${res}px → job ${jid} [${target_part}: ${part_slots[$target_part]}/${QOS_PER_PART}]"
                     submitted_this_round=$((submitted_this_round + 1))
                     sleep 2
                 else
-                    log "  [WARN] sbatch failed: ${model}/${dataset}@${res}px (out=${jid})"
-                    # QOS limit hit — stop trying this round to avoid log spam
+                    log "  [WARN] sbatch failed on ${target_part}: ${model}/${dataset}@${res}px (out=${jid})"
                     if [[ "$jid" == *QOSMax* ]]; then
-                        slots_used=$QOS_MAX  # force the guard to trigger for remaining combos
+                        part_slots[$target_part]=$QOS_PER_PART  # mark partition as full
                     fi
                 fi
             done
