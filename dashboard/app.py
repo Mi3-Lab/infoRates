@@ -171,25 +171,27 @@ def load_retrained_spatial():
         return None
 
     best: dict = {}
-    for pattern in ("accv2026_*_e10_h200", "accv2026_*_e10_v2_h200"):
-        is_v2 = "_v2_" in pattern
-        for d in ckpt_root.glob(pattern):
-            name = d.name
-            suffix = "_e10_v2_h200" if is_v2 else "_e10_h200"
-            inner = name[len("accv2026_"):-len(suffix)]
-            m = re.search(r'_(\d+)px$', inner)
-            if not m: continue
-            train_res = int(m.group(1))
-            middle = inner[:m.start()]
-            ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
-            if not ds: continue
-            model = middle[:-(len(ds)+1)]
-            if model not in mdl_keys: continue
-            val_acc = read_val_acc(d)
-            if val_acc is None: continue
-            key = (model, ds, train_res)
-            if key not in best or is_v2:
-                best[key] = val_acc
+    # Scan all versioned checkpoints: v1 (_e10_h200), v2 (_e10_v2_h200), v3, etc.
+    for d in ckpt_root.glob("accv2026_*_e10*_h200"):
+        name = d.name
+        # Extract inner: strip prefix "accv2026_" and suffix "_e10*_h200"
+        m_suffix = re.search(r'_e\d+(?:_v\d+)?_h200$', name)
+        if not m_suffix: continue
+        inner = name[len("accv2026_"):m_suffix.start()]
+        m = re.search(r'_(\d+)px$', inner)
+        if not m: continue
+        train_res = int(m.group(1))
+        middle = inner[:m.start()]
+        ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
+        if not ds: continue
+        model = middle[:-(len(ds)+1)]
+        if model not in mdl_keys: continue
+        val_acc = read_val_acc(d)
+        if val_acc is None: continue
+        key = (model, ds, train_res)
+        # Always keep the BEST accuracy across all versions
+        if key not in best or val_acc > best[key]:
+            best[key] = val_acc
 
     return pd.DataFrame([
         {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
@@ -296,14 +298,15 @@ if page == "🏠 Overview & TDS":
             fig_ov = go.Figure()
             for mk in MODEL_KEYS:
                 if mk == "videomamba":
-                    if not vmb_224: continue
-                    accs_ordered = [vmb_224.get(ds) for ds in DS_KEYS]
-                    fig_ov.add_trace(go.Bar(
-                        x=ds_short_list, y=accs_ordered,
-                        name=MODEL_NAMES[mk],
-                        marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
-                        hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
-                    ))
+                    # Only inject retrained values at cov=100%, stride=1 (training eval equivalent)
+                    if vmb_224 and sel_cov == 100 and sel_str == 1:
+                        accs_ordered = [vmb_224.get(ds) for ds in DS_KEYS]
+                        fig_ov.add_trace(go.Bar(
+                            x=ds_short_list, y=accs_ordered,
+                            name=MODEL_NAMES[mk],
+                            marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
+                            hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
+                        ))
                     continue
                 sub_m = sub_ov[sub_ov.model==mk].copy()
                 sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
@@ -337,12 +340,14 @@ if page == "🏠 Overview & TDS":
             for ds in DS_KEYS:
                 # VideoMamba: no stride sweep yet — use retrained@224px values (†)
                 if mk == "videomamba":
-                    v = vmb_224.get(ds)
-                    if v is not None:
-                        row[ds_short[ds]] = f"{v:.1f}%"
-                        accs.append(v)
-                    else:
-                        row[ds_short[ds]] = "—"
+                    # Only show at cov=100%, stride=1 (matches training val eval)
+                    if sel_cov == 100 and sel_str == 1:
+                        v = vmb_224.get(ds)
+                        if v is not None:
+                            row[ds_short[ds]] = f"{v:.1f}%"
+                            accs.append(v)
+                            continue
+                    row[ds_short[ds]] = "—"
                     continue
                 val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
                             (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
