@@ -12,7 +12,8 @@ SBATCH_SCRIPT="scripts/accv2026/slurm_res_cov_stride.sbatch"
 SWEEP_ROOT="evaluations/accv2026/coverage_stride_sweep"
 SCRATCH_MODELS="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models"
 LOG="evaluations/accv2026/logs/sweep_res_daemon.log"
-MAX_SWEEP_JOBS=6   # stay under QOS=7
+QOS_PER_PART=4     # max jobs per partition (cluster hard limit)
+PARTITIONS=(cenvalarc.gpu gpu)  # use both; total capacity = 8
 POLL_INTERVAL=120  # seconds between polls
 
 # Training job IDs still running when daemon starts — wait for all to finish
@@ -24,7 +25,7 @@ RESOLUTIONS=(48 96 112 160 224)
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
-log() { echo "[$(ts)] $*" >> "$LOG"; echo "[$(ts)] $*"; }
+log() { local msg="[$(ts)] $*"; echo "$msg" >> "$LOG"; echo "$msg"; }
 
 # ── Checkpoint detection ───────────────────────────────────────────────────
 # Naming: accv2026_{model}_{dataset}_{res}px_e10[_v{N}]_h200
@@ -55,7 +56,12 @@ sweep_done() {
     [[ $n -ge 26 ]]  # header + 25 data rows
 }
 
-# ── Count ALL active jobs (training + sweep) to respect QOS=7 limit ───────
+# ── Count jobs per partition ───────────────────────────────────────────────
+count_partition_jobs() {
+    local part=$1
+    squeue -u wesleyferreiramaia -p "$part" --noheader --format="%.10i" 2>/dev/null | wc -l
+}
+
 count_all_jobs() {
     local n
     n=$(squeue -u wesleyferreiramaia --noheader --format="%.10i" 2>/dev/null | wc -l)
@@ -66,6 +72,34 @@ count_sweep_jobs() {
     local n
     n=$(squeue -u wesleyferreiramaia --name=res-sweep --noheader --format="%.10i" 2>/dev/null | wc -l)
     echo "${n:-0}"
+}
+
+# ── Recover running sweeps into submitted_this_session on daemon restart ───
+recover_running_jobs() {
+    log "Recovering active sweep jobs into session lock..."
+    local jid fname inner model dataset res key
+    while IFS= read -r jid; do
+        jid="${jid// /}"
+        [[ "$jid" =~ ^[0-9]+$ ]] || continue
+        for f in evaluations/accv2026/logs/res-sweep-*-${jid}.out; do
+            [[ -f "$f" ]] || continue
+            fname=$(basename "$f" .out)         # res-sweep-MODEL-DATASET-RESpx-JID
+            inner="${fname#res-sweep-}"          # MODEL-DATASET-RESpx-JID
+            inner="${inner%-${jid}}"             # MODEL-DATASET-RESpx
+            res="${inner##*-}"; res="${res%px}"  # res digits
+            model_ds="${inner%-${res}px}"        # MODEL-DATASET (hyphens between)
+            # model names/datasets use _ internally, separator between them is -
+            # split on first and last hyphen groups carefully:
+            #   r2plus1d_18-driveact → parts: r2plus1d_18 driveact
+            #   slowfast_r50-ssv2    → parts: slowfast_r50 ssv2
+            IFS='-' read -ra parts <<< "$model_ds"
+            model="${parts[0]}"
+            dataset="${parts[*]:1}"; dataset="${dataset// /_}"
+            key="${model}_${dataset}_${res}"
+            submitted_this_session[$key]=1
+            log "  Recovered running: $key (job $jid)"
+        done
+    done < <(squeue -u wesleyferreiramaia --name=res-sweep --noheader --format="%.10i" 2>/dev/null)
 }
 
 # ── Count training jobs still running ─────────────────────────────────────
@@ -188,48 +222,50 @@ log "Datasets: ${DATASETS[*]}"
 
 mkdir -p evaluations/accv2026/logs
 
-submitted_jobs=()
+declare -A submitted_this_session  # in-memory lock: reset on daemon restart
 
 while true; do
     n_training=$(count_training)
+    n_current=$(count_all_jobs)
     n_sweep=$(count_sweep_jobs)
-    log "Training remaining: ${n_training} | Sweep jobs running: ${n_sweep}"
+    log "Training remaining: ${n_training} | Jobs: ${n_current}/${QOS_MAX}"
 
-    # Submit sweep jobs for combos with available checkpoints
     pending_count=0
     submitted_this_round=0
+    slots_used=$n_current
 
     for model in "${MODELS[@]}"; do
         for dataset in "${DATASETS[@]}"; do
             for res in "${RESOLUTIONS[@]}"; do
-                sweep_done "$model" "$dataset" "$res" && continue  # already done
+                sweep_done "$model" "$dataset" "$res" && continue
 
-                ckpt_path=$(ckpt_exists "$model" "$dataset" "$res" 2>/dev/null) || continue  # no checkpoint yet
+                ckpt_exists "$model" "$dataset" "$res" &>/dev/null || continue
 
-                # Check if a sweep job is already queued/running for this combo
-                dir="${SWEEP_ROOT}/${model}_${dataset}_trainres${res}"
-                lock="${dir}/.submitted"
-                [[ -f "$lock" ]] && continue  # already submitted
+                key="${model}_${dataset}_${res}"
+                [[ -v submitted_this_session[$key] ]] && continue
 
                 pending_count=$((pending_count + 1))
 
-                # Submit only if total jobs (training+sweep) < QOS limit of 7
-                n_total=$(count_all_jobs)
-                if [[ $n_total -lt 6 ]]; then
-                    mkdir -p "$dir"
-                    jid=$(sbatch \
-                        --output="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.out" \
-                        --error="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.err" \
-                        --export="ALL,MODEL=${model},DATASET=${dataset},TRAIN_RES=${res}" \
-                        "$SBATCH_SCRIPT" 2>&1 | awk '{print $NF}')
-                    if [[ "$jid" =~ ^[0-9]+$ ]]; then
-                        touch "$lock"
-                        log "  Submitted sweep ${model}/${dataset}@${res}px → job ${jid}"
-                        submitted_jobs+=("$jid")
-                        submitted_this_round=$((submitted_this_round + 1))
-                        sleep 2
-                    else
-                        log "  [WARN] sbatch failed for ${model}/${dataset}@${res}px: ${jid}"
+                # Stop submitting as soon as local counter hits QOS_MAX
+                [[ $slots_used -ge $QOS_MAX ]] && continue
+
+                mkdir -p "${SWEEP_ROOT}/${model}_${dataset}_trainres${res}"
+                jid=$(sbatch \
+                    --output="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.out" \
+                    --error="evaluations/accv2026/logs/res-sweep-${model}-${dataset}-${res}px-%j.err" \
+                    --export="ALL,MODEL=${model},DATASET=${dataset},TRAIN_RES=${res}" \
+                    "$SBATCH_SCRIPT" 2>&1 | awk '{print $NF}')
+                if [[ "$jid" =~ ^[0-9]+$ ]]; then
+                    submitted_this_session[$key]=1
+                    slots_used=$((slots_used + 1))
+                    log "  Submitted ${model}/${dataset}@${res}px → job ${jid} [${slots_used}/${QOS_MAX}]"
+                    submitted_this_round=$((submitted_this_round + 1))
+                    sleep 2
+                else
+                    log "  [WARN] sbatch failed: ${model}/${dataset}@${res}px (out=${jid})"
+                    # QOS limit hit — stop trying this round to avoid log spam
+                    if [[ "$jid" == *QOSMax* ]]; then
+                        slots_used=$QOS_MAX  # force the guard to trigger for remaining combos
                     fi
                 fi
             done

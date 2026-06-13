@@ -194,7 +194,7 @@ def load_retrained_spatial():
     return pd.DataFrame([
         {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
         for (m, ds, res), acc in best.items()
-        if res != 336   # 336px excluded: batch-size bug in original runs; pending fair retrain
+        if res != 336   # 336px excluded: batch-size bug in original runs
     ])
 
 
@@ -241,7 +241,7 @@ def model_select(key, default_all=True):
 # =============================================================================
 if page == "🏠 Overview & TDS":
     st.title("InfoRates — Spatiotemporal Aliasing Analysis")
-    st.markdown("8 architectures · 7 datasets · 7,000+ eval configs (base + train-res sweep)")
+    st.markdown("8 architectures · 7 datasets · 5 resolutions (48–224px) · 7,000+ eval configs")
 
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")
@@ -253,7 +253,7 @@ if page == "🏠 Overview & TDS":
 
     # TDS bar chart from real data
     st.subheader("Temporal Demand Score (TDS)")
-    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding. VideoMamba/AUTSL excluded: stride sweep was run with K400-pretrained model (collapses to 0.4%); fine-tuned model achieves 20.2% but stride sweep is pending re-run.")
+    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding. VideoMamba/AUTSL: stride sweep used K400-pretrained model (collapses to 0.4%); H200-retrained model achieves 20.2% @224px but full stride sweep is pending re-run with retrained checkpoint.")
 
     if TDS:
         tds_df = pd.DataFrame([
@@ -342,7 +342,7 @@ if page == "🏠 Overview & TDS":
                 "This measures **single-frame accuracy**, not temporal reasoning. "
                 "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
             )
-        st.caption("†VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%); fine-tuned model achieves 20.2% preliminary — stride sweep pending with H200-retrained checkpoint.")
+        st.caption("†VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%). H200-retrained model achieves 20.2% @224px — stride sweep pending re-run. Key spatial finding: VideoMamba/AUTSL completely fails below 112px (48px→3.7%, 96px→4.3%, 112px→34.2%), revealing a minimum resolution threshold for sign language recognition.")
 
 
 # =============================================================================
@@ -871,10 +871,10 @@ elif page == "🖼 Spatial Resolution":
     n_retrained = len(df_retrained.drop_duplicates(["model","dataset","train_res"])) if not df_retrained.empty else 0
     n_crossres  = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
     mc1, mc2, mc3 = st.columns(3)
-    mc1.metric("Retrained (96–224px)", f"{n_retrained}", "model × dataset × resolution")
+    mc1.metric("Retrained (48–224px)", f"{n_retrained}", "model × dataset × resolution")
     mc2.metric("Cross-res (no retrain)", f"{n_crossres}", "model × dataset × resolution")
-    n_total_expected = 8 * 7 * 5  # 8 models × 7 datasets × 5 resolutions (96/112/160/224/336)
-    mc3.metric("Total retrained", f"{n_retrained}", f"of {n_total_expected} (96–336px)")
+    n_total_expected = 8 * 7 * 5  # 8 models × 7 datasets × 5 resolutions (48/96/112/160/224)
+    mc3.metric("Total retrained", f"{n_retrained}", f"of {n_total_expected} (48–224px)")
 
     st.divider()
 
@@ -933,7 +933,7 @@ elif page == "🖼 Spatial Resolution":
                         opacity=0.6,
                     ))
 
-        fig.update_xaxes(title="Resolution (px)", tickvals=[96, 112, 160, 224, 336], range=[80, 350])
+        fig.update_xaxes(title="Resolution (px)", tickvals=[48, 96, 112, 160, 224], range=[40, 240])
         fig.update_yaxes(title="Top-1 (%)")
         fig.update_layout(
             height=440,
@@ -953,7 +953,7 @@ elif page == "🖼 Spatial Resolution":
         gain_rows = []
         for mk in sel_mkeys_p3:
             mdl_name = MODEL_NAMES[mk]
-            for res in [96, 112, 160, 224]:
+            for res in [48, 96, 112, 160, 224]:
                 # Retreinado
                 if not df_retrained.empty:
                     r_row = df_retrained[
@@ -986,7 +986,7 @@ elif page == "🖼 Spatial Resolution":
                 })
         if gain_rows:
             tbl = pd.DataFrame(gain_rows)
-            tbl["_res_num"] = tbl["Res"].str.extract(r"(\d+)").astype(int)
+            tbl["_res_num"] = tbl["Res"].str.extract(r"(\d+)").astype(int)  # noqa
             tbl = tbl.sort_values(["Model", "_res_num"]).drop(columns="_res_num")
             st.dataframe(tbl.reset_index(drop=True), use_container_width=True, height=400)
 
@@ -1022,7 +1022,7 @@ elif page == "🖼 Spatial Resolution":
                     line=dict(color=clrs.get(fam,"#999"), width=3),
                     marker=dict(size=10),
                 ))
-            fig_r.update_xaxes(title="Train resolution (px)", tickvals=[96,112,160,224])
+            fig_r.update_xaxes(title="Train resolution (px)", tickvals=[48,96,112,160,224])
             fig_r.update_yaxes(title="Mean Top-1 (%)")
             fig_r.update_layout(height=300, margin=dict(t=20,b=60),
                                 legend=dict(orientation="h",y=-0.4))
@@ -1048,7 +1048,7 @@ elif page == "🖼 Spatial Resolution":
                     line=dict(color=clrs.get(fam,"#999"), width=2, dash="dot"),
                     marker=dict(size=8, symbol="x"),
                 ))
-            fig_p.update_xaxes(title="Eval resolution (px)", tickvals=[96,112,160,224,336])
+            fig_p.update_xaxes(title="Eval resolution (px)", tickvals=[48,96,112,160,224])
             fig_p.update_yaxes(title="Mean Top-1 (%)")
             fig_p.update_layout(height=300, margin=dict(t=20,b=60),
                                 legend=dict(orientation="h",y=-0.4))
@@ -1114,7 +1114,7 @@ elif page == "🎛 Spatiotemporal Explorer":
 
     NATIVE_RES = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
                   "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-    ALL_RES      = [96, 112, 160, 224, 336]
+    ALL_RES      = [48, 96, 112, 160, 224]
     ALL_STRIDES  = [1, 2, 4, 8, 16]
     ALL_COVERAGES= [10, 25, 50, 75, 100]
 
@@ -1564,7 +1564,7 @@ elif page == "🎯 Architecture Recommender":
 
         lines.append("\n### Spatial resolution")
         lines.append("- **CNNs**: retrain at your deployment resolution for best results (lower res often HELPS)")
-        lines.append("- **Transformers/SSMs**: robust across 96–336px without retraining")
+        lines.append("- **Transformers/SSMs**: robust across 96–224px without retraining; SSMs (VideoMamba) may collapse below 112px on fine-grained tasks")
         if matched_ds == "autsl":
             lines.append("- ⚠️ AUTSL exception: handshapes need ≥112px — do not downsample below this")
 

@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+diving48,val,16,50,2,743,0.13055181695827725,0.4468371467025572,0.40990423216593536,0.021809437060239818,0.0009247366430471033,0.4386141518125258,16.0,16.0,111.67833109017496

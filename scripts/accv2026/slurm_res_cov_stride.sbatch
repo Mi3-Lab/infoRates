@@ -14,6 +14,7 @@ export PYTHONPATH=src
 export TORCH_HOME="${TORCH_HOME:-/scratch/wesleyferreiramaia/infoRates/torch_cache}"
 export WANDB_MODE=disabled  # too many sweep runs for W&B
 export HF_HOME=/scratch/wesleyferreiramaia/hf_unified
+export PYTHONUNBUFFERED=1
 
 # Required: MODEL, DATASET, TRAIN_RES (px)
 MODEL="${MODEL:?MODEL must be set}"
