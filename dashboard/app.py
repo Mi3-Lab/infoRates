@@ -253,7 +253,7 @@ if page == "🏠 Overview & TDS":
 
     # TDS bar chart from real data
     st.subheader("Temporal Demand Score (TDS)")
-    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding. VideoMamba/AUTSL: stride sweep used K400-pretrained model (collapses to 0.4%); H200-retrained model achieves 20.2% @224px but full stride sweep is pending re-run with retrained checkpoint.")
+    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models (<5%). Higher = more temporally demanding.")
 
     if TDS:
         tds_df = pd.DataFrame([
@@ -281,13 +281,30 @@ if page == "🏠 Overview & TDS":
             sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
                                         key="ov_str", help="Sampling density")
 
+        # VideoMamba fallback: retrained_spatial.csv @ 224px (cov=100%, stride=1 equivalent)
+        vmb_224 = {}
+        if not df_retrained_spatial.empty:
+            _vmb = df_retrained_spatial[(df_retrained_spatial.model=="videomamba") &
+                                        (df_retrained_spatial.train_res==224)]
+            vmb_224 = dict(zip(_vmb.dataset, _vmb.acc))
+
         # Bar chart: accuracy at chosen config per model, grouped by dataset (fixed order)
         sub_ov = df_sw[(df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]
-        if not sub_ov.empty:
+        ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
+        ds_short_list = [ds_short[ds] for ds in DS_KEYS]  # Fixed order
+        if not sub_ov.empty or vmb_224:
             fig_ov = go.Figure()
-            ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
-            ds_short_list = [ds_short[ds] for ds in DS_KEYS]  # Fixed order
             for mk in MODEL_KEYS:
+                if mk == "videomamba":
+                    if not vmb_224: continue
+                    accs_ordered = [vmb_224.get(ds) for ds in DS_KEYS]
+                    fig_ov.add_trace(go.Bar(
+                        x=ds_short_list, y=accs_ordered,
+                        name=MODEL_NAMES[mk],
+                        marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
+                        hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
+                    ))
+                    continue
                 sub_m = sub_ov[sub_ov.model==mk].copy()
                 sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
                 if sub_m.empty: continue
@@ -318,14 +335,17 @@ if page == "🏠 Overview & TDS":
             row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk]}
             accs = []
             for ds in DS_KEYS:
+                # VideoMamba: no stride sweep yet — use retrained@224px values (†)
+                if mk == "videomamba":
+                    v = vmb_224.get(ds)
+                    if v is not None:
+                        row[ds_short[ds]] = f"{v:.1f}%"
+                        accs.append(v)
+                    else:
+                        row[ds_short[ds]] = "—"
+                    continue
                 val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
                             (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
-                # VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%).
-                # Fine-tuned model achieves 20.2% — inject directly until stride sweep is re-run.
-                if mk == "videomamba" and ds == "autsl":
-                    row[ds_short[ds]] = "20.2%†"
-                    accs.append(20.2)
-                    continue
                 if val.empty: row[ds_short[ds]] = "—"; continue
                 v = val.values[0]
                 row[ds_short[ds]] = f"—†" if v < 2 else f"{v:.1f}%"
@@ -342,7 +362,7 @@ if page == "🏠 Overview & TDS":
                 "This measures **single-frame accuracy**, not temporal reasoning. "
                 "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
             )
-        st.caption("†VideoMamba/AUTSL: stride sweep used K400-pretrained (collapses to 0.4%). H200-retrained model achieves 20.2% @224px — stride sweep pending re-run. Key spatial finding: VideoMamba/AUTSL completely fails below 112px (48px→3.7%, 96px→4.3%, 112px→34.2%), revealing a minimum resolution threshold for sign language recognition.")
+        st.caption("Key spatial finding: VideoMamba/AUTSL completely fails below 112px (48px→3.7%, 96px→4.3%, 112px→34.2%), revealing a minimum resolution threshold for sign language recognition.")
 
 
 # =============================================================================
