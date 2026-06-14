@@ -1,2 +1,2 @@
 dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
-somethingv2,validation,16,100,1,0.3163841807909605,177,0.3163841807909605,0.0,0.0
+somethingv2,validation,16,100,1,0.1694915254237288,177,0.1694915254237288,0.0,0.0

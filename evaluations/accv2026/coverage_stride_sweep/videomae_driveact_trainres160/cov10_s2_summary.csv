@@ -1,2 +1,2 @@
 dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
-driveact,val,16,10,2,0.10267857142857142,448,0.10267857142857142,0.0,0.0
+driveact,val,16,10,2,0.35044642857142855,448,0.35044642857142855,0.0,0.0

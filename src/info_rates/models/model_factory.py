@@ -145,15 +145,26 @@ class ModelFactory:
         target_size = input_size if input_size is not None else native_size
 
         if target_size != native_size:
-            # Step 1: load at native 224px so all weights (including pos embed) load correctly
+            # Step 1: ALWAYS load from HF base model at native size so positional embeddings
+            # are correctly initialized at 224px.  Fine-tuned checkpoints do NOT save PE
+            # (it's a plain tensor, not nn.Parameter) so loading from checkpoint gives wrong
+            # fresh PE at target resolution.  We load base first, interpolate, then overlay.
             model = AutoModelForVideoClassification.from_pretrained(
-                src,
+                info["model_id"],
                 num_labels=num_labels,
                 ignore_mismatched_sizes=True,   # only head may mismatch for num_labels
             )
             # Step 2: bicubic-interpolate spatial positional embeddings in-place
             print(f"  Interpolating pos embeddings: {native_size}px → {target_size}px")
             _interp_pos_embed(model, native_size, target_size)
+            # Step 2b: overlay fine-tuned weights from checkpoint (PE not in safetensors → stays)
+            if checkpoint and Path(checkpoint).exists():
+                from safetensors.torch import load_file as _load_sf
+                import glob as _glob_m
+                st = next(iter(_glob_m.glob(str(Path(checkpoint) / "*.safetensors"))), None)
+                if st:
+                    state = _load_sf(st, device="cpu")
+                    model.load_state_dict(state, strict=False)
             # Step 3: update config so attention layers use correct spatial grid size
             # (e.g. TimeSformer computes num_patch_width = config.image_size // config.patch_size
             #  in its divided_space_time attention; wrong value → reshape crash)

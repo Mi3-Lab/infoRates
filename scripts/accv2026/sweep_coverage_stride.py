@@ -172,8 +172,43 @@ def load_model(model_name: str, dataset: str, train_res: int = None):
     else:
         # HuggingFace transformer (TimeSformer, ViViT, VideoMAE)
         from transformers import AutoImageProcessor, AutoModelForVideoClassification
+        from info_rates.models.model_factory import ModelFactory, _interp_pos_embed
+        import json as _json_local
         processor = AutoImageProcessor.from_pretrained(str(ckpt))
-        model = AutoModelForVideoClassification.from_pretrained(str(ckpt)).to(device)
+        cfg = _json_local.loads(config_text)
+        native_size = 224  # all HF video transformers use 224px native
+        ckpt_image_size = cfg.get("image_size", native_size) or native_size
+        num_labels_ckpt = len(cfg.get("id2label", {})) or cfg.get("num_labels") or 400
+        if train_res is not None and ckpt_image_size != native_size:
+            # Non-native resolution: PE was NOT saved (plain tensor, not nn.Parameter).
+            # Must load base model at 224px (correct PE), interpolate PE to train_res,
+            # then overlay fine-tuned weights from checkpoint (PE stays interpolated).
+            info = ModelFactory.get_model_info(model_name)
+            model = AutoModelForVideoClassification.from_pretrained(
+                info["model_id"], num_labels=num_labels_ckpt, ignore_mismatched_sizes=True,
+            )
+            _interp_pos_embed(model, native_size, train_res)
+            model.config.image_size = train_res
+            # Update image_size on patch embedding submodules (VideoMAE checks internally)
+            for submod in model.modules():
+                if submod is model or not hasattr(submod, "image_size"):
+                    continue
+                old = submod.image_size
+                if isinstance(old, (tuple, list)):
+                    submod.image_size = (train_res, train_res)
+                elif isinstance(old, int) and old == native_size:
+                    submod.image_size = train_res
+            # Overlay fine-tuned weights (classifier + attention); PE not in safetensors
+            from safetensors.torch import load_file as _load_safetensors
+            st = next(iter(ckpt.glob("*.safetensors")), None)
+            if st:
+                state = _load_safetensors(str(st), device="cpu")
+                missing, unexpected = model.load_state_dict(state, strict=False)
+                if missing:
+                    print(f"  [WARN] PE-fix: {len(missing)} keys missing (expected for PE): {missing[:3]}")
+            model = model.to(device)
+        else:
+            model = AutoModelForVideoClassification.from_pretrained(str(ckpt)).to(device)
 
     model.eval()
     return model, processor, device

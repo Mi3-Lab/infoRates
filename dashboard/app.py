@@ -142,7 +142,7 @@ def load_p3():
     return df
 
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_combined_sweep():
     """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
     sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
@@ -189,7 +189,7 @@ def load_combined_sweep():
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_retrained_spatial():
     # On Streamlit Cloud /scratch/ does not exist — read the bundled CSV instead.
     # On the cluster, prefer the live checkpoints (newer v2 results) and fall back

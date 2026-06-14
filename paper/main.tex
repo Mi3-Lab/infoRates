@@ -731,15 +731,20 @@ We validate the spatial robustness pattern across all six additional datasets
 full tables in supplementary~S9).
 The CNN/Transformer split holds universally---and is in fact \emph{more severe} on
 semantically specific, appearance-heavy datasets.
-On AUTSL (sign language), R3D-18 collapses from 75.0\% at native 112px to 2.0\%
-at 336px ($-73.0$pp) and R2+1D falls from 75.9\% to 7.3\% ($-68.7$pp);
+On AUTSL (sign language), CNNs exhibit a \emph{resolution-dependent reversal}:
+they \emph{improve} beyond their native 112px accuracy at 224px---R3D-18 from
+74.9\% to 86.7\%, MC3-18 from 66.1\% to 75.1\%, R2+1D from 77.9\% to
+84.7\%---because finer spatial detail exposes more discriminative hand-shape and
+finger-position features.
+The collapse is confined to 336px ($3\times$ native): R3D-18 falls to 2.0\%
+($-73.0$pp) and R2+1D to 7.3\% ($-68.7$pp);
 on DriveAct (in-cabin activities), MC3-18 falls from 69.0\% to 4.5\% ($-64.5$pp);
 on UCF-101, CNNs peak near 85--88\% at 112px and collapse to 20--25\% at 336px
 ($-60$ to $-64$pp).
-These far exceed the worst CNN drop on SSv2 ($-36.7$pp), suggesting that
+These far exceed the worst CNN drop on SSv2 ($-36.7$pp), confirming that
 spatial content with high discriminative frequency (hand shape, fine-grained gesture,
 instrument pose) imposes tighter spatial-frequency constraints on convolutional kernels,
-amplifying the resolution-scale mismatch.
+amplifying both resolution-gain and resolution-mismatch depending on the deviation direction.
 Transformers remain robust across all 7 datasets:
 no Transformer model exceeds 8pp degradation in any dataset--resolution combination,
 and VideoMAE deviates at most 7.7pp from its native accuracy across all tested domains.
@@ -867,13 +872,17 @@ causing catastrophic accuracy loss.
 Global attention and SSM recurrence aggregate tokens irrespective of their absolute
 spatial scale, producing representations that transfer across resolutions.
 
-Critically, the CNN brittleness is \emph{amplified} on semantically specific datasets:
-R3D-18 degrades 73pp on AUTSL (sign language) and MC3-18 degrades 64.5pp on DriveAct
-(in-cabin activities)---nearly double the 36.7pp worst case on SSv2.
-We attribute this amplification to discriminative-frequency coupling: datasets where
-fine-grained spatial features (handshape, gesture, body pose) are the primary
-discriminative signal impose tighter spatial-frequency constraints on convolutional
-filters, so any deviation from the training scale is especially destructive.
+Critically, this coupling is \emph{amplified} on semantically specific datasets,
+but with an important nuance: for AUTSL (sign language), CNNs actually \emph{improve}
+above native accuracy up to 224px (R3D-18: 74.9\%$\to$86.7\%; MC3-18: 66.1\%$\to$75.1\%),
+because fine-grained hand-shape features lie at spatial frequencies that benefit from
+higher resolution---the same coupling that amplifies degradation in one direction amplifies
+gain in the other.
+The catastrophic drop only emerges at 336px ($-73$pp for R3D-18), where the resolution
+deviation exceeds the filter bank's effective bandwidth.
+On DriveAct, MC3-18 degrades 64.5pp even at moderate off-native resolutions,
+confirming that the coupling direction depends on whether target resolution is above
+or below the native training scale.
 Transformers and VideoMamba remain within $\pm$8pp across all 7 datasets,
 confirming that global integration decouples representation quality from absolute input scale.
 
@@ -963,6 +972,7 @@ recognition systems tailored to the temporal Nyquist constraints of each applica
 
 \bibliographystyle{splncs04}
 \bibliography{main}
+
 \documentclass[runningheads]{llncs}
 
 % ---------------------------------------------------------------
@@ -1696,15 +1706,20 @@ We validate the spatial robustness pattern across all six additional datasets
 full tables in supplementary~S9).
 The CNN/Transformer split holds universally---and is in fact \emph{more severe} on
 semantically specific, appearance-heavy datasets.
-On AUTSL (sign language), R3D-18 collapses from 75.0\% at native 112px to 2.0\%
-at 336px ($-73.0$pp) and R2+1D falls from 75.9\% to 7.3\% ($-68.7$pp);
+On AUTSL (sign language), CNNs exhibit a \emph{resolution-dependent reversal}:
+they \emph{improve} beyond their native 112px accuracy at 224px---R3D-18 from
+74.9\% to 86.7\%, MC3-18 from 66.1\% to 75.1\%, R2+1D from 77.9\% to
+84.7\%---because finer spatial detail exposes more discriminative hand-shape and
+finger-position features.
+The collapse is confined to 336px ($3\times$ native): R3D-18 falls to 2.0\%
+($-73.0$pp) and R2+1D to 7.3\% ($-68.7$pp);
 on DriveAct (in-cabin activities), MC3-18 falls from 69.0\% to 4.5\% ($-64.5$pp);
 on UCF-101, CNNs peak near 85--88\% at 112px and collapse to 20--25\% at 336px
 ($-60$ to $-64$pp).
-These far exceed the worst CNN drop on SSv2 ($-36.7$pp), suggesting that
+These far exceed the worst CNN drop on SSv2 ($-36.7$pp), confirming that
 spatial content with high discriminative frequency (hand shape, fine-grained gesture,
 instrument pose) imposes tighter spatial-frequency constraints on convolutional kernels,
-amplifying the resolution-scale mismatch.
+amplifying both resolution-gain and resolution-mismatch depending on the deviation direction.
 Transformers remain robust across all 7 datasets:
 no Transformer model exceeds 8pp degradation in any dataset--resolution combination,
 and VideoMAE deviates at most 7.7pp from its native accuracy across all tested domains.
@@ -1832,13 +1847,17 @@ causing catastrophic accuracy loss.
 Global attention and SSM recurrence aggregate tokens irrespective of their absolute
 spatial scale, producing representations that transfer across resolutions.
 
-Critically, the CNN brittleness is \emph{amplified} on semantically specific datasets:
-R3D-18 degrades 73pp on AUTSL (sign language) and MC3-18 degrades 64.5pp on DriveAct
-(in-cabin activities)---nearly double the 36.7pp worst case on SSv2.
-We attribute this amplification to discriminative-frequency coupling: datasets where
-fine-grained spatial features (handshape, gesture, body pose) are the primary
-discriminative signal impose tighter spatial-frequency constraints on convolutional
-filters, so any deviation from the training scale is especially destructive.
+Critically, this coupling is \emph{amplified} on semantically specific datasets,
+but with an important nuance: for AUTSL (sign language), CNNs actually \emph{improve}
+above native accuracy up to 224px (R3D-18: 74.9\%$\to$86.7\%; MC3-18: 66.1\%$\to$75.1\%),
+because fine-grained hand-shape features lie at spatial frequencies that benefit from
+higher resolution---the same coupling that amplifies degradation in one direction amplifies
+gain in the other.
+The catastrophic drop only emerges at 336px ($-73$pp for R3D-18), where the resolution
+deviation exceeds the filter bank's effective bandwidth.
+On DriveAct, MC3-18 degrades 64.5pp even at moderate off-native resolutions,
+confirming that the coupling direction depends on whether target resolution is above
+or below the native training scale.
 Transformers and VideoMamba remain within $\pm$8pp across all 7 datasets,
 confirming that global integration decouples representation quality from absolute input scale.
 
@@ -1928,5 +1947,4 @@ recognition systems tailored to the temporal Nyquist constraints of each applica
 
 \bibliographystyle{splncs04}
 \bibliography{main}
-
 \end{document}

@@ -16,16 +16,10 @@ ds_list=(autsl diving48 driveact epic_kitchens hmdb51 ssv2 ucf101)
 # Pending jobs: (model dataset res sbatch_script)
 declare -a PENDING=()
 
-# VideoMAE @ 48px (native inference sweep — use native48 sbatch)
+# VideoMAE @ 48, 96, 112, 160px (trainres sweep with retrained checkpoints)
+# All use slurm_res_cov_stride.sbatch + --train-res flag so PE is correctly handled
 for ds in "${ds_list[@]}"; do
-    dir="${SWEEP_ROOT}/videomae_${ds}_trainres48"
-    [ -f "$dir/sweep_summary.csv" ] && [ "$(wc -l < "$dir/sweep_summary.csv")" -ge 26 ] && continue
-    PENDING+=("videomae ${ds} 48 ${SBATCH_NATIVE48}")
-done
-
-# VideoMAE @ 96, 112, 160px (trainres sweep)
-for ds in "${ds_list[@]}"; do
-    for res in 96 112 160; do
+    for res in 48 96 112 160; do
         dir="${SWEEP_ROOT}/videomae_${ds}_trainres${res}"
         [ -f "$dir/sweep_summary.csv" ] && [ "$(wc -l < "$dir/sweep_summary.csv")" -ge 26 ] && continue
         PENDING+=("videomae ${ds} ${res} ${SBATCH_TRAINRES}")
@@ -63,10 +57,14 @@ running_total() {
 
 submit_one() {
     local model=$1 ds=$2 res=$3 sbatch=$4
-    local part=${PARTITIONS[$((RANDOM % ${#PARTITIONS[@]}))]}
     local extra_args=""
+    local part
     if [[ "$model" == "videomamba" ]]; then
+        # H200 nodes are ONLY in cenvalarc.gpu partition
+        part="cenvalarc.gpu"
         extra_args="--constraint=H200"
+    else
+        part=${PARTITIONS[$((RANDOM % ${#PARTITIONS[@]}))]}
     fi
     local job_id
     if [[ "$sbatch" == *native_at_48px* ]]; then
@@ -104,7 +102,7 @@ while [ ${#remaining[@]} -gt 0 ]; do
             echo "[$(date '+%H:%M:%S')] DONE: ${model}/${ds}@${res}px"
             continue
         fi
-        if squeue -u wesleyferreiramaia --noheader 2>/dev/null | grep -q "sw-${model:0:4}-${ds}-${res}"; then
+        if squeue -u wesleyferreiramaia --format="%j" --noheader 2>/dev/null | grep -qF "sw-${model:0:4}-${ds}-${res}"; then
             new_remaining+=("$job")
             continue
         fi

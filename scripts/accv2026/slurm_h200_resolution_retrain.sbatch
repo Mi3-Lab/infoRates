@@ -132,16 +132,19 @@ case "$SCRIPT" in
             --lr 1e-4 --weight-decay 0.05 --num-frames 16
         ;;
     train_slowfast)
-        # SlowFast has a separate training script
+        # SlowFast has a separate training script.
+        # LR env var overrides default 1e-4 (use 5e-5 for collapsed checkpoints).
+        SLOWFAST_LR="${LR:-1e-4}"
         python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_slowfast.py \
             --dataset "${DATASET}" \
             --epochs "${EPOCHS}" \
             --batch-size "${BATCH_SIZE}" \
             --num-workers "${NUM_WORKERS}" \
             --input-size "${INPUT_SIZE}" \
+            --lr "${SLOWFAST_LR}" \
             --save-path "${CHECKPOINT}" \
             --wandb-project "${WANDB_PROJECT}" \
-            --wandb-run-name "retrain-slowfast-${DATASET}-${INPUT_SIZE}px-e${EPOCHS}-j${SLURM_JOB_ID}" \
+            --wandb-run-name "retrain-slowfast-${DATASET}-${INPUT_SIZE}px-lr${SLOWFAST_LR}-e${EPOCHS}-j${SLURM_JOB_ID}" \
             --wandb-tags accv2026 h200 "${DATASET}" slowfast "${INPUT_SIZE}px" resolution-ablation
         ;;
     train_transformers)
