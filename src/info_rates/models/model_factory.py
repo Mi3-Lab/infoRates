@@ -164,6 +164,14 @@ class ModelFactory:
                 st = next(iter(_glob_m.glob(str(Path(checkpoint) / "*.safetensors"))), None)
                 if st:
                     state = _load_sf(st, device="cpu")
+                    # strict=False skips missing/unexpected keys but still raises on shape
+                    # mismatch.  Drop keys whose shapes differ from the (post-interpolation)
+                    # model — these are native-size PE tensors we already fixed in Step 2.
+                    model_params = dict(model.named_parameters())
+                    shape_mismatch = {k for k, v in state.items()
+                                      if k in model_params and v.shape != model_params[k].shape}
+                    for k in shape_mismatch:
+                        state.pop(k)
                     model.load_state_dict(state, strict=False)
             # Step 3: update config so attention layers use correct spatial grid size
             # (e.g. TimeSformer computes num_patch_width = config.image_size // config.patch_size

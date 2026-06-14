@@ -1,2 +1,2 @@
-dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
-driveact,val,16,10,8,448,0.2857142857142857,0.5401785714285714,0.31530672918805586,0.0060981211536272895,0.00035284997232208425,0.1385019289295347,16.0,16.0,37.473214285714285
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+driveact,val,16,10,8,0.34151785714285715,448,0.34151785714285715,0.0,0.0

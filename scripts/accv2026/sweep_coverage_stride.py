@@ -105,6 +105,13 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
                     pass
             return -1.0
 
+        # For VideoMamba/EPIC-Kitchens: v1/v3 have leakage (trained with wrong
+        # num_labels=97); their inflated val_acc (41-50%) would be picked as
+        # "best" but gives worse real eval than the clean v2 (~25%).
+        # Threshold: EK real accuracy for these models ≤ 38%; above = leakage.
+        LEAKAGE_THRESHOLD = 0.38 if (model == "videomamba" and dataset == "epic_kitchens") else None
+
+        all_candidates: list[tuple[float, Path]] = []
         for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
             pattern = str(base / f"accv2026_{model}_{dataset}_{train_res}px_e*_*h200*")
             for p_str in _glob.glob(pattern):
@@ -119,12 +126,20 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
                     cfg = p / "config.json"
                     if not cfg.exists() or '"backend"' not in cfg.read_text():
                         continue
-                # Pick by highest val_acc so degraded re-runs (v2 convergence failures)
-                # don't override a good v1 checkpoint
                 acc = _read_val_acc(p)
-                if acc > best_acc:
-                    best_acc = acc
-                    best_path = p
+                all_candidates.append((acc, p))
+
+        if all_candidates:
+            if LEAKAGE_THRESHOLD is not None:
+                # Prefer clean checkpoint (val_acc ≤ threshold) if one exists
+                clean = [(a, p) for a, p in all_candidates
+                         if 0.15 <= a <= LEAKAGE_THRESHOLD]
+                chosen = max(clean, key=lambda x: x[0]) if clean else max(all_candidates, key=lambda x: x[0])
+            else:
+                # Default: pick highest val_acc so degraded re-runs don't override good v1
+                chosen = max(all_candidates, key=lambda x: x[0])
+            best_acc, best_path = chosen
+
         if best_path is not None:
             return best_path
         raise FileNotFoundError(

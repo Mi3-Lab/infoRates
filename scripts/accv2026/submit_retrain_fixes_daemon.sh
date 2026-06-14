@@ -38,6 +38,8 @@ declare -a JOBS=(
     "videomae epic_kitchens 224 cenvalarc.gpu LR=2e-5"
     "videomae hmdb51        224 cenvalarc.gpu LR=2e-5"
     "timesformer epic_kitchens 224 cenvalarc.gpu LR=2e-5"
+    # SlowFast DriveAct@224px: v1 shows 70.1% while 160px shows 74.8% — retrain v2.
+    "slowfast_r50 driveact 224 gpu LR=5e-5"
 )
 
 is_done() {

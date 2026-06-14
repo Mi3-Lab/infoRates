@@ -24,6 +24,7 @@ INPUT_SIZE="${INPUT_SIZE:?INPUT_SIZE must be set}"   # e.g. 112 or 224
 
 # Batch sizes safe for L40s (48GB) and H200 (141GB) — whichever is assigned
 # L40s = 48GB, H200 = 141GB. These values work on L40s; H200 can go higher.
+GRAD_ACCUM_STEPS=1  # default; overridden per-model/resolution below if needed
 if [[ "$MODEL" == "r3d_18" || "$MODEL" == "mc3_18" || "$MODEL" == "r2plus1d_18" ]]; then
     EPOCHS=10
     SCRIPT="train_torchvision"
@@ -46,11 +47,13 @@ elif [[ "$MODEL" == "slowfast_r50" ]]; then
         BATCH_SIZE=128   # 48px dual-path still fits large batch
     elif [[ "$INPUT_SIZE" -le 160 ]]; then
         BATCH_SIZE=48
-    else  # 224px
+    else  # 224px — use accumulation so effective batch = 48 matches 160px
         if [[ "$SLURM_JOB_PARTITION" == "gpu" ]]; then
             BATCH_SIZE=24
+            GRAD_ACCUM_STEPS=2   # 24×2 = effective 48
         else
             BATCH_SIZE=32
+            GRAD_ACCUM_STEPS=2   # 32×2 = effective 64 (closest above 48 for H200)
         fi
     fi
 elif [[ "$MODEL" == "videomamba" ]]; then
@@ -78,8 +81,10 @@ else
     # timesformer, vivit, videomae
     if [[ "$INPUT_SIZE" -le 48 ]]; then
         BATCH_SIZE=96    # 48px: patch_size=16 → 3×3=9 spatial tokens, low memory
+    elif [[ "$INPUT_SIZE" -ge 224 && "$SLURM_JOB_PARTITION" == "gpu" ]]; then
+        BATCH_SIZE=24    # 224px on gpu (A100-40GB): batch=48 OOMs; 24 is safe
     else
-        BATCH_SIZE=48    # Transformers: safe on L40s (48GB)
+        BATCH_SIZE=48    # cenvalarc.gpu (H200/A100-80GB): safe at all sizes
     fi
     EPOCHS=10
     SCRIPT="train_transformers"
@@ -135,6 +140,7 @@ case "$SCRIPT" in
         # SlowFast has a separate training script.
         # LR env var overrides default 1e-4 (use 5e-5 for collapsed checkpoints).
         SLOWFAST_LR="${LR:-1e-4}"
+        GRAD_ACCUM_STEPS="${GRAD_ACCUM_STEPS:-1}"
         python /data/wesleyferreiramaia/infoRates/scripts/accv2026/train_slowfast.py \
             --dataset "${DATASET}" \
             --epochs "${EPOCHS}" \
@@ -142,9 +148,10 @@ case "$SCRIPT" in
             --num-workers "${NUM_WORKERS}" \
             --input-size "${INPUT_SIZE}" \
             --lr "${SLOWFAST_LR}" \
+            --grad-accum-steps "${GRAD_ACCUM_STEPS}" \
             --save-path "${CHECKPOINT}" \
             --wandb-project "${WANDB_PROJECT}" \
-            --wandb-run-name "retrain-slowfast-${DATASET}-${INPUT_SIZE}px-lr${SLOWFAST_LR}-e${EPOCHS}-j${SLURM_JOB_ID}" \
+            --wandb-run-name "retrain-slowfast-${DATASET}-${INPUT_SIZE}px-lr${SLOWFAST_LR}-accum${GRAD_ACCUM_STEPS}-e${EPOCHS}-j${SLURM_JOB_ID}" \
             --wandb-tags accv2026 h200 "${DATASET}" slowfast "${INPUT_SIZE}px" resolution-ablation
         ;;
     train_transformers)
