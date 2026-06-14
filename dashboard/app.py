@@ -346,7 +346,6 @@ if page == "🏠 Overview & TDS":
     #   VideoMamba: 20pp — v2 re-training had convergence failures for most datasets
     #   default: 20pp — covers training vs inference protocol drift (~10-18pp typical)
     # EPIC-Kitchens gets +15pp because training val_acc is inflated by data leakage there.
-    @st.cache_data
     def _build_valid_trainres(_df_comb, _df_rt):
         if _df_comb.empty or _df_rt.empty:
             return set()
@@ -403,8 +402,7 @@ if page == "🏠 Overview & TDS":
                         (df_sw.stride == stride) & (df_sw.coverage == cov)]
             if not row.empty:
                 v = float(row["acc"].values[0])
-                if v > 1:
-                    return (v, "native")
+                return (v, "native")
 
         # 3. Authoritative single-point accuracy (stride=1, cov=100%)
         if stride == 1 and cov == 100 and not df_retrained_spatial.empty:
@@ -421,8 +419,7 @@ if page == "🏠 Overview & TDS":
             row = df_p3[(df_p3.model == mk) & (df_p3.dataset == ds) & (df_p3.res == res)]
             if not row.empty:
                 v = float(row["acc"].values[0])
-                if v > 1:
-                    return (v, "p3")
+                return (v, "p3")
 
         return None, None
 
@@ -481,7 +478,7 @@ if page == "🏠 Overview & TDS":
         accs = []
         for ds in DS_KEYS:
             acc, src = get_acc_overview(mk, ds, sel_cov, sel_str, sel_res)
-            if acc is None or acc < 1:
+            if acc is None:
                 row[ds_short[ds]] = "—"
             else:
                 row[ds_short[ds]] = f"{acc:.1f}%"

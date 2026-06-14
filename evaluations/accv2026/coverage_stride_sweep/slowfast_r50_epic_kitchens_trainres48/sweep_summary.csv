@@ -7,7 +7,7 @@ coverage,stride,top1,n,model,dataset
 25,1,0.10882352941176471,1020,slowfast_r50,epic_kitchens
 25,2,0.11470588235294117,1020,slowfast_r50,epic_kitchens
 25,4,0.09313725490196079,1020,slowfast_r50,epic_kitchens
-25,8,0.07254901960784314,1020,slowfast_r50,epic_kitchens
+25,8,0.07352941176470588,1020,slowfast_r50,epic_kitchens
 25,16,0.061764705882352944,1020,slowfast_r50,epic_kitchens
 50,1,0.1588235294117647,1020,slowfast_r50,epic_kitchens
 50,2,0.16568627450980392,1020,slowfast_r50,epic_kitchens
@@ -22,5 +22,5 @@ coverage,stride,top1,n,model,dataset
 100,1,0.21764705882352942,1020,slowfast_r50,epic_kitchens
 100,2,0.2,1020,slowfast_r50,epic_kitchens
 100,4,0.1803921568627451,1020,slowfast_r50,epic_kitchens
-100,8,0.16862745098039217,1020,slowfast_r50,epic_kitchens
+100,8,0.1696078431372549,1020,slowfast_r50,epic_kitchens
 100,16,0.1264705882352941,1020,slowfast_r50,epic_kitchens

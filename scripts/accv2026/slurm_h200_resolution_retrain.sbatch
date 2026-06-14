@@ -158,8 +158,12 @@ case "$SCRIPT" in
         # For sub-native resolutions, start from the already-adapted 224px checkpoint
         # (same model+dataset). This avoids learning AUTSL from scratch at 96px which
         # collapses to ~22% due to insufficient spatial information at init.
+        # FORCE_K400_INIT=1 overrides this and starts from HuggingFace K400 weights.
         NATIVE_CKPT="/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/accv2026_${MODEL}_${DATASET}_224px_e10_h200"
-        if [[ "${INPUT_SIZE}" != "224" && -d "${NATIVE_CKPT}" && -f "${NATIVE_CKPT}/accv_meta.json" ]]; then
+        if [[ "${FORCE_K400_INIT:-0}" == "1" ]]; then
+            PRETRAINED_ARG=""
+            echo "[Init] FORCE_K400_INIT=1 — starting from HuggingFace K400 (no 224px init)"
+        elif [[ "${INPUT_SIZE}" != "224" && -d "${NATIVE_CKPT}" && -f "${NATIVE_CKPT}/accv_meta.json" ]]; then
             PRETRAINED_ARG="--pretrained-from ${NATIVE_CKPT}"
             echo "[Init] Starting from 224px checkpoint: ${NATIVE_CKPT}"
         else
