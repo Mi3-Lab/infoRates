@@ -11,15 +11,21 @@ Usage:
 from __future__ import annotations
 import argparse
 import sys
+import time
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+import cv2
+from decord import VideoReader, cpu as decord_cpu
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_results
+from info_rates.evaluation.benchmark import (
+    evaluate_fixed_budgets, summarize_results,
+    select_frame_indices, adapt_frames_for_model, _move_batch_to_device,
+)
 
 # ── Sweep grid (matches ECCV paper protocol) ──────────────────────────────
 COVERAGES = [10, 25, 50, 75, 100]
@@ -159,6 +165,113 @@ def load_model(model_name: str, dataset: str, train_res: int = None):
     return model, processor, device
 
 
+@torch.inference_mode()
+def run_sweep_fast(
+    manifest_df: pd.DataFrame,
+    model,
+    processor,
+    coverages: list,
+    strides: list,
+    model_frames: int,
+    resize: int,
+    device: str,
+    batch_size: int = 32,
+    chunk_size: int = 128,
+) -> pd.DataFrame:
+    """Decode each video ONCE, run all configs from frame cache.
+
+    25x less disk I/O vs the config-outer approach; GPU stays busy.
+    """
+    configs = [(c, s) for c in coverages for s in strides]
+    num_labels = int(getattr(model.config, "num_labels",
+                             len(getattr(model.config, "id2label", {}))))
+    device_obj = torch.device(device)
+
+    df = manifest_df.copy()
+    if "exists" in df.columns:
+        df = df[df["exists"].astype(bool)]
+    if "split" in df.columns and hasattr(df, "_split_filter"):
+        pass  # already filtered upstream
+    df = df.reset_index(drop=True)
+
+    # accumulators: per config → list of correct booleans
+    correct: dict = {cfg: [] for cfg in configs}
+
+    n_chunks = (len(df) + chunk_size - 1) // chunk_size
+    t0_total = time.perf_counter()
+
+    for chunk_idx in range(n_chunks):
+        chunk = df.iloc[chunk_idx * chunk_size: (chunk_idx + 1) * chunk_size]
+
+        # ── 1. Decode every video in the chunk ONCE ──────────────────────
+        cache: list = []  # (frames_dict, total_frames, label_id) or None
+        for row in chunk.itertuples(index=False):
+            row_d = row._asdict()
+            label_id = int(row_d["label_id"])
+            if label_id < 0 or label_id >= num_labels:
+                cache.append(None)
+                continue
+            try:
+                vr = VideoReader(str(row_d["video_path"]), ctx=decord_cpu(0))
+                total = len(vr)
+                # Compute union of all frame positions needed across all 25 configs
+                needed = set()
+                for (cov, s) in configs:
+                    needed.update(select_frame_indices(total, model_frames, cov, s).tolist())
+                needed_sorted = sorted(needed)
+                raw = vr.get_batch(needed_sorted).asnumpy()  # [K, H, W, 3]
+                resized = np.stack([cv2.resize(f, (resize, resize)) for f in raw])
+                pos_map = {pos: i for i, pos in enumerate(needed_sorted)}
+                cache.append((resized, pos_map, total, label_id, row_d))
+            except Exception:
+                cache.append(None)
+
+        # ── 2. For each config, select frames from cache → batch GPU ──────
+        for (cov, s) in configs:
+            batch_frames: list = []
+            batch_labels: list = []
+
+            def _flush(bf, bl):
+                if not bf:
+                    return
+                inp = _move_batch_to_device(
+                    processor(bf, return_tensors="pt"), device_obj)
+                with torch.amp.autocast(device_type=device_obj.type,
+                                        enabled=device_obj.type == "cuda"):
+                    logits = model(**inp).logits
+                preds = logits.argmax(dim=-1).cpu().numpy()
+                for pred, lbl in zip(preds, bl):
+                    correct[(cov, s)].append(int(pred) == lbl)
+                del inp, logits
+
+            for entry in cache:
+                if entry is None:
+                    continue
+                resized, pos_map, total, label_id, _ = entry
+                idx = select_frame_indices(total, model_frames, cov, s)
+                frames = [resized[pos_map[min(i, max(pos_map))]] for i in idx]
+                frames = adapt_frames_for_model(frames, model_frames)
+                batch_frames.append(frames)
+                batch_labels.append(label_id)
+                if len(batch_frames) >= batch_size:
+                    _flush(batch_frames, batch_labels)
+                    batch_frames, batch_labels = [], []
+            _flush(batch_frames, batch_labels)
+
+        elapsed = time.perf_counter() - t0_total
+        done_vids = min((chunk_idx + 1) * chunk_size, len(df))
+        print(f"  chunk {chunk_idx+1}/{n_chunks}  ({done_vids}/{len(df)} videos"
+              f"  {elapsed:.0f}s)", flush=True)
+
+    rows = []
+    for (cov, s) in configs:
+        c = correct[(cov, s)]
+        n = len(c)
+        rows.append({"coverage": cov, "stride": s,
+                     "top1": sum(c) / max(n, 1), "n": n})
+    return pd.DataFrame(rows)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model",   required=True, choices=list(MODEL_CFG))
@@ -171,6 +284,8 @@ def main():
                         help="Override spatial resolution for inference (default: model's native)")
     parser.add_argument("--train-res",   type=int, default=None,
                         help="Load resolution-specific retrained checkpoint (e.g. 96, 112, 160, 224)")
+    parser.add_argument("--no-fast", action="store_true",
+                        help="Disable fast cached sweep (use legacy per-config decode)")
     args = parser.parse_args()
 
     mcfg = MODEL_CFG[args.model]
@@ -218,22 +333,67 @@ def main():
 
     results_all = []
 
+    # Check which configs are already done
+    pending_coverages, pending_strides = [], []
     for coverage in args.coverages:
         for stride in args.strides:
-            out_csv = out_dir / f"cov{coverage}_s{stride}_samples.csv"
             summary_csv = out_dir / f"cov{coverage}_s{stride}_summary.csv"
-
             if summary_csv.exists():
                 print(f"  [SKIP] cov={coverage}% s={stride} — already done")
-                df = pd.read_csv(summary_csv)
-                if not df.empty:
-                    row = df.iloc[0]
+                df_s = pd.read_csv(summary_csv)
+                if not df_s.empty:
+                    row = df_s.iloc[0]
                     results_all.append({"coverage": coverage, "stride": stride,
                                         "top1": row["top1"], "n": row["n"]})
+            else:
+                pending_coverages.append(coverage)
+                pending_strides.append(stride)
+
+    pending_configs = list(dict.fromkeys(zip(pending_coverages, pending_strides)))  # unique ordered
+
+    if pending_configs and not args.no_fast:
+        # Fast path: decode each video once, run all pending configs from cache
+        covs  = sorted(set(c for c, _ in pending_configs))
+        strs  = sorted(set(s for _, s in pending_configs))
+        print(f"\n  Fast sweep: {len(pending_configs)} configs × {len(manifest)} videos (decode-once)")
+        split_manifest = manifest[manifest["split"].astype(str) == dcfg["split"]].copy() \
+            if "split" in manifest.columns and dcfg["split"] else manifest.copy()
+        if "exists" in split_manifest.columns:
+            split_manifest = split_manifest[split_manifest["exists"].astype(bool)]
+
+        fast_df = run_sweep_fast(
+            manifest_df=split_manifest,
+            model=model,
+            processor=processor,
+            coverages=covs,
+            strides=strs,
+            model_frames=model_frames,
+            resize=resize,
+            device=device,
+            batch_size=args.batch_size,
+        )
+        for _, row in fast_df.iterrows():
+            coverage, stride = int(row["coverage"]), int(row["stride"])
+            if (coverage, stride) not in {(c, s) for c, s in pending_configs}:
                 continue
+            top1, n = float(row["top1"]), int(row["n"])
+            # Write per-config summary for resume compatibility
+            summary_csv = out_dir / f"cov{coverage}_s{stride}_summary.csv"
+            pd.DataFrame([{"dataset": dcfg["name"], "split": dcfg["split"],
+                           "budget": model_frames, "coverage": coverage,
+                           "stride": stride, "top1": top1, "n": n,
+                           "top5": top1, "mean_decode_s": 0.0,
+                           "mean_inference_s": 0.0}]).to_csv(summary_csv, index=False)
+            print(f"  cov={coverage:3d}%  s={stride:2d}  top1={top1*100:.1f}%  n={n}")
+            results_all.append({"coverage": coverage, "stride": stride,
+                                 "top1": top1, "n": n})
 
+    elif pending_configs:
+        # Legacy path (--no-fast flag)
+        for coverage, stride in pending_configs:
+            out_csv = out_dir / f"cov{coverage}_s{stride}_samples.csv"
+            summary_csv = out_dir / f"cov{coverage}_s{stride}_summary.csv"
             print(f"  Running cov={coverage:3d}%  s={stride:2d} ...", end=" ", flush=True)
-
             results = evaluate_fixed_budgets(
                 manifest=manifest,
                 model=model,
@@ -248,10 +408,8 @@ def main():
                 resize=resize,
                 model_frames=model_frames,
             )
-
             summary = summarize_results(results)
             summary.to_csv(summary_csv, index=False)
-
             if not summary.empty:
                 top1 = float(summary.iloc[0]["top1"])
                 n    = int(summary.iloc[0]["n"])

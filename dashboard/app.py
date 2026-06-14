@@ -143,6 +143,53 @@ def load_p3():
 
 
 @st.cache_data
+def load_combined_sweep():
+    """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+    if not sweep_root.exists():
+        return pd.DataFrame()
+    rows = []
+    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
+    NATIVE_L = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
+    for csv in sweep_root.glob("*/sweep_summary.csv"):
+        folder = csv.parent.name
+        res_override = None
+        is_trainres = False
+        if "_trainres" in folder:
+            tag, res_str = folder.rsplit("_trainres", 1)
+            try:
+                res_override = int(res_str)
+                is_trainres = True
+            except ValueError:
+                continue
+        elif "_res" in folder:
+            parts = folder.rsplit("_res", 1)
+            tag = parts[0]
+            try: res_override = int(parts[1])
+            except ValueError: tag = folder
+        else:
+            tag = folder
+        ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
+        if not ds:
+            continue
+        model = tag[:-(len(ds)+1)]
+        if model not in NATIVE_L:
+            continue
+        try:
+            df = pd.read_csv(csv)
+            df["model"]     = model
+            df["dataset"]   = ds
+            df["res"]       = res_override if res_override else NATIVE_L.get(model, 224)
+            df["train_res"] = res_override if is_trainres else None
+            df["acc"]       = df["top1"] * 100
+            rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
+        except Exception:
+            continue
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+@st.cache_data
 def load_retrained_spatial():
     # On Streamlit Cloud /scratch/ does not exist — read the bundled CSV instead.
     # On the cluster, prefer the live checkpoints (newer v2 results) and fall back
@@ -210,7 +257,8 @@ df_e10  = load_e10_duration()
 df_e3   = load_e3_spectral()
 df_anova = load_anova()
 df_p3   = load_p3()
-df_retrained_spatial = load_retrained_spatial()   # loaded at startup so cache is warm
+df_retrained_spatial = load_retrained_spatial()
+df_comb = load_combined_sweep()   # all stride×coverage sweeps across resolutions
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("🎬 InfoRates")
@@ -272,102 +320,130 @@ if page == "🏠 Overview & TDS":
 
     st.divider()
 
-    # Interactive accuracy explorer — any stride × coverage
-    st.subheader("Accuracy Explorer — any stride × coverage")
-    if not df_sw.empty:
-        c_sel1, c_sel2 = st.columns(2)
-        with c_sel1:
-            sel_cov = st.select_slider("Coverage", options=[10,25,50,75,100], value=100,
-                                        key="ov_cov", help="Fraction of clip observed")
-        with c_sel2:
-            sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
-                                        key="ov_str", help="Sampling density")
+    # Interactive accuracy explorer — stride × coverage × resolution
+    st.subheader("Accuracy Explorer")
+    NATIVE_RES_OV = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                     "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
 
-        # VideoMamba fallback: retrained_spatial.csv @ 224px (cov=100%, stride=1 equivalent)
-        vmb_224 = {}
-        if not df_retrained_spatial.empty:
-            _vmb = df_retrained_spatial[(df_retrained_spatial.model=="videomamba") &
-                                        (df_retrained_spatial.train_res==224)]
-            vmb_224 = dict(zip(_vmb.dataset, _vmb.acc))
+    c_sel1, c_sel2, c_sel3 = st.columns(3)
+    with c_sel1:
+        sel_cov = st.select_slider("Coverage (%)", options=[10,25,50,75,100], value=100,
+                                    key="ov_cov", help="Fraction of clip observed")
+    with c_sel2:
+        sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
+                                    key="ov_str", help="Frame sampling density")
+    with c_sel3:
+        sel_res = st.select_slider("Resolution (px)", options=[48,96,112,160,224], value=224,
+                                    key="ov_res", help="Input resolution. Native: CNN=112px, Transformer/SSM=224px")
 
-        # Bar chart: accuracy at chosen config per model, grouped by dataset (fixed order)
-        sub_ov = df_sw[(df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]
-        ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
-        ds_short_list = [ds_short[ds] for ds in DS_KEYS]  # Fixed order
-        if not sub_ov.empty or vmb_224:
-            fig_ov = go.Figure()
-            for mk in MODEL_KEYS:
-                if mk == "videomamba":
-                    # Only inject retrained values at cov=100%, stride=1 (training eval equivalent)
-                    if vmb_224 and sel_cov == 100 and sel_str == 1:
-                        accs_ordered = [vmb_224.get(ds) for ds in DS_KEYS]
-                        fig_ov.add_trace(go.Bar(
-                            x=ds_short_list, y=accs_ordered,
-                            name=MODEL_NAMES[mk],
-                            marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
-                            hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
-                        ))
-                    continue
-                sub_m = sub_ov[sub_ov.model==mk].copy()
-                sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
-                if sub_m.empty: continue
-                # Reindex to fixed dataset order, fill missing with NaN
-                accs_ordered = []
-                for ds_name in ds_short_list:
-                    val = sub_m[sub_m["ds_short"]==ds_name]["acc"]
-                    accs_ordered.append(val.values[0] if not val.empty and val.values[0] > 1 else None)
-                fig_ov.add_trace(go.Bar(
-                    x=ds_short_list, y=accs_ordered,
-                    name=MODEL_NAMES[mk],
-                    marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
-                    hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
-                ))
-            fig_ov.update_layout(
-                barmode="group", height=380,
-                title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}",
-                yaxis_title="Top-1 (%)", xaxis_title="",
-                legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
-                xaxis=dict(categoryorder="array", categoryarray=ds_short_list),  # Lock order
+    # Determine data source for each (model, dataset) at this (cov, stride, res) config
+    def get_acc_overview(mk, ds, cov, stride, res):
+        """Return (acc, source_label) for the given config. None if unavailable."""
+        native = NATIVE_RES_OV[mk]
+
+        # 1. Combined sweep: cross-res or trainres folder data (has all stride×cov)
+        if not df_comb.empty:
+            mask = ((df_comb.model == mk) & (df_comb.dataset == ds) &
+                    (df_comb.res == res) & (df_comb.stride == stride) &
+                    (df_comb.coverage == cov) & df_comb.train_res.isna())
+            row = df_comb[mask]
+            if not row.empty:
+                return float(row["acc"].values[0]), "cross-res"
+
+        # 2. Native sweep (df_sw): covers all stride×cov at native resolution
+        if res == native and not df_sw.empty:
+            row = df_sw[(df_sw.model == mk) & (df_sw.dataset == ds) &
+                        (df_sw.stride == stride) & (df_sw.coverage == cov)]
+            if not row.empty:
+                v = float(row["acc"].values[0])
+                return (v, "native") if v > 1 else (None, None)
+
+        # 3. VideoMamba @ 224px native (from retrained_spatial): only at cov=100%, stride=1
+        if mk == "videomamba" and res == 224 and cov == 100 and stride == 1:
+            if not df_retrained_spatial.empty:
+                row = df_retrained_spatial[(df_retrained_spatial.model == "videomamba") &
+                                           (df_retrained_spatial.train_res == 224) &
+                                           (df_retrained_spatial.dataset == ds)]
+                if not row.empty:
+                    return float(row["acc"].values[0]), "native"
+
+        # 4. p3_results (stride=1, cov=100% only)
+        if stride == 1 and cov == 100 and not df_p3.empty:
+            row = df_p3[(df_p3.model == mk) & (df_p3.dataset == ds) & (df_p3.res == res)]
+            if not row.empty:
+                return float(row["acc"].values[0]), "p3"
+
+        return None, None
+
+    ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
+    ds_short_list = [ds_short[ds] for ds in DS_KEYS]
+
+    # Build bar chart
+    fig_ov = go.Figure()
+    has_data = False
+    for mk in MODEL_KEYS:
+        accs_ordered = []
+        for ds in DS_KEYS:
+            acc, _ = get_acc_overview(mk, ds, sel_cov, sel_str, sel_res)
+            accs_ordered.append(acc)
+        if any(v is not None and v > 0 for v in accs_ordered):
+            has_data = True
+            fig_ov.add_trace(go.Bar(
+                x=ds_short_list, y=accs_ordered,
+                name=MODEL_NAMES[mk],
+                marker_color=FAM_COLOR.get(FAMILIES[mk], "#999"),
+                hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%<extra></extra>",
+            ))
+
+    if has_data:
+        res_label = f"{sel_res}px"
+        native_models = [mk for mk in MODEL_KEYS if NATIVE_RES_OV[mk] == sel_res]
+        if native_models:
+            res_label += f" (native for {', '.join(MODEL_NAMES[m] for m in native_models[:3])})"
+        fig_ov.update_layout(
+            barmode="group", height=400,
+            title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}, {res_label}",
+            yaxis_title="Top-1 (%)", xaxis_title="",
+            legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
+            xaxis=dict(categoryorder="array", categoryarray=ds_short_list),
+        )
+        st.plotly_chart(fig_ov, use_container_width=True)
+
+        if sel_res != 224:
+            st.caption(
+                f"Resolution {sel_res}px: cross-resolution eval using native-trained checkpoints "
+                f"(CNN native=112px, Transformers/SSM native=224px). "
+                f"Missing bars = data still generating."
             )
-            st.plotly_chart(fig_ov, use_container_width=True)
+    else:
+        st.info(
+            f"No data yet for coverage={sel_cov}%, stride={sel_str}, resolution={sel_res}px. "
+            "Try coverage=100%, stride=1 to see spatial results, or resolution=224px for full temporal sweep."
+        )
 
-        # Compact summary table for current config
-        st.subheader(f"Summary table — coverage={sel_cov}%, stride={sel_str}")
-        rows = []
-        for mk in MODEL_KEYS:
-            row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk]}
-            accs = []
-            for ds in DS_KEYS:
-                # VideoMamba: no stride sweep yet — use retrained@224px values (†)
-                if mk == "videomamba":
-                    # Only show at cov=100%, stride=1 (matches training val eval)
-                    if sel_cov == 100 and sel_str == 1:
-                        v = vmb_224.get(ds)
-                        if v is not None:
-                            row[ds_short[ds]] = f"{v:.1f}%"
-                            accs.append(v)
-                            continue
-                    row[ds_short[ds]] = "—"
-                    continue
-                val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
-                            (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
-                if val.empty: row[ds_short[ds]] = "—"; continue
-                v = val.values[0]
-                row[ds_short[ds]] = f"—†" if v < 2 else f"{v:.1f}%"
-                if v > 2: accs.append(v)
-            row["Avg"] = f"{np.mean(accs):.1f}%" if accs else "—"
-            rows.append(row)
-        df_tbl = pd.DataFrame(rows)
-        st.dataframe(df_tbl, use_container_width=True)
-        # Warn about degenerate extreme configs
-        if sel_cov == 10 and sel_str == 16:
-            st.warning(
-                "**Extreme config:** coverage=10% + stride=16 → frame pool has only ~1–3 frames, "
-                "so the model receives the same frame repeated up to 8×. "
-                "This measures **single-frame accuracy**, not temporal reasoning. "
-                "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
-            )
-        st.caption("Key spatial finding: VideoMamba/AUTSL completely fails below 112px (48px→3.7%, 96px→4.3%, 112px→34.2%), revealing a minimum resolution threshold for sign language recognition.")
+    # Compact summary table
+    st.subheader(f"Summary table — cov={sel_cov}%, stride={sel_str}, res={sel_res}px")
+    rows = []
+    for mk in MODEL_KEYS:
+        row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk], "Native px": f"{NATIVE_RES_OV[mk]}px"}
+        accs = []
+        for ds in DS_KEYS:
+            acc, src = get_acc_overview(mk, ds, sel_cov, sel_str, sel_res)
+            if acc is None or acc < 1:
+                row[ds_short[ds]] = "—"
+            else:
+                row[ds_short[ds]] = f"{acc:.1f}%"
+                accs.append(acc)
+        row["Avg"] = f"{np.mean(accs):.1f}%" if accs else "—"
+        rows.append(row)
+    df_tbl = pd.DataFrame(rows)
+    st.dataframe(df_tbl, use_container_width=True)
+
+    if sel_cov == 10 and sel_str == 16:
+        st.warning(
+            "**Extreme config:** coverage=10% + stride=16 → frame pool has only ~1–3 frames. "
+            "This measures **single-frame accuracy**, not temporal reasoning."
+        )
 
 
 # =============================================================================
@@ -1087,55 +1163,7 @@ elif page == "🎛 Spatiotemporal Explorer":
     st.title("Spatiotemporal Explorer")
     st.markdown("Choose **dataset, stride, coverage, and resolution** to see the accuracy of every model at that exact configuration.")
 
-    @st.cache_data
-    def load_combined_sweep():
-        sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
-        if not sweep_root.exists():
-            return pd.DataFrame()
-        rows = []
-        ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
-        NATIVE = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
-                  "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-        for csv in sweep_root.glob("*/sweep_summary.csv"):
-            folder = csv.parent.name
-            res_override = None
-            # New format: {model}_{dataset}_trainres{N}  (checkpoint retrained at N px)
-            if "_trainres" in folder:
-                tag, res_str = folder.rsplit("_trainres", 1)
-                try: res_override = int(res_str)
-                except ValueError: continue
-            # Legacy format: {model}_{dataset}_res{N}  (cross-resolution eval)
-            elif "_res" in folder:
-                parts = folder.rsplit("_res", 1)
-                tag = parts[0]
-                try: res_override = int(parts[1])
-                except ValueError: tag = folder
-            else:
-                tag = folder
-            ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
-            if not ds:
-                continue
-            model = tag[:-(len(ds)+1)]
-            if model not in NATIVE:
-                continue
-            try:
-                df = pd.read_csv(csv)
-                df["model"]    = model
-                df["dataset"]  = ds
-                df["res"]      = res_override if res_override else NATIVE.get(model, 224)
-                df["train_res"]= res_override if "_trainres" in folder else None
-                df["acc"]      = df["top1"] * 100
-                rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
-            except Exception:
-                continue
-        return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
-
-    df_comb = load_combined_sweep()
-
-    # Data sources:
-    # df_sw  = temporal sweep  → (model, dataset, coverage, stride) @ native res
-    # df_p3  = spatial eval    → (model, dataset, res) @ stride=1, cov=100%
-    # df_comb = trainres sweep → (model, dataset, res, coverage, stride) — generating
+    # df_comb loaded at startup (top-level load_combined_sweep)
 
     NATIVE_RES = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
                   "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}

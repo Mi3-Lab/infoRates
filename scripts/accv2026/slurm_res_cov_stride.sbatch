@@ -35,6 +35,6 @@ python scripts/accv2026/sweep_coverage_stride.py \
     --model      "${MODEL}" \
     --dataset    "${DATASET}" \
     --train-res  "${TRAIN_RES}" \
-    --batch-size 32
+    --batch-size 64
 
 echo "=== DONE — $(date) ==="

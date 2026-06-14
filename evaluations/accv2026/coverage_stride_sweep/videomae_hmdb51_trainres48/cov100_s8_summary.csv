@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+hmdb51,val,16,100,8,0.09378531073446328,885,0.09378531073446328,0.0,0.0

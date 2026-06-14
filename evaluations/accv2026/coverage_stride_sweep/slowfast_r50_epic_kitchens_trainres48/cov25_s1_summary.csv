@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+epic_kitchens,val,32,25,1,1020,0.047058823529411764,0.19019607843137254,0.2530688466467694,0.05694899445641603,0.0009966187005606936,1.0420792369254153,32.0,32.0,184.25392156862745

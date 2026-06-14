@@ -248,7 +248,7 @@ def load_videomamba_checkpoint(
     num_frames  = meta.get("num_frames", 8)
     input_size  = meta.get("input_size", 224)
 
-    model_raw = videomamba_middle(num_classes=num_classes, num_frames=num_frames)
+    model_raw = videomamba_middle(num_classes=num_classes, num_frames=num_frames, img_size=input_size)
     state_dict = torch.load(save_dir / "model.pth", map_location="cpu")
     model_raw.load_state_dict(state_dict)
     model_raw.eval()
