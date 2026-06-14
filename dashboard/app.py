@@ -235,6 +235,9 @@ def load_retrained_spatial():
         if model not in mdl_keys: continue
         val_acc = read_val_acc(d)
         if val_acc is None: continue
+        # VideoMamba/EK: v1/v3 leaky (num_labels=97, val_acc~50%); exclude above threshold
+        if model == "videomamba" and ds == "epic_kitchens" and val_acc > 0.38:
+            continue
         key = (model, ds, train_res)
         # Always keep the BEST accuracy across all versions
         if key not in best or val_acc > best[key]:
@@ -452,6 +455,7 @@ if page == "🏠 Overview & TDS":
             barmode="group", height=400,
             title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}, {res_label}",
             yaxis_title="Top-1 (%)", xaxis_title="",
+            yaxis=dict(range=[0, 100]),
             legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
             xaxis=dict(categoryorder="array", categoryarray=ds_short_list),
         )

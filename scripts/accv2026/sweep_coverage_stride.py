@@ -151,6 +151,9 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
     if key in SPECIAL_CKPTS:
         candidates.append(SPECIAL_CKPTS[key])
     # H200 retrain naming (campanha atual — 224px)
+    # VideoMamba/EK: v1/v3 leaky (num_labels=97, val_acc~50%); prefer v2 (val_acc~25%)
+    if model == "videomamba" and dataset == "epic_kitchens":
+        candidates.append(f"accv2026_{model}_{dataset}_224px_e10_v2_h200")
     candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
     # Fallback: nomenclatura antiga
     suffix = MODEL_CFG[model]["ckpt_suffix"]
