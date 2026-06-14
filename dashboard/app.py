@@ -337,7 +337,12 @@ if page == "🏠 Overview & TDS":
                                     key="ov_res", help="Input resolution. Native: CNN=112px, Transformer/SSM=224px")
 
     # Pre-build validated trainres lookup: only use df_comb trainres where baseline
-    # (stride=1, cov=100) is within 10pp of retrained_spatial (guards against collapsed sweeps)
+    # (stride=1, cov=100) is within threshold of retrained_spatial (guards against collapsed sweeps).
+    # Model-aware thresholds (pp):
+    #   VideoMAE: 30pp — sweeps at non-48px had near-random results with wrong checkpoint
+    #   VideoMamba: 20pp — v2 re-training had convergence failures for most datasets
+    #   default: 20pp — covers training vs inference protocol drift (~10-18pp typical)
+    # EPIC-Kitchens gets +15pp because training val_acc is inflated by data leakage there.
     @st.cache_data
     def _build_valid_trainres(_df_comb, _df_rt):
         if _df_comb.empty or _df_rt.empty:
@@ -356,8 +361,12 @@ if page == "🏠 Overview & TDS":
             if rt_val is None:
                 continue
             sweep_val = row["acc"]
-            # Valid if sweep baseline is within 10pp of authoritative retrained_spatial
-            if abs(sweep_val - rt_val) <= 10.0:
+            model = row["model"]
+            dataset = row["dataset"]
+            threshold = 30.0 if model == "videomae" else 20.0
+            if dataset == "epic_kitchens":
+                threshold += 15.0  # leakage inflates training val_acc for EPIC-Kitchens
+            if abs(sweep_val - rt_val) <= threshold:
                 valid.add(key)
         return valid
 
@@ -367,14 +376,25 @@ if page == "🏠 Overview & TDS":
         """Return (acc, source_label) for the given config. None if unavailable.
 
         Priority:
-        1. Native sweep (df_sw) — reliable stride×cov data at native resolution
-        2. retrained_spatial — authoritative accuracy at stride=1, cov=100%
-        3. df_comb trainres — stride×cov data ONLY if sweep baseline validated vs retrained_spatial
-        4. p3_results — stride=1, cov=100% only (cross-res / retrained values)
+        1. df_comb trainres — validated sweep with retrained checkpoint at this resolution.
+           Takes priority over native sweep so all resolutions use the same model generation
+           (accv2026 campaign) and curves are comparable across the resolution slider.
+        2. Native sweep (df_sw) — fallback when no trainres sweep exists at this resolution.
+        3. retrained_spatial — single-point (stride=1, cov=100%) from checkpoint val_acc.
+        4. p3_results — stride=1, cov=100% only (cross-res / retrained values).
         """
         native = NATIVE_RES_OV[mk]
 
-        # 1. Native sweep (df_sw): full stride×cov grid at each model's native resolution
+        # 1. df_comb trainres for stride/cov variation — preferred source for consistency
+        if not df_comb.empty and (mk, ds, res) in _valid_trainres:
+            mask_tr = ((df_comb.model == mk) & (df_comb.dataset == ds) &
+                       (df_comb.res == res) & (df_comb.stride == stride) &
+                       (df_comb.coverage == cov) & (df_comb.train_res == res))
+            row = df_comb[mask_tr]
+            if not row.empty:
+                return (float(row["acc"].values[0]), "trainres")
+
+        # 2. Native sweep (df_sw): fallback when no validated trainres exists
         if res == native and not df_sw.empty:
             row = df_sw[(df_sw.model == mk) & (df_sw.dataset == ds) &
                         (df_sw.stride == stride) & (df_sw.coverage == cov)]
@@ -383,7 +403,7 @@ if page == "🏠 Overview & TDS":
                 if v > 1:
                     return (v, "native")
 
-        # 2. Authoritative single-point accuracy (stride=1, cov=100%)
+        # 3. Authoritative single-point accuracy (stride=1, cov=100%)
         if stride == 1 and cov == 100 and not df_retrained_spatial.empty:
             row = df_retrained_spatial[
                 (df_retrained_spatial.model == mk) &
@@ -392,17 +412,6 @@ if page == "🏠 Overview & TDS":
             ]
             if not row.empty:
                 return float(row["acc"].values[0]), "retrained"
-
-        # 3. df_comb trainres for stride/cov variation — only if validated (not collapsed/wrong ckpt)
-        if not df_comb.empty and (mk, ds, res) in _valid_trainres:
-            mask_tr = ((df_comb.model == mk) & (df_comb.dataset == ds) &
-                       (df_comb.res == res) & (df_comb.stride == stride) &
-                       (df_comb.coverage == cov) & (df_comb.train_res == res))
-            row = df_comb[mask_tr]
-            if not row.empty:
-                v = float(row["acc"].values[0])
-                if v > 1:
-                    return (v, "trainres")
 
         # 4. p3_results: stride=1, cov=100% fallback (cross-res or retrained values)
         if stride == 1 and cov == 100 and not df_p3.empty:

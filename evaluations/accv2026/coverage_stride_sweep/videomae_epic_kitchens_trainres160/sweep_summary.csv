@@ -7,11 +7,11 @@ coverage,stride,top1,n,model,dataset
 25,1,0.056862745098039215,1020,videomae,epic_kitchens
 25,2,0.04803921568627451,1020,videomae,epic_kitchens
 25,4,0.04019607843137255,1020,videomae,epic_kitchens
-25,8,0.03725490196078431,1020,videomae,epic_kitchens
+25,8,0.03627450980392157,1020,videomae,epic_kitchens
 25,16,0.029411764705882353,1020,videomae,epic_kitchens
 50,1,0.06862745098039216,1020,videomae,epic_kitchens
 50,2,0.0696078431372549,1020,videomae,epic_kitchens
-50,4,0.05784313725490196,1020,videomae,epic_kitchens
+50,4,0.058823529411764705,1020,videomae,epic_kitchens
 50,8,0.049019607843137254,1020,videomae,epic_kitchens
 50,16,0.03823529411764706,1020,videomae,epic_kitchens
 75,1,0.0696078431372549,1020,videomae,epic_kitchens

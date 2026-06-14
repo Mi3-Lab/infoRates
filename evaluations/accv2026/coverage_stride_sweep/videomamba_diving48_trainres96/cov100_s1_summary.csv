@@ -1,2 +1,0 @@
-dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
-diving48,val,8,100,1,0.029609690444145357,743,0.029609690444145357,0.0,0.0

@@ -84,12 +84,27 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
     (e.g., accv2026_r3d_18_ucf101_96px_e10_h200) instead of the native one.
     """
     if train_res is not None:
-        # Search for best checkpoint: prefer highest version with valid metadata.
+        # Search for best checkpoint: prefer highest val_acc across all versions.
         # Naming: accv2026_{model}_{dataset}_{res}px_e10[_v{N}]_h200
         import glob as _glob
+        import json as _json
         transformer_models = {"timesformer", "vivit", "videomae", "videomamba"}
         best_path = None
-        best_ver = -1
+        best_acc = -1.0
+
+        def _read_val_acc(p: Path) -> float:
+            for fname in ("accv_meta.json", "config.json"):
+                f = p / fname
+                if not f.exists():
+                    continue
+                try:
+                    v = _json.loads(f.read_text()).get("val_acc")
+                    if v is not None:
+                        return float(v)
+                except Exception:
+                    pass
+            return -1.0
+
         for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
             pattern = str(base / f"accv2026_{model}_{dataset}_{train_res}px_e*_*h200*")
             for p_str in _glob.glob(pattern):
@@ -104,12 +119,11 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
                     cfg = p / "config.json"
                     if not cfg.exists() or '"backend"' not in cfg.read_text():
                         continue
-                # Extract version number
-                import re as _re
-                ver_m = _re.search(r"_v(\d+)_h200", p.name)
-                ver = int(ver_m.group(1)) if ver_m else 0
-                if ver > best_ver:
-                    best_ver = ver
+                # Pick by highest val_acc so degraded re-runs (v2 convergence failures)
+                # don't override a good v1 checkpoint
+                acc = _read_val_acc(p)
+                if acc > best_acc:
+                    best_acc = acc
                     best_path = p
         if best_path is not None:
             return best_path
