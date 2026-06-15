@@ -1,6 +1,6 @@
 model,dataset,resolution,top1,n,ckpt
 mc3_18,finegym,112,0.6425,1600,accv2026_mc3_18_finegym_112px_e10_h200
-mc3_18,finegym,160,0.483125,1600,accv2026_mc3_18_finegym_160px_e10_h200
+mc3_18,finegym,160,0.7375,1600,accv2026_mc3_18_finegym_160px_e10_h200
 mc3_18,finegym,224,0.656875,1600,accv2026_mc3_18_finegym_224px_e10_h200
 mc3_18,finegym,336,0.27625,1600,accv2026_mc3_18_finegym_336px_e10_h200
 mc3_18,finegym,48,0.4625,1600,accv2026_mc3_18_finegym_48px_e10_h200
@@ -23,7 +23,7 @@ slowfast_r50,finegym,48,0.3625,1600,accv2026_slowfast_r50_finegym_48px_e10_h200
 slowfast_r50,finegym,96,0.671875,1600,accv2026_slowfast_r50_finegym_96px_e10_h200
 timesformer,finegym,112,0.508125,1600,accv2026_timesformer_finegym_112px_e10_h200
 timesformer,finegym,160,0.621875,1600,accv2026_timesformer_finegym_160px_e10_h200
-timesformer,finegym,224,0.67625,1600,accv2026_timesformer_finegym_224px_e10_h200
+timesformer,finegym,224,0.664375,1600,accv2026_timesformer_finegym_224px_e10_h200
 timesformer,finegym,336,0.704375,1600,accv2026_timesformer_finegym_336px_e10_h200
 timesformer,finegym,48,0.243125,1600,accv2026_timesformer_finegym_48px_e10_h200
 timesformer,finegym,96,0.48875,1600,accv2026_timesformer_finegym_96px_e10_h200
@@ -33,13 +33,13 @@ videomae,finegym,224,0.78,1600,accv2026_videomae_finegym_224px_e10_h200
 videomae,finegym,336,0.66125,1600,accv2026_videomae_finegym_336px_e10_h200
 videomae,finegym,48,0.254375,1600,accv2026_videomae_finegym_48px_e10_h200
 videomae,finegym,96,0.51125,1600,accv2026_videomae_finegym_96px_e10_h200
-videomamba,finegym,112,0.583125,1600,accv2026_videomamba_finegym_112px_e10_h200
+videomamba,finegym,112,0.581875,1600,accv2026_videomamba_finegym_112px_e10_h200
 videomamba,finegym,160,0.66,1600,accv2026_videomamba_finegym_160px_e10_h200
 videomamba,finegym,224,0.731875,1600,accv2026_videomamba_finegym_224px_e10_h200
-videomamba,finegym,48,0.291875,1600,accv2026_videomamba_finegym_48px_e10_h200
+videomamba,finegym,48,0.29125,1600,accv2026_videomamba_finegym_48px_e10_h200
 videomamba,finegym,96,0.51625,1600,accv2026_videomamba_finegym_96px_e10_h200
-vivit,finegym,112,0.393125,1600,accv2026_vivit_finegym_112px_e10_h200
-vivit,finegym,160,0.4875,1600,accv2026_vivit_finegym_160px_e10_h200
-vivit,finegym,224,0.529375,1600,accv2026_vivit_finegym_224px_e10_h200
+vivit,finegym,112,0.408125,1600,accv2026_vivit_finegym_112px_e10_h200
+vivit,finegym,160,0.49625,1600,accv2026_vivit_finegym_160px_e10_h200
+vivit,finegym,224,0.699375,1600,accv2026_vivit_finegym_224px_e10_h200
 vivit,finegym,48,0.2125,1600,accv2026_vivit_finegym_48px_e10_h200
-vivit,finegym,96,0.374375,1600,accv2026_vivit_finegym_96px_e10_h200
+vivit,finegym,96,0.390625,1600,accv2026_vivit_finegym_96px_e10_h200
