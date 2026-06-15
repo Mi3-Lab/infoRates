@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+finegym,val,16,75,2,1600,0.555625,0.88375,0.5499932788545265,0.004798416952980915,0.001030230690157623,0.45339692181456487,16.0,16.0,49.018125
