@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,n,top1,top5,mean_confidence,mean_decode_time_s,mean_inference_time_s,mean_total_time_s,mean_processed_frames,mean_model_input_frames,mean_source_frames
+hmdb51,val,8,50,16,885,0.4056497175141243,0.6610169491525424,0.5121251246855084,0.022612672457524106,0.0010436874138201866,0.46085248246346994,8.0,8.0,96.54124293785311

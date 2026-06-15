@@ -19,6 +19,7 @@ for _p in (ROOT, SRC, VIDEOMAMBA_REPO, MAMBA_BUNDLED):
 
 import cv2
 import numpy as np
+import random
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -37,6 +38,7 @@ from info_rates.models.videomamba_model import (
     PRETRAINED_PATH,
     VideoMambaProcessor,
     build_videomamba,
+    build_videomamba_from_finetuned,
     load_videomamba_checkpoint,
 )
 from info_rates.training.ddp import cleanup_ddp, setup_ddp
@@ -109,7 +111,8 @@ class VideoMambaDataset(Dataset):
 
     def _decode(self, path) -> np.ndarray:
         from decord import VideoReader, cpu
-        vr = VideoReader(str(path), ctx=cpu(0))
+        # num_threads=1 prevents VP8/VP9 webm EAGAIN errors from FFmpeg thread pool.
+        vr = VideoReader(str(path), ctx=cpu(0), num_threads=1)
         total = len(vr)
         if total <= 0:
             raise RuntimeError(f"Video has 0 frames: {path}")
@@ -119,8 +122,11 @@ class VideoMambaDataset(Dataset):
     def __getitem__(self, idx):
         attempts = min(max(1, self.max_decode_retries), max(1, len(self.files)))
         last_error = None
-        for offset in range(attempts):
-            path, label = self._resolve((idx + offset) % len(self.files))
+        for i in range(attempts):
+            # First attempt uses the requested index; retries jump to random indices
+            # to avoid sequential clusters of corrupt videos (common in SSv2 webm).
+            try_idx = idx if i == 0 else random.randint(0, len(self.files) - 1)
+            path, label = self._resolve(try_idx)
             try:
                 frames = self._decode(path)
                 break
@@ -194,16 +200,23 @@ def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: i
 def make_loader(files, processor, num_frames: int, args, use_ddp: bool, train: bool) -> DataLoader:
     ds = VideoMambaDataset(files, processor, num_frames=num_frames)
     sampler = DistributedSampler(ds, shuffle=train) if use_ddp else None
+    # SSv2 WebM files trigger Decord EAGAIN (-11) errors when multiple VideoReader
+    # instances run concurrently (FFmpeg internal thread contention). Force
+    # num_workers=1 to ensure only one Decord instance at a time.
+    ssv2_mode = getattr(args, "dataset", "") == "ssv2"
+    nw = 1 if ssv2_mode else args.num_workers
+    persistent = nw > 0 and not ssv2_mode
+    prefetch = 2 if (ssv2_mode and nw > 0) else (4 if nw > 0 else None)
     return DataLoader(
         ds,
         batch_size=args.batch_size,
         shuffle=train and sampler is None,
         sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=False,
-        persistent_workers=args.num_workers > 0,
-        prefetch_factor=4 if args.num_workers > 0 else None,
-        multiprocessing_context="forkserver" if args.num_workers > 0 else None,
+        num_workers=nw,
+        pin_memory=True,
+        persistent_workers=persistent,
+        prefetch_factor=prefetch if nw > 0 else None,
+        multiprocessing_context="forkserver" if nw > 0 else None,
     )
 
 
@@ -347,6 +360,12 @@ def parse_args():
     p.add_argument("--batch-size", type=int, default=16)
     p.add_argument("--lr", type=float, default=5e-6)
     p.add_argument("--weight-decay", type=float, default=0.05)
+    p.add_argument("--warmup-epochs", type=int, default=0,
+                   help="Linear LR warmup from 0 to --lr over this many epochs (0=disabled)")
+    p.add_argument("--lr-scheduler", choices=["none", "cosine"], default="none",
+                   help="LR scheduler after warmup (cosine anneals to 0 over remaining epochs)")
+    p.add_argument("--early-stopping-patience", type=int, default=0,
+                   help="Stop if val_acc does not improve for this many epochs (0=disabled)")
     p.add_argument("--num-workers", type=int, default=6)
     p.add_argument("--max-train-samples", type=int, default=0)
     p.add_argument("--max-val-samples", type=int, default=0)
@@ -357,9 +376,15 @@ def parse_args():
                    help="Skip K400 pretrained weights (random init)")
     p.add_argument("--resume-from", default=None,
                    help="Checkpoint dir to resume training from")
+    p.add_argument("--pretrained-from", default=None,
+                   help="Fine-tuned checkpoint dir to initialize weights from (epoch resets to 1). "
+                        "Use for cross-resolution transfer, e.g. AUTSL 224px → 96px, "
+                        "so BiMamba already adapted to target domain.")
     p.add_argument("--input-size", type=int, default=224,
                    help="Spatial resolution for training (default: 224). "
                         "Use for spatial aliasing ablation (e.g. --input-size 112).")
+    p.add_argument("--compile", action="store_true",
+                   help="Enable torch.compile (requires enough VRAM; safe on H200/141GB, may OOM on L40S/46GB)")
     p.add_argument("--no-wandb", action="store_true")
     p.add_argument("--wandb-project", default="inforates-accv2026")
     p.add_argument("--wandb-run-name", default=None)
@@ -385,6 +410,7 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision("high")  # TF32 on Ampere/Hopper: ~3× matmul speedup
 
     class_names, train_files, val_files = prepare_data(
         args.dataset, args.data_root, args.max_train_samples, args.max_val_samples
@@ -405,6 +431,14 @@ def main() -> None:
         start_epoch = meta.get("epoch", 1) + 1
         if is_main:
             print(f"[Resume] from {resume_path}, starting epoch {start_epoch}")
+    elif args.pretrained_from:
+        model = build_videomamba_from_finetuned(
+            checkpoint_dir=args.pretrained_from,
+            target_img_size=args.input_size,
+        )
+        model = model.to(device)
+        if is_main:
+            print(f"[Pretrained-from] {args.pretrained_from} → {args.input_size}px, training from epoch 1")
     else:
         pretrained = None if args.no_pretrained else PRETRAINED_PATH
         model = build_videomamba(
@@ -419,8 +453,8 @@ def main() -> None:
         model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
         model._set_static_graph()  # BiMamba reuses params bidirectionally; static graph avoids DDP "ready once" error
 
-    # torch.compile disabled: SSM CUDA Graphs consume 49+ GiB private pool → OOM on FineGym
-    if False and torch.cuda.is_available() and not args.ddp:
+    # torch.compile: enabled via --compile flag (needs ≥80GB VRAM; SSM CUDA Graphs ~49GB pool)
+    if args.compile and torch.cuda.is_available() and not args.ddp:
         try:
             model = torch.compile(model, mode="reduce-overhead", fullgraph=False)
             if is_main:
@@ -430,31 +464,75 @@ def main() -> None:
                 print(f"[torch.compile] skipped: {e}")
 
     optimizer  = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+    # LR scheduler: optional warmup then cosine annealing
+    cosine_epochs = args.epochs - args.warmup_epochs
+    if args.lr_scheduler == "cosine" and cosine_epochs > 0:
+        cosine_sched = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=cosine_epochs, eta_min=args.lr * 0.01
+        )
+    else:
+        cosine_sched = None
+
+    def _update_lr(epoch: int):
+        if args.warmup_epochs > 0 and epoch <= args.warmup_epochs:
+            # Linear warmup: scale from lr/100 to lr
+            scale = epoch / args.warmup_epochs
+            for pg in optimizer.param_groups:
+                pg["lr"] = args.lr * max(scale, 0.01)
+        elif cosine_sched is not None and epoch > args.warmup_epochs:
+            cosine_sched.step()
+
     wandb_run  = init_wandb(args, len(class_names), len(train_files), len(val_files)) if is_main else None
 
     best_acc = -1.0
     best_epoch = start_epoch
+    no_improve = 0
     for epoch in range(start_epoch, args.epochs + 1):
+        _update_lr(epoch)
+        current_lr = optimizer.param_groups[0]["lr"]
+
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
         train_loss          = train_one_epoch(model, train_loader, optimizer, device, epoch, is_main)
         val_loss, val_acc   = evaluate(model, val_loader, device, is_main)
 
         if is_main:
-            print(f"Epoch {epoch}/{args.epochs}: train_loss={train_loss:.4f}  val_loss={val_loss:.4f}  val_acc={val_acc:.4f}")
+            print(f"Epoch {epoch}/{args.epochs}: train_loss={train_loss:.4f}  val_loss={val_loss:.4f}  val_acc={val_acc:.4f}  lr={current_lr:.2e}")
             if wandb_run is not None:
                 import wandb
-                wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss, "val_accuracy": val_acc})
+                wandb.log({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss,
+                           "val_accuracy": val_acc, "lr": current_lr})
 
             # Per-epoch checkpoints disabled to preserve disk quota
 
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_epoch = epoch
+                no_improve = 0
                 save_checkpoint(args.save_path, model, class_names,
                                 extra={"epoch": epoch, "val_acc": val_acc, "is_best": True},
                                 input_size=args.input_size)
                 print(f"  -> New best! Saved to {args.save_path} (epoch {epoch}, val_acc={val_acc:.4f})")
+            else:
+                no_improve += 1
+
+        # Broadcast early-stopping decision from rank-0
+        if args.ddp:
+            import torch.distributed as dist
+            stop_tensor = torch.tensor(
+                1 if (args.early_stopping_patience > 0 and no_improve >= args.early_stopping_patience) else 0,
+                device=device
+            )
+            dist.broadcast(stop_tensor, src=0)
+            should_stop = stop_tensor.item() == 1
+        else:
+            should_stop = args.early_stopping_patience > 0 and no_improve >= args.early_stopping_patience
+
+        if should_stop:
+            if is_main:
+                print(f"  [EarlyStopping] No improvement for {args.early_stopping_patience} epochs. Stopping at epoch {epoch}.")
+            break
 
     if is_main:
         print(f"Training complete. Best val_acc={best_acc:.4f} at epoch {best_epoch}. Checkpoint: {args.save_path}")

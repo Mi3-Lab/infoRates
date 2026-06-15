@@ -30,7 +30,7 @@ from info_rates.evaluation.benchmark import evaluate_fixed_budgets, summarize_re
 # ── Model configs ──────────────────────────────────────────────────────────
 # 5-point common grid — all divisible by patch_size=16, valid for ALL architectures
 # Mirrors temporal E1 which uses 5 strides: [1, 2, 4, 8, 16]
-RESOLUTIONS_ALL = [96, 112, 160, 224, 336]
+RESOLUTIONS_ALL = [48, 96, 112, 160, 224]
 
 MODEL_CFG = {
     "r3d_18":       dict(frames=16, native_res=112, ckpt_suffix="a100", resolutions=RESOLUTIONS_ALL),
@@ -130,11 +130,13 @@ def main():
     parser.add_argument("--dataset", required=True, choices=list(DATASET_CFG))
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--resolutions", default=None,
+                        help="Comma-separated resolutions to evaluate (overrides default list)")
     args = parser.parse_args()
 
     mcfg = MODEL_CFG[args.model]
     dcfg = DATASET_CFG[args.dataset]
-    resolutions = mcfg["resolutions"]
+    resolutions = [int(r) for r in args.resolutions.split(",")] if args.resolutions else mcfg["resolutions"]
     native_res  = mcfg["native_res"]
     model_frames = mcfg["frames"]
 
@@ -240,9 +242,24 @@ def main():
         else:
             print("no results")
 
-    # Aggregate
-    if results_all:
-        agg = pd.DataFrame(results_all)
+    # Aggregate — rebuild from ALL res*_summary.csv in dir (merges with existing runs)
+    all_rows = []
+    import re as _re
+    for f in sorted(out_dir.glob("res*_summary.csv")):
+        m = _re.match(r"res(\d+)_summary\.csv", f.name)
+        if not m:
+            continue
+        res_val = int(m.group(1))
+        try:
+            df_r = pd.read_csv(f)
+            if not df_r.empty:
+                all_rows.append({"resolution": res_val,
+                                 "top1": float(df_r.iloc[0]["top1"]),
+                                 "n": int(df_r.iloc[0]["n"])})
+        except Exception:
+            pass
+    if all_rows:
+        agg = pd.DataFrame(all_rows).sort_values("resolution").reset_index(drop=True)
         agg["model"]      = args.model
         agg["dataset"]    = args.dataset
         agg["native_res"] = native_res

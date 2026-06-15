@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+autsl,val,8,25,4,0.02399275690357628,4418,0.02399275690357628,0.0,0.0

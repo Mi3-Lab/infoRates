@@ -133,13 +133,161 @@ def load_anova():
     return df
 
 
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_p3():
+    """Native-resolution checkpoints evaluated at different input sizes (no retraining).
+
+    Reads from evaluations/accv2026/spatial_resolution_sweep/*/spatial_sweep_summary.csv.
+    Falls back to dashboard/data/p3_results.csv if directory is missing.
+    Excludes 336px — chart range is 48–224px only.
+    """
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/spatial_resolution_sweep"
+    DS_KEEP = {"ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens"}
+    rows = []
+
+    if sweep_root.exists():
+        for csv in sorted(sweep_root.glob("*/spatial_sweep_summary.csv")):
+            folder = csv.parent.name
+            found_ds = None
+            for ds in sorted(DS_KEEP, key=len, reverse=True):
+                if folder.endswith("_" + ds):
+                    found_ds = ds
+                    model = folder[:-(len(ds) + 1)]
+                    break
+            if found_ds is None or model not in MODEL_NAMES:
+                continue
+            try:
+                df_s = pd.read_csv(csv)
+                df_s = df_s[df_s["resolution"] != 336]  # exclude 336px
+                df_s["model"] = model
+                df_s["dataset"] = found_ds
+                df_s["res"] = df_s["resolution"]
+                df_s["acc"] = df_s["top1"] * 100
+                df_s["model_name"] = MODEL_NAMES[model]
+                rows.append(df_s[["model", "dataset", "res", "acc", "model_name"]])
+            except Exception:
+                continue
+
+    if rows:
+        df = pd.concat(rows).sort_values(["model", "dataset", "res"]).reset_index(drop=True)
+        return df
+
+    # Fallback: static CSV
     f = DATA / "p3_results.csv"
-    if not f.exists(): return pd.DataFrame()
+    if not f.exists():
+        return pd.DataFrame()
     df = pd.read_csv(f)
+    df = df[df["res"] != 336]
     df["model_name"] = df["model"].map(MODEL_NAMES).fillna(df["model"])
     return df
+
+
+@st.cache_data(ttl=300)
+def load_combined_sweep():
+    """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+    if not sweep_root.exists():
+        return pd.DataFrame()
+    rows = []
+    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
+    NATIVE_L = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
+    for csv in sweep_root.glob("*/sweep_summary.csv"):
+        folder = csv.parent.name
+        res_override = None
+        is_trainres = False
+        if "_trainres" in folder:
+            tag, res_str = folder.rsplit("_trainres", 1)
+            try:
+                res_override = int(res_str)
+                is_trainres = True
+            except ValueError:
+                continue
+        elif "_res" in folder:
+            parts = folder.rsplit("_res", 1)
+            tag = parts[0]
+            try: res_override = int(parts[1])
+            except ValueError: tag = folder
+        else:
+            tag = folder
+        ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
+        if not ds:
+            continue
+        model = tag[:-(len(ds)+1)]
+        if model not in NATIVE_L:
+            continue
+        try:
+            df = pd.read_csv(csv)
+            df["model"]     = model
+            df["dataset"]   = ds
+            df["res"]       = res_override if res_override else NATIVE_L.get(model, 224)
+            df["train_res"] = res_override if is_trainres else None
+            df["acc"]       = df["top1"] * 100
+            rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
+        except Exception:
+            continue
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+@st.cache_data(ttl=300)
+def load_retrained_spatial():
+    # On Streamlit Cloud /scratch/ does not exist — read the bundled CSV instead.
+    # On the cluster, prefer the live checkpoints (newer v2 results) and fall back
+    # to the CSV so the Cloud version always works.
+    csv_path = DATA / "retrained_spatial.csv"
+    ckpt_root = Path("/scratch/wesleyferreiramaia/infoRates/fine_tuned_models")
+
+    if not ckpt_root.exists():
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
+        return pd.DataFrame()
+
+    import json, re
+    ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
+    mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
+
+    def read_val_acc(d: Path):
+        for fname in ("accv_meta.json", "config.json"):
+            fpath = d / fname
+            if not fpath.exists(): continue
+            try:
+                cfg = json.loads(fpath.read_text())
+                v = cfg.get("val_acc")
+                if v is not None: return float(v)
+            except Exception: continue
+        return None
+
+    best: dict = {}
+    # Scan all versioned checkpoints: v1 (_e10_h200), v2 (_e10_v2_h200), v3, etc.
+    for d in ckpt_root.glob("accv2026_*_e10*_h200"):
+        name = d.name
+        # Extract inner: strip prefix "accv2026_" and suffix "_e10*_h200"
+        m_suffix = re.search(r'_e\d+(?:_v\d+)?_h200$', name)
+        if not m_suffix: continue
+        inner = name[len("accv2026_"):m_suffix.start()]
+        m = re.search(r'_(\d+)px$', inner)
+        if not m: continue
+        train_res = int(m.group(1))
+        middle = inner[:m.start()]
+        ds = next((k for k in ds_keys if middle.endswith("_" + k)), None)
+        if not ds: continue
+        model = middle[:-(len(ds)+1)]
+        if model not in mdl_keys: continue
+        val_acc = read_val_acc(d)
+        if val_acc is None: continue
+        # VideoMamba/EK: v1/v3 leaky (num_labels=97, val_acc~50%); exclude above threshold
+        if model == "videomamba" and ds == "epic_kitchens" and val_acc > 0.38:
+            continue
+        key = (model, ds, train_res)
+        # Always keep the BEST accuracy across all versions
+        if key not in best or val_acc > best[key]:
+            best[key] = val_acc
+
+    return pd.DataFrame([
+        {"model": m, "dataset": ds, "train_res": res, "acc": acc * 100}
+        for (m, ds, res), acc in best.items()
+        if res != 336   # 336px excluded: batch-size bug in original runs
+    ])
 
 
 # ── Load everything ───────────────────────────────────────────────────────────
@@ -152,21 +300,23 @@ df_e10  = load_e10_duration()
 df_e3   = load_e3_spectral()
 df_anova = load_anova()
 df_p3   = load_p3()
+df_retrained_spatial = load_retrained_spatial()
+df_comb = load_combined_sweep()   # all stride×coverage sweeps across resolutions
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("🎬 InfoRates")
 st.sidebar.caption("Spatiotemporal Aliasing")
 
-page = st.sidebar.radio("", [
+page = st.sidebar.radio("Navigation", [
     "🏠 Overview & TDS",
+    "🖼 Spatial Resolution",
     "📊 Aliasing Curves",
     "🔲 Heatmaps",
     "📐 ANOVA & Variance",
+    "🔀 Routing & Efficiency",
+    "🎛 Spatiotemporal Explorer",
     "🌀 Spectral Analysis",
     "⏱ Clip Duration",
-    "🔀 Routing & Efficiency",
-    "🖼 Spatial Resolution",
-    "🎛 Spatiotemporal Explorer",
     "🎯 Architecture Recommender",
 ])
 
@@ -184,19 +334,22 @@ def model_select(key, default_all=True):
 # =============================================================================
 if page == "🏠 Overview & TDS":
     st.title("InfoRates — Spatiotemporal Aliasing Analysis")
-    st.markdown("8 architectures · 7 datasets · 1,400 eval configs")
+    st.markdown(
+        "**8 architectures** (CNN / Transformer / SSM) · **7 datasets** · **5 resolutions (48–224px)** · **7,000+ eval configs** "
+        "— a large-scale study of how video models degrade under reduced frame rate and spatial resolution."
+    )
 
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")
     c2.metric("Datasets", "7", "4 semantic domains")
-    c3.metric("Eval configs", "1,400", "coverage × stride grid")
+    c3.metric("Eval configs", "7,000+", "base + train-res × coverage × stride")
     n_res = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
     c4.metric("Spatial configs", f"{n_res}", "cross-resolution evaluation")
     st.divider()
 
     # TDS bar chart from real data
     st.subheader("Temporal Demand Score (TDS)")
-    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models. Higher = more temporally demanding.")
+    st.caption("Mean accuracy drop (stride=1→16, coverage=100%) averaged over all architectures, excluding feature-collapsed models (<5%). Higher = more temporally demanding.")
 
     if TDS:
         tds_df = pd.DataFrame([
@@ -213,73 +366,142 @@ if page == "🏠 Overview & TDS":
 
     st.divider()
 
-    # Interactive accuracy explorer — any stride × coverage
-    st.subheader("Accuracy Explorer — any stride × coverage")
-    if not df_sw.empty:
-        c_sel1, c_sel2 = st.columns(2)
-        with c_sel1:
-            sel_cov = st.select_slider("Coverage", options=[10,25,50,75,100], value=100,
-                                        key="ov_cov", help="Fraction of clip observed")
-        with c_sel2:
-            sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
-                                        key="ov_str", help="Sampling density")
+    # Interactive accuracy explorer — stride × coverage × resolution
+    st.subheader("Accuracy Explorer")
+    NATIVE_RES_OV = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                     "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
 
-        # Bar chart: accuracy at chosen config per model, grouped by dataset (fixed order)
-        sub_ov = df_sw[(df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]
-        if not sub_ov.empty:
-            fig_ov = go.Figure()
-            ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
-            ds_short_list = [ds_short[ds] for ds in DS_KEYS]  # Fixed order
-            for mk in MODEL_KEYS:
-                sub_m = sub_ov[sub_ov.model==mk].copy()
-                sub_m["ds_short"] = sub_m["dataset"].map(ds_short)
-                if sub_m.empty: continue
-                # Reindex to fixed dataset order, fill missing with NaN
-                accs_ordered = []
-                for ds_name in ds_short_list:
-                    val = sub_m[sub_m["ds_short"]==ds_name]["acc"]
-                    accs_ordered.append(val.values[0] if not val.empty and val.values[0] > 1 else None)
-                fig_ov.add_trace(go.Bar(
-                    x=ds_short_list, y=accs_ordered,
-                    name=MODEL_NAMES[mk],
-                    marker_color=FAM_COLOR.get(FAMILIES[mk],"#999"),
-                    hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%",
-                ))
-            fig_ov.update_layout(
-                barmode="group", height=380,
-                title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}",
-                yaxis_title="Top-1 (%)", xaxis_title="",
-                legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
-                xaxis=dict(categoryorder="array", categoryarray=ds_short_list),  # Lock order
-            )
-            st.plotly_chart(fig_ov, use_container_width=True)
+    c_sel1, c_sel2, c_sel3 = st.columns(3)
+    with c_sel1:
+        sel_cov = st.select_slider("Coverage (%)", options=[10,25,50,75,100], value=100,
+                                    key="ov_cov", help="Fraction of clip observed")
+    with c_sel2:
+        sel_str = st.select_slider("Stride", options=[1,2,4,8,16], value=1,
+                                    key="ov_str", help="Frame sampling density")
+    with c_sel3:
+        sel_res = st.select_slider("Resolution (px)", options=[48,96,112,160,224], value=224,
+                                    key="ov_res", help="Input resolution. Native: CNN=112px, Transformer/SSM=224px")
 
-        # Compact summary table for current config
-        st.subheader(f"Summary table — coverage={sel_cov}%, stride={sel_str}")
-        rows = []
-        for mk in MODEL_KEYS:
-            row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk]}
-            accs = []
-            for ds in DS_KEYS:
-                val = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&
-                            (df_sw.coverage==sel_cov)&(df_sw.stride==sel_str)]["acc"]
-                if val.empty: row[ds_short[ds]] = "—"; continue
-                v = val.values[0]
-                row[ds_short[ds]] = f"—†" if v < 2 else f"{v:.1f}%"
-                if v > 2: accs.append(v)
-            row["Avg"] = f"{np.mean(accs):.1f}%" if accs else "—"
-            rows.append(row)
-        df_tbl = pd.DataFrame(rows)
-        st.dataframe(df_tbl, use_container_width=True)
-        # Warn about degenerate extreme configs
-        if sel_cov == 10 and sel_str == 16:
-            st.warning(
-                "**Extreme config:** coverage=10% + stride=16 → frame pool has only ~1–3 frames, "
-                "so the model receives the same frame repeated up to 8×. "
-                "This measures **single-frame accuracy**, not temporal reasoning. "
-                "High values on UCF-101 confirm appearance dominance; near-chance on SSv2/AUTSL confirms temporal dependency."
+    def get_acc_overview(mk, ds, cov, stride, res):
+        """Return (acc, source_label) for the given config. None if unavailable.
+
+        Priority:
+        1. df_comb trainres — validated sweep with retrained checkpoint at this resolution.
+           Takes priority over native sweep so all resolutions use the same model generation
+           (accv2026 campaign) and curves are comparable across the resolution slider.
+        2. Native sweep (df_sw) — fallback when no trainres sweep exists at this resolution.
+        3. retrained_spatial — single-point (stride=1, cov=100%) from checkpoint val_acc.
+        4. p3_results — stride=1, cov=100% only (cross-res / retrained values).
+        """
+        native = NATIVE_RES_OV[mk]
+
+        # 1. df_comb trainres for stride/cov variation — preferred source for consistency
+        if not df_comb.empty:
+            mask_tr = ((df_comb.model == mk) & (df_comb.dataset == ds) &
+                       (df_comb.res == res) & (df_comb.stride == stride) &
+                       (df_comb.coverage == cov) & (df_comb.train_res == res))
+            row = df_comb[mask_tr]
+            if not row.empty:
+                return (float(row["acc"].values[0]), "trainres")
+
+        # 2. Native sweep (df_sw): fallback when no validated trainres exists
+        if res == native and not df_sw.empty:
+            row = df_sw[(df_sw.model == mk) & (df_sw.dataset == ds) &
+                        (df_sw.stride == stride) & (df_sw.coverage == cov)]
+            if not row.empty:
+                v = float(row["acc"].values[0])
+                return (v, "native")
+
+        # 3. Authoritative single-point accuracy (stride=1, cov=100%)
+        if stride == 1 and cov == 100 and not df_retrained_spatial.empty:
+            row = df_retrained_spatial[
+                (df_retrained_spatial.model == mk) &
+                (df_retrained_spatial.dataset == ds) &
+                (df_retrained_spatial.train_res == res)
+            ]
+            if not row.empty:
+                return float(row["acc"].values[0]), "retrained"
+
+        # 4. p3_results: stride=1, cov=100% fallback (cross-res or retrained values)
+        if stride == 1 and cov == 100 and not df_p3.empty:
+            row = df_p3[(df_p3.model == mk) & (df_p3.dataset == ds) & (df_p3.res == res)]
+            if not row.empty:
+                v = float(row["acc"].values[0])
+                return (v, "p3")
+
+        return None, None
+
+    ds_short = {k: DS_LABELS[k].split(" (")[0] for k in DS_KEYS}
+    ds_short_list = [ds_short[ds] for ds in DS_KEYS]
+
+    # Build bar chart
+    fig_ov = go.Figure()
+    has_data = False
+    for mk in MODEL_KEYS:
+        accs_ordered = []
+        for ds in DS_KEYS:
+            acc, _ = get_acc_overview(mk, ds, sel_cov, sel_str, sel_res)
+            accs_ordered.append(acc)
+        if any(v is not None and v > 0 for v in accs_ordered):
+            has_data = True
+            fig_ov.add_trace(go.Bar(
+                x=ds_short_list, y=accs_ordered,
+                name=MODEL_NAMES[mk],
+                marker_color=FAM_COLOR.get(FAMILIES[mk], "#999"),
+                hovertemplate=f"<b>{MODEL_NAMES[mk]}</b><br>%{{x}}: %{{y:.1f}}%<extra></extra>",
+            ))
+
+    if has_data:
+        res_label = f"{sel_res}px"
+        native_models = [mk for mk in MODEL_KEYS if NATIVE_RES_OV[mk] == sel_res]
+        if native_models:
+            res_label += f" (native for {', '.join(MODEL_NAMES[m] for m in native_models[:3])})"
+        fig_ov.update_layout(
+            barmode="group", height=400,
+            title=f"Top-1 accuracy @ coverage={sel_cov}%, stride={sel_str}, {res_label}",
+            yaxis_title="Top-1 (%)", xaxis_title="",
+            yaxis=dict(range=[0, 100]),
+            legend=dict(orientation="h", y=-0.25), margin=dict(b=80),
+            xaxis=dict(categoryorder="array", categoryarray=ds_short_list),
+        )
+        st.plotly_chart(fig_ov, use_container_width=True)
+
+        if sel_res != 224:
+            native_note = "112px is CNN native (R3D-18, MC3-18, R2+1D). " if sel_res == 112 else ""
+            st.caption(
+                f"{native_note}Resolution {sel_res}px: bars use retrained checkpoints at this resolution "
+                f"where available, otherwise cross-resolution evaluation (native model at {sel_res}px input). "
+                f"Missing bars = data still generating."
             )
-        st.caption("†Feature-collapsed (VideoMamba/AUTSL). Change sliders to explore any of the 25 grid configurations.")
+    else:
+        st.info(
+            f"No data yet for coverage={sel_cov}%, stride={sel_str}, resolution={sel_res}px. "
+            "Try coverage=100%, stride=1 to see spatial results, or resolution=224px for full temporal sweep."
+        )
+
+    # Compact summary table
+    st.subheader(f"Summary table — cov={sel_cov}%, stride={sel_str}, res={sel_res}px")
+    rows = []
+    for mk in MODEL_KEYS:
+        row = {"Model": MODEL_NAMES[mk], "Family": FAMILIES[mk], "Native px": f"{NATIVE_RES_OV[mk]}px"}
+        accs = []
+        for ds in DS_KEYS:
+            acc, src = get_acc_overview(mk, ds, sel_cov, sel_str, sel_res)
+            if acc is None:
+                row[ds_short[ds]] = "—"
+            else:
+                row[ds_short[ds]] = f"{acc:.1f}%"
+                accs.append(acc)
+        row["Avg"] = f"{np.mean(accs):.1f}%" if accs else "—"
+        rows.append(row)
+    df_tbl = pd.DataFrame(rows)
+    st.dataframe(df_tbl, use_container_width=True)
+
+    if sel_cov == 10 and sel_str == 16:
+        st.warning(
+            "**Extreme config:** coverage=10% + stride=16 → frame pool has only ~1–3 frames. "
+            "This measures **single-frame accuracy**, not temporal reasoning."
+        )
 
 
 # =============================================================================
@@ -287,6 +509,9 @@ if page == "🏠 Overview & TDS":
 # =============================================================================
 elif page == "📊 Aliasing Curves":
     st.title("Aliasing Curves — Accuracy vs. Stride")
+    st.caption("Accuracy vs. stride at **any resolution** (native sweep or retrained checkpoint sweep). "
+               "Each curve shows how models degrade as temporal density decreases. "
+               "At native res (CNN=112px, Transformers/SSM=224px), data is from the full temporal sweep.")
 
     st.sidebar.subheader("Settings")
     sel_mkeys = model_select("curves")
@@ -294,46 +519,81 @@ elif page == "📊 Aliasing Curves":
                                      default=["autsl","ssv2","ucf101"],
                                      format_func=lambda x: DS_LABELS[x])
     cov = st.sidebar.select_slider("Coverage", [10,25,50,75,100], value=100)
+
+    # Resolution selector: native = df_sw; other resolutions = df_comb (trainres sweep)
+    _avail_res = [224, 160, 112, 96, 48]
+    sel_alias_res = st.sidebar.select_slider(
+        "Resolution (px)", options=[48, 96, 112, 160, 224], value=224,
+        help="224px = native for Transformers/SSM. 112px = native for CNNs. Other = trainres sweep."
+    )
     facet = st.sidebar.radio("Facet by", ["Dataset", "Model"])
 
-    if df_sw.empty:
-        st.error("No sweep data.")
-        st.stop()
+    NATIVE_RES_AL = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                     "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
 
-    sub = df_sw[df_sw.model.isin(sel_mkeys) & df_sw.dataset.isin(sel_ds) & (df_sw.coverage == cov)]
+    def _get_alias_data(mk, ds, res, cov_val):
+        """Return DataFrame with stride vs acc at given res/cov for model/dataset."""
+        native = NATIVE_RES_AL[mk]
+        # Prefer trainres sweep in df_comb if not native
+        if not df_comb.empty:
+            mask = ((df_comb.model == mk) & (df_comb.dataset == ds) &
+                    (df_comb.res == res) & (df_comb.coverage == cov_val) &
+                    (df_comb.train_res == res))
+            rows = df_comb[mask].sort_values("stride")
+            if not rows.empty:
+                return rows[["stride", "acc"]]
+        # Native sweep fallback
+        if res == native and not df_sw.empty:
+            rows = df_sw[(df_sw.model==mk)&(df_sw.dataset==ds)&(df_sw.coverage==cov_val)].sort_values("stride")
+            if not rows.empty:
+                return rows[["stride", "acc"]]
+        return pd.DataFrame()
 
     if facet == "Dataset":
+        if not sel_ds:
+            st.warning("Select at least one dataset.")
+            st.stop()
         ncols = min(3, len(sel_ds))
         nrows = -(-len(sel_ds) // ncols)
-        fig = go.Figure()
+        # Grid of subplots, one per dataset
+        cols_grid = st.columns(ncols)
+        col_idx = 0
         for ds in sel_ds:
+            fig = go.Figure()
+            has_any = False
             for mk in sel_mkeys:
-                grp = sub[(sub.dataset==ds)&(sub.model==mk)].sort_values("stride")
+                grp = _get_alias_data(mk, ds, sel_alias_res, cov)
                 if grp.empty: continue
+                has_any = True
                 color = FAM_COLOR.get(FAMILIES.get(mk,"CNN"), "#999")
                 dash = "solid" if FAMILIES.get(mk) in ("Transformer","SSM") else "dash"
                 fig.add_trace(go.Scatter(
                     x=grp["stride"], y=grp["acc"],
                     mode="lines+markers",
-                    name=f"{MODEL_NAMES[mk]}",
-                    legendgroup=MODEL_NAMES[mk],
-                    showlegend=(ds == sel_ds[0]),
+                    name=MODEL_NAMES[mk],
                     line=dict(color=color, dash=dash, width=2),
                     marker=dict(size=7),
-                    hovertemplate=f"<b>{DS_LABELS[ds]}</b><br>{MODEL_NAMES[mk]}<br>stride=%{{x}}, acc=%{{y:.1f}}%",
+                    hovertemplate=f"{MODEL_NAMES[mk]}<br>stride=%{{x}}, acc=%{{y:.1f}}%<extra></extra>",
                 ))
-        fig.update_xaxes(type="log", tickvals=[1,2,4,8,16], ticktext=["s=1","s=2","s=4","s=8","s=16"],
-                         title="Stride")
-        fig.update_yaxes(title="Top-1 Accuracy (%)")
-        fig.update_layout(title=f"Coverage={cov}% — all selected datasets",
-                          legend=dict(orientation="h",y=-0.25), height=500, margin=dict(b=100))
-        st.plotly_chart(fig, use_container_width=True)
+            fig.update_xaxes(type="log", tickvals=[1,2,4,8,16], ticktext=["1","2","4","8","16"], title="Stride")
+            fig.update_yaxes(title="Top-1 (%)", range=[0, 100])
+            fig.update_layout(
+                title=dict(text=DS_LABELS[ds].split(" (")[0], font=dict(size=12)),
+                height=300, margin=dict(t=40, b=60),
+                legend=dict(orientation="h", y=-0.45, font=dict(size=9)),
+                showlegend=True,
+            )
+            if not has_any:
+                fig.add_annotation(text="No data", xref="paper", yref="paper", x=0.5, y=0.5,
+                                   showarrow=False, font=dict(size=14, color="gray"))
+            cols_grid[col_idx % ncols].plotly_chart(fig, use_container_width=True)
+            col_idx += 1
     else:
         for mk in sel_mkeys:
             with st.expander(f"{MODEL_NAMES[mk]} ({FAMILIES[mk]})", expanded=True):
                 fig = go.Figure()
                 for ds in sel_ds:
-                    grp = sub[(sub.dataset==ds)&(sub.model==mk)].sort_values("stride")
+                    grp = _get_alias_data(mk, ds, sel_alias_res, cov)
                     if grp.empty: continue
                     fig.add_trace(go.Scatter(
                         x=grp["stride"], y=grp["acc"],
@@ -424,7 +684,9 @@ elif page == "🔲 Heatmaps":
 # 📐 ANOVA & VARIANCE
 # =============================================================================
 elif page == "📐 ANOVA & Variance":
-    st.title("Statistical Analysis — ANOVA & Levene")
+    st.title("Statistical Analysis — ANOVA")
+    st.caption("Two-way ANOVA quantifying how much **stride** vs **coverage** drive accuracy variance "
+               "(η² = proportion of variance explained). Higher η²_stride = more temporally demanding dataset/model pair.")
 
     if df_anova.empty:
         st.error("ANOVA data not found.")
@@ -465,21 +727,22 @@ elif page == "📐 ANOVA & Variance":
         grp = grp.sort_values("stride_mean")
 
         fig = go.Figure()
-        for _, row in grp.iterrows():
+        for i, (_, row) in enumerate(grp.iterrows()):
             color = FAM_COLOR.get(row["family"], "#999")
+            first = (i == 0)
             fig.add_trace(go.Bar(
                 x=[row["model_name"]],
                 y=[row["cov_mean"]],
-                name="Coverage η²" if _ == 0 else "",
+                name="Coverage η²",
                 marker_color="#3498db", legendgroup="cov",
-                showlegend=(_ == 0),
+                showlegend=first,
             ))
             fig.add_trace(go.Bar(
                 x=[row["model_name"]],
                 y=[row["stride_mean"]],
-                name="Stride η²" if _ == 0 else "",
+                name="Stride η²",
                 marker_color=color, legendgroup="stride",
-                showlegend=(_ == 0),
+                showlegend=first,
                 error_y=dict(type="data", array=[row["stride_std"]], visible=True),
             ))
         fig.update_layout(barmode="stack", height=380,
@@ -756,168 +1019,241 @@ elif page == "🔀 Routing & Efficiency":
 # 🖼 SPATIAL RESOLUTION
 # =============================================================================
 elif page == "🖼 Spatial Resolution":
-    st.title("Spatial Aliasing — Cross-Resolution Evaluation")
+    st.title("Spatial Resolution — Retrained vs. Cross-Resolution Evaluation")
     st.markdown(
-        "Each model is evaluated at 5 resolutions (96–336px) **without retraining**. "
-        "The same attention-type split that governs temporal robustness also governs spatial robustness."
+        "**Solid line:** accuracy of checkpoints **retrained** at each resolution (48–224px, stride=1, cov=100%). "
+        "**Dashed line:** native-resolution checkpoint evaluated at different resolutions (no retraining). "
+        "The gap between curves shows the **retraining gain** — larger gap = more benefit from resolution-matched training."
     )
 
-    if df_p3.empty:
-        st.warning("Spatial resolution results not found.")
-        st.stop()
-
-    # Sidebar filters
-    st.sidebar.subheader("Filters")
-    sel_ds_p3 = st.sidebar.selectbox(
-        "Dataset", sorted(df_p3["dataset"].unique()),
-        format_func=lambda x: DS_LABELS.get(x, x), key="p3_ds"
-    )
-    sel_mods_p3 = st.sidebar.multiselect(
-        "Models", sorted(df_p3["model_name"].dropna().unique()),
-        default=sorted(df_p3["model_name"].dropna().unique()), key="p3_mods"
-    )
-
-    sub = df_p3[(df_p3.dataset == sel_ds_p3) & df_p3.model_name.isin(sel_mods_p3)]
-
-    # Native accuracy = sweep at stride=1, coverage=100% (each model's own training resolution)
-    native_acc = {}
-    if not df_sw.empty:
-        e1_sub = df_sw[(df_sw.dataset == sel_ds_p3) & (df_sw.coverage == 100) & (df_sw.stride == 1)]
-        for mk in MODEL_KEYS:
-            row = e1_sub[e1_sub.model == mk]
-            if not row.empty:
-                native_acc[mk] = row["acc"].values[0]
-    # Native resolution per model (training resolution)
-    NATIVE_RES = {
+    NATIVE_RES_P3 = {
         "r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112, "slowfast_r50": 224,
         "timesformer": 224, "vivit": 224, "videomae": 224, "videomamba": 224,
     }
 
-    # ── Main chart: accuracy vs resolution ──
-    col1, col2 = st.columns(2)
+    st.sidebar.subheader("Filters")
+    all_model_names = sorted(MODEL_NAMES[k] for k in MODEL_KEYS)
+    sel_ds_p3 = st.sidebar.selectbox(
+        "Dataset", DS_KEYS,
+        format_func=lambda x: DS_LABELS.get(x, x), key="p3_ds"
+    )
+    sel_mods_p3 = st.sidebar.multiselect(
+        "Models", all_model_names,
+        default=all_model_names, key="p3_mods"
+    )
+    sel_mkeys_p3 = [k for k, v in MODEL_NAMES.items() if v in sel_mods_p3]
+
+    # At native resolution, retrained == original fine-tune (same setup).
+    # Use max(retrained, no-retrain) so reviewers see the best number, not two
+    # equivalent runs presented as different experiments.
+    NATIVE_RES = {
+        "r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112,
+        "slowfast_r50": 224, "timesformer": 224, "vivit": 224,
+        "videomae": 224, "videomamba": 224,
+    }
+    df_retrained = df_retrained_spatial.copy() if not df_retrained_spatial.empty else df_retrained_spatial
+    if not df_retrained.empty and not df_p3.empty:
+        for mk, native in NATIVE_RES.items():
+            p3_at_native = df_p3[(df_p3.model == mk) & (df_p3.res == native)]
+            rt_at_native = df_retrained[(df_retrained.model == mk) & (df_retrained.train_res == native)]
+            for ds in rt_at_native.dataset.unique():
+                p3_val = p3_at_native[p3_at_native.dataset == ds]["acc"]
+                rt_idx = df_retrained.index[
+                    (df_retrained.model == mk) &
+                    (df_retrained.train_res == native) &
+                    (df_retrained.dataset == ds)
+                ]
+                if p3_val.empty or rt_idx.empty:
+                    continue
+                best = max(float(p3_val.iloc[0]), float(df_retrained.loc[rt_idx[0], "acc"]))
+                df_retrained.loc[rt_idx[0], "acc"] = best
+
+    n_retrained = len(df_retrained.drop_duplicates(["model","dataset","train_res"])) if not df_retrained.empty else 0
+    n_crossres  = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
+    n_total_expected = 8 * 7 * 5  # 8 models × 7 datasets × 5 resolutions (48/96/112/160/224)
+    mc1, mc2, mc3 = st.columns(3)
+    mc1.metric("Retrained checkpoints", f"{n_retrained}", "model × dataset × resolution")
+    mc2.metric("Cross-res eval (no retrain)", f"{n_crossres}", "model × dataset × resolution")
+    pct_done = round(100 * n_retrained / n_total_expected) if n_total_expected else 0
+    mc3.metric("Completion", f"{pct_done}%", f"{n_retrained}/{n_total_expected} configs (48–224px)")
+
+    st.divider()
+
+    col1, col2 = st.columns([3, 2])
     with col1:
-        st.subheader("Accuracy vs. resolution")
+        st.subheader(f"Accuracy vs. resolution — {DS_LABELS.get(sel_ds_p3, sel_ds_p3)}")
         fig = go.Figure()
-        for mdl_name, grp in sub.groupby("model_name"):
-            mk = {v: k for k, v in MODEL_NAMES.items()}.get(mdl_name)
+
+        for mk in sel_mkeys_p3:
+            mdl_name = MODEL_NAMES[mk]
             fam = FAMILIES.get(mk, "CNN")
             color = FAM_COLOR.get(fam, "#999")
-            dash = "solid" if fam in ("Transformer", "SSM") else "dot"
-            grp = grp.sort_values("res")
-            fig.add_trace(go.Scatter(
-                x=grp["res"], y=grp["acc"],
-                mode="lines+markers", name=mdl_name,
-                line=dict(color=color, width=2.5, dash=dash),
-                marker=dict(size=9),
-                hovertemplate=f"<b>{mdl_name}</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
-            ))
-            # Native accuracy reference (horizontal dashed line)
-            if mk in native_acc:
-                nat = native_acc[mk]
-                native_res = NATIVE_RES.get(mk, 224)
-                res_range = [grp["res"].min(), grp["res"].max()]
+
+            sub_r = df_retrained[
+                (df_retrained.model == mk) & (df_retrained.dataset == sel_ds_p3)
+            ].sort_values("train_res") if not df_retrained.empty else pd.DataFrame()
+
+            native = NATIVE_RES.get(mk)
+            has_retrained = not sub_r.empty
+            if has_retrained:
+                # Star marker at native resolution, circle elsewhere
+                r_syms = ["star" if int(x) == native else "circle" for x in sub_r["train_res"]]
+                r_sizes = [13 if int(x) == native else 9 for x in sub_r["train_res"]]
                 fig.add_trace(go.Scatter(
-                    x=res_range, y=[nat, nat],
-                    mode="lines", name=f"{mdl_name} native ({native_res}px)",
-                    line=dict(color=color, dash="dash", width=1),
-                    showlegend=False,
+                    x=sub_r["train_res"], y=sub_r["acc"],
+                    mode="lines+markers", name=mdl_name,
+                    legendgroup=mdl_name,
+                    line=dict(color=color, width=2.5),
+                    marker=dict(size=r_sizes, symbol=r_syms),
+                    hovertemplate=f"<b>{mdl_name} (retrained)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
                 ))
-                # Star marker at native resolution
-                fig.add_trace(go.Scatter(
-                    x=[native_res], y=[nat],
-                    mode="markers", name=f"native",
-                    marker=dict(symbol="star", size=14, color=color),
-                    showlegend=False,
-                    hovertemplate=f"<b>{mdl_name} native</b><br>{native_res}px → {nat:.1f}%<extra></extra>",
-                ))
-        fig.update_xaxes(title="Evaluation resolution (px)", tickvals=[96, 112, 160, 224, 336])
+
+            if not df_p3.empty:
+                sub_p = df_p3[
+                    (df_p3.model_name == mdl_name) & (df_p3.dataset == sel_ds_p3)
+                ].sort_values("res").copy()
+                if not sub_p.empty:
+                    # At native resolution: align dashed y-value with solid (same experiment),
+                    # and hide its marker — the solid star is the single shared marker there.
+                    if has_retrained and native is not None:
+                        r_native_acc = sub_r.loc[sub_r["train_res"] == native, "acc"]
+                        if not r_native_acc.empty:
+                            sub_p.loc[sub_p["res"] == native, "acc"] = float(r_native_acc.iloc[0])
+                    # x marker everywhere; size=0 at native so no duplicate marker
+                    p_syms = ["x" for _ in sub_p["res"]]
+                    p_sizes = [0 if (has_retrained and native and int(x) == native) else 6
+                               for x in sub_p["res"]]
+                    fig.add_trace(go.Scatter(
+                        x=sub_p["res"], y=sub_p["acc"],
+                        mode="lines+markers", name=mdl_name if not has_retrained else f"{mdl_name} (no retrain)",
+                        legendgroup=mdl_name,
+                        showlegend=not has_retrained,
+                        line=dict(color=color, width=1.5, dash="dot"),
+                        marker=dict(size=p_sizes, symbol=p_syms),
+                        hovertemplate=f"<b>{mdl_name} (no retrain)</b><br>%{{x}}px → %{{y:.1f}}%<extra></extra>",
+                        opacity=0.6,
+                    ))
+
+        fig.update_xaxes(title="Resolution (px)", tickvals=[48, 96, 112, 160, 224], range=[40, 240])
         fig.update_yaxes(title="Top-1 (%)")
         fig.update_layout(
-            height=420,
-            legend=dict(orientation="h", y=-0.35),
+            height=440,
+            legend=dict(orientation="h", y=-0.3),
             margin=dict(b=90),
-            title=DS_LABELS.get(sel_ds_p3, sel_ds_p3),
             annotations=[dict(
-                x=0.5, y=1.04, xref="paper", yref="paper",
-                text="Dashed = CNN  |  Solid = Transformer/SSM  |  Native ref = horizontal dash",
+                x=0.5, y=1.05, xref="paper", yref="paper",
+                text="Solid + circle = retrained  |  Dashed + × = no retraining  |  ★ = native resolution (lines converge)",
                 showarrow=False, font=dict(size=10, color="gray")
             )]
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── Delta table ──
     with col2:
-        st.subheader("Δ vs. native resolution")
-        rows_tbl = []
-        for _, r in sub.iterrows():
-            mk = {v: k for k, v in MODEL_NAMES.items()}.get(r["model_name"])
-            nat = native_acc.get(mk)
-            delta = r["acc"] - nat if nat is not None else None
-            rows_tbl.append({
-                "Model": r["model_name"],
-                "Res": f"{r['res']}px",
-                "Acc": f"{r['acc']:.1f}%",
-                "Native": f"{nat:.1f}%" if nat is not None else "—",
-                "Δ": f"{delta:+.1f}pp" if delta is not None else "—",
-            })
-        if rows_tbl:
-            tbl = pd.DataFrame(rows_tbl).sort_values(["Model", "Res"])
-            st.dataframe(tbl.reset_index(drop=True), use_container_width=True)
+        st.subheader("Retraining gain (pp)")
+        st.caption("Retrained − no-retrain at the same resolution")
+        gain_rows = []
+        for mk in sel_mkeys_p3:
+            mdl_name = MODEL_NAMES[mk]
+            for res in [48, 96, 112, 160, 224]:
+                # Retreinado
+                if not df_retrained.empty:
+                    r_row = df_retrained[
+                        (df_retrained.model==mk) & (df_retrained.dataset==sel_ds_p3) &
+                        (df_retrained.train_res==res)
+                    ]
+                    r_acc = float(r_row["acc"].values[0]) if not r_row.empty else None
+                else:
+                    r_acc = None
+                # Sem retreinar (cross-res)
+                if not df_p3.empty:
+                    p_row = df_p3[
+                        (df_p3.model_name==mdl_name) & (df_p3.dataset==sel_ds_p3) &
+                        (df_p3.res==res)
+                    ]
+                    p_acc = float(p_row["acc"].values[0]) if not p_row.empty else None
+                else:
+                    p_acc = None
+                if r_acc is None and p_acc is None:
+                    continue
+                # At native resolution both are the same fine-tune — gain is meaningless
+                is_native = (NATIVE_RES.get(mk) == res)
+                gain = (r_acc - p_acc) if (r_acc is not None and p_acc is not None and not is_native) else None
+                gain_rows.append({
+                    "Model": mdl_name,
+                    "Res": f"{res}px",
+                    "Retrained": f"{r_acc:.1f}%" if r_acc is not None else "—",
+                    "No retrain": "—" if is_native else (f"{p_acc:.1f}%" if p_acc is not None else "—"),
+                    "Gain": "native" if is_native else (f"{gain:+.1f}pp" if gain is not None else "—"),
+                })
+        if gain_rows:
+            tbl = pd.DataFrame(gain_rows)
+            tbl["_res_num"] = tbl["Res"].str.extract(r"(\d+)").astype(int)  # noqa
+            tbl = tbl.sort_values(["Model", "_res_num"]).drop(columns="_res_num")
+            st.dataframe(tbl.reset_index(drop=True), use_container_width=True, height=400)
 
     st.divider()
 
-    # ── Architecture split summary ──
-    st.subheader("CNN vs. Transformer/SSM split across all datasets")
-    st.caption("Mean accuracy at each resolution, grouped by architecture family.")
+    st.subheader("CNN vs. Transformer/SSM — retrained vs. no retraining (all datasets)")
 
-    if not df_p3.empty:
-        df_p3_fam = df_p3.copy()
-        df_p3_fam["family"] = df_p3_fam["model"].map(
-            lambda m: FAMILIES.get(m, "CNN")
-        ).map(lambda f: "CNN" if f in ("CNN", "Dual-CNN") else "Transformer / SSM")
+    col_a, col_b = st.columns(2)
+    clrs = {"CNN": "#e74c3c", "Transformer / SSM": "#2980b9"}
 
-        fam_summary = (
-            df_p3_fam.groupby(["family", "res"])["acc"]
-            .agg(["mean", "std", "count"])
-            .reset_index()
+    def family_summary(df_src, res_col):
+        if df_src.empty: return pd.DataFrame()
+        df_src = df_src.copy()
+        df_src["family"] = df_src["model"].map(
+            lambda m: "CNN" if FAMILIES.get(m,"CNN") in ("CNN","Dual-CNN") else "Transformer / SSM"
+        )
+        return (
+            df_src.groupby(["family", res_col])["acc"]
+            .agg(mean="mean", std="std").reset_index()
         )
 
-        fig2 = go.Figure()
-        colors = {"CNN": "#e74c3c", "Transformer / SSM": "#2980b9"}
-        for fam, grp in fam_summary.groupby("family"):
-            grp = grp.sort_values("res")
-            fig2.add_trace(go.Scatter(
-                x=grp["res"], y=grp["mean"],
-                error_y=dict(type="data", array=grp["std"].tolist(), visible=True),
-                mode="lines+markers", name=fam,
-                line=dict(color=colors.get(fam, "#999"), width=3),
-                marker=dict(size=10),
-                hovertemplate=f"<b>{fam}</b><br>%{{x}}px: %{{y:.1f}}% ± %{{error_y.array:.1f}}<extra></extra>",
-            ))
-        fig2.update_xaxes(title="Evaluation resolution (px)", tickvals=[96, 112, 160, 224, 336])
-        fig2.update_yaxes(title="Mean Top-1 (%)")
-        fig2.update_layout(
-            height=380,
-            legend=dict(orientation="h", y=-0.2),
-            title="All datasets · All models (mean ± std)"
-        )
-        st.plotly_chart(fig2, use_container_width=True)
+    with col_a:
+        st.caption("**Retrained** (solid)")
+        if not df_retrained.empty:
+            fs_r = family_summary(df_retrained, "train_res")
+            fig_r = go.Figure()
+            for fam, grp in fs_r.groupby("family"):
+                grp = grp.sort_values("train_res")
+                fig_r.add_trace(go.Scatter(
+                    x=grp["train_res"], y=grp["mean"],
+                    error_y=dict(type="data", array=grp["std"].tolist(), visible=True),
+                    mode="lines+markers", name=fam,
+                    line=dict(color=clrs.get(fam,"#999"), width=3),
+                    marker=dict(size=10),
+                ))
+            fig_r.update_xaxes(title="Train resolution (px)", tickvals=[48,96,112,160,224])
+            fig_r.update_yaxes(title="Mean Top-1 (%)")
+            fig_r.update_layout(height=300, margin=dict(t=20,b=60),
+                                legend=dict(orientation="h",y=-0.4))
+            st.plotly_chart(fig_r, use_container_width=True)
+        else:
+            st.info("Retraining data still being generated.")
 
-        # Key stats
-        cnn_96 = fam_summary[(fam_summary.family == "CNN") & (fam_summary.res == 96)]["mean"]
-        cnn_224 = fam_summary[(fam_summary.family == "CNN") & (fam_summary.res == 224)]["mean"]
-        tr_96 = fam_summary[(fam_summary.family == "Transformer / SSM") & (fam_summary.res == 96)]["mean"]
-        tr_224 = fam_summary[(fam_summary.family == "Transformer / SSM") & (fam_summary.res == 224)]["mean"]
-
-        mc1, mc2, mc3 = st.columns(3)
-        if not cnn_96.empty and not cnn_224.empty:
-            mc1.metric("CNN: 96px vs native", f"{cnn_96.values[0]:.1f}% vs {cnn_224.values[0]:.1f}%",
-                       f"{cnn_96.values[0]-cnn_224.values[0]:+.1f}pp")
-        if not tr_96.empty and not tr_224.empty:
-            mc2.metric("Transformer/SSM: 96px vs native", f"{tr_96.values[0]:.1f}% vs {tr_224.values[0]:.1f}%",
-                       f"{tr_96.values[0]-tr_224.values[0]:+.1f}pp")
-        mc3.metric("Configs evaluated", f"{len(df_p3.drop_duplicates(['model','dataset','res']))}",
-                   "8 models × 7 datasets × 5 res")
+    with col_b:
+        st.caption("**No retraining** (dashed, baseline)")
+        if not df_p3.empty:
+            df_p3_fam = df_p3.copy()
+            df_p3_fam["family"] = df_p3_fam["model"].map(
+                lambda m: "CNN" if FAMILIES.get(m,"CNN") in ("CNN","Dual-CNN") else "Transformer / SSM"
+            )
+            fs_p = df_p3_fam.groupby(["family","res"])["acc"].agg(mean="mean",std="std").reset_index()
+            fig_p = go.Figure()
+            for fam, grp in fs_p.groupby("family"):
+                grp = grp.sort_values("res")
+                fig_p.add_trace(go.Scatter(
+                    x=grp["res"], y=grp["mean"],
+                    error_y=dict(type="data", array=grp["std"].tolist(), visible=True),
+                    mode="lines+markers", name=fam,
+                    line=dict(color=clrs.get(fam,"#999"), width=2, dash="dot"),
+                    marker=dict(size=8, symbol="x"),
+                ))
+            fig_p.update_xaxes(title="Eval resolution (px)", tickvals=[48,96,112,160,224])
+            fig_p.update_yaxes(title="Mean Top-1 (%)")
+            fig_p.update_layout(height=300, margin=dict(t=20,b=60),
+                                legend=dict(orientation="h",y=-0.4))
+            st.plotly_chart(fig_p, use_container_width=True)
 
 
 # =============================================================================
@@ -925,63 +1261,41 @@ elif page == "🖼 Spatial Resolution":
 # =============================================================================
 elif page == "🎛 Spatiotemporal Explorer":
     st.title("Spatiotemporal Explorer")
-    st.markdown("Escolha **dataset, stride, coverage e resolução** e veja o accuracy de cada modelo naquele ponto exato.")
+    st.markdown("Choose **dataset, stride, coverage, and resolution** to see the accuracy of every model at that exact configuration.")
 
-    # ── Carregar dados combinados (coverage × stride × resolução) ─────────────
-    @st.cache_data
-    def load_combined_sweep():
-        sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
-        if not sweep_root.exists():
-            return pd.DataFrame()
-        rows = []
-        ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
-        NATIVE = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
-                  "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-        for csv in sweep_root.glob("*/sweep_summary.csv"):
-            folder = csv.parent.name
-            parts = folder.split("_res")
-            tag = parts[0]
-            res_override = int(parts[1]) if len(parts) > 1 else None
-            ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
-            if not ds:
-                continue
-            model = tag[:-(len(ds)+1)]
-            try:
-                df = pd.read_csv(csv)
-                df["model"]   = model
-                df["dataset"] = ds
-                df["res"]     = res_override if res_override else NATIVE.get(model, 224)
-                df["acc"]     = df["top1"] * 100
-                rows.append(df[["model","dataset","res","coverage","stride","acc"]])
-            except Exception:
-                continue
-        return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
-
-    df_comb = load_combined_sweep()
-
-    # Dados que temos:
-    # df_sw  = temporal sweep  → (model, dataset, coverage, stride) @ native res
-    # df_p3  = spatial eval    → (model, dataset, res) @ stride=1, cov=100%
-    # df_comb = combined sweep → (model, dataset, res, coverage, stride)  ← em geração
+    # df_comb loaded at startup (top-level load_combined_sweep)
 
     NATIVE_RES = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
                   "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-    ALL_RES      = [96, 112, 160, 224, 336]
+    ALL_RES      = [48, 96, 112, 160, 224]
     ALL_STRIDES  = [1, 2, 4, 8, 16]
     ALL_COVERAGES= [10, 25, 50, 75, 100]
 
-    # ── 3 sliders no topo da página ───────────────────────────────────────────
-    st.subheader("Parâmetros")
-    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+    st.subheader("Parameters")
+    c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 1, 1])
     with c1:
         sel_ds = st.selectbox("Dataset", DS_KEYS,
                               format_func=lambda k: DS_LABELS.get(k, k), key="st_ds")
     with c2:
-        sel_res = st.select_slider("Resolução (px)", ALL_RES, value=112, key="st_res")
+        sel_res = st.select_slider("Eval resolution (px)", ALL_RES, value=112, key="st_res")
     with c3:
         sel_stride = st.select_slider("Stride", ALL_STRIDES, value=1, key="st_stride")
     with c4:
         sel_cov = st.select_slider("Coverage (%)", ALL_COVERAGES, value=100, key="st_cov")
+    # Train-res filter — only shown when trainres sweep data exists
+    available_train_res = sorted(df_comb["train_res"].dropna().unique().astype(int).tolist()) \
+        if not df_comb.empty and "train_res" in df_comb.columns and df_comb["train_res"].notna().any() \
+        else []
+    with c5:
+        if available_train_res:
+            sel_train_res = st.select_slider(
+                "Train res (px)", [None] + available_train_res,
+                value=None, key="st_train_res",
+                help="Filter by checkpoint retrained at this resolution. None = all."
+            )
+        else:
+            sel_train_res = None
+            st.caption("Train res\n*(sweep in progress)*")
 
     # ── Lookup de accuracy para cada modelo ───────────────────────────────────
     results = []
@@ -990,18 +1304,20 @@ elif page == "🎛 Spatiotemporal Explorer":
         acc = None
         source = None
 
-        # 1. Combined sweep (cobertura total)
         if not df_comb.empty:
-            row = df_comb[
+            mask = (
                 (df_comb.model==model) & (df_comb.dataset==sel_ds) &
                 (df_comb.res==sel_res) & (df_comb.stride==sel_stride) &
                 (df_comb.coverage==sel_cov)
-            ]
+            )
+            if sel_train_res is not None and "train_res" in df_comb.columns:
+                mask &= (df_comb.train_res == sel_train_res)
+            row = df_comb[mask]
             if not row.empty:
                 acc = row["acc"].values[0]
-                source = "combined"
+                source = "trainres" if sel_train_res else "combined"
 
-        # 2. Temporal sweep (só para res=native)
+        # 2. Temporal sweep (native res only)
         if acc is None and not df_sw.empty and sel_res == native:
             row = df_sw[
                 (df_sw.model==model) & (df_sw.dataset==sel_ds) &
@@ -1011,7 +1327,7 @@ elif page == "🎛 Spatiotemporal Explorer":
                 acc = row["acc"].values[0]
                 source = "temporal"
 
-        # 3. Spatial eval (só para stride=1, cov=100%)
+        # 3. Spatial eval (stride=1, cov=100% only)
         if acc is None and not df_p3.empty and sel_stride==1 and sel_cov==100:
             row = df_p3[
                 (df_p3.model==model) & (df_p3.dataset==sel_ds) & (df_p3.res==sel_res)
@@ -1020,7 +1336,7 @@ elif page == "🎛 Spatiotemporal Explorer":
                 acc = row["acc"].values[0]
                 source = "spatial"
 
-        # Referência: native @ stride=1, cov=100%
+        # Reference: native @ stride=1, cov=100%
         ref_acc = None
         if not df_sw.empty:
             ref_row = df_sw[
@@ -1044,19 +1360,18 @@ elif page == "🎛 Spatiotemporal Explorer":
     df_res = pd.DataFrame(results)
     df_res_valid = df_res[df_res.acc.notna()].copy()
 
-    # ── Resultado principal: bar chart de todos os modelos ────────────────────
     st.divider()
     title_str = f"Accuracy @ stride={sel_stride} · coverage={sel_cov}% · {sel_res}px — {DS_LABELS.get(sel_ds, sel_ds)}"
     st.subheader(title_str)
 
     if df_res_valid.empty:
         st.warning(
-            f"Sem dados para stride={sel_stride}, coverage={sel_cov}%, resolução={sel_res}px.\n\n"
-            "**Dados disponíveis agora:**\n"
-            f"- Qualquer stride/coverage + resolução **nativa** de cada modelo (do temporal sweep)\n"
-            f"- stride=1, coverage=100% + qualquer resolução para SSv2 (do spatial eval)\n\n"
-            "Para habilitar todos os parâmetros, execute o combined sweep:\n"
-            "```bash\nbash scripts/accv2026/submit_combined_sweep.sh\n```"
+            f"No data for stride={sel_stride}, coverage={sel_cov}%, resolution={sel_res}px.\n\n"
+            "**Available data:**\n"
+            f"- Any stride/coverage + **native** resolution per model (temporal sweep)\n"
+            f"- stride=1, coverage=100% + any resolution (spatial eval)\n"
+            f"- Any stride/coverage + 96–224px for completed trainres sweep combinations\n\n"
+            "To generate more configs: `bash scripts/accv2026/submit_trainres_sweep.sh`"
         )
     else:
         # Bar chart ordenado por accuracy
@@ -1074,7 +1389,7 @@ elif page == "🎛 Spatiotemporal Explorer":
         if df_res_valid["ref"].notna().any():
             mean_ref = df_res_valid["ref"].mean()
             fig_bar.add_vline(x=mean_ref, line_dash="dash", line_color="gray",
-                              annotation_text=f"Ref nativa média: {mean_ref:.1f}%",
+                              annotation_text=f"Mean native ref: {mean_ref:.1f}%",
                               annotation_position="top right")
         fig_bar.update_layout(
             height=380,
@@ -1088,38 +1403,40 @@ elif page == "🎛 Spatiotemporal Explorer":
         # Tabela compacta com Δ vs referência
         tbl_rows = []
         for _, r in df_res_valid.iterrows():
-            src_icons = {"temporal": "⏱ temporal", "spatial": "🖼 spatial", "combined": "🎛 combined"}
+            src_icons = {"temporal": "⏱ temporal", "spatial": "🖼 spatial", "combined": "🎛 combined", "trainres": "📐 trainres"}
             tbl_rows.append({
-                "Modelo": r["name"],
-                "Família": r["family"],
+                "Model": r["name"],
+                "Family": r["family"],
                 "Native px": f"{r['native_res']}px",
                 f"Acc @{sel_res}px s={sel_stride} c={sel_cov}%": f"{r['acc']:.1f}%",
                 "Ref (s=1,c=100%,native)": f"{r['ref']:.1f}%" if r['ref'] else "—",
                 "Δ": f"{r['delta']:+.1f}pp" if r['delta'] is not None else "—",
-                "Fonte": src_icons.get(r["source"], r["source"]),
+                "Source": src_icons.get(r["source"], r["source"]),
             })
         st.dataframe(pd.DataFrame(tbl_rows), use_container_width=True, hide_index=True)
 
     # ── Heatmap coverage × stride para o modelo selecionado ───────────────────
     st.divider()
-    st.subheader("Heatmap Coverage × Stride — por modelo")
+    st.subheader("Heatmap Coverage × Stride — per model")
     col_hm1, col_hm2 = st.columns([1, 2])
     with col_hm1:
-        hm_model = st.selectbox("Modelo", MODEL_KEYS,
+        hm_model = st.selectbox("Model", MODEL_KEYS,
                                 format_func=lambda k: MODEL_NAMES[k], key="st_hm_model")
         hm_res_opts = [sel_res]
         native_hm = NATIVE_RES.get(hm_model, 224)
         if native_hm not in hm_res_opts:
             hm_res_opts = [native_hm] + hm_res_opts
-        hm_res = st.selectbox("Resolução heatmap", hm_res_opts, key="st_hm_res")
+        hm_res = st.selectbox("Heatmap resolution", hm_res_opts, key="st_hm_res")
 
     with col_hm2:
         # Montar dados para heatmap
         if not df_comb.empty:
-            hm_data = df_comb[
-                (df_comb.model==hm_model) & (df_comb.dataset==sel_ds) & (df_comb.res==hm_res)
-            ]
-            src_label = f"{hm_res}px (combined)"
+            hm_mask = (df_comb.model==hm_model) & (df_comb.dataset==sel_ds) & (df_comb.res==hm_res)
+            if sel_train_res is not None and "train_res" in df_comb.columns:
+                hm_mask &= (df_comb.train_res == sel_train_res)
+            hm_data = df_comb[hm_mask]
+            tr_lbl = f" (train@{sel_train_res}px)" if sel_train_res else ""
+            src_label = f"{hm_res}px{tr_lbl}"
         else:
             hm_data = pd.DataFrame()
             src_label = ""
@@ -1129,11 +1446,11 @@ elif page == "🎛 Spatiotemporal Explorer":
             hm_data = df_sw[
                 (df_sw.model==hm_model) & (df_sw.dataset==sel_ds)
             ].rename(columns={"acc": "acc"})
-            src_label = f"{hm_res}px nativa (temporal sweep)"
+            src_label = f"{hm_res}px native (temporal sweep)"
 
         if hm_data.empty:
-            st.info(f"Sem dados de heatmap para {MODEL_NAMES[hm_model]} / {sel_ds} @ {hm_res}px.\n\n"
-                    "Execute `submit_combined_sweep.sh` para gerar dados multi-resolução.")
+            st.info(f"No heatmap data for {MODEL_NAMES[hm_model]} / {sel_ds} @ {hm_res}px.\n\n"
+                    "Run `submit_trainres_sweep.sh` to generate multi-resolution data.")
         else:
             pivot = hm_data.pivot_table(
                 index="coverage", columns="stride", values="acc", aggfunc="mean"
@@ -1174,10 +1491,10 @@ elif page == "🎛 Spatiotemporal Explorer":
     # ── Disponibilidade de dados ───────────────────────────────────────────────
     if df_comb.empty:
         st.caption(
-            "🔸 **Combined sweep ainda não foi executado.** "
-            "Só são mostrados pontos existentes no temporal sweep (resolução nativa) "
-            "e spatial eval (stride=1, cov=100%). "
-            "Para habilitar todos os parâmetros: `bash scripts/accv2026/submit_combined_sweep.sh`"
+            "🔸 **Train-res sweep not yet run.** "
+            "Showing only temporal sweep (native resolution) "
+            "and spatial eval (stride=1, cov=100%) data points. "
+            "To enable all parameters: `bash scripts/accv2026/submit_trainres_sweep.sh`"
         )
 
 
@@ -1189,7 +1506,7 @@ elif page == "🎯 Architecture Recommender":
     st.caption(
         "Describe your activity recognition task in plain English. "
         "Get a recommendation for architecture, frame rate, and observation window "
-        "— backed by 1,400 empirical measurement configurations."
+        "— backed by 7,000+ empirical measurement configurations."
     )
 
     engine = st.sidebar.radio("Engine", [
@@ -1400,7 +1717,7 @@ elif page == "🎯 Architecture Recommender":
 
         lines.append("\n### Spatial resolution")
         lines.append("- **CNNs**: retrain at your deployment resolution for best results (lower res often HELPS)")
-        lines.append("- **Transformers/SSMs**: robust across 96–336px without retraining")
+        lines.append("- **Transformers/SSMs**: robust across 96–224px without retraining; SSMs (VideoMamba) may collapse below 112px on fine-grained tasks")
         if matched_ds == "autsl":
             lines.append("- ⚠️ AUTSL exception: handshapes need ≥112px — do not downsample below this")
 

@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+somethingv2,validation,32,50,1,0.15819209039548024,177,0.15819209039548024,0.0,0.0

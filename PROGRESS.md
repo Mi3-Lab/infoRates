@@ -1,7 +1,7 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-10
+Last updated: 2026-06-14
 
 ---
 
@@ -39,8 +39,46 @@ Last updated: 2026-06-10
 | Entropy routing (E7) | ✅ **Completo** | 42.5% SSv2 · 7.7f · +4.2pp vs FrameExit |
 | Baseline comparison vs AdaFocus/AR-Net/FrameExit | ✅ **Completo** | Tabela comparação pronta |
 | Clip duration analysis | ✅ **Completo** | Clips curtos aliam mais (r=−0.3 a −0.8) |
-| Resolution retraining (96–224px, 7 datasets) | ⏳ **197/224 done** | 8 jobs running (H200+A100 daemons); ~27 remaining |
-| Resolution retraining (P3/336px investigation) | ❌ **Pausado** | Padrão anômalo (batch_size bug); investiga após 96–224px terminar |
+| Resolution retraining (96–224px, 7 datasets) | ✅ **256/280 done** | 256 checkpoints 96–224px prontos; 24 faltando = todos 336px |
+| Stride×Coverage×Resolution sweep (C3b) | ⏳ **122/140 done** | 18 restantes = todos VideoMamba; 4 PENDING + 14 em daemon |
+| Anomaly retraining campaign (Jun 14) | ⏳ **Em progresso** | 4 rodando; 9 em daemon (aguardando slot gpu); 13 total |
+| VideoMAE PE bug fix (model_factory.py) | ✅ **Corrigido** | PE sinusoidal era tensor não-parameter → não salvo; fix: carrega HF base + interpola bicubic |
+| Resolution retraining (P3/336px investigation) | ❌ **Pausado** | Padrão anômalo (batch_size bug); investiga após sweep C3b terminar |
+
+---
+
+## Anomalias Identificadas e Corrigidas (2026-06-14)
+
+### Root Cause: VideoMAE PE Bug
+`position_embeddings` no VideoMAE é stored como tensor simples (não `nn.Parameter`) →
+não salvo no `model.safetensors`. Antes do fix, training e inference usavam PE aleatória
+nas resoluções sub-nativas. Fix: carrega base HF model, interpolação bicúbica do PE
+224px → target res, depois overlay os pesos do checkpoint. Aplicado em:
+- `scripts/accv2026/sweep_coverage_stride.py` (inference)
+- `src/info_rates/models/model_factory.py` (training)
+
+### Checkpoints com retraining em andamento:
+| Modelo | Dataset | Res | Problema | Status |
+|--------|---------|-----|----------|--------|
+| slowfast_r50 | autsl | 96px | Collapse (LR 1e-4 > 5e-5 ideal) | RUNNING |
+| slowfast_r50 | autsl | 112px | Collapse | RUNNING |
+| slowfast_r50 | ssv2 | 96px | Collapse | RUNNING |
+| slowfast_r50 | epic_kitchens | 96px | Collapse | RUNNING |
+| slowfast_r50 | epic_kitchens | 48px | Collapse | daemon queue |
+| mc3_18 | driveact | 48px | Checkpoint curto | daemon queue |
+| mc3_18 | epic_kitchens | 160px | Checkpoint curto | daemon queue |
+| timesformer | autsl | 48px | PE mismatch (9 tokens, collapse) | daemon queue |
+| timesformer | diving48 | 48px | PE mismatch (9 tokens, collapse) | daemon queue |
+| vivit | autsl | 48px | PE mismatch (9 tokens, collapse) | daemon queue |
+| videomae | ssv2 | 96px | PE mismatch durante training | daemon queue |
+| videomae | ssv2 | 112px | PE mismatch durante training | daemon queue |
+| videomae | ssv2 | 160px | PE mismatch durante training | daemon queue |
+
+### Anomalias menores (não corrigindo):
+- VideoMAE driveact@160px (75.9%) > @224px (73.0%): checkpoint v2 em 160px tem val_acc superior ao v1-only em 224px
+- VideoMAE EK@160px (42.6%) > @224px (38.6%): mesmo motivo
+- ViViT SSV2@96-160px plateau (~23%): SSV2 genuinamente difícil para ViViT < 224px
+- VideoMamba autsl/diving48@48px collapse: limite genuíno (9 SSM tokens p/ 226 classes)
 
 ---
 

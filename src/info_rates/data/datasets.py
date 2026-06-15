@@ -79,10 +79,14 @@ def load_diving48(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     """Diving48 from the pre-built manifest CSV (evaluations/accv2026/manifests/)."""
     import pandas as pd
 
-    _src_root = Path(__file__).resolve().parents[4]
+    # Navigate up from this file to the repo root (the dir named "infoRates")
+    _p = Path(__file__).resolve()
+    while _p.name != "infoRates" and _p.parent != _p:
+        _p = _p.parent
+    _src_root = _p
     candidates = [
-        Path("evaluations/accv2026/manifests/diving48_manifest.csv"),
         _src_root / "evaluations/accv2026/manifests/diving48_manifest.csv",
+        Path("evaluations/accv2026/manifests/diving48_manifest.csv"),
         Path(data_root) / "annotations" / "diving48_manifest.csv",
     ]
     manifest_path = next((p for p in candidates if p.exists()), None)

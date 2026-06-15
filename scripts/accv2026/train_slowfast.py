@@ -32,6 +32,15 @@ from info_rates.data.something import (
     list_classes,
 )
 from info_rates.models.timesformer import UCFDataset
+
+
+class RobustUCFDataset(UCFDataset):
+    """UCFDataset using PyAV — avoids decord C-level crashes on corrupt SSV2 videos."""
+
+    def _decode_frames(self, path):
+        return self._decode_frames_av(path)
+
+
 from info_rates.models.slowfast_video import (
     SlowFastVideoProcessor,
     create_slowfast_model,
@@ -66,6 +75,8 @@ def parse_args():
     parser.add_argument("--wandb-project", default="inforates-accv2026")
     parser.add_argument("--wandb-run-name", default=None)
     parser.add_argument("--wandb-tags", nargs="*", default=None)
+    parser.add_argument("--grad-accum-steps", type=int, default=1,
+                        help="Gradient accumulation steps. Effective batch = batch_size × steps.")
     return parser.parse_args()
 
 
@@ -118,8 +129,8 @@ def prepare_data(dataset: str, data_root: str | None, max_train: int, max_val: i
 
 
 def make_loader(files, processor, args, use_ddp: bool, train: bool):
-    # UCFDataset decodes `num_frames` from the video; SlowFast adapts internally
-    dataset = UCFDataset(files, processor, num_frames=SLOWFAST_FAST_FRAMES, size=args.input_size)
+    # RobustUCFDataset uses PyAV to avoid decord C-level crashes on corrupt SSV2 videos
+    dataset = RobustUCFDataset(files, processor, num_frames=SLOWFAST_FAST_FRAMES, size=args.input_size)
     sampler = DistributedSampler(dataset, shuffle=train) if use_ddp else None
     return DataLoader(
         dataset,
@@ -177,21 +188,23 @@ def reduce_sum(value: float, device: torch.device) -> float:
     return float(tensor.item())
 
 
-def train_one_epoch(model, loader, optimizer, device, epoch, show_progress):
+def train_one_epoch(model, loader, optimizer, device, epoch, show_progress, accum_steps=1):
     model.train()
     total_loss, total_n = 0.0, 0
     pbar = tqdm(loader, desc=f"epoch={epoch} train", disable=not show_progress)
-    for batch in pbar:
+    optimizer.zero_grad(set_to_none=True)
+    for step, batch in enumerate(pbar):
         labels = batch.pop("labels").to(device, non_blocking=True)
         inputs = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
-        optimizer.zero_grad(set_to_none=True)
         with torch.amp.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=device.type == "cuda"):
             logits = model(**inputs).logits
             loss = torch.nn.functional.cross_entropy(logits, labels)
-        loss.backward()
-        optimizer.step()
+        (loss / accum_steps).backward()
         total_loss += float(loss.detach().item()) * labels.numel()
         total_n += labels.numel()
+        if (step + 1) % accum_steps == 0:
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
         if show_progress:
             pbar.set_postfix(loss=total_loss / max(1, total_n))
     total_loss = reduce_sum(total_loss, device)
@@ -267,7 +280,7 @@ def main() -> None:
     for epoch in range(start_epoch, args.epochs + 1):
         if args.ddp and hasattr(train_loader.sampler, "set_epoch"):
             train_loader.sampler.set_epoch(epoch)
-        train_loss = train_one_epoch(model, train_loader, optimizer, device, epoch, is_main)
+        train_loss = train_one_epoch(model, train_loader, optimizer, device, epoch, is_main, accum_steps=args.grad_accum_steps)
         val_loss, val_acc = evaluate(model, val_loader, device, is_main)
         if is_main:
             print(f"Epoch {epoch}/{args.epochs}: train_loss={train_loss:.4f} val_loss={val_loss:.4f} val_acc={val_acc:.4f}")
