@@ -44,11 +44,47 @@ DS_LABELS = {
 
 
 # ── Cached data loaders ───────────────────────────────────────────────────────
-@st.cache_data
+@st.cache_data(ttl=300)
 def load_sweeps():
+    """Load native-resolution coverage×stride sweep.
+
+    Primary source: dashboard/data/sweep_summary.csv.
+    Fallback: coverage_stride_sweep/{model}_{dataset}_trainres{native}/sweep_summary.csv
+    for any (model, dataset) pairs missing from the primary source.
+    """
+    NATIVE = {"r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112, "slowfast_r50": 224,
+              "timesformer": 224, "vivit": 224, "videomae": 224, "videomamba": 224}
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+
     f = DATA / "sweep_summary.csv"
-    if not f.exists(): return pd.DataFrame()
-    df = pd.read_csv(f)
+    df = pd.read_csv(f) if f.exists() else pd.DataFrame()
+
+    # Find which (model, dataset) pairs are missing from the global CSV
+    present = set() if df.empty else set(zip(df["model"], df["dataset"]))
+    extra_rows = []
+    if sweep_root.exists():
+        ds_list = ["ucf101", "ssv2", "hmdb51", "diving48", "autsl",
+                   "driveact", "epic_kitchens", "finegym"]
+        for mk, native in NATIVE.items():
+            for ds in ds_list:
+                if (mk, ds) in present:
+                    continue
+                trainres_csv = sweep_root / f"{mk}_{ds}_trainres{native}" / "sweep_summary.csv"
+                if trainres_csv.exists():
+                    try:
+                        tmp = pd.read_csv(trainres_csv)
+                        tmp["model"] = mk
+                        tmp["dataset"] = ds
+                        extra_rows.append(tmp)
+                    except Exception:
+                        pass
+
+    if extra_rows:
+        df = pd.concat([df] + extra_rows, ignore_index=True) if not df.empty \
+             else pd.concat(extra_rows, ignore_index=True)
+
+    if df.empty:
+        return df
     df["acc"] = df["top1"] * 100
     df["model_name"] = df["model"].map(MODEL_NAMES)
     df["family"] = df["model"].map(FAMILIES)

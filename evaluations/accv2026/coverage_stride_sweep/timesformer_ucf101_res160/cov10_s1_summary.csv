@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+ucf101,val,8,10,1,0.8222772277227722,2020,0.8222772277227722,0.0,0.0

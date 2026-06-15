@@ -105,20 +105,16 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
                     pass
             return -1.0
 
-        # For VideoMamba/EPIC-Kitchens: v1/v3 have leakage (trained with wrong
-        # num_labels=97); their inflated val_acc (41-50%) would be picked as
-        # "best" but gives worse real eval than the clean v2 (~25%).
-        # Threshold: EK real accuracy for these models ≤ 38%; above = leakage.
-        LEAKAGE_THRESHOLD = 0.38 if (model == "videomamba" and dataset == "epic_kitchens") else None
-
         all_candidates: list[tuple[float, Path]] = []
+        native_res = MODEL_CFG[model]["resize"]
+        suffix     = MODEL_CFG[model]["ckpt_suffix"]
+
         for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
             pattern = str(base / f"accv2026_{model}_{dataset}_{train_res}px_e*_*h200*")
             for p_str in _glob.glob(pattern):
                 p = Path(p_str)
                 if not p.is_dir():
                     continue
-                # Check has valid metadata
                 if model in transformer_models:
                     if not (p / "accv_meta.json").exists():
                         continue
@@ -129,15 +125,32 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
                 acc = _read_val_acc(p)
                 all_candidates.append((acc, p))
 
+            # When train_res == native resolution, also search full_e10 checkpoint
+            if train_res == native_res:
+                for name in (f"accv2026_{model}_{dataset}_full_e10_{suffix}",
+                             f"accv2026_{model}_{dataset}_224px_e10_v2_h200",
+                             f"accv2026_{model}_{dataset}_224px_e10_h200"):
+                    p = base / name
+                    if not p.is_dir():
+                        continue
+                    if model in transformer_models and not (p / "accv_meta.json").exists():
+                        continue
+                    acc = _read_val_acc(p)
+                    all_candidates.append((acc, p))
+
+        # Deduplicate by path
+        seen: set = set()
+        unique: list[tuple[float, Path]] = []
+        for acc, p in all_candidates:
+            if str(p) not in seen:
+                seen.add(str(p))
+                unique.append((acc, p))
+        all_candidates = unique
+
         if all_candidates:
-            if LEAKAGE_THRESHOLD is not None:
-                # Prefer clean checkpoint (val_acc ≤ threshold) if one exists
-                clean = [(a, p) for a, p in all_candidates
-                         if 0.15 <= a <= LEAKAGE_THRESHOLD]
-                chosen = max(clean, key=lambda x: x[0]) if clean else max(all_candidates, key=lambda x: x[0])
-            else:
-                # Default: pick highest val_acc so degraded re-runs don't override good v1
-                chosen = max(all_candidates, key=lambda x: x[0])
+            # Pick highest val_acc — degenerate v2 checkpoints (~25% val) naturally
+            # lose to full_e10 (52%) when both are candidates for native resolution.
+            chosen = max(all_candidates, key=lambda x: x[0])
             best_acc, best_path = chosen
 
         if best_path is not None:

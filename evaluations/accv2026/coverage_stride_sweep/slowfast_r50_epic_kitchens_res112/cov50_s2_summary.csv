@@ -1,0 +1,2 @@
+dataset,split,budget,coverage,stride,top1,n,top5,mean_decode_s,mean_inference_s
+epic_kitchens,val,32,50,2,0.11862745098039215,1020,0.11862745098039215,0.0,0.0

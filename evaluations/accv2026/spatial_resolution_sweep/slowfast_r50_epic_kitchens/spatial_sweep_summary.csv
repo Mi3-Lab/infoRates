@@ -1,6 +1,7 @@
 resolution,top1,n,model,dataset,native_res
-96,0.11274509803921569,1020,slowfast_r50,epic_kitchens,224
-112,0.17745098039215687,1020,slowfast_r50,epic_kitchens,224
+48,0.0284313725490196,1020,slowfast_r50,epic_kitchens,224
+96,0.1127450980392156,1020,slowfast_r50,epic_kitchens,224
+112,0.1774509803921568,1020,slowfast_r50,epic_kitchens,224
 160,0.3127450980392157,1020,slowfast_r50,epic_kitchens,224
-224,0.37450980392156863,1020,slowfast_r50,epic_kitchens,224
+224,0.3745098039215686,1020,slowfast_r50,epic_kitchens,224
 336,0.2872549019607843,1020,slowfast_r50,epic_kitchens,224

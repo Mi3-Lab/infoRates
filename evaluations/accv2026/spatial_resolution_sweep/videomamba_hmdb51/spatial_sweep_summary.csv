@@ -1,4 +1,5 @@
 resolution,top1,n,model,dataset,native_res
+48,0.2734463276836158,885,videomamba,hmdb51,224
 96,0.5988700564971752,885,videomamba,hmdb51,224
 112,0.6384180790960452,885,videomamba,hmdb51,224
 160,0.672316384180791,885,videomamba,hmdb51,224

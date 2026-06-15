@@ -1,6 +1,7 @@
 resolution,top1,n,model,dataset,native_res
-96,0.35044642857142855,448,videomamba,driveact,224
-112,0.38169642857142855,448,videomamba,driveact,224
+48,0.1361607142857142,448,videomamba,driveact,224
+96,0.3504464285714285,448,videomamba,driveact,224
+112,0.3816964285714285,448,videomamba,driveact,224
 160,0.46875,448,videomamba,driveact,224
 224,0.578125,448,videomamba,driveact,224
 336,0.5290178571428571,448,videomamba,driveact,224
