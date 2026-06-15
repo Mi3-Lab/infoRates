@@ -786,7 +786,7 @@ elif page == "📐 ANOVA & Variance":
 # 🌀 SPECTRAL ANALYSIS (E3)
 # =============================================================================
 elif page == "🌀 Spectral Analysis":
-    st.title("Spectral Correlation Analysis (E3)")
+    st.title("Spectral Correlation Analysis")
     st.caption("Pearson correlation between per-class optical-flow magnitude (Farnebäck) and aliasing loss per dataset.")
 
     if df_e3.empty:
@@ -851,7 +851,7 @@ elif page == "🌀 Spectral Analysis":
 # ⏱ CLIP DURATION (E10)
 # =============================================================================
 elif page == "⏱ Clip Duration":
-    st.title("Clip Duration vs. Aliasing Loss (E10)")
+    st.title("Clip Duration vs. Aliasing Loss")
     st.caption("Counter-intuitive finding: shorter clips alias *more* — less temporal redundancy means each dropped frame costs more.")
 
     if df_e10.empty:
@@ -921,10 +921,10 @@ elif page == "⏱ Clip Duration":
 # 🔀 ROUTING & EFFICIENCY (E7 + E9)
 # =============================================================================
 elif page == "🔀 Routing & Efficiency":
-    st.title("Entropy Routing & Efficiency Analysis (E7 / E9)")
+    st.title("Entropy Routing & Efficiency Analysis")
 
     tab_curves, tab_compare, tab_summary = st.tabs([
-        "Routing Curves", "vs Literature Baselines (E9)", "Full Results Table"
+        "Routing Curves", "vs Literature Baselines", "Full Results Table"
     ])
 
     # ── Tab 1: Routing curves ─────────────────────────────────────────────────
@@ -1597,7 +1597,7 @@ elif page == "🎯 Architecture Recommender":
         except: pass
 
         # Routing summary
-        lines.append("\n### E7 ENTROPY ROUTING")
+        lines.append("\n### Entropy Routing")
         lines.append("- Adaptive frame allocation: ~77% of videos route to cheap 4-frame inference")
         lines.append("- Saves computation while maintaining accuracy")
 
