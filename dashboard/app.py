@@ -34,12 +34,12 @@ FAMILIES = {
     "timesformer":"Transformer","vivit":"Transformer","videomae":"Transformer","videomamba":"SSM",
 }
 FAM_COLOR = {"CNN":"#e74c3c","Dual-CNN":"#e67e22","Transformer":"#3498db","SSM":"#2ecc71"}
-DS_KEYS   = ["autsl","diving48","ssv2","hmdb51","driveact","epic_kitchens","ucf101"]
+DS_KEYS   = ["autsl","diving48","ssv2","hmdb51","driveact","epic_kitchens","ucf101","finegym"]
 DS_LABELS = {
     "autsl":"AUTSL (Sign Language)","diving48":"Diving-48 (Fine-grained)",
     "ssv2":"SSv2 (Causal)","hmdb51":"HMDB-51 (Sports)",
     "driveact":"DriveAct (In-vehicle)","epic_kitchens":"EPIC-Kitchens (Egocentric)",
-    "ucf101":"UCF-101 (Appearance)",
+    "ucf101":"UCF-101 (Appearance)","finegym":"FineGym (Fine-Grained Gym)",
 }
 
 
@@ -142,7 +142,7 @@ def load_p3():
     Excludes 336px — chart range is 48–224px only.
     """
     sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/spatial_resolution_sweep"
-    DS_KEEP = {"ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens"}
+    DS_KEEP = {"ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens", "finegym"}
     rows = []
 
     if sweep_root.exists():
@@ -185,11 +185,11 @@ def load_p3():
 @st.cache_data(ttl=300)
 def load_combined_sweep():
     """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
-    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_resolution_sweep"
     if not sweep_root.exists():
         return pd.DataFrame()
     rows = []
-    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens"]
+    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens","finegym"]
     NATIVE_L = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
                 "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
     for csv in sweep_root.glob("*/sweep_summary.csv"):
@@ -243,7 +243,7 @@ def load_retrained_spatial():
         return pd.DataFrame()
 
     import json, re
-    ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2"]
+    ds_keys  = ["epic_kitchens","diving48","driveact","ucf101","hmdb51","autsl","ssv2","finegym"]
     mdl_keys = ["r3d_18","mc3_18","r2plus1d_18","slowfast_r50","timesformer","vivit","videomae","videomamba"]
 
     def read_val_acc(d: Path):
@@ -1595,6 +1595,7 @@ elif page == "🎯 Architecture Recommender":
             (["driving","driver","vehicle","car","dashcam","drowsiness","fatigue","driveact"], "driveact"),
             (["kitchen","cooking","food","eat","chef","egocentric","first person","epic"], "epic_kitchens"),
             (["diving","swimming","gymnastics","sport","fine.grained","precise"],        "diving48"),
+            (["gym","fitness","yoga","weight","exercise","finegym"],                     "finegym"),
             (["something","manipulation","push","pull","pick","causal","physics","ssv2"],"ssv2"),
             (["sport","action","human","general","hmdb","exercise","workout"],           "hmdb51"),
             (["appearance","object","scene","recognition","classify","ucf"],             "ucf101"),
@@ -1673,7 +1674,7 @@ elif page == "🎯 Architecture Recommender":
             "autsl":"AUTSL (Sign Language)","diving48":"Diving-48 (Fine-grained)",
             "ssv2":"SSv2 (Causal)","hmdb51":"HMDB-51 (Sports)",
             "driveact":"DriveAct (In-vehicle)","epic_kitchens":"EPIC-Kitchens (Egocentric)",
-            "ucf101":"UCF-101 (Appearance)"}.items()}
+            "ucf101":"UCF-101 (Appearance)","finegym":"FineGym (Fine-Grained Gym)"}.items()}
 
         lines = []
         lines.append(f"## Recommendation for: *{prompt_text[:80]}*\n")
