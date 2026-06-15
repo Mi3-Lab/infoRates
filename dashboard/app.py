@@ -185,7 +185,7 @@ def load_p3():
 @st.cache_data(ttl=300)
 def load_combined_sweep():
     """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
-    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_resolution_sweep"
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
     if not sweep_root.exists():
         return pd.DataFrame()
     rows = []
