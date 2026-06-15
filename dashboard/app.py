@@ -184,48 +184,73 @@ def load_p3():
 
 @st.cache_data(ttl=300)
 def load_combined_sweep():
-    """Load all coverage×stride sweep CSVs: trainres + cross-res folders."""
-    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
-    if not sweep_root.exists():
-        return pd.DataFrame()
-    rows = []
-    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens","finegym"]
+    """Load all coverage×stride sweep CSVs: trainres + cross-res folders + FineGym resolution sweep."""
     NATIVE_L = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
                 "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
-    for csv in sweep_root.glob("*/sweep_summary.csv"):
-        folder = csv.parent.name
-        res_override = None
-        is_trainres = False
-        if "_trainres" in folder:
-            tag, res_str = folder.rsplit("_trainres", 1)
-            try:
-                res_override = int(res_str)
-                is_trainres = True
-            except ValueError:
+    ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens","finegym"]
+    rows = []
+
+    # ── Original trainres/cross-res sweeps (7 datasets) ───────────────────────
+    sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
+    if sweep_root.exists():
+        for csv in sweep_root.glob("*/sweep_summary.csv"):
+            folder = csv.parent.name
+            res_override = None
+            is_trainres = False
+            if "_trainres" in folder:
+                tag, res_str = folder.rsplit("_trainres", 1)
+                try:
+                    res_override = int(res_str)
+                    is_trainres = True
+                except ValueError:
+                    continue
+            elif "_res" in folder:
+                parts = folder.rsplit("_res", 1)
+                tag = parts[0]
+                try: res_override = int(parts[1])
+                except ValueError: tag = folder
+            else:
+                tag = folder
+            ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
+            if not ds:
                 continue
-        elif "_res" in folder:
-            parts = folder.rsplit("_res", 1)
-            tag = parts[0]
-            try: res_override = int(parts[1])
-            except ValueError: tag = folder
-        else:
-            tag = folder
-        ds = next((d for d in sorted(ds_list, key=len, reverse=True) if tag.endswith(d)), None)
-        if not ds:
-            continue
-        model = tag[:-(len(ds)+1)]
-        if model not in NATIVE_L:
-            continue
-        try:
-            df = pd.read_csv(csv)
-            df["model"]     = model
-            df["dataset"]   = ds
-            df["res"]       = res_override if res_override else NATIVE_L.get(model, 224)
-            df["train_res"] = res_override if is_trainres else None
-            df["acc"]       = df["top1"] * 100
-            rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
-        except Exception:
-            continue
+            model = tag[:-(len(ds)+1)]
+            if model not in NATIVE_L:
+                continue
+            try:
+                df = pd.read_csv(csv)
+                df["model"]     = model
+                df["dataset"]   = ds
+                df["res"]       = res_override if res_override else NATIVE_L.get(model, 224)
+                df["train_res"] = res_override if is_trainres else None
+                df["acc"]       = df["top1"] * 100
+                rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
+            except Exception:
+                continue
+
+    # ── FineGym: coverage × stride × resolution sweep (P3-retrained) ──────────
+    fg_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_resolution_sweep"
+    if fg_root.exists():
+        for model_dir in fg_root.glob("*_finegym"):
+            model = model_dir.name.replace("_finegym", "")
+            if model not in NATIVE_L:
+                continue
+            for res_dir in model_dir.glob("res*px"):
+                csv = res_dir / "sweep_summary.csv"
+                if not csv.exists():
+                    continue
+                try:
+                    res = int(res_dir.name.replace("res", "").replace("px", ""))
+                    df = pd.read_csv(csv)
+                    df["model"]     = model
+                    df["dataset"]   = "finegym"
+                    df["res"]       = res
+                    df["train_res"] = res   # P3-retrained at this exact resolution
+                    df["acc"]       = df["top1"] * 100
+                    rows.append(df[["model","dataset","res","train_res","coverage","stride","acc"]])
+                except Exception:
+                    continue
+
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
 
