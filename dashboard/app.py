@@ -360,14 +360,14 @@ def model_select(key, default_all=True):
 if page == "🏠 Overview & TDS":
     st.title("InfoRates — Spatiotemporal Aliasing Analysis")
     st.markdown(
-        "**8 architectures** (CNN / Transformer / SSM) · **8 datasets** · **5 resolutions (48–224px)** · **14,000+ eval configs** "
+        "**8 architectures** (CNN / Transformer / SSM) · **8 datasets** · **5 resolutions (48–224px)** · **8,000+ eval configs** "
         "— a large-scale study of how video models degrade under reduced frame rate and spatial resolution."
     )
 
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")
     c2.metric("Datasets", "8", "5 semantic domains")
-    c3.metric("Eval configs", "14,000+", "temporal + spatial + resolution sweep")
+    c3.metric("Eval configs", "8,000+", "8 models × 8 datasets × res × cov × stride")
     n_res = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
     c4.metric("Spatial configs", f"{n_res}", "cross-resolution evaluation")
     st.divider()
@@ -1531,7 +1531,7 @@ elif page == "🎯 Architecture Recommender":
     st.caption(
         "Describe your activity recognition task in plain English. "
         "Get a recommendation for architecture, frame rate, and observation window "
-        "— backed by 14,000+ empirical measurement configurations across 8 architectures and 8 datasets."
+        "— backed by 8,000+ empirical measurement configurations across 8 architectures and 8 datasets."
     )
 
     engine = st.sidebar.radio("Engine", [
@@ -1544,7 +1544,7 @@ elif page == "🎯 Architecture Recommender":
     # ── Build data context for the AI ────────────────────────────────────────
     def build_data_context():
         lines = ["## InfoRates COMPLETE Empirical Data\n"]
-        lines.append("8 architectures × 8 datasets × 5 resolutions × 14,000+ evaluation configs\n")
+        lines.append("8 architectures × 8 datasets × 5 resolutions × 8,000+ evaluation configs\n")
 
         # TDS
         lines.append("### TDS (Temporal Demand Score) per dataset")
