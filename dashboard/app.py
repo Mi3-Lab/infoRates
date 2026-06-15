@@ -1927,14 +1927,7 @@ elif page == "🎯 Architecture Recommender":
         "— model, resolution, stride — grounded in 8,000+ measured configurations and real GPU latency."
     )
 
-    # ── Sidebar: engine + deployment context ──────────────────────────────────
-    engine = st.sidebar.radio("Engine", [
-        "⚙️ RAG (offline, instant)",
-        "🦙 Groq (Llama-3.3-70B)",
-        "🔬 Hybrid (RAG → Groq)",
-    ], index=0)
-    st.sidebar.caption("RAG: instant, fully data-driven. Groq: LLM narrative. Hybrid: RAG feeds the LLM.")
-
+    # ── Sidebar: deployment context ───────────────────────────────────────────
     st.sidebar.divider()
     st.sidebar.subheader("📟 Deployment target")
 
@@ -2066,200 +2059,256 @@ elif page == "🎯 Architecture Recommender":
         return "\n".join(L)
 
     # ── Core RAG: device-aware, latency-filtered, Nyquist-compliant ──────────
+    _NATIVE_RES = {"r3d_18":112,"mc3_18":112,"r2plus1d_18":112,"slowfast_r50":224,
+                   "timesformer":224,"vivit":224,"videomae":224,"videomamba":224}
+
     def rag_recommend(prompt_text, df_sweep, tds_dict,
                       hw_factor, hw_name, budget_ms, src_fps_val):
         import re
         text = prompt_text.lower()
 
-        # 1. Domain match
+        # 1. Domain match — more precise keyword map with higher specificity first
         keyword_map = [
-            (["sign language","sign","gesture","hand","deaf","asl","libras","autsl"],           "autsl"),
-            (["driving","driver","vehicle","car","dashcam","drowsiness","fatigue","driveact"],   "driveact"),
-            (["kitchen","cooking","food","eat","chef","egocentric","first person","epic"],        "epic_kitchens"),
-            (["diving","swimming","gymnastics","precise","fine.grained"],                        "diving48"),
-            (["gym","fitness","yoga","weight","exercise","finegym"],                              "finegym"),
-            (["something","manipulation","push","pull","pick","causal","physics","ssv2"],         "ssv2"),
-            (["sport","action","hmdb","activity","recognition"],                                  "hmdb51"),
-            (["appearance","object","scene","classify","ucf"],                                    "ucf101"),
+            # Very specific — few datasets share these terms
+            (["sign language","asl","libras","autsl","deaf","signer"],                            "autsl"),
+            (["drowsiness","fatigue","dashcam","driveact","in-vehicle","cockpit","cabin"],         "driveact"),
+            (["first person","egocentric","epic","kitchens","wrist","utensil"],                    "epic_kitchens"),
+            (["diving","dive","springboard","platform dive"],                                      "diving48"),
+            (["gymnastics","finegym","floor exercise","pommel","parallel bars","vault","beam"],    "finegym"),
+            (["something something","ssv2","pushing","pulling","pick up","put down","sliding"],     "ssv2"),
+            # Broader activity / motion words
+            (["gesture","hand movement","wrist"],                                                  "autsl"),
+            (["cooking","food preparation","chopping","stirring"],                                 "epic_kitchens"),
+            (["gym","weightlifting","fitness equipment","treadmill","elliptical","squat","bench"], "finegym"),
+            (["causal","counterfactual","temporal order","direction"],                             "ssv2"),
+            # General sports / human activity
+            (["sport","walk","run","jump","swim","tennis","basketball","soccer",
+              "cycling","football","boxing","golf","cricket","skateboard",
+              "hmdb","human action","activity"],                                                   "hmdb51"),
+            # Appearance-dominated
+            (["scene","object recognition","static","ucf","classify","indoor","outdoor",
+              "appearance","background"],                                                          "ucf101"),
         ]
-        matched_ds, match_score = "ssv2", 0
+        matched_ds, match_score = "hmdb51", 0   # better default than ssv2
         for kws, ds in keyword_map:
             score = sum(1 for kw in kws if kw in text)
             if score > match_score:
                 match_score, matched_ds = score, ds
 
-        tds_v  = tds_dict.get(matched_ds, 20.0)
+        tds_v  = tds_dict.get(matched_ds, 18.0)
         ns_max = _nyquist_stride(tds_v)
+        ds_short = DS_LABELS[matched_ds].split(" (")[0]
 
-        # 2. Parse params from text
+        # 2. Parse numeric params from text
         fps_nums   = re.findall(r"(\d+)\s*fps", text)
         stride_num = re.findall(r"stride\s*[=:]?\s*(\d+)", text)
         cov_num    = re.findall(r"coverage\s*[=:]?\s*(\d+)", text)
-        text_fps   = int(fps_nums[0])   if fps_nums   else src_fps_val
-        query_cov  = int(cov_num[0])    if cov_num    else 100
+        text_fps   = int(fps_nums[0])  if fps_nums   else src_fps_val
+        query_cov  = int(cov_num[0])   if cov_num    else 100
 
-        # Auto-derive target stride from source fps + Nyquist
+        # Target stride: Nyquist-respecting, derived from source fps
         if stride_num:
             target_stride = int(stride_num[0])
         else:
-            # stride that gives ≥15fps for high-TDS, ≥7.5fps for moderate
-            target_fps_needed = 15 if tds_v > 40 else 7.5 if tds_v > 20 else 5
-            target_stride = max(1, int(text_fps / target_fps_needed))
+            needed_fps = 15.0 if tds_v > 40 else 7.5 if tds_v > 20 else 5.0
+            target_stride = max(1, int(text_fps / needed_fps))
         valid_strides = [1, 2, 4, 8, 16]
         target_stride = min(valid_strides, key=lambda s: abs(s - target_stride))
+        target_stride = min(target_stride, ns_max)   # never exceed Nyquist
 
-        # 3. Helper: get accuracy
+        # 3. Accuracy lookup
         def get_acc_sw(mk, ds, stride, cov=100):
             if df_sweep.empty: return None
             r = df_sweep[(df_sweep.model==mk)&(df_sweep.dataset==ds)&
                          (df_sweep.stride==stride)&(df_sweep.coverage==cov)]
-            if not r.empty and r["acc"].values[0]>2:
+            if not r.empty and r["acc"].values[0] > 2:
                 return float(r["acc"].values[0])
             return None
 
-        # 4. Build Pareto table: all (model, res, stride) combos
-        records = []
-        for mk in MODEL_KEYS:
-            for res in [48, 96, 112, 160, 224]:
-                lat_row = df_lat_rec[(df_lat_rec.model==mk)&(df_lat_rec.resolution==res)] \
-                    if not df_lat_rec.empty else pd.DataFrame()
-                if lat_row.empty: continue
-                lat_ms = float(lat_row["mean_ms"].values[0]) * hw_factor
+        def get_lat(mk, res):
+            if df_lat_rec.empty: return None
+            r = df_lat_rec[(df_lat_rec.model==mk)&(df_lat_rec.resolution==res)]
+            return float(r["mean_ms"].values[0]) * hw_factor if not r.empty else None
 
-                for st_val in [s for s in valid_strides if s <= ns_max]:
-                    acc = get_acc_sw(mk, matched_ds, st_val, query_cov)
-                    if acc is None and st_val != 1:
-                        acc = get_acc_sw(mk, matched_ds, 1, query_cov)
-                    if acc is None: continue
-                    records.append({
-                        "model": mk, "name": MODEL_NAMES[mk], "family": FAMILIES[mk],
-                        "res": res, "stride": st_val,
-                        "lat_ms": round(lat_ms, 1), "acc": round(acc, 1),
-                        "eff": round(acc / lat_ms, 2) if lat_ms > 0 else 0,
-                        "fits_budget": lat_ms <= budget_ms,
-                        "nyquist_ok":  st_val <= ns_max,
-                    })
+        # 4. Determine budget constraint: is latency actually a binding limit?
+        #    Check how many models pass at their native resolution
+        native_pass = sum(
+            1 for mk in MODEL_KEYS
+            if (get_lat(mk, _NATIVE_RES[mk]) or 999) <= budget_ms
+        )
+        budget_constrained = native_pass < 5   # fewer than 5 models fit at native → constrained
 
-        # De-duplicate: keep best stride per (model, res) by accuracy
-        best_per_cfg: dict = {}
-        for r in records:
-            k = (r["model"], r["res"])
-            if k not in best_per_cfg or r["acc"] > best_per_cfg[k]["acc"]:
-                best_per_cfg[k] = r
-        deduped = sorted(best_per_cfg.values(),
-                         key=lambda x: (-x["fits_budget"], -x["acc"], x["lat_ms"]))
-
-        within = [v for v in deduped if v["fits_budget"] and v["nyquist_ok"]]
-        ds_short = DS_LABELS[matched_ds].split(" (")[0]
-
-        # 5. Build markdown report
-        lines = [f"## Recommendation for: *{prompt_text[:90]}*\n"]
-
+        # 5. Build output
         tier = ("🔴 HIGH" if tds_v>40 else
                 "🟡 MODERATE-HIGH" if tds_v>30 else
                 "🟠 MODERATE" if tds_v>15 else "🟢 LOW")
 
+        lines = [f"## {prompt_text[:80]}\n"]
+
+        # ── Task summary table ──
         lines.append("### Task Analysis")
-        lines.append("| Property | Value |")
-        lines.append("|----------|-------|")
-        ds_warn = " ⚠️ (no keyword match — defaulted)" if match_score == 0 else ""
-        lines.append(f"| Domain | **{ds_short}**{ds_warn} |")
-        lines.append(f"| TDS (temporal demand) | **{tds_v:.1f}pp** → {tier} |")
-        lines.append(f"| Nyquist-safe max stride | **≤ {ns_max}** at {text_fps}fps source |")
-        lines.append(f"| Effective sampling @ target stride | **{round(text_fps/target_stride,1)}fps** (stride={target_stride}) |")
-        lines.append(f"| Deployment | **{hw_name}** (latency = RTX PRO 6000 × {hw_factor:.0f}) |")
-        lines.append(f"| Latency budget | **{budget_ms:.0f}ms/clip** |")
+        lines.append("| | |")
+        lines.append("|---|---|")
+        ds_warn = " *(low confidence — refine description)*" if match_score == 0 else ""
+        lines.append(f"| Nearest benchmark domain | **{ds_short}**{ds_warn} |")
+        lines.append(f"| Temporal demand (TDS) | **{tds_v:.1f}pp** — {tier} |")
+        lines.append(f"| Nyquist-safe max stride | ≤ **{ns_max}** at {text_fps}fps source "
+                     f"→ min {round(text_fps/ns_max,1)}fps effective |")
+        lines.append(f"| Recommended stride | **{target_stride}** "
+                     f"({round(text_fps/target_stride,1)}fps effective) |")
+        lines.append(f"| Device | **{hw_name}** |")
+        budget_note = "no binding constraint — all models fit" if not budget_constrained else f"{budget_ms:.0f}ms/clip"
+        lines.append(f"| Latency budget | {budget_ms:.0f}ms/clip — *{budget_note}* |")
         lines.append("")
 
-        # Nyquist explanation
-        lines.append("### Nyquist Sampling Constraint")
+        # ── Nyquist note (concise) ──
+        lines.append("### Sampling / Nyquist")
         if tds_v > 40:
-            lines.append(
-                f"⚠️ **Very high temporal demand.** Accuracy drops >30pp at stride>2. "
-                f"At {text_fps}fps source, stride={ns_max} gives {round(text_fps/ns_max,1)}fps — "
-                f"the Nyquist limit for this domain. Do not exceed stride {ns_max}."
-            )
+            lines.append(f"Accuracy drops **>30pp** beyond stride {ns_max}. "
+                         f"At {text_fps}fps source, stride {ns_max} = {round(text_fps/ns_max,1)}fps effective — "
+                         f"do not exceed this.")
         elif tds_v > 15:
-            lines.append(
-                f"Moderate temporal demand. Stride up to {ns_max} is empirically safe "
-                f"(mean drop <10pp). At {text_fps}fps source: stride={ns_max} → {round(text_fps/ns_max,1)}fps effective. "
-                f"Exceeding this introduces noticeable aliasing."
-            )
+            lines.append(f"Stride ≤ {ns_max} empirically safe (mean loss <10pp). "
+                         f"Stride {ns_max} at {text_fps}fps → {round(text_fps/ns_max,1)}fps effective.")
         else:
-            lines.append(
-                f"Low temporal demand — appearance dominates. Stride up to {ns_max} causes only "
-                f"{tds_v:.1f}pp mean accuracy loss. Even aggressive subsampling is acceptable."
-            )
+            lines.append(f"Low temporal demand — appearance dominates. "
+                         f"Stride up to {ns_max} loses only {tds_v:.1f}pp on average.")
         lines.append("")
 
-        # Pareto table
-        lines.append(f"### Device-Constrained Model Analysis — {hw_name}, budget={budget_ms:.0f}ms")
-        lines.append("Showing top configurations (best accuracy per model at Nyquist-safe stride):\n")
-        lines.append("| Model | Res | Stride | Latency | Accuracy | Eff (acc/ms) | Status |")
-        lines.append("|-------|-----|--------|---------|----------|--------------|--------|")
-        shown = 0
-        for v in deduped[:12]:
-            if not v["nyquist_ok"]: continue
-            status = "✅ OK" if v["fits_budget"] else f"🔴 over {budget_ms:.0f}ms"
-            lines.append(
-                f"| **{v['name']}** | {v['res']}px | s={v['stride']} | "
-                f"{v['lat_ms']:.1f}ms | {v['acc']:.1f}% | {v['eff']:.2f} | {status} |"
-            )
-            shown += 1
-            if shown >= 10: break
-        lines.append("")
-        lines.append(
-            f"*Accuracy: dataset={ds_short}, cov={query_cov}%, stride as shown. "
-            f"Latency = RTX PRO 6000 baseline × {hw_factor:.0f}× ({hw_name}).*"
-        )
-        lines.append("")
+        # ── Model ranking table ──
+        if not budget_constrained:
+            # Device has headroom — rank by accuracy at native resolution
+            lines.append(f"### Model Ranking — {ds_short} "
+                         f"(device has headroom; sorted by accuracy at native resolution)")
+            lines.append("")
+            lines.append(f"| Model | Family | Native Res | Latency on {hw_name} | "
+                         f"Accuracy s=1 | Accuracy s={target_stride} |")
+            lines.append("|-------|--------|-----------|----------------------|"
+                         "-------------|----------------------|")
+            ranking = []
+            for mk in MODEL_KEYS:
+                native = _NATIVE_RES[mk]
+                lat = get_lat(mk, native)
+                acc_s1 = get_acc_sw(mk, matched_ds, 1)
+                acc_st = get_acc_sw(mk, matched_ds, target_stride) if target_stride != 1 else acc_s1
+                if acc_s1 is None: continue
+                ranking.append((mk, native, lat, acc_s1, acc_st))
+            ranking.sort(key=lambda x: -(x[3] or 0))
+            for mk, native, lat, acc_s1, acc_st in ranking:
+                lat_str = f"{lat:.1f}ms" if lat else "—"
+                acc_s1_str = f"{acc_s1:.1f}%" if acc_s1 else "—"
+                drop = f"{acc_s1-acc_st:.1f}pp↓" if (acc_s1 and acc_st and target_stride > 1) else "—"
+                acc_st_str = f"{acc_st:.1f}% ({drop})" if acc_st and target_stride > 1 else (f"{acc_st:.1f}%" if acc_st else "—")
+                fam = FAMILIES[mk]
+                lines.append(f"| **{MODEL_NAMES[mk]}** | {fam} | {native}px | {lat_str} | "
+                             f"{acc_s1_str} | {acc_st_str} |")
+            lines.append("")
+            lines.append(f"*Latency = RTX PRO 6000 baseline × {hw_factor:.0f}× ({hw_name}), "
+                         f"bfloat16, batch=1. Accuracy: cov=100%.*")
+            lines.append("")
 
-        # Optimal config
-        if within:
-            best = within[0]
-            eff_best = sorted(within, key=lambda x: -x["eff"])[0]
-            eff_fps = round(text_fps / best["stride"], 1)
-            lines.append("### ✅ Recommended Configuration")
-            lines.append(
-                f"**{best['name']} @ {best['res']}px, stride={best['stride']}**"
-            )
-            lines.append(f"- Estimated latency: **{best['lat_ms']:.1f}ms/clip** on {hw_name}")
-            lines.append(f"- Accuracy: **{best['acc']:.1f}%** on {ds_short}")
-            lines.append(f"- Effective frame rate: {eff_fps}fps ({text_fps}fps ÷ stride {best['stride']})")
-            lines.append(f"- Nyquist compliance: ✅ stride={best['stride']} ≤ {ns_max}")
-            fam = FAMILIES[best["model"]]
-            if fam in ("CNN","Dual-CNN") and best["res"] < 224:
-                lines.append(f"- Retraining: fine-tune at {best['res']}px — CNNs often gain +5–10pp vs cross-resolution eval")
-            elif fam in ("Transformer","SSM") and best["res"] < 112:
-                lines.append(f"- Retraining: bicubic pos-embed interpolation required at {best['res']}px (see model_factory.py)")
-            if eff_best["model"] != best["model"] or eff_best["res"] != best["res"]:
-                lines.append(
-                    f"\n**Most efficient alternative:** {eff_best['name']} @ {eff_best['res']}px — "
-                    f"{eff_best['lat_ms']:.1f}ms, {eff_best['acc']:.1f}%, {eff_best['eff']:.2f} acc/ms"
+            # Recommendation for unconstrained device
+            if ranking:
+                best_mk, best_nat, best_lat, best_acc, best_acc_t = ranking[0]
+                lines.append("### Recommendation")
+                lines.append(f"**{MODEL_NAMES[best_mk]} @ {best_nat}px, stride={target_stride}**")
+                lines.append(f"- Accuracy: **{best_acc_t or best_acc:.1f}%** on {ds_short}")
+                lines.append(f"- Latency: {best_lat:.1f}ms/clip on {hw_name} ({best_lat/budget_ms*100:.0f}% of budget)")
+                lines.append(f"- Stride={target_stride} → {round(text_fps/target_stride,1)}fps effective — Nyquist-safe (limit: s={ns_max})")
+                fam = FAMILIES[best_mk]
+                if fam in ("Transformer","SSM") and best_nat == 224:
+                    lines.append("- Use full 224px — no resolution trade-off needed on this device")
+                # Most efficient
+                by_eff = sorted(
+                    [(mk, n, l, a, at) for mk, n, l, a, at in ranking if l],
+                    key=lambda x: -(x[3] or 0) / (x[2] or 999)
                 )
+                if by_eff and by_eff[0][0] != best_mk:
+                    e = by_eff[0]
+                    lines.append(f"\n**Most efficient:** {MODEL_NAMES[e[0]]} @ {e[1]}px — "
+                                 f"{e[2]:.1f}ms, {e[3]:.1f}% acc, "
+                                 f"{(e[3] or 0)/(e[2] or 1):.2f} acc/ms")
+
         else:
-            lines.append("### ❌ No viable configuration found")
-            lines.append(
-                f"No model fits within {budget_ms:.0f}ms at a Nyquist-safe stride on {hw_name}."
-            )
-            lines.append("**Options to try:**")
-            lines.append("- Lower resolution (48 or 96px for CNNs)")
-            lines.append("- Increase latency budget or use a stronger device")
-            lines.append("- Relax Nyquist (accept accuracy degradation)")
-            cheapest = sorted(records, key=lambda x: x["lat_ms"])
-            if cheapest:
-                c = cheapest[0]
-                lines.append(
-                    f"\nCheapest option ignoring Nyquist: **{c['name']} @ {c['res']}px** — "
-                    f"{c['lat_ms']:.1f}ms, {c['acc']:.1f}%"
-                )
+            # Budget IS constraining — Pareto search across all (model, res)
+            lines.append(f"### Latency-Accuracy Pareto — {hw_name}, budget={budget_ms:.0f}ms")
+            lines.append(f"Configurations within budget at Nyquist-safe stride ≤ {ns_max}:\n")
+            lines.append(f"| Model | Family | Res | Native? | Stride | Latency | Accuracy | acc/ms |")
+            lines.append("|-------|--------|-----|---------|--------|---------|----------|--------|")
 
-        # Dense baseline
-        lines.append(f"\n### Dense Baseline (stride=1, cov=100%) — {ds_short}")
-        for mk in MODEL_KEYS:
-            acc = get_acc_sw(mk, matched_ds, 1)
-            if acc:
-                lines.append(f"- {MODEL_NAMES[mk]}: {acc:.1f}%")
+            # Build records for constrained search
+            records = []
+            for mk in MODEL_KEYS:
+                native = _NATIVE_RES[mk]
+                for res in [48, 96, 112, 160, 224]:
+                    lat = get_lat(mk, res)
+                    if lat is None: continue
+                    acc = get_acc_sw(mk, matched_ds, target_stride, query_cov)
+                    if acc is None: acc = get_acc_sw(mk, matched_ds, 1, query_cov)
+                    if acc is None: continue
+                    records.append({
+                        "model": mk, "name": MODEL_NAMES[mk], "family": FAMILIES[mk],
+                        "res": res, "native": native, "stride": target_stride,
+                        "lat_ms": round(lat, 1), "acc": round(acc, 1),
+                        "eff": round(acc / lat, 2),
+                        "fits": lat <= budget_ms,
+                        "is_native": res == native,
+                    })
+
+            # Best per (model, res) and sort
+            in_budget  = sorted([r for r in records if r["fits"]],  key=lambda x: -x["acc"])
+            over_budget = sorted([r for r in records if not r["fits"]], key=lambda x:  x["lat_ms"])
+
+            shown = 0
+            for r in in_budget[:8]:
+                nat_tag = " ★" if r["is_native"] else ""
+                lines.append(
+                    f"| **{r['name']}** | {r['family']} | {r['res']}px{nat_tag} | "
+                    f"{'yes' if r['is_native'] else 'no'} | s={r['stride']} | "
+                    f"{r['lat_ms']:.1f}ms | {r['acc']:.1f}% | {r['eff']:.2f} |"
+                )
+                shown += 1
+            if not shown:
+                lines.append("| *no config fits* | — | — | — | — | — | — | — |")
+            if over_budget:
+                lines.append(f"| *(below: over budget)* | | | | | | | |")
+                for r in over_budget[:3]:
+                    nat_tag = " ★" if r["is_native"] else ""
+                    lines.append(
+                        f"| {r['name']} | {r['family']} | {r['res']}px{nat_tag} | "
+                        f"{'yes' if r['is_native'] else 'no'} | s={r['stride']} | "
+                        f"**{r['lat_ms']:.1f}ms** 🔴 | {r['acc']:.1f}% | {r['eff']:.2f} |"
+                    )
+            lines.append("")
+            lines.append(f"*★ = native training resolution. "
+                         f"Latency = RTX PRO 6000 × {hw_factor:.0f}× ({hw_name}), bfloat16, batch=1.*")
+            lines.append("")
+
+            if in_budget:
+                best = in_budget[0]
+                lines.append("### Recommendation")
+                lines.append(f"**{best['name']} @ {best['res']}px, stride={target_stride}**")
+                lines.append(f"- Accuracy: **{best['acc']:.1f}%** on {ds_short}")
+                lines.append(f"- Latency: **{best['lat_ms']:.1f}ms** on {hw_name} "
+                             f"({best['lat_ms']/budget_ms*100:.0f}% of {budget_ms:.0f}ms budget)")
+                lines.append(f"- Stride={target_stride} → {round(text_fps/target_stride,1)}fps effective — Nyquist-safe")
+                fam = FAMILIES[best["model"]]
+                if fam in ("CNN","Dual-CNN") and not best["is_native"]:
+                    lines.append(f"- Retrain at {best['res']}px: CNNs gain +5–10pp vs cross-resolution eval")
+                elif fam in ("Transformer","SSM") and best["res"] < 112:
+                    lines.append("- Bicubic pos-embed interpolation required at this resolution (model_factory.py)")
+                by_eff = sorted(in_budget, key=lambda x: -x["eff"])
+                if by_eff[0]["model"] != best["model"] or by_eff[0]["res"] != best["res"]:
+                    e = by_eff[0]
+                    lines.append(f"\n**Most efficient:** {e['name']} @ {e['res']}px — "
+                                 f"{e['lat_ms']:.1f}ms, {e['acc']:.1f}%, {e['eff']:.2f} acc/ms")
+            else:
+                lines.append("### ❌ No configuration fits within budget")
+                cheapest = sorted(records, key=lambda x: x["lat_ms"])
+                if cheapest:
+                    c = cheapest[0]
+                    lines.append(f"Closest: **{c['name']} @ {c['res']}px** — {c['lat_ms']:.1f}ms, {c['acc']:.1f}%")
+                lines.append("Options: lower resolution, relax budget, or use Jetson AGX Orin instead of Nano.")
 
         return "\n".join(lines)
 
@@ -2284,10 +2333,9 @@ elif page == "🎯 Architecture Recommender":
             return None, str(e)
 
     # ── Chat UI ───────────────────────────────────────────────────────────────
-    session_key = f"rec_msgs_{engine[:3]}"
-    if session_key not in st.session_state:
-        st.session_state[session_key] = []
-    msgs = st.session_state[session_key]
+    if "rec_msgs" not in st.session_state:
+        st.session_state["rec_msgs"] = []
+    msgs = st.session_state["rec_msgs"]
 
     for msg in msgs:
         with st.chat_message(msg["role"]):
@@ -2306,53 +2354,37 @@ elif page == "🎯 Architecture Recommender":
         with st.chat_message("assistant"):
             with st.spinner("Analyzing…"):
                 rag_args = (prompt, df_sw, TDS, hw_factor_rec, hw_name_rec, lat_budget_ms, src_fps)
-
-                if engine.startswith("⚙️"):
-                    answer = rag_recommend(*rag_args)
-                    st.markdown(answer)
-                    msgs.append({"role":"assistant","content":answer})
-
-                elif engine.startswith("🔬"):
-                    rag_data = rag_recommend(*rag_args)
-                    data_ctx = build_data_context()
-                    sys_p = f"""You are an expert analyst for InfoRates (spatiotemporal aliasing in video recognition).
+                rag_data = rag_recommend(*rag_args)
+                data_ctx = build_data_context()
+                sys_p = f"""You are a senior research engineer analyzing video architecture deployment.
+You have access to measured data from the InfoRates benchmark (8 architectures, 8 datasets, 8,000+ configs).
 
 {data_ctx}
 
-Below is a rigorous data-driven analysis. Your task: enrich it with mechanistic explanations,
-trade-off reasoning, and practical implementation guidance. Cite the measured numbers.
+The structured analysis below was produced programmatically from measured data. Your role is to:
+- Add mechanistic insight: WHY does this architecture behave this way at this stride/resolution?
+- Note any practical trade-offs the user should know before deploying.
+- Flag risks (e.g. Transformer sensitivity to resolution, VideoMamba bf16 latency cliff).
+- Keep it tight: tables and bullet points only. No narrative framing.
 
-DATA ANALYSIS:
+STRICT FORMATTING RULES — violations will cause automatic rejection:
+- NO sentences starting with "we", "our", "I", "this analysis", "based on".
+- NO phrases like "we are deploying", "we recommend", "to ensure", "as we can see".
+- State facts and numbers directly: "VideoMAE @ 224px — 2.1ms, 95.4% on UCF-101."
+- Use markdown headers (###), bullet points (-), and tables only.
+- If the recommendation is clear-cut, say so in one sentence. Do not hedge.
+
+STRUCTURED ANALYSIS (from measured data):
 {rag_data}
 
-Provide a rich markdown response. Be specific and concise."""
-                    answer, err = call_llm(engine, sys_p,
-                                           [{"role":m["role"],"content":m["content"]} for m in msgs])
-                    if err:
-                        st.error(f"Groq error: {err}")
-                        answer = rag_data
-                    else:
-                        st.markdown(answer)
-                    msgs.append({"role":"assistant","content":answer})
-
-                else:  # Pure Groq
-                    data_ctx = build_data_context()
-                    sys_p = f"""You are an expert assistant for InfoRates (spatiotemporal aliasing in video recognition).
-{data_ctx}
-
-The user's deployment device: {hw_name_rec} (latency = RTX PRO 6000 × {hw_factor_rec:.0f}),
-latency budget: {lat_budget_ms:.0f}ms/clip, source fps: {src_fps}fps.
-
-Recommend: architecture, resolution, stride — respecting Nyquist and the device budget.
-Cite measured latency and accuracy numbers. Use markdown tables. Be concise and specific."""
-                    answer, err = call_llm(engine, sys_p,
-                                           [{"role":m["role"],"content":m["content"]} for m in msgs])
-                    if err:
-                        st.error(f"Groq error: {err}")
-                        answer = f"[Error: {err}]"
-                    else:
-                        st.markdown(answer)
-                    msgs.append({"role":"assistant","content":answer})
+Device: {hw_name_rec} | Budget: {lat_budget_ms:.0f}ms/clip | Source: {src_fps}fps"""
+                answer, err = call_llm("hybrid", sys_p,
+                                       [{"role":m["role"],"content":m["content"]} for m in msgs])
+                if err:
+                    st.warning(f"LLM unavailable ({err}) — showing data analysis.")
+                    answer = rag_data
+                st.markdown(answer)
+                msgs.append({"role":"assistant","content":answer})
 
         # Reference chart below the response
         if msgs and not df_sw.empty:
