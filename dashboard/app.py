@@ -190,7 +190,7 @@ def load_combined_sweep():
     ds_list = ["ucf101","ssv2","hmdb51","diving48","autsl","driveact","epic_kitchens","finegym"]
     rows = []
 
-    # ── Original trainres/cross-res sweeps (7 datasets) ───────────────────────
+    # ── Original trainres/cross-res sweeps (7 datasets excluding FineGym) ──────
     sweep_root = Path(__file__).parent.parent / "evaluations/accv2026/coverage_stride_sweep"
     if sweep_root.exists():
         for csv in sweep_root.glob("*/sweep_summary.csv"):
@@ -360,14 +360,14 @@ def model_select(key, default_all=True):
 if page == "🏠 Overview & TDS":
     st.title("InfoRates — Spatiotemporal Aliasing Analysis")
     st.markdown(
-        "**8 architectures** (CNN / Transformer / SSM) · **7 datasets** · **5 resolutions (48–224px)** · **7,000+ eval configs** "
+        "**8 architectures** (CNN / Transformer / SSM) · **8 datasets** · **5 resolutions (48–224px)** · **14,000+ eval configs** "
         "— a large-scale study of how video models degrade under reduced frame rate and spatial resolution."
     )
 
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("Architectures", "8", "CNN + Transformer + SSM")
-    c2.metric("Datasets", "7", "4 semantic domains")
-    c3.metric("Eval configs", "7,000+", "base + train-res × coverage × stride")
+    c2.metric("Datasets", "8", "5 semantic domains")
+    c3.metric("Eval configs", "14,000+", "temporal + spatial + resolution sweep")
     n_res = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
     c4.metric("Spatial configs", f"{n_res}", "cross-resolution evaluation")
     st.divider()
@@ -771,7 +771,7 @@ elif page == "📐 ANOVA & Variance":
                 error_y=dict(type="data", array=[row["stride_std"]], visible=True),
             ))
         fig.update_layout(barmode="stack", height=380,
-                          yaxis_title="η² (mean across 7 datasets)",
+                          yaxis_title="η² (mean across 8 datasets)",
                           xaxis_title="Model",
                           title="Coverage vs Stride Effect Sizes (coverage dominates everywhere)",
                           margin=dict(t=50,b=40))
@@ -1095,7 +1095,7 @@ elif page == "🖼 Spatial Resolution":
 
     n_retrained = len(df_retrained.drop_duplicates(["model","dataset","train_res"])) if not df_retrained.empty else 0
     n_crossres  = len(df_p3.drop_duplicates(["model","dataset","res"])) if not df_p3.empty else 0
-    n_total_expected = 8 * 7 * 5  # 8 models × 7 datasets × 5 resolutions (48/96/112/160/224)
+    n_total_expected = 8 * 8 * 5  # 8 models × 8 datasets × 5 resolutions (48/96/112/160/224)
     mc1, mc2, mc3 = st.columns(3)
     mc1.metric("Retrained checkpoints", f"{n_retrained}", "model × dataset × resolution")
     mc2.metric("Cross-res eval (no retrain)", f"{n_crossres}", "model × dataset × resolution")
@@ -1531,7 +1531,7 @@ elif page == "🎯 Architecture Recommender":
     st.caption(
         "Describe your activity recognition task in plain English. "
         "Get a recommendation for architecture, frame rate, and observation window "
-        "— backed by 7,000+ empirical measurement configurations."
+        "— backed by 14,000+ empirical measurement configurations across 8 architectures and 8 datasets."
     )
 
     engine = st.sidebar.radio("Engine", [
@@ -1544,6 +1544,7 @@ elif page == "🎯 Architecture Recommender":
     # ── Build data context for the AI ────────────────────────────────────────
     def build_data_context():
         lines = ["## InfoRates COMPLETE Empirical Data\n"]
+        lines.append("8 architectures × 8 datasets × 5 resolutions × 14,000+ evaluation configs\n")
 
         # TDS
         lines.append("### TDS (Temporal Demand Score) per dataset")
@@ -1551,7 +1552,7 @@ elif page == "🎯 Architecture Recommender":
             lines.append(f"- {DS_LABELS[ds]}: TDS={tds_v:.1f}pp")
 
         # Avg drops
-        lines.append("\n### Architecture aliasing robustness (avg accuracy drop stride=1→16)")
+        lines.append("\n### Architecture aliasing robustness (avg accuracy drop stride=1→16, all 8 datasets)")
         if not df_sw.empty:
             for mk in MODEL_KEYS:
                 sub = df_sw[(df_sw.model==mk)&(df_sw.coverage==100)]
@@ -1568,23 +1569,30 @@ elif page == "🎯 Architecture Recommender":
         lines.append("\n### SAMPLE ACCURACY DATA (stride & coverage combinations)")
         lines.append("Best 3 models per config. Format: dataset | stride | coverage | top models")
         if not df_sw.empty:
-            for ds in ["autsl", "ssv2", "ucf101"]:  # Just top 3 datasets
+            for ds in ["autsl", "ssv2", "ucf101", "finegym"]:
                 sub_ds = df_sw[df_sw.dataset==ds]
                 for stride in [1, 4, 8, 16]:
-                    for cov in [10, 100]:  # Just 10% and 100%
+                    for cov in [10, 100]:
                         sub = sub_ds[(sub_ds.stride==stride)&(sub_ds.coverage==cov)].sort_values("acc", ascending=False)
                         if sub.empty: continue
                         top3 = [f"{MODEL_NAMES[row['model']]}={row['acc']:.0f}%" for _, row in sub.head(3).iterrows() if row['acc']>2]
                         if top3:
                             lines.append(f"{ds:10} | s={stride:2} | c={cov:3}% | {', '.join(top3)}")
 
+        # FineGym resolution sweep summary
+        lines.append("\n### FINEGYM COVERAGE × STRIDE × RESOLUTION SWEEP (P3-retrained, 1000 configs)")
+        lines.append("Key findings (ANOVA): Coverage F=178.94 >> Stride F=80.76 >> Resolution F=13.16")
+        lines.append("- Max accuracy: 59.7% (cov=100%, stride=1, res=224px)")
+        lines.append("- Best trade-off: cov=100%, stride=1, res=160px → 43.7%")
+        lines.append("- Catastrophic: cov<50% + stride>2 → 2–7%")
+
         # P3 spatial retraining summary
-        lines.append("\n### P3 SPATIAL RETRAINING (CNN resolution ablation)")
+        lines.append("\n### P3 SPATIAL RETRAINING (all 8 datasets)")
         try:
-            df_p3 = pd.read_csv(DATA / "p3_results.csv")
-            for model in ["r3d_18", "slowfast_r50"]:
-                avg_96 = df_p3[(df_p3.model==model)&(df_p3.res==96)]["acc"].mean()
-                avg_224 = df_p3[(df_p3.model==model)&(df_p3.res==224)]["acc"].mean()
+            df_p3_ctx = pd.read_csv(DATA / "p3_results.csv")
+            for model in ["r3d_18", "r2plus1d_18", "slowfast_r50"]:
+                avg_96 = df_p3_ctx[(df_p3_ctx.model==model)&(df_p3_ctx.res==96)]["acc"].mean()
+                avg_224 = df_p3_ctx[(df_p3_ctx.model==model)&(df_p3_ctx.res==224)]["acc"].mean()
                 lines.append(f"- {MODEL_NAMES[model]}: @96px avg={avg_96:.1f}%, @224px avg={avg_224:.1f}%")
         except: pass
 
