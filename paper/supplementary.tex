@@ -19,7 +19,7 @@
 \begin{document}
 
 \title{Supplementary Material:\\
-  Temporal Aliasing in Video Action Recognition:\\
+  Spatiotemporal Aliasing in Video Action Recognition:\\
   A Cross-Architecture Analysis at Scale}
 
 \author{Anonymous ACCV Submission}
@@ -42,7 +42,7 @@ We include:
 (S5) entropy routing curves for all models;
 (S6) clip duration analysis;
 (S7) spectral correlation detail;
-(S8) implementation details (P3 retraining, positional embedding interpolation);
+(S8) implementation details (target-resolution fine-tuning, positional embedding interpolation);
 (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models);
 and (S10) interactive dashboard and code availability.
 
@@ -51,11 +51,9 @@ and (S10) interactive dashboard and code availability.
 \label{sec:sup_heatmaps}
 
 Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete
-coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets
-(7 datasets for VideoMamba; AUTSL is excluded due to training collapse).
+coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets.
 Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration.
 Color scale: green=high accuracy, red=low accuracy.
-$\dagger$ denotes VideoMamba/AUTSL feature collapse (K400$\to$sign language domain gap).
 FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis
 for FineGym is in progress (97-class egomotion-compensated flow extraction).
 
@@ -140,12 +138,12 @@ Column order (stride): 1, 2, 4, 8, 16.
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_videomamba.pdf}
-  \caption{VideoMamba (SSM selective scan) heatmaps (7 datasets; AUTSL excluded).
-    On 6 of 7 datasets, VideoMamba shows a flat heatmap with minimal degradation
+  \caption{VideoMamba (SSM selective scan) heatmaps (all 8 datasets).
+    On 5 of 8 datasets, VideoMamba shows a flat heatmap with minimal degradation
     across strides---the SSM recurrent state aggregates temporal context, providing
     natural robustness.
-    FineGym is the exception: 40.0pp drop at stride=16 reveals the limit of SSM
-    temporal integration bandwidth under high-frequency gymnastics transitions.}
+    FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp) are exceptions, revealing
+    the limit of SSM temporal integration under high-frequency transitions.}
   \label{fig:heatmap_videomamba}
 \end{figure}
 
@@ -212,7 +210,7 @@ datasets), with error bars indicating standard deviation.
     per model. Coverage consistently dominates (blue bars, 53--90\% of variance).
     The stride effect is large for CNNs and ViViT (red bars, 18--35\%) but small
     for VideoMamba and TimeSformer ($<$12\%), confirming architecture-dependent aliasing.
-    Error bars: std across 8 datasets (7 for VideoMamba, AUTSL excluded).}
+    Error bars: std across all 8 datasets.}
   \label{fig:anova_bar}
 \end{figure}
 
@@ -220,8 +218,8 @@ Table~\ref{tab:anova_full} provides the complete per-dataset $\eta^2$ values for
 8 datasets.
 All stride effects are significant ($p < 0.05$); coverage effects are significant
 ($p < 0.001$) in all cases.
-FineGym ($\eta^2_\text{stride}$ up to 0.50 for SlowFast) follows AUTSL as the second
-most aliasing-intensive dataset, consistent with its TDS rank.
+FineGym ($\eta^2_\text{stride}$ up to 0.50 for SlowFast) is the most aliasing-intensive
+dataset, with AUTSL second, consistent with the updated TDS ranking (FineGym=55.9pp, AUTSL=53.0pp).
 
 \begin{table}[t]
 \centering
@@ -335,7 +333,7 @@ and datasets at the optimal threshold (avg frames $\leq 8$).
 \centering
 \caption{Entropy routing: best accuracy at avg $\leq8$ frames per model/dataset.
   Values are Top-1 accuracy (\%). Bold = highest per column.
-  $\dagger$ AUTSL excluded for VideoMamba (feature collapse).}
+  $^*$VideoMamba/AUTSL: entropy routing not computed; value is direct stride=8 accuracy (65.0\%).}
 \label{tab:routing_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -350,7 +348,7 @@ SlowFast     & 59.5 & 57.8 & 46.6 & 35.0 & 76.3 & 67.4 & 37.4 & 87.9 & 58.5 \\
 TimeSformer  & 67.1 & 66.8 & 38.9 & 42.5 & 80.6 & 68.5 & 32.4 & 91.3 & \textbf{61.0} \\
 ViViT        & 67.2 & 66.1 & 48.9 & 32.2 & 80.1 & 64.3 & 31.3 & 94.3 & 60.6 \\
 VideoMAE     & \textbf{79.5} & \textbf{76.4} & \textbf{52.6} & \textbf{51.9} & \textbf{84.7} & \textbf{69.0} & \textbf{37.8} & \textbf{95.9} & \textbf{68.5} \\
-VideoMamba   & $\dagger$ & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 57.0 \\
+VideoMamba   & 65.0$^*$ & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 58.0 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -445,8 +443,8 @@ All models use cosine learning rate decay with linear warmup (1 epoch).
 Spatial augmentation: random resized crop, horizontal flip, normalization
 (ImageNet statistics).
 
-\paragraph{Positional embedding interpolation for Transformers and SSMs (P3).}
-For P3 retraining at non-native resolutions, Transformer and SSM positional embeddings
+\paragraph{Positional embedding interpolation for Transformers and SSMs.}
+For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings
 must be adapted.
 \textit{The wrong approach}: passing \texttt{ignore\_mismatched\_sizes=True} in
 HuggingFace discards positional embeddings entirely, causing a large accuracy cliff
@@ -484,11 +482,10 @@ Tables~\ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_finegym} extend the spatial robust
 analysis from the main paper (Section~4.3) to all 8 datasets.
 Tables \ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_epic} show cross-resolution results
 (no retraining): the fine-tuned native-resolution checkpoint evaluated at 96--336px.
-Table~\ref{tab:sup_sp_finegym} shows FineGym P3-retrained results (one retrained
-checkpoint per resolution).
+Table~\ref{tab:sup_sp_finegym} shows FineGym target-resolution fine-tuning results
+(one fine-tuned checkpoint per resolution).
 \textbf{Bold} = native training resolution.
 $\Delta_\text{max}$ = largest accuracy drop from native across all tested resolutions.
-VideoMamba is excluded from AUTSL due to training collapse.
 
 \begin{table}[h]
 \centering
@@ -588,9 +585,10 @@ VideoMamba  & 224px & 29.2 & 29.1 & 36.1 & \textbf{36.6} & 36.2 & $-7.5$pp \\
 
 \begin{table}[h]
 \centering
-\caption{Spatial robustness on \textbf{AUTSL} (sign language; no retraining).
-  CNN degradation is most severe: R3D-18 collapses from 75.0\% to 2.0\% at 336px
-  ($-73.0$pp). VideoMamba excluded (training collapse).}
+\caption{Spatial robustness on \textbf{AUTSL} (sign language; no retraining from AUTSL-fine-tuned checkpoint).
+  CNN degradation is most severe: R3D-18 collapses from 75.0\% to 2.0\% at 336px ($-73.0$pp).
+  VideoMamba excluded: K400-pretrained checkpoint not fine-tuned on AUTSL; temporal aliasing
+  results (Table~2) use the AUTSL-fine-tuned checkpoint.}
 \label{tab:sup_sp_autsl}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -606,7 +604,7 @@ SlowFast    & 224px & 22.5 & 32.6 & 70.0 & \textbf{79.2} & 69.0 & $-56.7$pp \\
 TimeSformer & 224px & 65.1 & 66.0 & 68.3 & \textbf{68.5} & 68.6 & $-3.5$pp \\
 ViViT       & 224px & 49.2 & 51.8 & 53.3 & \textbf{53.6} & 54.0 & $-4.5$pp \\
 VideoMAE    & 224px & 77.3 & 78.2 & 79.5 & \textbf{79.6} & 79.3 & $-2.2$pp \\
-VideoMamba  & --- & \multicolumn{6}{c}{excluded (training collapse on AUTSL)} \\
+VideoMamba  & 224px & \multicolumn{6}{c}{K400-pretrained checkpoint collapses on AUTSL (domain gap)} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -662,11 +660,11 @@ VideoMamba  & 224px & 11.1 & 12.6 & 20.8 & \textbf{28.3} & 24.5 & $-17.3$pp \\
 
 \begin{table}[h]
 \centering
-\caption{\textbf{FineGym} spatial resolution results (P3 retrained: one checkpoint
-  per resolution, 10 fine-tuning epochs from native checkpoint).
+\caption{\textbf{FineGym} spatial resolution results after target-resolution fine-tuning
+  (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint).
   Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM).
   Unlike other datasets in S9 (cross-resolution without retraining), FineGym
-  shows CNN performance that \emph{improves beyond native} with P3 retraining at
+  shows CNN performance that \emph{improves beyond native} after fine-tuning at
   higher resolutions (R3D-18: 71.5\%@112px$\to$76.1\%@224px), confirming that
   higher spatial resolution genuinely aids gymnastics pose discrimination.}
 \label{tab:sup_sp_finegym}
@@ -705,7 +703,7 @@ The dashboard provides:
 \item \textbf{Temporal sweep explorer}: coverage$\times$stride heatmaps per model and
   dataset, with configurable color scaling and reference stride annotations.
 \item \textbf{Spatial resolution browser}: cross-resolution accuracy curves for all
-  8 models across all 8 datasets; P3 retraining results per architecture family.
+  8 models across all 8 datasets; target-resolution fine-tuning results per architecture family.
 \item \textbf{Architecture recommender (hybrid AI)}: given a target dataset, hardware
   latency budget, source frame rate, and deployment context, the system performs
   structured data-driven analysis followed by LLM synthesis (Llama-3.3-70B via
@@ -719,7 +717,7 @@ The dashboard provides:
 \end{enumerate}
 
 \paragraph{Code availability.}
-Evaluation scripts, model fine-tuning code (including the P3 retraining pipeline
+Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline
 with bicubic positional embedding interpolation), and the Streamlit dashboard
 source code will be released at [anonymized for review].
 The repository includes:

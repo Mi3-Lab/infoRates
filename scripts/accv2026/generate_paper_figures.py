@@ -85,17 +85,57 @@ DATASET_LABELS = {
 }
 STRIDES = [1, 2, 4, 8, 16]
 BASE = Path("evaluations/accv2026/coverage_stride_sweep")
+# dashboard/data/sweep_summary.csv is the authoritative source (matches paper Table 2)
+_DASHBOARD_CSV = Path("dashboard/data/sweep_summary.csv")
+_DASHBOARD = None  # loaded on first use
+
+def _get_dashboard():
+    global _DASHBOARD
+    if _DASHBOARD is None and _DASHBOARD_CSV.exists():
+        _DASHBOARD = pd.read_csv(_DASHBOARD_CSV)
+    return _DASHBOARD
+
+NATIVE_RES = {
+    "r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112, "slowfast_r50": 224,
+    "timesformer": 224, "vivit": 224, "videomae": 224, "videomamba": 224,
+}
 
 def load_stride_curve(model, dataset, coverage=100):
-    """Load accuracy vs stride at given coverage level."""
+    """Load accuracy vs stride at given coverage level.
+
+    Priority:
+    1. dashboard/data/sweep_summary.csv  (authoritative, matches paper tables)
+    2. coverage_stride_sweep/{model}_{dataset}/sweep_summary.csv  (bare dir)
+    3. coverage_stride_sweep/{model}_{dataset}_trainres{native}/  (trainres fallback)
+    """
+    dash = _get_dashboard()
+    if dash is not None:
+        sub = dash[
+            (dash["model"] == model) &
+            (dash["dataset"] == dataset) &
+            (dash["coverage"] == coverage)
+        ].sort_values("stride")
+        if not sub.empty and 1 in sub["stride"].values and 16 in sub["stride"].values:
+            return sub[["stride","top1"]].set_index("stride")["top1"]
+
+    # fallback: bare dir (original E1 experiment)
     csv = BASE / f"{model}_{dataset}" / "sweep_summary.csv"
-    if not csv.exists():
-        return None
-    df = pd.read_csv(csv)
-    sub = df[df["coverage"] == coverage].sort_values("stride")
-    if sub.empty:
-        return None
-    return sub[["stride","top1"]].set_index("stride")["top1"]
+    if csv.exists():
+        df = pd.read_csv(csv)
+        sub = df[df["coverage"] == coverage].sort_values("stride")
+        if not sub.empty:
+            return sub[["stride","top1"]].set_index("stride")["top1"]
+
+    # trainres fallback: native-resolution fine-tuned checkpoint (e.g. videomamba_autsl_trainres224)
+    native = NATIVE_RES.get(model, 224)
+    csv_tr = BASE / f"{model}_{dataset}_trainres{native}" / "sweep_summary.csv"
+    if csv_tr.exists():
+        df = pd.read_csv(csv_tr)
+        sub = df[df["coverage"] == coverage].sort_values("stride")
+        if not sub.empty:
+            return sub[["stride","top1"]].set_index("stride")["top1"]
+
+    return None
 
 def savefig(fig, name, folder=OUT_MAIN):
     fig.savefig(folder / f"{name}.pdf", bbox_inches="tight")
@@ -106,15 +146,12 @@ def savefig(fig, name, folder=OUT_MAIN):
 print("Generating Fig 1: E1 aliasing curves...")
 fig, axes = plt.subplots(1, 3, figsize=(12, 3.8), sharey=False)
 show_datasets = ["autsl", "ssv2", "ucf101"]
-tds_labels = {"autsl": "AUTSL (TDS#1, +58.3pp)", "ssv2": "SSv2 (TDS#2, +27.6pp)", "ucf101": "UCF-101 (TDS#7, +4.9pp)"}
+tds_labels = {"autsl": "AUTSL (TDS#2, +53.0pp)", "ssv2": "SSv2 (TDS#3, +27.6pp)", "ucf101": "UCF-101 (TDS#8, +4.9pp)"}
 
 for ax, ds in zip(axes, show_datasets):
     for model in MODELS:
         curve = load_stride_curve(model, ds, coverage=100)
         if curve is None:
-            continue
-        # Skip videomamba/autsl (feature collapse)
-        if model == "videomamba" and ds == "autsl":
             continue
         y = [curve.get(s, np.nan) * 100 for s in STRIDES]
         if all(np.isnan(v) for v in y):
@@ -179,7 +216,7 @@ for i in range(len(MODELS)):
             ax.text(j, i, "†", ha="center", va="center", fontsize=9, color="gray")
 
 ax.set_title("Fig 2: Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
-             "† = feature collapse (VideoMamba/AUTSL: K400→sign language domain gap)",
+             "† = feature collapse (s1<5%). VideoMamba/AUTSL uses native-res fine-tuned checkpoint.",
              fontsize=10, pad=10)
 
 # Add family brackets
@@ -198,7 +235,8 @@ plt.close()
 print("Generating Fig 3: TDS ranking and spectral correlation...")
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 3.8))
 
-# Left: TDS ranking bar chart (avg aliasing loss across models)
+# Left: TDS ranking bar chart (avg aliasing loss across models, n=8 all datasets)
+# VideoMamba included for all datasets; feature-collapsed models (s1<5%) excluded
 tds_data = {}
 for ds in DATASETS:
     losses = []
