@@ -342,6 +342,7 @@ page = st.sidebar.radio("Navigation", [
     "🎛 Spatiotemporal Explorer",
     "🌀 Spectral Analysis",
     "⏱ Clip Duration",
+    "⚡ Latency & Efficiency",
     "🎯 Architecture Recommender",
 ])
 
@@ -1524,6 +1525,236 @@ elif page == "🎛 Spatiotemporal Explorer":
 
 
 # =============================================================================
+# ⚡ LATENCY & EFFICIENCY
+# =============================================================================
+elif page == "⚡ Latency & Efficiency":
+    st.title("⚡ Latency & Efficiency")
+    st.caption(
+        "Accuracy vs. **measured** inference latency across all 8 architectures × 5 resolutions. "
+        "All timings are real CUDA-event measurements (batch=1, 100 iterations) on the RTX PRO 6000 Blackwell. "
+        "Apply a hardware multiplier to estimate latency on your deployment target."
+    )
+
+    # ── Load real latency data ────────────────────────────────────────────────
+    @st.cache_data
+    def load_latency_data():
+        f = DATA / "latency_by_resolution.csv"
+        if not f.exists():
+            return pd.DataFrame()
+        return pd.read_csv(f)
+
+    df_lat_raw = load_latency_data()
+
+    HW_PRESETS = {
+        "RTX PRO 6000 Blackwell (measured)": 1.0,
+        "RTX 4090": 1.5,
+        "RTX 3090 / 3080": 2.4,
+        "RTX 2080 Ti": 3.8,
+        "Jetson AGX Orin (edge)": 10.0,
+        "Jetson Nano (edge)": 50.0,
+        "Custom…": None,
+    }
+
+    # ── Sidebar controls ──────────────────────────────────────────────────────
+    st.sidebar.subheader("Deployment target")
+    hw_choice = st.sidebar.selectbox("Hardware", list(HW_PRESETS.keys()), index=0)
+    if HW_PRESETS[hw_choice] is None:
+        hw_factor = st.sidebar.number_input(
+            "Slowdown vs. RTX PRO 6000 (×)", min_value=0.1, max_value=500.0,
+            value=10.0, step=0.5,
+            help="How many times slower is your target device compared to the RTX PRO 6000 Blackwell."
+        )
+    else:
+        hw_factor = HW_PRESETS[hw_choice]
+
+    st.sidebar.subheader("Evaluation setting")
+    lat_ds  = st.sidebar.selectbox("Dataset", DS_KEYS, format_func=lambda x: DS_LABELS[x], index=0)
+    lat_cov = st.sidebar.select_slider("Coverage (%)", [10, 25, 50, 75, 100], value=100)
+    lat_str = st.sidebar.select_slider("Stride", [1, 2, 4, 8, 16], value=1)
+    lat_res = st.sidebar.select_slider("Eval resolution (px)", [48, 96, 112, 160, 224], value=224)
+
+    if df_lat_raw.empty:
+        st.error("Latency data not found (`dashboard/data/latency_by_resolution.csv`). "
+                 "Run `scripts/accv2026/benchmark_latency_by_resolution.py` to generate it.")
+    else:
+        # ── Build per-model (latency, accuracy) pairs ─────────────────────────
+        rows = []
+        for mk in MODEL_KEYS:
+            # Look up real measured latency at selected resolution
+            hit = df_lat_raw[(df_lat_raw.model == mk) & (df_lat_raw.resolution == lat_res)]
+            if hit.empty or pd.isna(hit["mean_ms"].values[0]):
+                continue
+            lat_ms = hit["mean_ms"].values[0] * hw_factor
+            lat_std = hit["std_ms"].values[0] * hw_factor
+
+            # Accuracy: df_sw first (native-res temporal sweep), then df_comb (multi-res)
+            acc = np.nan
+            sw_hit = df_sw[
+                (df_sw.model == mk) & (df_sw.dataset == lat_ds) &
+                (df_sw.coverage == lat_cov) & (df_sw.stride == lat_str)
+            ]
+            if not sw_hit.empty:
+                acc = sw_hit["acc"].values[0]
+            else:
+                comb_hit = df_comb[
+                    (df_comb.model == mk) & (df_comb.dataset == lat_ds) &
+                    (df_comb.coverage == lat_cov) & (df_comb.stride == lat_str) &
+                    (df_comb.res == lat_res)
+                ]
+                if not comb_hit.empty:
+                    acc = comb_hit["acc"].values[0]
+
+            rows.append({
+                "model":      mk,
+                "name":       MODEL_NAMES[mk],
+                "family":     FAMILIES[mk],
+                "latency_ms": lat_ms,
+                "std_ms":     lat_std,
+                "acc":        acc,
+                "eff":        acc / lat_ms if not np.isnan(acc) else np.nan,
+            })
+
+        df_lat = pd.DataFrame(rows).dropna(subset=["acc"])
+
+        if df_lat.empty:
+            st.warning("No accuracy data for this dataset / stride / coverage combination.")
+        else:
+            # ── Pareto frontier ───────────────────────────────────────────────
+            df_lat = df_lat.sort_values("latency_ms").reset_index(drop=True)
+            best_so_far = -np.inf
+            pareto = []
+            for _, r in df_lat.iterrows():
+                if r["acc"] > best_so_far:
+                    pareto.append(True)
+                    best_so_far = r["acc"]
+                else:
+                    pareto.append(False)
+            df_lat["pareto"] = pareto
+
+            # ── Target latency budget slider ──────────────────────────────────
+            max_lat = float(df_lat["latency_ms"].max())
+            target_ms = st.slider(
+                "Max latency budget (ms)",
+                min_value=1.0, max_value=max(max_lat * 1.5, 200.0),
+                value=float(min(max_lat, 100.0)), step=1.0,
+                format="%.0f ms",
+            )
+
+            # ── Pareto scatter ────────────────────────────────────────────────
+            fig = go.Figure()
+            for fam, grp in df_lat.groupby("family"):
+                color = FAM_COLOR.get(fam, "#888")
+                fig.add_trace(go.Scatter(
+                    x=grp["latency_ms"], y=grp["acc"],
+                    error_x=dict(type="data", array=grp["std_ms"].tolist(), visible=True, color=color, thickness=1.5),
+                    mode="markers+text",
+                    name=fam,
+                    text=grp["name"],
+                    textposition="top center",
+                    textfont=dict(size=11),
+                    marker=dict(
+                        size=grp["pareto"].map({True: 18, False: 11}),
+                        color=color,
+                        symbol=grp["pareto"].map({True: "star", False: "circle"}),
+                        line=dict(width=1, color="white"),
+                    ),
+                    customdata=grp[["name","latency_ms","std_ms","acc","eff"]].values,
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b><br>"
+                        "Latency: %{customdata[1]:.2f} ± %{customdata[2]:.2f} ms<br>"
+                        "Accuracy: %{customdata[3]:.1f}%<br>"
+                        "Efficiency: %{customdata[4]:.2f} acc/ms<extra></extra>"
+                    ),
+                ))
+
+            pareto_pts = df_lat[df_lat["pareto"]].sort_values("latency_ms")
+            if len(pareto_pts) > 1:
+                fig.add_trace(go.Scatter(
+                    x=pareto_pts["latency_ms"], y=pareto_pts["acc"],
+                    mode="lines", name="Pareto frontier",
+                    line=dict(color="#f39c12", width=2, dash="dot"),
+                    showlegend=True,
+                ))
+
+            fig.add_vline(
+                x=target_ms, line_color="#e74c3c", line_dash="dash", line_width=2,
+                annotation_text=f"Budget: {target_ms:.0f} ms",
+                annotation_position="top right",
+                annotation_font_color="#e74c3c",
+            )
+
+            fig.update_layout(
+                xaxis_title=f"Measured latency (ms/clip) × {hw_factor:.1f} [{hw_choice}]",
+                yaxis_title=f"Top-1 accuracy (%) — {DS_LABELS[lat_ds]}, cov={lat_cov}%, stride={lat_str}",
+                xaxis_type="log",
+                xaxis=dict(gridcolor="#333"),
+                yaxis=dict(gridcolor="#333"),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
+                height=500,
+                margin=dict(t=60),
+                plot_bgcolor="#111", paper_bgcolor="#111",
+                font_color="white",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            # ── Efficiency table ──────────────────────────────────────────────
+            st.subheader("Model ranking")
+            df_table = df_lat.sort_values("eff", ascending=False).copy()
+            df_table["Within budget"] = df_table["latency_ms"] <= target_ms
+            df_table["Pareto"] = df_table["pareto"].map({True: "★", False: ""})
+            df_table["Latency (ms)"] = df_table.apply(
+                lambda r: f"{r['latency_ms']:.2f} ± {r['std_ms']:.2f}", axis=1)
+            df_table["Accuracy (%)"] = df_table["acc"].map("{:.1f}".format)
+            df_table["Efficiency (acc/ms)"] = df_table["eff"].map("{:.2f}".format)
+            st.dataframe(
+                df_table[["name","family","Latency (ms)","Accuracy (%)","Efficiency (acc/ms)","Within budget","Pareto"]]
+                .rename(columns={"name":"Model","family":"Family"}),
+                hide_index=True, use_container_width=True,
+            )
+
+            # ── Key insight boxes ─────────────────────────────────────────────
+            within = df_lat[df_lat["latency_ms"] <= target_ms]
+            if within.empty:
+                st.warning(f"No model fits within {target_ms:.0f} ms at {lat_res}px on {hw_choice}. "
+                           "Try lowering resolution or using a faster GPU.")
+            else:
+                best     = within.loc[within["acc"].idxmax()]
+                efficient = within.loc[within["eff"].idxmax()]
+                c1, c2 = st.columns(2)
+                c1.info(f"**Best accuracy within budget**  \n"
+                        f"{MODEL_NAMES[best['model']]} — **{best['acc']:.1f}%** @ {best['latency_ms']:.1f} ms")
+                c2.success(f"**Best efficiency within budget**  \n"
+                           f"{MODEL_NAMES[efficient['model']]} — **{efficient['eff']:.2f} acc/ms**")
+
+            # ── Raw latency table (all resolutions) ───────────────────────────
+            with st.expander("Raw latency measurements (all resolutions, all models)"):
+                tbl = df_lat_raw.copy()
+                tbl["latency"] = tbl.apply(lambda r: f"{r['mean_ms']:.2f} ± {r['std_ms']:.2f} ms", axis=1)
+                tbl["model_name"] = tbl["model"].map(MODEL_NAMES)
+                pivot = tbl.pivot_table(index="model_name", columns="resolution", values="mean_ms", aggfunc="first")
+                pivot.columns = [f"{c}px" for c in pivot.columns]
+                st.dataframe(pivot.round(2), use_container_width=True)
+                st.caption(f"GPU: {df_lat_raw['gpu'].iloc[0]} | batch=1 | {BENCH_ITERS if 'BENCH_ITERS' in dir() else 100} iterations per point")
+
+            with st.expander("Methodology"):
+                st.markdown(f"""
+**Measurement:** CUDA events (start/end), batch size 1, 20 warmup + 100 benchmark iterations per (model, resolution).
+All models loaded from FineGym P3-retrained checkpoints — architecture is identical to production use.
+Script: `scripts/accv2026/benchmark_latency_by_resolution.py`
+
+**Hardware scaling ({hw_choice}: {hw_factor:.1f}×):** throughput ratios are approximate. They depend on
+batch size, CUDA kernel availability, and driver optimisations on the target device. Use as
+order-of-magnitude feasibility estimates, not deployment SLAs.
+
+**VideoMamba resolution sensitivity:** VideoMamba (SSM) shows near-flat latency from 48–160px
+(~10ms) due to its linear O(n) sequence scan, only rising to ~16ms at 224px where patch count
+crosses a hardware threshold. This contrasts with Transformers (O(n²) attention) which scale
+strongly with resolution.
+""")
+
+
+
+# =============================================================================
 # 🎯 ARCHITECTURE RECOMMENDER
 # =============================================================================
 elif page == "🎯 Architecture Recommender":
@@ -1704,10 +1935,10 @@ elif page == "🎯 Architecture Recommender":
             rec_stride, rec_fps_note = 8, "4–8fps sufficient (appearance-dominated)"
 
         labels_short = {k: v.split(" (")[0] for k,v in {
-            "autsl":"AUTSL (Sign Language)","diving48":"Diving-48 (Fine-grained)",
+            "autsl":"AUTSL (Sign Language)","diving48":"Diving-48 (Fine-grained diving)",
             "ssv2":"SSv2 (Causal)","hmdb51":"HMDB-51 (Sports)",
             "driveact":"DriveAct (In-vehicle)","epic_kitchens":"EPIC-Kitchens (Egocentric)",
-            "ucf101":"UCF-101 (Appearance)","finegym":"FineGym (Fine-Grained Gym)"}.items()}
+            "ucf101":"UCF-101 (Appearance)","finegym":"FineGym (Fine-grained sport)"}.items()}
 
         lines = []
         lines.append(f"## Recommendation for: *{prompt_text[:80]}*\n")

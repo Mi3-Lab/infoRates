@@ -1,346 +1,276 @@
-# Contributing New Datasets to InfoRates
+# Contributing to InfoRates
 
-This guide explains how to add new datasets and models to the InfoRates project, following the same workflow used to integrate FineGym.
+Thank you for your interest in extending this benchmark. Contributions of new **datasets** and new **architectures** help build a more complete picture of spatiotemporal aliasing across the video recognition landscape.
 
-## Overview
+This guide walks through the technical workflow. If you have questions at any step, open an issue or email us at the address at the [bottom of this page](#contact).
 
-The InfoRates project evaluates 8 video action recognition architectures across multiple datasets using coverage × stride × resolution sweeps. To contribute a new dataset:
+---
 
-1. **Prepare evaluation data** (Coverage × Stride × Resolution sweep)
-2. **Run the sweep scripts**
-3. **Integrate results into the dashboard**
-4. **Update documentation**
+## Table of Contents
 
-## Project Structure
+- [Contributing a New Dataset](#contributing-a-new-dataset)
+- [Contributing a New Architecture](#contributing-a-new-architecture)
+- [Submitting Your Results](#submitting-your-results)
+- [Contact](#contact)
+
+---
+
+## Contributing a New Dataset
+
+### Overview
+
+Each dataset goes through three stages:
+
+1. **Validation manifest** — a balanced clip list used for all evaluations
+2. **P3-retrained checkpoints** — one fine-tuned model per (architecture, resolution) pair
+3. **Coverage × stride × resolution sweep** — 1,000 evaluation configurations per architecture
+
+The output integrates into the dashboard via three CSV files:
+- `dashboard/data/sweep_summary.csv` — temporal sweep at native resolution
+- `dashboard/data/p3_results.csv` — cross-resolution accuracy (stride=1, cov=100%)
+- `dashboard/data/retrained_spatial.csv` — P3-retrained checkpoint accuracies
+
+---
+
+### Step 1 — Prepare the Validation Manifest
+
+The manifest is a CSV listing the clips used for evaluation. We aim for a **balanced, fixed-size sample per class** so that all datasets are evaluated under the same statistical conditions.
+
+**Target**: up to 20 clips per class, stratified random sampling from the official validation or test split.
 
 ```
-/mnt/datasets/infoRates/
-├── evaluations/accv2026/
-│   ├── manifests/                          # Dataset split files (20 samples per class)
-│   │   └── {dataset}_val_20_per_class.csv
-│   ├── coverage_stride_resolution_sweep/   # Multi-resolution sweeps (NEW datasets)
-│   │   └── {model}_{dataset}/
-│   │       ├── res48px/
-│   │       ├── res96px/
-│   │       ├── res112px/
-│   │       ├── res160px/
-│   │       └── res224px/
-│   ├── p3_retrained/                       # P3-retrained checkpoint evaluations
-│   │   └── {model}_{dataset}/
-│   └── coverage_stride_sweep/              # Legacy sweeps (original 7 datasets)
-├── scripts/accv2026/
-│   ├── sweep_coverage_stride_resolution.py # Single-model sweep script
-│   ├── sweep_all_models_coverage_stride_resolution.py # Batch all models
-│   └── integrate_finegym_to_dashboard.py   # Integration script
-├── dashboard/
-│   ├── app.py                              # Streamlit app
-│   └── data/
-│       ├── sweep_summary.csv               # Aggregated temporal data
-│       ├── p3_results.csv                  # Spatial resolution results
-│       └── retrained_spatial.csv           # P3-retrained checkpoints
-└── fine_tuned_models/                      # Trained checkpoint directory
+evaluations/accv2026/manifests/{dataset_name}_val.csv
 ```
 
-## Step-by-Step: Adding a New Dataset
+Columns:
 
-### Step 1: Prepare the Dataset Manifest
+| Column | Type | Description |
+|--------|------|-------------|
+| `video_path` | str | Absolute or relative path to the video file |
+| `label` | str | Class name (use the dataset's original naming) |
+| `dataset` | str | Dataset key (lowercase, underscores, e.g. `my_dataset`) |
 
-Create a validation split file with 20 samples per class (stratified random sampling):
-
-```bash
-# File: evaluations/accv2026/manifests/{new_dataset}_val_20_per_class.csv
-# Columns: video_path, label, dataset
-# Example:
-# path/to/video_001.mp4,action_label,new_dataset
-# path/to/video_002.mp4,action_label,new_dataset
+Example rows:
+```
+/data/videos/my_dataset/class_a/clip_001.mp4,class_a,my_dataset
+/data/videos/my_dataset/class_b/clip_047.mp4,class_b,my_dataset
 ```
 
-The manifest should contain exactly 20 clips per action class for consistent evaluation.
+**What if a class has fewer than 20 clips?** Use all available clips for that class. The minimum we recommend is 5 clips per class; classes below this threshold should be excluded from evaluation to avoid high-variance accuracy estimates. Document any such exclusions in your submission.
 
-### Step 2: Train P3-Retrained Checkpoints
+**What if the dataset has no official validation split?** Apply a stratified 80/20 train-validation split at the video level (not the clip level if videos have multiple clips). Use a fixed random seed (we use `seed=42`).
 
-For each model and resolution (48px, 96px, 112px, 160px, 224px), fine-tune the base checkpoint:
+---
 
-```python
-# Model configurations (frames, native resolution, checkpoint suffix):
-MODEL_CFG = {
-    "r3d_18":       dict(frames=16, resize=112, ckpt_suffix="a100"),
-    "mc3_18":       dict(frames=16, resize=112, ckpt_suffix="a100"),
-    "r2plus1d_18":  dict(frames=16, resize=112, ckpt_suffix="a100"),
-    "slowfast_r50": dict(frames=32, resize=224, ckpt_suffix="a100"),
-    "timesformer":  dict(frames=8,  resize=224, ckpt_suffix="h200"),
-    "vivit":        dict(frames=32, resize=224, ckpt_suffix="h200"),
-    "videomae":     dict(frames=16, resize=224, ckpt_suffix="h200"),
-    "videomamba":   dict(frames=8,  resize=224, ckpt_suffix="h200"),
-}
+### Step 2 — Fine-Tune P3-Retrained Checkpoints
+
+For each of the 8 architectures, fine-tune from the pretrained checkpoint at each target spatial resolution (48, 96, 112, 160, 224 px) for 10 epochs. This is referred to as **P3 retraining** in the paper.
+
+Architecture configurations used in this project:
+
+| Model | Frames | Native Res | Notes |
+|-------|-------:|----------:|-------|
+| R3D-18 | 16 | 112 px | |
+| MC3-18 | 16 | 112 px | |
+| R2+1D | 16 | 112 px | |
+| SlowFast-R50 | 32 | 224 px | Slow + Fast pathway |
+| TimeSformer | 8 | 224 px | Divided space-time attention |
+| ViViT | 32 | 224 px | Factorised encoder |
+| VideoMAE | 16 | 224 px | Masked autoencoder pretraining |
+| VideoMamba | 8 | 224 px | Bidirectional SSM |
+
+**Important for Transformers and SSMs**: when loading a checkpoint at a resolution that differs from its pretraining resolution, positional embeddings must be bicubic-interpolated before fine-tuning. Passing `ignore_mismatched_sizes=True` in HuggingFace silently discards the positional embeddings, causing a large accuracy drop. The correct implementation is in `src/info_rates/models/model_factory.py`.
+
+Checkpoint naming convention:
 ```
-
-Trained checkpoints must follow the naming pattern:
-```
-accv2026_{model}_{dataset}_{resolution}px_e10_{suffix}
+accv2026_{model}_{dataset}_{resolution}px_e10_{gpu_suffix}
 ```
 
 Example:
 ```
-accv2026_r3d_18_new_dataset_48px_e10_a100/
-accv2026_r3d_18_new_dataset_96px_e10_a100/
-accv2026_r3d_18_new_dataset_112px_e10_a100/
-accv2026_r3d_18_new_dataset_160px_e10_a100/
-accv2026_r3d_18_new_dataset_224px_e10_a100/
+accv2026_timesformer_my_dataset_48px_e10_h200/
+accv2026_timesformer_my_dataset_96px_e10_h200/
+accv2026_r3d_18_my_dataset_112px_e10_a100/
 ```
 
-**Important**: Use bicubic interpolation for positional embeddings when loading at non-native resolutions (HuggingFace transformers). See `src/info_rates/models/model_factory.py` for implementation details.
+---
 
-### Step 3: Run the Coverage × Stride × Resolution Sweep
+### Step 3 — Run the Evaluation Sweep
 
-Once checkpoints are trained and stored in `/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/`, run the evaluation sweep:
+With checkpoints in place, run the coverage × stride × resolution sweep for each architecture:
 
 ```bash
-# Single model example:
+# Single architecture:
 python scripts/accv2026/sweep_coverage_stride_resolution.py \
-  --model r3d_18 \
-  --dataset new_dataset \
+  --model timesformer \
+  --dataset my_dataset \
+  --manifest evaluations/accv2026/manifests/my_dataset_val.csv \
   --resolutions 48 96 112 160 224 \
-  --batch-size 96 \
+  --batch-size 64 \
   --num-workers 8
 
-# All 8 models (sequential):
+# All 8 architectures (sequential):
 python scripts/accv2026/sweep_all_models_coverage_stride_resolution.py \
-  --dataset new_dataset \
+  --dataset my_dataset \
+  --manifest evaluations/accv2026/manifests/my_dataset_val.csv \
   --resolutions 48 96 112 160 224 \
-  --batch-size 96 \
+  --batch-size 64 \
   --num-workers 8
 ```
 
-Output structure:
+This runs 5 resolutions × 5 coverages × 5 strides = **125 configurations per architecture** (1,000 total for 8 architectures). Expected runtime: 30–60 minutes per architecture on a single A100/H200.
+
+Output layout:
 ```
 evaluations/accv2026/coverage_stride_resolution_sweep/
 └── {model}_{dataset}/
     ├── res48px/
-    │   ├── cov10_s1_samples.csv     # Raw predictions (5 coverages × 5 strides = 25 configs)
-    │   ├── cov10_s1_summary.csv
-    │   ├── cov10_s2_samples.csv
-    │   ...
-    │   └── sweep_summary.csv        # Aggregated for this resolution
+    │   ├── sweep_summary.csv        # 25 rows: 5 cov × 5 stride
+    │   └── cov{C}_s{S}_summary.csv  # per-config detailed results
     ├── res96px/
-    └── ...
-    └── sweep_summary_all_resolutions.csv  # All 1000 configs (5 res × 5 cov × 5 stride × 8 models)
+    ├── res112px/
+    ├── res160px/
+    └── res224px/
 ```
 
-**Output CSVs contain:**
-- `resolution`: spatial resolution (48, 96, 112, 160, 224)
-- `coverage`: percentage of frames observed (10, 25, 50, 75, 100)
-- `stride`: frame sampling interval (1, 2, 4, 8, 16)
-- `top1`: accuracy (decimal, 0–1)
-- `n`: number of evaluation samples
-- `model`: model name
-- `dataset`: dataset name
+Each `sweep_summary.csv` has columns: `resolution, coverage, stride, top1, n, model, dataset`.
 
-### Step 4: Evaluate P3-Retrained Checkpoints at Native Resolution
+---
 
-Extract single-point accuracy (stride=1, coverage=100%) for each model-dataset-resolution combination:
+### Step 4 — Evaluate P3-Retrained Checkpoints (Spatial Only)
+
+This extracts the single-point accuracy at stride=1, coverage=100% for each (architecture, resolution) pair, which populates the spatial resolution analysis in the dashboard:
 
 ```bash
-python scripts/accv2026/eval_p3_retrained.py --dataset new_dataset
+python scripts/accv2026/eval_p3_retrained.py --dataset my_dataset
 ```
 
-This creates `evaluations/accv2026/p3_retrained/{model}_{dataset}/res{N}_*_summary.csv` files.
+Output: `evaluations/accv2026/p3_retrained/{model}_{dataset}/res{N}_*_summary.csv`
 
-### Step 5: Integrate into Dashboard
+---
 
-Update the app to recognize the new dataset:
+### Step 5 — Integrate into the Dashboard
 
-#### 5a. Add dataset to constants (`dashboard/app.py`):
+#### 5a. Register the dataset in `dashboard/app.py`
 
 ```python
-# Line ~37
-DS_KEYS = ["autsl", "diving48", "ssv2", "hmdb51", "driveact", "epic_kitchens", 
-           "ucf101", "finegym", "new_dataset"]
+# Add to DS_KEYS list (~line 37):
+DS_KEYS = [..., "my_dataset"]
 
+# Add to DS_LABELS dict (~line 38):
 DS_LABELS = {
-    ...existing datasets...
-    "new_dataset": "New Dataset (Domain Description)",
+    ...,
+    "my_dataset": "My Dataset (Domain Description)",
 }
 ```
 
-#### 5b. Run the integration script:
+#### 5b. Run the integration script
+
+Copy `scripts/accv2026/integrate_finegym_to_dashboard.py` and adapt the `dataset_name` variable and source paths for your dataset. Then run:
 
 ```bash
-python scripts/accv2026/integrate_finegym_to_dashboard.py
+python scripts/accv2026/integrate_my_dataset_to_dashboard.py
 ```
 
-**Adapt the script for your dataset:**
-- Update `dataset_name` variable
-- Ensure paths match your data structure
-- Verify CSV columns: `resolution, coverage, stride, top1, n, model, dataset`
+The script appends to the three dashboard CSVs without touching existing entries.
 
-The script updates:
-- `dashboard/data/sweep_summary.csv` (temporal sweep @ native resolution)
-- `dashboard/data/p3_results.csv` (spatial resolution evaluation)
-- `dashboard/data/retrained_spatial.csv` (P3-retrained checkpoint results)
-
-#### 5c. Verify integration:
+#### 5c. Verify
 
 ```python
 import pandas as pd
-df = pd.read_csv('dashboard/data/sweep_summary.csv')
-print(f"Datasets: {sorted(df['dataset'].unique())}")
-print(f"New dataset rows: {len(df[df['dataset']=='new_dataset'])}")
+
+df = pd.read_csv("dashboard/data/sweep_summary.csv")
+assert "my_dataset" in df["dataset"].unique(), "Dataset not found in sweep_summary.csv"
+assert len(df[df["dataset"] == "my_dataset"]) == 200, \
+    "Expected 200 rows (8 models × 5 coverage × 5 stride at native resolution)"
+
+df_p3 = pd.read_csv("dashboard/data/p3_results.csv")
+assert "my_dataset" in df_p3["dataset"].unique()
+
+print("Integration verified.")
 ```
 
-Expected: 200 rows (8 models × 5 coverage × 5 stride at native resolution)
+#### 5d. Update the eval config count in `dashboard/app.py`
 
-### Step 6: Update App Display Numbers
+Find the metric line and increment the dataset count accordingly. The formula is:
 
-Update statistics in `dashboard/app.py`:
-
-```python
-# Line ~363
-c3.metric("Eval configs", "8,000+", "8 models × 8 datasets × res × cov × stride")
+```
+N_configs = num_datasets × 8 models × 5 resolutions × 5 coverages × 5 strides
 ```
 
-Recalculate as: `(num_datasets × 8 models × 5 res × 5 cov × 5 stride)`
-
-### Step 7: Test the Dashboard
-
-Restart Streamlit and verify:
+#### 5e. Smoke-test the dashboard
 
 ```bash
-pkill -9 streamlit
-cd /mnt/datasets/infoRates/dashboard
-streamlit run app.py --server.address 0.0.0.0 --server.port 8501
+streamlit run dashboard/app.py
 ```
 
-Check:
-1. **Overview & TDS**: New dataset appears in table with TDS score
-2. **Accuracy Explorer**: Select new dataset, vary stride/coverage → results appear
-3. **Spatial Resolution**: Compare retrained vs native models
-4. **Aliasing Curves**: Stride degradation patterns visible
-5. **Architecture Recommender**: New dataset in keyword matching
+Verify: (1) dataset appears in the Overview TDS chart, (2) the Accuracy Explorer shows results when your dataset is selected with non-default stride/coverage settings, (3) Spatial Resolution curves are populated.
 
-## Key Implementation Details
+---
 
-### Positional Embedding Interpolation
+## Contributing a New Architecture
 
-When evaluating transformers at non-native resolutions, use bicubic interpolation:
+Adding a new model requires three things: a loader in `model_factory.py`, a sweep run, and dashboard registration.
 
+### Step 1 — Add the Model Loader
+
+Implement a loader in `src/info_rates/models/model_factory.py` that:
+- Accepts `(model_name, num_classes, resolution, pretrained=True)` as arguments
+- Returns a `torch.nn.Module` ready for `model.eval()`
+- Handles positional embedding interpolation if the model uses patch-based attention (see `_interp_pos_embed` in that file for reference)
+
+### Step 2 — Register in Constants
+
+In `dashboard/app.py`, add to:
 ```python
-# In model_factory.py
-def _interp_pos_embed(model, native_size: int, target_size: int) -> None:
-    """Bicubic-interpolate spatial positional embeddings in-place."""
-    patch_size = 16
-    H_nat = native_size // patch_size
-    H_tgt = target_size // patch_size
-    
-    for pname, param in model.named_parameters():
-        if "position_embed" in pname.lower():
-            # Reshape, interpolate, reshape back
-            grid = param.data.reshape(1, H_nat, H_nat, D).permute(0, 3, 1, 2)
-            grid = F.interpolate(grid, size=(H_tgt, H_tgt), mode="bicubic")
-            # ... update parameter
+MODEL_KEYS  = [..., "my_model"]
+MODEL_NAMES = {..., "my_model": "My Model"}
+FAMILIES    = {..., "my_model": "Transformer"}   # CNN | Dual-CNN | Transformer | SSM | Other
+FAM_COLOR   = {...}  # add a color if introducing a new family
 ```
 
-### Checkpoint Loading Priority
+### Step 3 — Run the Sweep Across All Existing Datasets
 
-The sweep script searches for checkpoints in this order:
+Run the full sweep for your model against all datasets currently in the benchmark. The sweep script accepts `--model my_model` directly once the loader is registered.
 
-1. **P3-retrained @ exact resolution**: `accv2026_{model}_{dataset}_{resolution}px_e10_{suffix}`
-2. **Special hardcoded names** (SSv2, FineGym)
-3. **Native resolution fallback**: `accv2026_{model}_{dataset}_224px_e10_{suffix}`
-
-### Data Aggregation Formula
-
-- **Temporal sweep** (sweep_summary.csv): native resolution only
-  - 7 original datasets: `7 × 8 models × 5 coverage × 5 stride = 1,400 rows`
-  - Per new dataset: `1 × 8 models × 5 coverage × 5 stride = 200 rows`
-
-- **Multi-resolution sweep** (coverage_stride_resolution_sweep/):
-  - Per new dataset: `8 models × 5 resolution × 5 coverage × 5 stride = 1,000 rows`
-
-- **Total configs**: `(num_datasets × 8 × 5 × 5 × 5)`
-
-## Troubleshooting
-
-### Missing checkpoint error in sweep script
-
-```
-FileNotFoundError: Checkpoint not found for {model}/{dataset}@{resolution}px
+```bash
+for dataset in autsl ssv2 hmdb51 diving48 driveact epic_kitchens ucf101 finegym; do
+  python scripts/accv2026/sweep_coverage_stride_resolution.py \
+    --model my_model --dataset $dataset \
+    --resolutions 48 96 112 160 224
+done
 ```
 
-**Solution**: Verify checkpoint exists at:
-```
-/scratch/wesleyferreiramaia/infoRates/fine_tuned_models/
-  accv2026_{model}_{dataset}_{resolution}px_e10_{suffix}/
-```
+### Step 4 — Integrate and Verify
 
-### CSV column mismatch
+Same as Steps 4–5 in the dataset workflow: run the integration script (adding a `model` filter rather than `dataset`), verify row counts, and smoke-test the dashboard.
 
-Ensure sweep output CSVs have exactly these columns (order matters):
-```
-resolution, coverage, stride, top1, n, model, dataset
-```
+---
 
-### Dashboard doesn't show new dataset
+## Submitting Your Results
 
-1. Run `integrate_finegym_to_dashboard.py` (or equivalent)
-2. Check `dashboard/data/sweep_summary.csv` contains dataset name
-3. Restart Streamlit (`pkill -9 streamlit`)
-4. Clear browser cache (Ctrl+Shift+Delete)
+Once your contribution is ready:
 
-## Performance Benchmarks
+1. **Open a pull request** to this repository with:
+   - The validation manifest (`evaluations/accv2026/manifests/`)
+   - Updated `dashboard/data/` CSVs (sweep_summary, p3_results, retrained_spatial)
+   - Any changes to `dashboard/app.py` (DS_KEYS, DS_LABELS, MODEL_KEYS, etc.)
+   - Your integration script under `scripts/accv2026/`
 
-- **Single model sweep** (1 dataset × 5 res × 5 cov × 5 stride):
-  - Time: ~30-60 minutes (RTX 6000 Blackwell)
-  - Memory: 84GB VRAM
-  
-- **All 8 models** (sequential):
-  - Time: ~4-8 hours
-  - Batch size: 96 (adjust for your GPU)
+2. **Include in the PR description**:
+   - Dataset or model name and a one-sentence description
+   - Number of classes, approximate number of evaluation clips
+   - TDS score and a brief interpretation (what drives temporal demand in this domain?)
+   - Any deviations from the standard protocol (e.g., fewer clips per class, custom split)
+   - Hardware used and approximate runtime
 
-- **Integration script**:
-  - Time: <5 minutes
-  - Reads from disk, no GPU required
+3. **If you cannot open a pull request** (e.g., the dataset is under a restricted license and results cannot be published directly), contact us by email with your result CSVs and we will integrate them manually.
 
-## Contributing Back
+---
 
-Once your dataset evaluation is complete:
+## Contact
 
-1. Create a pull request with:
-   - New manifest file
-   - Updated `dashboard/app.py` (DS_KEYS, DS_LABELS)
-   - Integration script results (updated CSVs)
-   - Brief dataset description (domain, class count, typical accuracy range)
+**Wesley Maia** — Mi3 Lab, UC Merced
+wesleymaia999@gmail.com
 
-2. Include in PR description:
-   - Dataset characteristics (# classes, # videos, action categories)
-   - Temporal demand score (TDS) interpretation
-   - Any dataset-specific findings (e.g., resolution sensitivity)
-
-3. Example PR template:
-   ```
-   ## Dataset: New Dataset
-   
-   - **Domain**: [Sport/Gesture/Egocentric/etc]
-   - **Classes**: [N]
-   - **Videos**: [M]
-   - **TDS Score**: [X.X]pp (coverage=100%, stride=1→16 drop)
-   - **Key Finding**: [Observation about temporal aliasing sensitivity]
-   
-   Evaluation complete: 8,000 configs (8 models × 5 res × 5 cov × 5 stride)
-   ```
-
-## References
-
-- **Main sweep script**: `scripts/accv2026/sweep_coverage_stride_resolution.py`
-- **Batch runner**: `scripts/accv2026/sweep_all_models_coverage_stride_resolution.py`
-- **Integration**: `scripts/accv2026/integrate_finegym_to_dashboard.py`
-- **Dashboard app**: `dashboard/app.py`
-- **Model loading**: `src/info_rates/models/model_factory.py`
-
-## Questions?
-
-For questions about the workflow, refer to:
-1. This guide (step-by-step instructions)
-2. Script docstrings (function signatures and parameters)
-3. Git commit history (`git log --oneline --grep="FineGym"`)
-4. Recent PRs adding datasets to the project
+For questions about the evaluation protocol, sweep scripts, or integration workflow, open a GitHub issue or reach out by email. We are happy to assist with datasets that require non-standard handling (restricted licenses, unusual class distributions, non-standard video formats).

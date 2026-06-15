@@ -78,16 +78,16 @@ Temporal aliasing differs dramatically by attention mechanism, not by CNN vs. Tr
 
 Evaluated via P3-retraining: each model is fine-tuned at a target resolution (10 epochs) and then evaluated at that same resolution. Without retraining, transformers degrade severely at non-native sizes; with retraining, the gap narrows but does not close.
 
-| Family | Eval@48px | Eval@112px | Eval@224px |
+| Family | Eval@96px | Eval@112px | Eval@224px |
 |--------|----------:|-----------:|-----------:|
 | **Cross-resolution (no retraining)** | | | |
-| CNN | 54.8% | 59.7% | 33.6% |
-| Transformer | 23.7% | 58.8% | 63.7% |
-| SSM | 29.1% | 40.0% | 49.2% |
+| CNN | 58.0% | 59.7% | 33.6% |
+| Transformer | 57.7% | 58.8% | 63.7% |
+| SSM | 37.7% | 40.0% | 49.2% |
 | **P3-retrained at target resolution** | | | |
-| CNN | 49.3% | 67.7% | 69.2% |
-| Transformer | 36.6% | 60.3% | 71.4% |
-| SSM | 31.5% | 45.1% | 59.7% |
+| CNN | 64.9% | 67.7% | 69.2% |
+| Transformer | 56.3% | 60.3% | 71.4% |
+| SSM | 41.2% | 45.1% | 59.7% |
 
 CNNs transfer reasonably across resolutions (trained at 112px, still 54.8% at 48px). Transformers are resolution-sensitive without bicubic positional embedding interpolation.
 
@@ -201,11 +201,15 @@ streamlit run app.py --server.address 0.0.0.0 --server.port 8501
 
 ## Contributing
 
-To add a new dataset, see [CONTRIBUTING_NEW_DATASETS.md](CONTRIBUTING_NEW_DATASETS.md). The workflow covers:
-1. Preparing a 20-clip-per-class validation manifest
-2. Training P3-retrained checkpoints at 5 resolutions (≈4–8 hours, all 8 models)
-3. Running the coverage × stride × resolution sweep
-4. Running the integration script to update dashboard CSVs
+We welcome contributions of new **datasets** and new **architectures**. See [CONTRIBUTING_NEW_DATASETS.md](CONTRIBUTING_NEW_DATASETS.md) for the full workflow, including:
+
+- How to prepare a validation manifest (and what to do when a class has fewer than the target number of clips)
+- P3 retraining protocol and checkpoint naming conventions
+- Running the coverage × stride × resolution sweep (~1,000 configs per architecture)
+- Integrating results into the dashboard CSVs
+- Adding a new model architecture end-to-end
+
+To submit results, open a pull request or contact us at **wesleymaia999@gmail.com**.
 
 ---
 
