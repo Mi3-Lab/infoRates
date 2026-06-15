@@ -103,19 +103,24 @@ def make_input(b: str, model_name: str, res: int, device: str):
 
 
 def measure(model, inputs: dict, device: str) -> tuple[float, float]:
-    """Return (mean_ms, std_ms) over BENCH_ITERS forward passes."""
+    """Return (mean_ms, std_ms) over BENCH_ITERS forward passes.
+
+    All models run under bfloat16 autocast for a fair comparison.
+    VideoMamba already forces bf16 internally; applying the context to others
+    brings them to the same precision so numbers are directly comparable.
+    """
     start_evt = torch.cuda.Event(enable_timing=True)
     end_evt   = torch.cuda.Event(enable_timing=True)
 
     # Warmup
-    with torch.no_grad():
+    with torch.no_grad(), torch.amp.autocast("cuda", dtype=torch.bfloat16):
         for _ in range(WARMUP_ITERS):
             model(**inputs)
     torch.cuda.synchronize()
 
     # Benchmark
     times = []
-    with torch.no_grad():
+    with torch.no_grad(), torch.amp.autocast("cuda", dtype=torch.bfloat16):
         for _ in range(BENCH_ITERS):
             start_evt.record()
             model(**inputs)
