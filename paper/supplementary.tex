@@ -33,7 +33,7 @@
 \renewcommand\thetable{S\arabic{table}}
 \setcounter{figure}{0} \setcounter{table}{0}
 
-This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) interactive dashboard and code availability; (S11) \TDS{} ranking robustness: leave-one-architecture-out, architecture-family ablation (CNN-only, Transformer-only, Transformer+SSM pools), and bootstrap confidence intervals; and (S12) a direct spectral test of the Nyquist framing across 7 datasets $\times$ 5 resolutions.
+This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) interactive dashboard and code availability; (S11) \TDS{} ranking robustness: leave-one-architecture-out, architecture-family ablation (CNN-only, Transformer-only, Transformer+SSM pools), and bootstrap confidence intervals; and (S12) a direct spectral test of the Nyquist framing across 8 datasets $\times$ 5 resolutions.
 
 % ── S1: Full heatmaps ─────────────────────────────────────────────────────────
 \section{Full Coverage$\times$Stride Heatmaps}
@@ -103,7 +103,7 @@ Row order (coverage): 10\%, 25\%, 50\%, 75\%, 100\%. Column order (stride): 1, 2
 \section{Levene Variance Inflation Analysis}
 \label{sec:sup_levene}
 
-Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 (x-axis) versus stride=16 (y-axis) for all model-dataset pairs. Points above the diagonal indicate that sparse sampling increases inter-class variability. Significant pairs ($p < 0.05$, Bonferroni-corrected) are highlighted in red.
+Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 versus stride=16 for all model-dataset pairs. Points above the diagonal indicate that sparse sampling increases inter-class variability. Significant pairs ($p < 0.05$, Bonferroni-corrected) are highlighted in red.
 
 \begin{figure}[!htbp]
   \centering
@@ -513,12 +513,14 @@ VideoMamba  & 224px & 29.1 & 51.6 & 58.2 & 66.0 & \textbf{73.2} \\
 \paragraph{Interactive visualization dashboard.}
 An anonymized interactive dashboard is included with the supplementary material for review. The public dashboard URL will be released after the review period. The dashboard provides:
 \begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
-\item \textbf{Temporal sweep explorer}: coverage$\times$stride heatmaps per model and
-  dataset, with configurable color scaling and reference stride annotations.
-\item \textbf{Spatial resolution browser}: cross-resolution accuracy curves for all
-  8 models and datasets; target-resolution fine-tuning by architecture family.
-\item \textbf{Architecture recommender (hybrid AI)}: given a target dataset, hardware
-  latency budget, source frame rate, and deployment context, the system performs structured data-driven analysis followed by LLM synthesis (Llama-3.3-70B via Groq), recommending the optimal model--resolution--stride operating point. Budget-constrained and unconstrained deployment paths are handled separately, with Nyquist-guided stride selection.
+\item \textbf{Temporal explorer}: coverage$\times$stride heatmaps per model and
+  dataset, with configurable scaling and stride annotations.
+\item \textbf{Spatial browser}: accuracy curves across resolutions for all
+  8 models and datasets; target resolution tuning by family.
+\item \textbf{Recommender}: given a target dataset, latency budget, frame rate,
+  and deployment context, the system combines structured analysis with LLM synthesis
+  (Llama-3.3-70B via Groq) to recommend a model--resolution--stride operating point.
+  Budget-constrained and unconstrained paths are handled separately.
 \item \textbf{TDS comparison}: rank any subset of the 8 datasets by temporal demand,
   with model-specific breakdowns and Spearman correlation display.
 \item \textbf{Routing simulator}: entropy threshold sweep for any model on any dataset,
@@ -552,7 +554,7 @@ An anonymized interactive dashboard is included with the supplementary material 
 \end{figure}
 
 \paragraph{Code availability.}
-Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline with bicubic positional embedding interpolation), result tables, and the Streamlit dashboard source code are provided as an anonymized supplementary package for review. The public repository will be released after the review period. The package includes:
+Evaluation scripts, model fine-tuning code, result tables, and the Streamlit dashboard source are provided as an anonymized supplementary package for review. This includes the target-resolution pipeline with bicubic positional embedding interpolation. The public repository will be released after review. The package includes:
 \begin{itemize}[leftmargin=*,topsep=2pt,itemsep=1pt]
 \item \texttt{scripts/accv2026/}: all evaluation and retraining scripts
 \item \texttt{src/info\_rates/}: model loading, temporal sweep, entropy routing
@@ -592,7 +594,7 @@ For 7 of 8 leave-one-out pools, the ranking is \emph{exactly} identical to the f
 \subsection{Architecture-Family Ablation}
 \label{sec:sup_family_ablation}
 
-Leave-one-out removes a single architecture at a time; a stronger test is to remove an entire architectural family. We recompute \TDS{} for all 8 datasets under three restricted pools: \textbf{CNN-only} ($n{=}4$: R3D-18, MC3-18, R2+1D, SlowFast), \textbf{Transformer-only} ($n{=}3$: TimeSformer, ViViT, VideoMAE), and \textbf{Transformer+SSM} ($n{=}4$: adding VideoMamba). Table~\ref{tab:family_ablation} reports \TDS{} under each pool and the Spearman $\rho$ against the full 8-architecture ranking.
+Leave-one-out removes a single architecture at a time; a stronger test removes an entire family. We recompute \TDS{} under three restricted pools: \textbf{CNN-only} ($n{=}4$: R3D-18, MC3-18, R2+1D, SlowFast), \textbf{Transformer-only} ($n{=}3$: TimeSformer, ViViT, VideoMAE), and \textbf{Transformer+SSM} ($n{=}4$: adding VideoMamba). Table~\ref{tab:family_ablation} reports \TDS{} under each pool and Spearman $\rho$ against the full ranking.
 
 \begin{table}[!htbp]
 \centering
@@ -655,7 +657,7 @@ We additionally bootstrap the FineGym$-$AUTSL gap directly (same resampling proc
 
 The main paper's Nyquist--Shannon framing (Sec.~\ref{sec:intro}) is conceptual: we characterize aliasing through accuracy degradation under controlled stride and coverage sweeps rather than by directly measuring action-frequency spectra. Here we report a direct test, intended to give the most literal version of the Nyquist criterion that our evaluation infrastructure supports without retraining any model.
 
-\paragraph{Methodology.} For each of 7 datasets (FineGym's source videos were not accessible at analysis time) and 5 resolutions (48, 96, 112, 160, 224\,px), we sample up to 12 classes $\times$ 2 videos, decode up to 64 \emph{consecutive} frames at native frame order (not resampled across the whole clip), resize to the target resolution, and compute the inter-frame optical-flow magnitude (Farneback) as a temporal signal sampled at 1 sample/original-frame---the same unit our coverage/stride sweep uses (stride=$k$ keeps every $k$-th original frame). We estimate each signal's spectral cutoff frequency $f_c$ (frequency below which 90\% of periodogram power lies, cycles/frame) and average over sampled videos to obtain one $f_c$ per (dataset, resolution) pair. We pair each $f_c$ with the empirical stride-sensitivity (mean accuracy drop from stride=1 to stride=16 at coverage=100\%, averaged over the 8 architectures, excluding feature-collapsed models) \emph{at that same resolution}, read directly from the existing coverage$\times$stride$\times$resolution sweep (no additional training or inference). This yields $7\times5=35$ (dataset, resolution) points.
+\paragraph{Methodology.} For each of 8 datasets and 5 resolutions (48, 96, 112, 160, 224\,px), we sample up to 12 classes $\times$ 2 videos. We decode up to 64 \emph{consecutive} frames in native order, resize to the target resolution, and compute inter-frame optical-flow magnitude (Farneback) as a temporal signal sampled once per original frame. We estimate each signal's spectral cutoff frequency $f_c$ (90\% cumulative periodogram power, cycles/frame) and average over sampled videos to obtain one $f_c$ per (dataset, resolution) pair. We pair each $f_c$ with empirical stride-sensitivity at the same resolution: mean accuracy drop from stride=1 to stride=16 at coverage=100\%, averaged over 8 architectures and read from the existing sweep. This yields $8\times5=40$ (dataset, resolution) points.
 
 \begin{table}[!htbp]
 \centering
@@ -666,6 +668,7 @@ The main paper's Nyquist--Shannon framing (Sec.~\ref{sec:intro}) is conceptual: 
 \toprule
 Dataset & Mean $f_c$ (cyc/frame) & Mean stride-sensitivity (pp) \\
 \midrule
+FineGym       & 0.208 & 46.30 \\
 AUTSL         & 0.121 & 45.61 \\
 SSv2          & 0.339 & 25.70 \\
 DriveAct      & 0.192 & 18.65 \\
@@ -677,9 +680,9 @@ UCF-101       & 0.387 &  5.45 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Result.} Pooling across all 35 (dataset, resolution) points, $f_c$ is significantly \emph{negatively} correlated with stride-sensitivity (Spearman $\rho=-0.549$, $p=0.0006$, $n=35$)---the opposite sign from the naive Nyquist prediction that higher temporal-frequency content should require denser sampling (and thus show higher measured stride-sensitivity). The per-resolution across-dataset trend is consistent in sign at every resolution tested (e.g.\ $\rho=-0.679$, $p=0.094$ at both 160px and 224px, $n=7$ each), and within-dataset across-resolution trends are negative for 6 of 7 datasets (SSv2 is the lone near-zero exception, $\rho=+0.10$).
+\paragraph{Result.} Pooling across all 40 (dataset, resolution) points, $f_c$ is significantly \emph{negatively} correlated with stride-sensitivity (Spearman $\rho=-0.518$, permutation $p=0.00068$, $n=40$)---the opposite sign from the naive Nyquist prediction that higher temporal-frequency content should require denser sampling (and thus show higher measured stride-sensitivity). FineGym integrates cleanly into this pattern: it has the highest mean stride-sensitivity (46.30pp) but a moderate whole-frame cutoff frequency ($f_c=0.208$ cycles/frame), close to DriveAct and Diving-48 rather than UCF-101/HMDB-51.
 
-\paragraph{Interpretation.} This is the same qualitative inversion already reported for FineGym in the main paper ($r=-0.475$), now shown to generalize across the other 7 datasets with real statistical power rather than being a single-dataset anomaly. UCF-101 and HMDB-51---appearance- and sports-driven domains with large whole-body and camera motion---have the highest flow-derived cutoff frequencies but among the lowest stride-sensitivity, because the action remains identifiable from almost any sampled frame. AUTSL has the lowest cutoff frequency but the highest stride-sensitivity, because sign language's discriminative information (small, fast handshape and orientation changes) occupies a small fraction of the frame and is diluted by the mostly-static body and background in a whole-frame flow aggregate. We conclude that whole-frame optical-flow frequency content is a systematically \emph{anti-correlated}, not merely noisy, proxy for the temporal demand that matters to a classifier---a stronger statement than ``partial proxy,'' and the basis for treating the Nyquist--Shannon analogy in the main paper as conceptual motivation rather than a literally measurable, directly validating criterion. A class- or region-localized motion signal (e.g., restricted to the hands in sign language, or guided by class-discriminative saliency) is a natural direction for a more faithful spectral test, left to future work.
+\paragraph{Interpretation.} This is the same qualitative inversion already reported for FineGym in the main paper ($r=-0.475$), now shown across all 8 datasets with real statistical power rather than being a single-dataset anomaly. UCF-101 and HMDB-51---appearance- and sports-driven domains with large whole-body and camera motion---have the highest flow-derived cutoff frequencies but among the lowest stride-sensitivity, because the action remains identifiable from almost any sampled frame. AUTSL and FineGym show the opposite behavior: their discriminative evidence is localized in handshape changes or brief gymnastics phase events, which are diluted by a whole-frame flow aggregate. We conclude that whole-frame optical-flow frequency content is a systematically \emph{anti-correlated}, not merely noisy, proxy for the temporal demand that matters to a classifier. A class- or region-localized motion signal (e.g., hands in sign language or salient joints in gymnastics) is a natural direction for a more faithful spectral test.
 
 \bibliographystyle{splncs04}
 \bibliography{main}

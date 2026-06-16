@@ -1,0 +1,6 @@
+dataset,resolution,n_videos,cutoff_freq
+finegym,48,11,0.2112
+finegym,96,11,0.2048
+finegym,112,11,0.2118
+finegym,160,11,0.2102
+finegym,224,11,0.2019
