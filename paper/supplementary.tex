@@ -1,26 +1,27 @@
 \documentclass[runningheads]{llncs}
 
 % ── Packages ──────────────────────────────────────────────────────────────────
+\PassOptionsToPackage{table,dvipsnames}{xcolor}
+\usepackage[review,year=2026,ID=*****]{accv}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage[pagebackref,breaklinks,colorlinks,citecolor=blue]{hyperref}
 \usepackage{amsmath,amssymb}
-\usepackage{xcolor}
-\usepackage[table]{xcolor}
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{adjustbox}
-\usepackage{subcaption}
 \usepackage{enumitem}
+\usepackage[section]{placeins}
 
 \newcommand{\tabtight}{\setlength{\tabcolsep}{3.5pt}\renewcommand{\arraystretch}{1.12}}
 \newcommand{\TDS}{\textsc{TDS}}
 
 \begin{document}
+\raggedbottom
 
-\title{Supplementary Material:\\
+\title{\texorpdfstring{Supplementary Material:\\
   Spatiotemporal Aliasing in Video Action Recognition:\\
-  A Cross-Architecture Analysis at Scale}
+  A Cross-Architecture Analysis at Scale}{Supplementary Material: Spatiotemporal Aliasing in Video Action Recognition: A Cross-Architecture Analysis at Scale}}
 
 \author{Anonymous ACCV Submission}
 \institute{}
@@ -211,7 +212,7 @@ UCF-101       & 101 &  1.4pp &  7.5pp & 35 & 31 \\
 \end{table}
 
 % ── S5: Routing curves ────────────────────────────────────────────────────────
-\section{Entropy Routing Curves — All Models}
+\section{Entropy Routing Curves --- All Models}
 \label{sec:sup_routing}
 
 Figure~\ref{fig:routing_all} shows accuracy vs.\ average frames for all 8 architectures on SSv2 under the entropy routing protocol. Each curve is the result of sweeping confidence threshold $\tau \in [0.10, 0.95]$. Dashed horizontal lines indicate fixed-budget baselines (4f, 16f) and the oracle.
@@ -299,7 +300,7 @@ Training experiments used NVIDIA A100 (40GB) and H200 NVL (141GB) GPUs (CUDA 13.
 All models fine-tuned for 10 epochs from Kinetics-400 checkpoints. Transformers and VideoMamba: AdamW, lr=$2\times10^{-5}$, weight decay=0.05, batch size=32 per GPU. CNNs: AdamW, lr=$10^{-4}$, batch size=128 per GPU. SlowFast: AdamW, lr=$10^{-4}$, batch size=32 per GPU. All models use cosine learning rate decay with linear warmup (1 epoch). Spatial augmentation: random resized crop, horizontal flip, normalization (ImageNet statistics).
 
 \paragraph{Positional embedding interpolation for Transformers and SSMs.}
-For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings must be adapted. \textit{The wrong approach}: passing \texttt{ignore\_mismatched\_sizes=True} in HuggingFace discards positional embeddings entirely, causing a large accuracy cliff (typically 10--20pp worse than our approach at any non-native resolution). \textit{Our approach}: load the native-resolution checkpoint, then bicubically interpolate spatial positional embeddings from the native grid ($14{\times}14{=}196$ tokens at 224px) to the target grid ($\lfloor r/16\rfloor^2$ tokens at resolution $r$) before copying weights to a model instantiated at the target resolution. This preserves the spatial topology learned during pretraining and ensures fine-tuning starts from a meaningful positional encoding rather than a random one. The same bicubic interpolation applies to TimeSformer, VideoMAE, ViViT, and VideoMamba.
+For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings must be adapted. \textit{The wrong approach}: using the HuggingFace mismatched-size flag discards positional embeddings entirely, causing a large accuracy cliff (typically 10--20pp worse than our approach). \textit{Our approach}: load the native-resolution checkpoint, then bicubically interpolate spatial positional embeddings from the native grid ($14{\times}14{=}196$ tokens at 224px) to the target grid ($\lfloor r/16\rfloor^2$ tokens at resolution $r$) before copying weights to a model instantiated at the target resolution. This preserves the spatial topology learned during pretraining and ensures fine-tuning starts from a meaningful positional encoding rather than a random one. The same bicubic interpolation applies to TimeSformer, VideoMAE, ViViT, and VideoMamba.
 
 \paragraph{SlowFast spatial pooling fix.}
 The original SlowFast-R50 head uses a fixed $7\times7$ average pooling kernel, assuming 224px input. For non-native resolutions, we replace both head pooling layers with \texttt{AdaptiveAvgPool3d(1)}, enabling forward passes at arbitrary input resolutions without parameter changes.
@@ -510,16 +511,12 @@ VideoMamba  & 224px & 29.1 & 51.6 & 58.2 & 66.0 & \textbf{73.2} \\
 \label{sec:sup_dashboard}
 
 \paragraph{Interactive visualization dashboard.}
-All evaluation results from this paper are accessible through an interactive web dashboard at:
-\begin{center}
-\url{https://mi3-inforates.streamlit.app/}
-\end{center}
-The dashboard provides:
+An anonymized interactive dashboard is included with the supplementary material for review. The public dashboard URL will be released after the review period. The dashboard provides:
 \begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
 \item \textbf{Temporal sweep explorer}: coverage$\times$stride heatmaps per model and
   dataset, with configurable color scaling and reference stride annotations.
 \item \textbf{Spatial resolution browser}: cross-resolution accuracy curves for all
-  8 models across all 8 datasets; target-resolution fine-tuning results per architecture family.
+  8 models and datasets; target-resolution fine-tuning by architecture family.
 \item \textbf{Architecture recommender (hybrid AI)}: given a target dataset, hardware
   latency budget, source frame rate, and deployment context, the system performs structured data-driven analysis followed by LLM synthesis (Llama-3.3-70B via Groq), recommending the optimal model--resolution--stride operating point. Budget-constrained and unconstrained deployment paths are handled separately, with Nyquist-guided stride selection.
 \item \textbf{TDS comparison}: rank any subset of the 8 datasets by temporal demand,
@@ -550,18 +547,17 @@ The dashboard provides:
   \includegraphics[width=\textwidth]{images/app4.png}
   \small{(d) Latency \& Efficiency: measured forward-pass latency (ms/clip, bfloat16, RTX PRO 6000) vs.\ spatial resolution for all 8 architectures. VideoMamba (green) is 4--8$\times$ slower than VideoMAE across all resolutions.}
 \end{minipage}
-\caption{Interactive dashboard screenshots (\url{https://mi3-inforates.streamlit.app/}). The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. The Architecture Recommender (c) provides AI-assisted deployment guidance grounded in measured data. The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.}
+\caption{Interactive dashboard screenshots from the anonymized supplementary package. The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. The Architecture Recommender (c) provides AI-assisted deployment guidance grounded in measured data. The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.}
 \label{fig:dashboard_screenshots}
 \end{figure}
 
 \paragraph{Code availability.}
-Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline with bicubic positional embedding interpolation), and the Streamlit dashboard source code will be released at [anonymized for review]. The repository includes:
+Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline with bicubic positional embedding interpolation), result tables, and the Streamlit dashboard source code are provided as an anonymized supplementary package for review. The public repository will be released after the review period. The package includes:
 \begin{itemize}[leftmargin=*,topsep=2pt,itemsep=1pt]
 \item \texttt{scripts/accv2026/}: all evaluation and retraining scripts
 \item \texttt{src/info\_rates/}: model loading, temporal sweep, entropy routing
 \item \texttt{dashboard/}: Streamlit app with hybrid RAG+LLM recommender
-\item \texttt{evaluations/accv2026/paper\_results/}: all CSV result files
-  (\texttt{sweep\_summary.csv}, \texttt{retrained\_spatial.csv}, \texttt{latency\_by\_resolution.csv})
+\item \texttt{evaluations/accv2026/paper\_results/}: CSV result files used in the paper.
 \end{itemize}
 
 % ── S11: Leave-one-architecture-out TDS stability ─────────────────────────────
