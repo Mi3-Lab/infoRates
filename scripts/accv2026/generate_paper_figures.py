@@ -268,7 +268,7 @@ try:
     ax2.axvline(0, color="0.5", lw=1, ls="--")
     ax2.set_xlabel("Pearson r (optical flow ↔ aliasing loss)")
     ax2.set_title("Fig 3b: Spectral Correlation\n(flow magnitude vs aliasing sensitivity)", fontsize=10)
-    ax2.set_xlim(-0.15, 0.45)
+    ax2.set_xlim(-0.55, 0.45)
     ax2.grid(True, axis="x", alpha=0.3, ls="--")
     ax2.annotate("Nyquist prediction:\nhigher flow → more aliasing", xy=(0.3, 0.5),
                  xycoords="axes fraction", fontsize=7.5, color="#E64B35")

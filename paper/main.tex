@@ -238,12 +238,12 @@ Figure~\ref{fig:tds_spectral} (left) shows the \TDS{} ranking across 8 datasets.
 Crucially, the ranking for positions 3--8 is \emph{exactly} stable under leave-one-architecture-out: removing any single one of the 8 architectures and recomputing \TDS{} leaves SSv2, DriveAct, Diving-48, HMDB-51, EPIC-Kitchens, and UCF-101 in the same relative order in all 8 cases ($\rho=1.00$ for 7 of the 8 leave-one-out pools). The exception is the \#1/\#2 position: removing VideoMamba specifically swaps FineGym and AUTSL ($\rho=0.976$), because VideoMamba is comparatively robust on AUTSL (16.0pp, near the bottom of VideoMamba's own range) but comparatively fragile on FineGym (40.8pp, its single worst dataset)---so its inclusion is what tips FineGym narrowly above AUTSL. We report FineGym and AUTSL as effectively co-equal highest-demand domains rather than claiming a definitive order between them; full leave-one-out results are in supplementary~S11.
 
 \paragraph{Spectral validation.}
-Figure~\ref{fig:tds_spectral} (right) shows the Pearson correlation between per-class optical-flow magnitude and aliasing loss across all 8 datasets, including FineGym. AUTSL ($r=0.285$, $p<0.001$) and DriveAct ($r=0.327$, $p=0.063$) show the strongest flow-aliasing correlation. EPIC-Kitchens shows near-zero correlation ($r=-0.002$), suggesting that in egocentric datasets, background camera motion dominates optical flow, decoupling it from action-relevant temporal demand (Table~\ref{tab:spectral}).
+Figure~\ref{fig:tds_spectral} (right) shows the Pearson correlation between per-class optical-flow magnitude and aliasing loss across all 8 datasets, including FineGym. AUTSL ($r=0.285$, $p<0.001$) and DriveAct ($r=0.327$, $p=0.063$) show the expected positive correlation: more motion, more aliasing. EPIC-Kitchens shows near-zero correlation ($r=-0.002$), suggesting that in egocentric datasets, background camera motion dominates optical flow, decoupling it from action-relevant temporal demand. FineGym is the surprise: it shows the \emph{strongest} correlation of any dataset in magnitude ($r=-0.475$, $p<0.0001$, $n=97$ classes), but in the \emph{opposite} direction predicted by the Nyquist hypothesis---higher flow magnitude classes alias \emph{less}. We hypothesize this reflects a property specific to gymnastics phase discrimination: high-flow classes (full-twisting vaults, fast tumbling passes) have a continuously distinctive visual signature recognizable from almost any frame in the sequence, whereas low-flow classes (held positions, small-amplitude balance corrections) require catching one specific, brief, low-motion moment that sparse sampling is more likely to miss. Raw flow magnitude is therefore a poor proxy for temporal demand specifically when class identity hinges on a discrete event rather than sustained motion (Table~\ref{tab:spectral}).
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{images/main_fig3_tds_spectral.pdf}
-  \caption{\textbf{Left}: \TDS{} ranking---mean accuracy drop from stride=1 to 16 averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) and AUTSL (53.0pp) are co-equal highest-demand domains (order between them is leave-one-out sensitive, supplementary~S11); UCF-101 (4.9pp) is appearance-dominated. Positions 3--8 are exactly stable under leave-one-architecture-out. \textbf{Right}: Pearson correlation between optical-flow magnitude and per-class aliasing loss (8 datasets, including FineGym). AUTSL and DriveAct show moderate-significant correlation; EPIC-Kitchens near-zero (background camera motion confounds flow).}
+  \caption{\textbf{Left}: \TDS{} ranking---mean accuracy drop from stride=1 to 16 averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) and AUTSL (53.0pp) are co-equal highest-demand domains (order between them is leave-one-out sensitive, supplementary~S11); UCF-101 (4.9pp) is appearance-dominated. Positions 3--8 are exactly stable under leave-one-architecture-out. \textbf{Right}: Pearson correlation between optical-flow magnitude and per-class aliasing loss (8 datasets). AUTSL and DriveAct show the expected positive correlation; EPIC-Kitchens is near-zero (background camera motion confounds flow); FineGym shows the strongest correlation of any dataset but in the opposite direction ($r=-0.475$): discrete-event classes alias more than sustained-motion ones.}
   \label{fig:tds_spectral}
 \end{figure}
 
@@ -256,6 +256,7 @@ Figure~\ref{fig:tds_spectral} (right) shows the Pearson correlation between per-
 \toprule
 Dataset & Classes & Pearson $r$ & Significant & Interpretation \\
 \midrule
+FineGym       &  97 & $-0.475$ & \checkmark & Discrete-event classes alias more \\
 DriveAct      &  33 & 0.327 & marginal   & Flow $\sim$ arm motion \\
 AUTSL         & 226 & 0.285 & \checkmark & Flow $\sim$ hand speed \\
 SSv2          & 174 & 0.184 & \checkmark & Causal/object motion \\
@@ -263,7 +264,6 @@ HMDB-51       &  51 & 0.180 & $\times$   & Mixed motion types \\
 Diving-48     &  47 & 0.140 & $\times$   & Body rotation dominated \\
 UCF-101       & 101 & 0.031 & $\times$   & Appearance dominates \\
 EPIC-Kitchens &  89 & $-0.002$& $\times$ & Camera motion confounds \\
-FineGym       &  97 & \texttt{PENDING} & \texttt{PENDING} & Gymnastics phase transitions \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -564,7 +564,7 @@ ViViT's fragility is a design lesson. The factorized attention topology was moti
 VideoMamba achieves competitive temporal robustness yet is 4--8$\times$ slower than VideoMAE on CUDA. SSMs' theoretical FLOPs advantage materializes primarily on sequence-length-sensitive hardware (e.g., long-sequence CPUs or dedicated accelerators), not on modern GPU matrix engines optimized for parallel attention. For GPU-deployed applications, VideoMAE dominates on accuracy-per-ms; TimeSformer dominates on robustness-per-ms for high-TDS domains.
 
 \paragraph{Limitations.}
-\emph{Spectral validation}: flow-magnitude correlation ($r=0.14$--$0.33$) is exploratory; egomotion-compensated flow and FineGym per-class analysis are pending. \emph{Clip duration}: correlation ($r=-0.3$ to $-0.8$) reported without controls for class distribution; the SSv2 3--6s bin reversal is unexplained. \emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could close the 4.8pp oracle gap. The two-tier budget (4f/16f) is fixed.
+\emph{Spectral validation}: flow-magnitude correlation ($r=-0.48$--$0.33$ across 8 datasets) is exploratory and the FineGym sign reversal is only hypothesized, not directly verified; egomotion-compensated flow extraction is pending. \emph{Clip duration}: correlation ($r=-0.3$ to $-0.8$) reported without controls for class distribution; the SSv2 3--6s bin reversal is unexplained. \emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could close the 4.8pp oracle gap. The two-tier budget (4f/16f) is fixed.
 
 % =========================================================
 \section{Conclusion}

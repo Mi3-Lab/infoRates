@@ -38,7 +38,7 @@ This document provides supplementary material for the main paper. We include: (S
 \section{Full Coverage$\times$Stride Heatmaps}
 \label{sec:sup_heatmaps}
 
-Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets. Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration. Color scale: green=high accuracy, red=low accuracy. FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis for FineGym is in progress (97-class egomotion-compensated flow extraction).
+Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets. Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration. Color scale: green=high accuracy, red=low accuracy. FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis for FineGym is reported in supplementary~S7.
 
 Row order (coverage): 10\%, 25\%, 50\%, 75\%, 100\%. Column order (stride): 1, 2, 4, 8, 16.
 
@@ -265,11 +265,11 @@ VideoMamba   & 65.0$^*$ & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 58.0 
 
 We estimated per-class temporal frequency demand using optical-flow magnitude (Farneback algorithm~\cite{farneback2003two}) computed on 5 representative videos per class, sampling 16 frames per video at 112$\times$112px. The mean inter-frame flow magnitude serves as a proxy for temporal activity level. This analysis is exploratory and should not be read as confirmatory evidence for the Nyquist-aliasing hypothesis on its own; see the main paper (Sec.~3.1, Fig.~3 right) for the summary figure including FineGym.
 
-Table~\ref{tab:spectral} reports Pearson correlation between per-class mean flow magnitude and aliasing loss (accuracy drop stride=1$\to$16) per dataset. FineGym per-class flow analysis requires egomotion-compensated flow at 97-class granularity; this is in progress and will be added in a camera-ready revision. Prior studies on small closed-vocabulary datasets (UCF-101, Kinetics-400) have reported near-perfect optical-flow--aliasing correlations ($r{=}0.99$) using controlled synthetic flow protocols. Our large-scale evaluation on 7 diverse datasets yields moderate correlations ($r=0.03$--$0.33$). This discrepancy has three plausible explanations: (1) complex background motion in egocentric datasets (EPIC-Kitchens) decorrelates flow from action content; (2) sign language (AUTSL) involves localized, subtle movements that optical flow at 112px partially misses; (3) our use of raw flow magnitude rather than class-conditioned frequency analysis is a coarser proxy.
+Table~\ref{tab:spectral} reports Pearson correlation between per-class mean flow magnitude and aliasing loss (accuracy drop stride=1$\to$16) per dataset. Prior studies on small closed-vocabulary datasets (UCF-101, Kinetics-400) have reported near-perfect optical-flow--aliasing correlations ($r{=}0.99$) using controlled synthetic flow protocols. Our large-scale evaluation on 8 diverse datasets yields a more nuanced picture ($r=-0.475$ to $0.327$). This has at least four plausible explanations: (1) complex background motion in egocentric datasets (EPIC-Kitchens) decorrelates flow from action content; (2) sign language (AUTSL) involves localized, subtle movements that optical flow at 112px partially misses; (3) our use of raw flow magnitude rather than class-conditioned frequency analysis is a coarser proxy; (4) FineGym's negative correlation suggests that for discrete-event classes (a held position, a precise landing), raw motion magnitude is the wrong signal entirely---what matters is whether sparse sampling catches the one brief moment that defines the class, which low-flow (slow, precise) actions are more likely to lose than high-flow (fast, sustained) ones.
 
 \begin{table}[t]
 \centering
-\caption{Spectral correlation: Pearson $r$ between optical-flow magnitude and per-class aliasing loss. Positive $r$ supports the Nyquist hypothesis; near-zero values suggest flow magnitude is an insufficient proxy for temporal demand on complex datasets. FineGym: per-class flow extraction in progress.}
+\caption{Spectral correlation: Pearson $r$ between optical-flow magnitude and per-class aliasing loss. Positive $r$ supports the Nyquist hypothesis; near-zero or negative values suggest flow magnitude is an insufficient (or inverted) proxy for temporal demand.}
 \label{tab:spectral}
 \scriptsize\tabtight
 \begin{tabular}{l r r r}
@@ -283,7 +283,7 @@ HMDB-51       & 0.180 & 0.206 & No \\
 Diving-48     & 0.140 & 0.349 & No \\
 UCF-101       & 0.031 & 0.762 & No \\
 EPIC-Kitchens & --0.002 & 0.985 & No \\
-FineGym       & \multicolumn{3}{c}{(per-class flow extraction in progress)} \\
+FineGym       & --0.475 & $<$0.0001 & Yes (inverted) \\
 \bottomrule
 \end{tabular}
 \end{table}
