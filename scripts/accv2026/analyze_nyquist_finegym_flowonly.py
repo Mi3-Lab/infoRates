@@ -79,9 +79,12 @@ def main():
     rng = np.random.default_rng(0)
     df_m = pd.read_csv(MANIFEST)
     if "exists" in df_m.columns:
-        df_m = df_m[df_m["exists"] == True]
+        df_m = df_m[df_m["exists"].astype(str).str.lower().isin(["true", "1"])]
+    df_m["abs_video_path"] = df_m["video_path"].apply(lambda p: ROOT / p)
+    df_m = df_m[df_m["abs_video_path"].apply(lambda p: p.exists())]
 
-    classes = sorted(df_m.label_id.unique())
+    classes = [c for c in sorted(df_m.label_id.unique())
+               if len(df_m[df_m.label_id == c]) >= N_VIDEOS_PER_CLASS]
     if len(classes) > MAX_CLASSES:
         classes = list(rng.choice(classes, size=MAX_CLASSES, replace=False))
 
@@ -90,7 +93,7 @@ def main():
         sub = df_m[df_m.label_id == c]
         sample_rows.append(sub.sample(n=min(N_VIDEOS_PER_CLASS, len(sub)), random_state=0))
     sample_df = pd.concat(sample_rows)
-    video_paths = sample_df["video_path"].tolist()
+    video_paths = sample_df["abs_video_path"].astype(str).tolist()
     print(f"Sampled {len(video_paths)} FineGym videos across {len(classes)} classes")
 
     rows = []

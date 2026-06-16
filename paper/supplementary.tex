@@ -661,26 +661,26 @@ The main paper's Nyquist--Shannon framing (Sec.~\ref{sec:intro}) is conceptual: 
 
 \begin{table}[!htbp]
 \centering
-\caption{Mean flow-derived spectral cutoff frequency $f_c$ and mean empirical stride-sensitivity, averaged over the 5 tested resolutions per dataset, sorted by stride-sensitivity.}
+\caption{Mean flow-derived spectral cutoff frequency $f_c$, videos per resolution, and mean empirical stride-sensitivity, averaged over the 5 tested resolutions per dataset and sorted by stride-sensitivity.}
 \label{tab:nyquist_v2}
 \scriptsize\tabtight
-\begin{tabular}{l r r}
+\begin{tabular}{l r r r}
 \toprule
-Dataset & Mean $f_c$ (cyc/frame) & Mean stride-sensitivity (pp) \\
+Dataset & Mean $f_c$ & $n$/res. & Mean stride-sens. \\
 \midrule
-FineGym       & 0.208 & 46.30 \\
-AUTSL         & 0.121 & 45.61 \\
-SSv2          & 0.339 & 25.70 \\
-DriveAct      & 0.192 & 18.65 \\
-HMDB-51       & 0.383 & 16.57 \\
-Diving-48     & 0.182 & 15.21 \\
-EPIC-Kitchens & 0.248 &  9.70 \\
-UCF-101       & 0.387 &  5.45 \\
+FineGym       & 0.188 & 24 & 46.30 \\
+AUTSL         & 0.121 & 24 & 45.61 \\
+SSv2          & 0.339 & 24 & 25.70 \\
+DriveAct      & 0.192 & 21 & 18.65 \\
+HMDB-51       & 0.383 & 24 & 16.57 \\
+Diving-48     & 0.182 & 24 & 15.21 \\
+EPIC-Kitchens & 0.248 & 23 &  9.70 \\
+UCF-101       & 0.387 & 24 &  5.45 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Result.} Pooling across all 40 (dataset, resolution) points, $f_c$ is significantly \emph{negatively} correlated with stride-sensitivity (Spearman $\rho=-0.518$, permutation $p=0.00068$, $n=40$)---the opposite sign from the naive Nyquist prediction that higher temporal-frequency content should require denser sampling (and thus show higher measured stride-sensitivity). FineGym integrates cleanly into this pattern: it has the highest mean stride-sensitivity (46.30pp) but a moderate whole-frame cutoff frequency ($f_c=0.208$ cycles/frame), close to DriveAct and Diving-48 rather than UCF-101/HMDB-51.
+\paragraph{Result.} Pooling across all 40 (dataset, resolution) points, $f_c$ is significantly \emph{negatively} correlated with stride-sensitivity (Spearman $\rho=-0.635$, permutation $p=1.0\times10^{-5}$, $n=40$)---the opposite sign from the naive Nyquist prediction that higher temporal-frequency content should require denser sampling (and thus show higher measured stride-sensitivity). FineGym integrates cleanly into this pattern: it has the highest mean stride-sensitivity (46.30pp) but a moderate whole-frame cutoff frequency ($f_c=0.188$ cycles/frame), close to DriveAct and Diving-48 rather than UCF-101/HMDB-51.
 
 \paragraph{Interpretation.} This is the same qualitative inversion already reported for FineGym in the main paper ($r=-0.475$), now shown across all 8 datasets with real statistical power rather than being a single-dataset anomaly. UCF-101 and HMDB-51---appearance- and sports-driven domains with large whole-body and camera motion---have the highest flow-derived cutoff frequencies but among the lowest stride-sensitivity, because the action remains identifiable from almost any sampled frame. AUTSL and FineGym show the opposite behavior: their discriminative evidence is localized in handshape changes or brief gymnastics phase events, which are diluted by a whole-frame flow aggregate. We conclude that whole-frame optical-flow frequency content is a systematically \emph{anti-correlated}, not merely noisy, proxy for the temporal demand that matters to a classifier. A class- or region-localized motion signal (e.g., hands in sign language or salient joints in gymnastics) is a natural direction for a more faithful spectral test.
 

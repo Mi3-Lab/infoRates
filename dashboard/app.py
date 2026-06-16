@@ -195,6 +195,18 @@ def load_e3_spectral():
 
 
 @st.cache_data
+def load_nyquist_spectral():
+    f = DATA / "nyquist_resolution_validation_with_finegym.csv"
+    if not f.exists():
+        f = Path(__file__).parent.parent / "evaluations/accv2026/e3_spectral/nyquist_resolution_validation_with_finegym.csv"
+    if not f.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(f)
+    df["ds_label"] = df["dataset"].map(DS_LABELS).fillna(df["dataset"])
+    return df
+
+
+@st.cache_data
 def load_anova():
     f = DATA / "anova_results.csv"
     if not f.exists(): return pd.DataFrame()
@@ -393,6 +405,7 @@ df_e7s  = load_e7_summary()
 df_e9   = load_e9_comparison()
 df_e10  = load_e10_duration()
 df_e3   = load_e3_spectral()
+df_nyq  = load_nyquist_spectral()
 df_anova = load_anova()
 df_p3   = load_p3()
 df_retrained_spatial = load_retrained_spatial()
@@ -853,17 +866,13 @@ elif page == "📈 Dataset Analysis":
     # ── Tab 2: Spectral Correlation ───────────────────────────────────────────
     with tab_spectral:
         st.caption(
-            "Pearson correlation between per-class optical-flow magnitude (Farnebäck) and aliasing loss. "
-            "**FineGym:** optical-flow extraction pending — not yet included in this analysis."
+            "Two complementary checks: per-class optical-flow magnitude vs. aliasing loss, "
+            "and a direct whole-frame spectral-cutoff test across resolutions."
         )
 
         if df_e3.empty:
             st.error("Spectral correlation data not found (`dashboard/data/spectral_correlation.csv`).")
         else:
-            st.info("⚠️ **7 of 8 datasets shown.** FineGym requires per-class optical flow extraction "
-                    "which is currently in progress. Values will update when the computation completes.",
-                    icon="⏳")
-
             col1_s, col2_s = st.columns(2)
             with col1_s:
                 st.subheader("Pearson r: Flow magnitude ↔ Aliasing loss")
@@ -880,7 +889,7 @@ elif page == "📈 Dataset Analysis":
                           for r, p in zip(df_e3s["pearson_r_abs"], df_e3s["pearson_p_abs"])],
                     textposition="outside",
                 ))
-                fig_s.update_xaxes(title="Pearson r", range=[-0.05, 0.45])
+                fig_s.update_xaxes(title="Pearson r", range=[-0.55, 0.45])
                 fig_s.update_layout(height=320, margin=dict(t=20, r=80, b=40),
                                     title="Green = significant (p<0.05), Red = ns")
                 st.plotly_chart(fig_s, use_container_width=True)
@@ -906,13 +915,10 @@ elif page == "📈 Dataset Analysis":
 
             st.subheader("Interpretation")
             st.info(
-                "Optical-flow magnitude is an **incomplete proxy** for temporal demand (r=0.03–0.33). "
-                "AUTSL (r=0.28, p<0.001): hand speed correlates with aliasing — gestural fine-structure "
-                "requires dense sampling. SSv2 (r=0.18, p=0.015): object velocity correlates with "
-                "directionality sensitivity. EPIC-Kitchens (r≈−0.002): background camera motion dominates "
-                "flow, masking action content. UCF-101 (r=0.03): appearance-dominated — flow irrelevant. "
-                "FineGym (TDS=55.9pp): despite near-sports-level flow, aliasing is driven by phase "
-                "transitions rather than pixel velocity (flow is expected to show weak-to-moderate r)."
+                "Optical-flow magnitude is an **incomplete proxy** for temporal demand. AUTSL and DriveAct "
+                "show positive within-dataset trends, EPIC-Kitchens is near zero because camera motion "
+                "dominates the flow field, and FineGym is inverted: high-flow classes can remain visually "
+                "distinctive, while low-flow phase/pose transitions can be missed by sparse sampling."
             )
 
             st.dataframe(
@@ -922,6 +928,69 @@ elif page == "📈 Dataset Analysis":
                              "significant":"Significant"}
                 ),
                 use_container_width=True, hide_index=True,
+            )
+
+        st.divider()
+        st.subheader("Direct spectral-cutoff test across resolutions")
+
+        if df_nyq.empty:
+            st.error("Nyquist spectral-cutoff data not found (`dashboard/data/nyquist_resolution_validation_with_finegym.csv`).")
+        else:
+            rho = df_nyq["cutoff_freq"].rank().corr(df_nyq["stride_sensitivity"].rank())
+            n_points = len(df_nyq)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Spearman ρ", f"{rho:.3f}")
+            c2.metric("Permutation p", "1.0e-5")
+            c3.metric("Points", f"{n_points}", "8 datasets × 5 resolutions")
+
+            st.caption(
+                "Whole-frame optical-flow cutoff frequency is anti-correlated with empirical stride-sensitivity. "
+                "This does not literally validate the Nyquist analogy; it shows that classifier-relevant temporal "
+                "evidence is often localized and diluted by global motion."
+            )
+
+            df_nyq_summary = (
+                df_nyq.groupby(["dataset", "ds_label"], as_index=False)
+                .agg(
+                    cutoff_freq=("cutoff_freq", "mean"),
+                    stride_sensitivity=("stride_sensitivity", "mean"),
+                    n_videos=("n_videos", "mean"),
+                )
+                .sort_values("stride_sensitivity", ascending=False)
+            )
+            df_nyq_summary["Dataset"] = df_nyq_summary["ds_label"].apply(
+                lambda x: x.split(" (")[0] if isinstance(x, str) else x
+            )
+
+            fig_n = px.scatter(
+                df_nyq,
+                x="cutoff_freq",
+                y="stride_sensitivity",
+                color="ds_label",
+                size="n_videos",
+                hover_data={"resolution": True, "n_videos": True, "ds_label": False},
+                labels={
+                    "cutoff_freq": "Spectral cutoff frequency (cycles/frame)",
+                    "stride_sensitivity": "Stride-sensitivity (pp)",
+                    "ds_label": "Dataset",
+                },
+                title="Whole-frame spectral cutoff vs. empirical temporal demand",
+                height=420,
+            )
+            fig_n.update_layout(margin=dict(t=60, b=40), legend_title_text="Dataset")
+            st.plotly_chart(fig_n, use_container_width=True)
+
+            st.dataframe(
+                df_nyq_summary[["Dataset", "cutoff_freq", "n_videos", "stride_sensitivity"]].rename(
+                    columns={
+                        "cutoff_freq": "Mean cutoff (cyc/frame)",
+                        "n_videos": "Videos / res.",
+                        "stride_sensitivity": "Mean stride-sensitivity (pp)",
+                    }
+                ).round({"Mean cutoff (cyc/frame)": 3, "Videos / res.": 0,
+                         "Mean stride-sensitivity (pp)": 2}),
+                use_container_width=True,
+                hide_index=True,
             )
 
     # ── Tab 3: Clip Duration ──────────────────────────────────────────────────

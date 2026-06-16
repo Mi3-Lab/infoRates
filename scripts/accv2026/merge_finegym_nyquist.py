@@ -127,8 +127,9 @@ def main() -> None:
     for dataset, ds_rows in by_dataset.items():
         mean_fc = sum(float(r["cutoff_freq"]) for r in ds_rows) / len(ds_rows)
         mean_stride = sum(float(r["stride_sensitivity"]) for r in ds_rows) / len(ds_rows)
-        means.append((mean_stride, dataset, mean_fc))
-    for mean_stride, dataset, mean_fc in sorted(means, reverse=True):
+        mean_n = sum(float(r["n_videos"]) for r in ds_rows) / len(ds_rows)
+        means.append((mean_stride, dataset, mean_fc, mean_n))
+    for mean_stride, dataset, mean_fc, mean_n in sorted(means, reverse=True):
         label = {
             "autsl": "AUTSL",
             "ssv2": "SSv2",
@@ -139,7 +140,7 @@ def main() -> None:
             "ucf101": "UCF-101",
             "finegym": "FineGym",
         }.get(dataset, dataset)
-        print(f"{label:<13} & {mean_fc:0.3f} & {mean_stride:5.2f} \\\\")
+        print(f"{label:<13} & {mean_fc:0.3f} & {mean_n:2.0f} & {mean_stride:5.2f} \\\\")
 
 
 if __name__ == "__main__":
