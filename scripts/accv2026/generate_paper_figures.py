@@ -259,7 +259,7 @@ ax1.grid(True, axis="x", alpha=0.3, ls="--")
 for i, (ds, v) in enumerate(tds_sorted):
     ax1.text(v + 0.5, i, f"{v:.1f}pp", va="center", fontsize=8.5)
 
-# Right: E3 spectral correlation
+# Right: E3 spectral correlation (includes FineGym once flow extraction completes)
 try:
     corr = pd.read_csv("evaluations/accv2026/e3_spectral/flow_aliasing_correlation.csv")
     ax2.scatter(corr["pearson_r_abs"], [DATASET_LABELS.get(d, d) for d in corr["dataset"]],

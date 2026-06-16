@@ -56,37 +56,9 @@
 
 % =========================================================
 \begin{abstract}
-Temporal resolution in video action recognition is typically treated as a
-fixed hyperparameter rather than a signal-processing constraint.
-We present the first \emph{large-scale}, \emph{cross-architecture} study of
-spatiotemporal aliasing, evaluating 8 architectures---from 3D CNNs and dual-pathway
-networks to attention-based Transformers and state-space models (SSMs)---across
-8 diverse datasets spanning sign language, fine-grained gymnastics, egocentric video,
-causal reasoning, and appearance-dominated actions
-(8,000+ evaluation configurations: 5 resolutions $\times$ 5 coverage levels $\times$
-5 temporal strides per architecture--dataset pair).
+Temporal resolution in video action recognition is typically treated as a fixed hyperparameter rather than a signal-processing constraint. We present a \emph{large-scale}, \emph{cross-architecture} study of spatiotemporal aliasing, evaluating 8 architectures---from 3D CNNs and dual-pathway networks to attention-based Transformers and state-space models (SSMs)---across 8 diverse datasets spanning sign language, fine-grained gymnastics, egocentric video, causal reasoning, and appearance-dominated actions (8,000+ evaluation configurations: 5 resolutions $\times$ 5 coverage levels $\times$ 5 temporal strides per architecture--dataset pair).
 
-Our principal finding is that aliasing behavior is governed by
-\emph{attention mechanism type}, not architecture family:
-VideoMamba (SSM) and TimeSformer (divided attention) alias 3--5$\times$ less than
-CNNs and ViViT (factorized attention), despite ViViT being a Transformer.
-We introduce the \textbf{Temporal Demand Score (\TDS{})}, a dataset-level metric
-derived from the mean architecture-agnostic accuracy drop under temporal subsampling,
-which ranks 8 datasets consistently across all 8 models (Spearman $\rho{=}0.97$).
-FineGym (fine-grained gymnastics, \TDS{}=55.9pp) surpasses sign language (AUTSL, 53.0pp)
-as the highest-demand domain, establishing sport phase transitions as a
-previously underappreciated high-aliasing regime.
-Cross-resolution evaluation shows CNNs degrade up to 73pp off-native while Transformers
-and VideoMamba stay within $\pm$8pp universally;
-Target-resolution fine-tuning recovers 10--20pp for CNNs while leaving Transformers
-largely unchanged.
-Measured GPU latency reveals that VideoMAE is the most efficient Transformer
-(1.6--2.8ms across resolutions) while VideoMamba is 4--8$\times$ slower than comparable
-models (8--15ms), directly informing Nyquist-aware deployment choices.
-Finally, entropy-based routing reduces average inference cost by 52\% with no accuracy
-penalty, outperforming FrameExit~\cite{ghodrati2021frameexit} by $+4.2$pp.
-All 8,000+ evaluation results and an interactive dashboard are available at
-\url{https://mi3-inforates.streamlit.app/} (code repository: anonymized for review).
+Our principal finding is that aliasing behavior is strongly associated with \emph{attention mechanism type} rather than architecture family: VideoMamba (SSM) and TimeSformer (divided attention) alias 3--5$\times$ less than CNNs and ViViT (factorized attention), despite ViViT being a Transformer. We introduce the \textbf{Temporal Demand Score (\TDS{})}, a dataset-level metric derived from the mean architecture-agnostic accuracy drop under temporal subsampling, which ranks 8 datasets consistently across all 8 models (Spearman $\rho{=}0.97$). FineGym (fine-grained gymnastics, \TDS{}=55.9pp) rivals sign language (AUTSL, 53.0pp) as the highest-demand domain---the two are close enough that their relative order is sensitive to which architectures are included in the average---establishing sport phase transitions as a previously underappreciated high-aliasing regime. Cross-resolution evaluation shows CNNs degrade up to 73pp off-native while Transformers stay within $\pm$8pp on 7 of 8 datasets (VideoMamba is more variable, from $\pm$6pp to $-23$pp); target-resolution fine-tuning recovers up to 39pp for CNNs while leaving Transformers largely unchanged. Measured GPU latency reveals that VideoMAE is the most efficient Transformer (1.6--2.8ms across resolutions) while VideoMamba is 4--8$\times$ slower than comparable models (8--15ms), directly informing Nyquist-aware deployment choices. Finally, entropy-based routing reduces average inference cost by 52\% with no accuracy penalty, outperforming FrameExit~\cite{ghodrati2021frameexit} by $+4.2$pp. All 8,000+ evaluation results and an interactive dashboard are available at \url{https://mi3-inforates.streamlit.app/} (code repository: anonymized for review).
 \keywords{Temporal Aliasing \and Spatial Aliasing \and Video Action Recognition \and
           Cross-Architecture \and Temporal Demand Score \and Adaptive Routing}
 \end{abstract}
@@ -95,34 +67,12 @@ All 8,000+ evaluation results and an interactive dashboard are available at
 \section{Introduction}
 \label{sec:intro}
 
-Human activity recognition has broad applications in autonomous vehicles,
-healthcare monitoring, and surveillance~\cite{5771372,10484402}.
-The field has evolved through four architectural generations:
-3D ConvNets (C3D~\cite{tran2015c3d}, I3D~\cite{carreira2017i3d},
-R(2+1)D~\cite{tran2018r2plus1d}, Non-local Networks~\cite{wang2018nonlocal}),
-dual-pathway networks (SlowFast~\cite{feichtenhofer2019slowfast}),
-video Transformers (TimeSformer~\cite{bertasius2021timesformer},
-ViViT~\cite{arnab2021vivit}, Video Swin~\cite{liu2022videoswin},
-MViT~\cite{fan2021mvit}, VideoMAE~\cite{tong2022videomae,wang2023videomaev2}),
-and most recently video state-space models
-(VideoMamba~\cite{li2024videomamba}).
+Human activity recognition has broad applications in autonomous vehicles, healthcare monitoring, and surveillance~\cite{5771372,10484402}. The field has evolved through four architectural generations: 3D ConvNets (C3D~\cite{tran2015c3d}, I3D~\cite{carreira2017i3d}, R(2+1)D~\cite{tran2018r2plus1d}, Non-local Networks~\cite{wang2018nonlocal}), dual-pathway networks (SlowFast~\cite{feichtenhofer2019slowfast}), video Transformers (TimeSformer~\cite{bertasius2021timesformer}, ViViT~\cite{arnab2021vivit}, Video Swin~\cite{liu2022videoswin}, MViT~\cite{fan2021mvit}, VideoMAE~\cite{tong2022videomae,wang2023videomaev2}), and most recently video state-space models (VideoMamba~\cite{li2024videomamba}).
 
-Despite this diversity, all models are evaluated using standardized sampling
-recipes (8--32 uniformly-sampled frames at fixed stride), treating temporal
-resolution as a static implementation detail.
-This assumption fails in resource-constrained deployments where dense sampling
-is infeasible~\cite{lin2019tsm}, and leaves two fundamental questions
-unanswered: \emph{when} does temporal subsampling become destructive, and
-\emph{why} do different architectures respond differently?
+Despite this diversity, all models are evaluated using standardized sampling recipes (8--32 uniformly-sampled frames at fixed stride), treating temporal resolution as a static implementation detail. This assumption fails in resource-constrained deployments where dense sampling is infeasible~\cite{lin2019tsm}, and leaves two fundamental questions unanswered: \emph{when} does temporal subsampling become destructive, and \emph{why} do different architectures respond differently?
 
 \paragraph{Sampling theory perspective.}
-The Nyquist--Shannon theorem~\cite{shannon1949communication} states that a
-signal must be sampled above twice its highest-frequency component to avoid
-aliasing---a principle well established in perception~\cite{vanrullen2007wagon}
-and deep learning~\cite{zhang2019antialiased}.
-Figure~\ref{fig:aliasing_concept} illustrates how human actions, which exhibit
-intrinsic temporal frequencies, may fall into the aliasing regime when the
-sampling rate drops below a dataset-dependent Nyquist limit.
+The Nyquist--Shannon theorem~\cite{shannon1949communication} states that a signal must be sampled above twice its highest-frequency component to avoid aliasing---a principle well established in perception~\cite{vanrullen2007wagon} and deep learning~\cite{zhang2019antialiased}. Figure~\ref{fig:aliasing_concept} illustrates how human actions, which exhibit intrinsic temporal frequencies, may fall into the aliasing regime when the sampling rate drops below a dataset-dependent Nyquist limit.
 
 \begin{figure}[t]
 \centering
@@ -130,15 +80,11 @@ sampling rate drops below a dataset-dependent Nyquist limit.
 \begin{tikzpicture}[font=\small, node distance=7mm]
 \tikzset{
   act/.style  ={draw, trapezium, trapezium left angle=70,
-                trapezium right angle=110, align=center,
-                minimum height=1.0cm, text width=3.5cm,
-                fill=blue!7, draw=blue!60},
+                trapezium right angle=110, align=center, minimum height=1.0cm, text width=3.5cm, fill=blue!7, draw=blue!60},
   samp/.style ={draw, rounded corners=2pt, align=center,
-                minimum height=1.0cm, text width=3.5cm,
-                fill=orange!10, draw=orange!70},
+                minimum height=1.0cm, text width=3.5cm, fill=orange!10, draw=orange!70},
   obs/.style  ={draw, rounded corners=2pt, align=center,
-                minimum height=1.0cm, text width=3.5cm,
-                fill=gray!7, draw=gray!70},
+                minimum height=1.0cm, text width=3.5cm, fill=gray!7, draw=gray!70},
   aI/.style={-{Stealth[length=2mm]},thick,dashed,draw=gray!80},
   aO/.style={-{Stealth[length=2mm]},thick,draw=gray!80}
 }
@@ -154,32 +100,23 @@ sampling rate drops below a dataset-dependent Nyquist limit.
 \draw[aO](d.east)--(o1.west); \draw[aO](n.east)--(o2.west); \draw[aO](a.east)--(o3.west);
 \end{tikzpicture}
 \end{adjustbox}
-\caption{Temporal aliasing: high-frequency actions enter the distorted-evidence
-regime when sampling stride exceeds the Nyquist limit for that action class.}
+\caption{Temporal aliasing: high-frequency actions enter the distorted-evidence regime when sampling stride exceeds the Nyquist limit for that action class.}
 \label{fig:aliasing_concept}
 \end{figure}
 
 \paragraph{Contributions.}
 We conduct a systematic cross-architecture study of spatiotemporal aliasing:
 \begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
-\item \textbf{Temporal Demand Score (\TDS{})}: a model-independent dataset
-metric that consistently ranks 8 datasets by aliasing sensitivity across all 8
-architectures (Sec.~\ref{sec:results_tds}).
-FineGym (55.9pp) is confirmed as the highest-demand domain, surpassing sign language (AUTSL, 53.0pp).
+\item \textbf{Temporal Demand Score (\TDS{})}: an architecture-averaged dataset
+metric that consistently ranks 8 datasets by aliasing sensitivity, validated by leave-one-architecture-out analysis (Sec.~\ref{sec:results_tds}). FineGym (55.9pp) rivals sign language (AUTSL, 53.0pp) as the highest-demand domain.
 \item \textbf{Cross-architecture aliasing characterization}: 8,000+ evaluation
-configurations reveal that \emph{attention mechanism type}---not architecture family---
-determines aliasing behavior, with VideoMamba and TimeSformer aliasing 3--5$\times$
-less than CNNs and ViViT (Sec.~\ref{sec:results_temporal}).
+configurations reveal that \emph{attention mechanism type}---not architecture family---is the strongest correlate of aliasing behavior, with VideoMamba and TimeSformer aliasing 3--5$\times$ less than CNNs and ViViT (Sec.~\ref{sec:results_temporal}).
 \item \textbf{Target-resolution fine-tuning}: Fine-tuning each model at the deployment
-resolution closes the cross-resolution gap by 10--35pp for CNNs while
-Transformers---already resolution-robust---require no retraining
-(Sec.~\ref{sec:results_spatial}).
-\item \textbf{Measured inference latency}: First GPU latency characterization
-across all 8 models $\times$ 5 resolutions (bfloat16), enabling Nyquist-aware
-deployment budgeting per device class (Sec.~\ref{sec:results_latency}).
+resolution closes the cross-resolution gap by up to 39pp for CNNs while Transformers---already resolution-robust---require no retraining (Sec.~\ref{sec:results_spatial}).
+\item \textbf{Measured inference latency}: GPU latency characterization
+across all 8 models $\times$ 5 resolutions (bfloat16), enabling Nyquist-aware deployment budgeting per device class (Sec.~\ref{sec:results_latency}).
 \item \textbf{Entropy-based adaptive routing}: A zero-training method reduces
-average inference frames by 52\% while matching dense-sampling accuracy, outperforming
-FrameExit by $+4.2$pp (Sec.~\ref{sec:results_routing}).
+average inference frames by 52\% while matching dense-sampling accuracy, outperforming FrameExit by $+4.2$pp (Sec.~\ref{sec:results_routing}).
 \end{enumerate}
 
 % =========================================================
@@ -188,73 +125,19 @@ FrameExit by $+4.2$pp (Sec.~\ref{sec:results_routing}).
 
 \subsection{Video Recognition Architectures}
 
-\textbf{CNN-based architectures.}
-3D ConvNets learn spatiotemporal features end-to-end~\cite{tran2015c3d,carreira2017i3d},
-while Non-local Networks introduce global self-attention to capture long-range
-dependencies~\cite{wang2018nonlocal}.
-Factorized variants (R(2+1)D, MC3) improve optimization and
-efficiency~\cite{tran2018r2plus1d,tran2019video}.
-SlowFast processes two frame-rate streams simultaneously~\cite{feichtenhofer2019slowfast}.
-For a comprehensive survey see~\cite{zhu2020comprehensive}.
+\textbf{CNN-based architectures.} 3D ConvNets learn spatiotemporal features end-to-end~\cite{tran2015c3d,carreira2017i3d}, while Non-local Networks introduce global self-attention to capture long-range dependencies~\cite{wang2018nonlocal}. Factorized variants (R(2+1)D, MC3) improve optimization and efficiency~\cite{tran2018r2plus1d,tran2019video}. SlowFast processes two frame-rate streams simultaneously~\cite{feichtenhofer2019slowfast}. For a comprehensive survey see~\cite{zhu2020comprehensive}.
 
-\textbf{Transformer-based architectures.}
-The Vision Transformer (ViT)~\cite{dosovitskiy2021vit} enabled patch-based image
-recognition at scale, spawning numerous video extensions.
-TimeSformer factorizes temporal and spatial attention
-globally~\cite{bertasius2021timesformer}, while ViViT processes spatial features
-independently per frame before temporal aggregation~\cite{arnab2021vivit}.
-Video Swin introduces window-based local attention for
-efficiency~\cite{liu2022videoswin}, and MViT uses multi-scale feature hierarchies
-to jointly capture fine-grained and global motion~\cite{fan2021mvit}.
-VideoMAE learns via masked patch reconstruction~\cite{tong2022videomae},
-with VideoMAE~V2 scaling this to billion-parameter models~\cite{wang2023videomaev2}.
-Prior robustness analysis~\cite{schiappa2023robustness} benchmarks 90 video
-perturbations and finds Transformers more robust than CNNs to \emph{spatial}
-corruptions; our work is the first to characterize \emph{temporal aliasing} across
-architectures and diverse semantic domains systematically.
+\textbf{Transformer-based architectures.} The Vision Transformer (ViT)~\cite{dosovitskiy2021vit} enabled patch-based image recognition at scale, spawning numerous video extensions. TimeSformer factorizes temporal and spatial attention globally~\cite{bertasius2021timesformer}, while ViViT processes spatial features independently per frame before temporal aggregation~\cite{arnab2021vivit}. Video Swin introduces window-based local attention for efficiency~\cite{liu2022videoswin}, and MViT uses multi-scale feature hierarchies to jointly capture fine-grained and global motion~\cite{fan2021mvit}. VideoMAE learns via masked patch reconstruction~\cite{tong2022videomae}, with VideoMAE~V2 scaling this to billion-parameter models~\cite{wang2023videomaev2}. Prior robustness analysis~\cite{schiappa2023robustness} benchmarks 90 video perturbations and finds Transformers more robust than CNNs to \emph{spatial} corruptions; we extend this line of work to systematically characterize \emph{temporal aliasing} across architectures and diverse semantic domains.
 
-\textbf{State-space models (SSMs).}
-The Mamba architecture~\cite{gu2023mamba} introduces selective state-space scanning
-as a hardware-efficient alternative to attention; Mamba-2~\cite{dao2024mamba2} shows
-that SSMs and Transformers are special cases of a unified framework.
-VideoMamba~\cite{li2024videomamba} applies bidirectional Mamba scanning to video
-tokens, achieving strong efficiency--accuracy trade-offs.
-As we show, SSMs' recurrent integration of temporal context confers significant
-robustness to temporal aliasing, though GPU latency is higher than expected.
+\textbf{State-space models (SSMs).} The Mamba architecture~\cite{gu2023mamba} introduces selective state-space scanning as a hardware-efficient alternative to attention; Mamba-2~\cite{dao2024mamba2} shows that SSMs and Transformers are special cases of a unified framework. VideoMamba~\cite{li2024videomamba} applies bidirectional Mamba scanning to video tokens, achieving strong efficiency--accuracy trade-offs. As we show, SSMs' recurrent integration of temporal context confers significant robustness to temporal aliasing, though GPU latency is higher than expected.
 
 \subsection{Temporal Sampling and Adaptive Inference}
 
-TSN~\cite{wang2016tsn} and TSM~\cite{lin2019tsm} established the foundations
-of efficient temporal sampling.
-AdaFrame~\cite{wu2019adaframe} selects informative frames via policy learning;
-AdaFocus~\cite{wang2021adafocus} crops high-resolution spatial patches
-adaptively; AR-Net~\cite{meng2020arnet} adapts spatial resolution per video;
-FrameExit~\cite{ghodrati2021frameexit} uses confidence cascades for early exit.
-Huang \emph{et al.}~\cite{huang2018makes} study which datasets require temporal
-reasoning by testing models on shuffled frames, finding that many ``temporal'' datasets
-are solved by appearance cues alone; Sevilla-Lara \emph{et al.}~\cite{sevilla2021only}
-show that motion-only cues improve performance primarily on action sports---a finding
-our \TDS{} ranking corroborates for sign language and gymnastics.
-These analyses are qualitative; we provide the first quantitative, architecture-agnostic
-characterization of temporal sensitivity via the \TDS{} metric.
+TSN~\cite{wang2016tsn} and TSM~\cite{lin2019tsm} established the foundations of efficient temporal sampling. AdaFrame~\cite{wu2019adaframe} selects informative frames via policy learning; AdaFocus~\cite{wang2021adafocus} crops high-resolution spatial patches adaptively; AR-Net~\cite{meng2020arnet} adapts spatial resolution per video; FrameExit~\cite{ghodrati2021frameexit} uses confidence cascades for early exit. Huang \emph{et al.}~\cite{huang2018makes} study which datasets require temporal reasoning by testing models on shuffled frames, finding that many ``temporal'' datasets are solved by appearance cues alone; Sevilla-Lara \emph{et al.}~\cite{sevilla2021only} show that motion-only cues improve performance primarily on action sports---a finding our \TDS{} ranking corroborates for sign language and gymnastics. These analyses are qualitative; we provide a quantitative, architecture-averaged characterization of temporal sensitivity via the \TDS{} metric (Sec.~\ref{sec:results_tds} discusses its dependence on the evaluated model pool).
 
 \subsection{Sampling Theory in Deep Learning}
 
-The Nyquist--Shannon theorem~\cite{shannon1949communication} states that signals
-must be sampled above twice their highest frequency to avoid aliasing.
-Temporal aliasing is well documented in perception (stroboscopic motion
-reversal~\cite{vanrullen2007wagon}).
-In deep learning, standard strided convolutions violate shift-invariance and can be
-fixed by anti-aliasing filters~\cite{zhang2019antialiased}.
-The VideoMAE masked-autoencoder objective~\cite{he2022mae,tong2022videomae}
-provides spatial robustness via masked patch reconstruction; as we
-show, this does \emph{not} generalize to temporal gaps.
-Frequency-domain analysis has been explored for action
-recognition~\cite{tran2014frequency}.
-Prior robustness work~\cite{schiappa2023robustness} benchmarks 90 spatial and
-photometric corruptions but does not characterize temporal undersampling specifically.
-Our work is the first to study \emph{temporal aliasing} systematically
-across architectures and diverse semantic domains.
+The Nyquist--Shannon theorem~\cite{shannon1949communication} states that signals must be sampled above twice their highest frequency to avoid aliasing. Temporal aliasing is well documented in perception (stroboscopic motion reversal~\cite{vanrullen2007wagon}). In deep learning, standard strided convolutions violate shift-invariance and can be fixed by anti-aliasing filters~\cite{zhang2019antialiased}. The VideoMAE masked-autoencoder objective~\cite{he2022mae,tong2022videomae} provides spatial robustness via masked patch reconstruction; as we show, this does \emph{not} generalize to temporal gaps. Frequency-domain analysis has been explored for action recognition~\cite{tran2014frequency}. Prior robustness work~\cite{schiappa2023robustness} benchmarks 90 spatial and photometric corruptions but does not characterize temporal undersampling specifically. Our work is the first to study \emph{temporal aliasing} systematically across architectures and diverse semantic domains.
 
 % =========================================================
 \section{Methodology}
@@ -278,33 +161,17 @@ across architectures and diverse semantic domains.
 \node(an)[eval,right=6mm of e6]{\textbf{Analysis}\\TDS metric · ANOVA\\Levene · Taxonomy\\Latency · Entropy routing};
 \draw[arr](ds)--(ar); \draw[arr](ar)--(e1); \draw[arr](e1)--(e6); \draw[arr](e6)--(an);
 \end{tikzpicture}}
-\caption{Pipeline: 8 architectures evaluated across 8 datasets $\times$ 5 resolutions $\times$
-5 coverages $\times$ 5 strides = \textbf{8,000+ configurations}.
-Temporal sweep at native resolution (1,600 configs) feeds TDS, ANOVA, and entropy routing;
-spatial sweep with target-resolution fine-tuning (6,400 configs) characterizes resolution
-robustness. GPU latency measured separately (bfloat16, batch=1).
-Interactive results: \url{https://mi3-inforates.streamlit.app/}}
+\caption{Pipeline: 8 architectures evaluated across 8 datasets $\times$ 5 resolutions $\times$ 5 coverages $\times$ 5 strides = \textbf{8,000+ configurations}. Temporal sweep at native resolution (1,600 configs) feeds TDS, ANOVA, and entropy routing; spatial sweep with target-resolution fine-tuning (6,400 configs) characterizes resolution robustness. GPU latency measured separately (bfloat16, batch=1). Interactive results: \url{https://mi3-inforates.streamlit.app/}}
 \label{fig:pipeline}
 \end{figure*}
 
 \subsection{Datasets and Architectures}
 
-Table~\ref{tab:datasets} summarizes the 8 datasets selected to span semantic domains,
-motion frequencies, and recording conditions.
-We evaluate 8 architectures from four families:
-(i) \textbf{3D CNNs}: R3D-18, MC3-18~\cite{tran2019video}, R(2+1)D-18~\cite{tran2018r2plus1d};
-(ii) \textbf{dual-pathway}: SlowFast-R50~\cite{feichtenhofer2019slowfast};
-(iii) \textbf{Transformers}: TimeSformer~\cite{bertasius2021timesformer},
-ViViT~\cite{arnab2021vivit}, VideoMAE~\cite{tong2022videomae};
-(iv) \textbf{SSM}: VideoMamba~\cite{li2024videomamba}.
-All models are fine-tuned from Kinetics-400 checkpoints for 10 epochs using AdamW
-with cosine decay; learning rate $2\times10^{-5}$ (Transformers/SSMs) and
-$10^{-4}$ (CNNs).
+Table~\ref{tab:datasets} summarizes the 8 datasets selected to span semantic domains, motion frequencies, and recording conditions. We evaluate 8 architectures from four families: (i) \textbf{3D CNNs}: R3D-18, MC3-18~\cite{tran2019video}, R(2+1)D-18~\cite{tran2018r2plus1d}; (ii) \textbf{dual-pathway}: SlowFast-R50~\cite{feichtenhofer2019slowfast}; (iii) \textbf{Transformers}: TimeSformer~\cite{bertasius2021timesformer}, ViViT~\cite{arnab2021vivit}, VideoMAE~\cite{tong2022videomae}; (iv) \textbf{SSM}: VideoMamba~\cite{li2024videomamba}. All models are fine-tuned from Kinetics-400 checkpoints for 10 epochs using AdamW with cosine decay; learning rate $2\times10^{-5}$ (Transformers/SSMs) and $10^{-4}$ (CNNs).
 
 \begin{table}[t]
 \centering
-\caption{\TDS{} = mean accuracy drop (stride=1$\to$16, cov=100\%) per Eq.~\ref{eq:tds},
-  averaged over all 8 architectures ($n{=}8$). Sorted by \TDS{}.}
+\caption{\TDS{} = mean accuracy drop (stride=1$\to$16, cov=100\%) per Eq.~\ref{eq:tds}, averaged over all 8 architectures ($n{=}8$). Sorted by \TDS{}. \textbf{Bold} = the two co-equal highest-demand domains (their relative order is leave-one-out sensitive; ranks 3--8 are exactly stable, supplementary~S11).}
 \label{tab:datasets}
 \scriptsize\tabtight
 \begin{tabular}{l r r l r r}
@@ -325,78 +192,39 @@ UCF-101~\cite{soomro2012ucf101}      & 101 & 2,020 & Appearance         &  4.9pp
 
 \subsection{Temporal Sampling Protocol}
 
-We decouple \textit{temporal coverage} $\mathcal{C}$ (fraction of clip observed)
-from \textit{temporal stride} $s$ (sampling density), forming a 5$\times$5 grid:
-$\mathcal{C}\in\{10,25,50,75,100\}\%$ and $s\in\{1,2,4,8,16\}$.
-The temporal sweep at native resolution yields $8{\times}8{\times}25{=}\mathbf{1{,}600}$
-model--dataset--configuration triples
-(each evaluated over ${\approx}20$ clips per class).
-Combined with the spatial resolution sweep (5 resolutions), the total reaches
-\textbf{8,000+ evaluation configurations}.
+We decouple \textit{temporal coverage} $\mathcal{C}$ (fraction of clip observed) from \textit{temporal stride} $s$ (sampling density), forming a 5$\times$5 grid: $\mathcal{C}\in\{10,25,50,75,100\}\%$ and $s\in\{1,2,4,8,16\}$. The temporal sweep at native resolution yields $8{\times}8{\times}25{=}\mathbf{1{,}600}$ model--dataset--configuration triples (each evaluated over ${\approx}20$ clips per class). Combined with the spatial resolution sweep (5 resolutions), the total reaches \textbf{8,000+ evaluation configurations}.
 
 \paragraph{Coverage implementation.}
-Coverage is applied from the \emph{beginning} of each clip: the first
-$\lfloor T\cdot\mathcal{C}/100\rfloor$ frames form the candidate pool,
-and $s$ controls sampling density within that window.
-This simulates a sensor that observes only a leading fraction of the action
-and gives the sharpest, most interpretable measurement of ``how early in the clip
-does the model have enough temporal context.''
-An alternative---random window placement---would confound temporal structure
-with missing-data effects, making coverage and stride effects harder to disentangle.
-We acknowledge that this choice is conservative for datasets where key events
-occur at clip boundaries (e.g., action completion in SSv2); supplementary~S1
-shows that the coverage effect on SSv2 is qualitatively similar across window
-positions when checked on a 10\% random subset.
+Coverage is applied from the \emph{beginning} of each clip: the first $\lfloor T\cdot\mathcal{C}/100\rfloor$ frames form the candidate pool, and $s$ controls sampling density within that window. This simulates a sensor that observes only a leading fraction of the action and gives the sharpest, most interpretable measurement of ``how early in the clip does the model have enough temporal context.'' An alternative---random window placement---would confound temporal structure with missing-data effects, making coverage and stride effects harder to disentangle. We acknowledge that this choice is conservative for datasets where key events occur at clip boundaries (e.g., action completion in SSv2); supplementary~S1 shows that the coverage effect on SSv2 is qualitatively similar across window positions when checked on a 10\% random subset.
 
 \subsection{Spatial Resolution Protocol}
 
 \paragraph{Cross-resolution evaluation.}
-We evaluate all 8 fine-tuned checkpoints (at native resolution) on \emph{all 8 datasets}
-at $r\in\{48,96,112,160,224,336\}$\,px \emph{without retraining},
-measuring accuracy retention when the input resolution differs from the native training
-resolution (112px for CNNs, 224px for Transformers and VideoMamba).
+We evaluate all 8 fine-tuned checkpoints (at native resolution) on \emph{all 8 datasets} at $r\in\{48,96,112,160,224,336\}$\,px \emph{without retraining}, measuring accuracy retention when the input resolution differs from the native training resolution (112px for CNNs, 224px for Transformers and VideoMamba).
 
 \paragraph{Target-resolution fine-tuning.}
-For each (model, dataset, resolution) triple at $r\in\{48,96,112,160,224\}$\,px,
-we fine-tune from the native-resolution checkpoint for 10 additional epochs.
-For Transformers and VideoMamba, positional embeddings are bicubically interpolated
-from the native grid to the target grid before fine-tuning; passing
-\texttt{ignore\_mismatched\_sizes=True} in HuggingFace discards positional embeddings
-entirely and causes a large accuracy cliff---our interpolation-based approach avoids this.
-CNNs transfer directly; SlowFast head pooling is replaced with
-\texttt{AdaptiveAvgPool3d(1)} to support non-native resolutions.
+For each (model, dataset, resolution) triple at $r\in\{48,96,112,160,224\}$\,px, we fine-tune from the native-resolution checkpoint for 10 additional epochs. For Transformers and VideoMamba, positional embeddings are bicubically interpolated from the native grid to the target grid before fine-tuning; passing \texttt{ignore\_mismatched\_sizes=True} in HuggingFace discards positional embeddings entirely and causes a large accuracy cliff---our interpolation-based approach avoids this. CNNs transfer directly; SlowFast head pooling is replaced with \texttt{AdaptiveAvgPool3d(1)} to support non-native resolutions.
 
 \subsection{Temporal Demand Score (\texorpdfstring{\TDS{}}{TDS})}
 
 We define \TDS{} as the architecture-averaged accuracy drop from stride=1 to stride=16:
 \begin{equation}
-  \TDS(\mathcal{D}) = \frac{1}{|\mathcal{M}|} \sum_{m\in\mathcal{M}}
-  \bigl[\mathrm{Acc}(m,\mathcal{D},s{=}1) - \mathrm{Acc}(m,\mathcal{D},s{=}16)\bigr]^+
+  \TDS(\mathcal{D}) = \frac{1}{|\mathcal{M}|} \sum_{m\in\mathcal{M}} \bigl[\mathrm{Acc}(m,\mathcal{D},s{=}1) - \mathrm{Acc}(m,\mathcal{D},s{=}16)\bigr]^+
   \label{eq:tds}
 \end{equation}
-where $[\cdot]^+$ excludes feature-collapsed models.
-\TDS{} is a \emph{dataset property}: it measures the dataset's intrinsic
-temporal frequency demand independently of any single model.
+where $[\cdot]^+$ excludes feature-collapsed models. \TDS{} is a \emph{dataset property}: it measures the dataset's intrinsic temporal frequency demand independently of any single model.
 
 \subsection{Statistical Analysis}
 
-For each model-dataset pair, two-way ANOVA decomposes variance into coverage
-and stride components (effect size $\eta^2$).
-Levene's test detects per-class variance inflation under sparse sampling.
-Post-hoc Welch's $t$-tests with Bonferroni correction identify aliasing ``cliffs.''
+For each model-dataset pair, two-way ANOVA decomposes variance into coverage and stride components (effect size $\eta^2$). Levene's test detects per-class variance inflation under sparse sampling. Post-hoc Welch's $t$-tests with Bonferroni correction identify aliasing ``cliffs.''
 
 \subsection{Entropy-Based Routing}
 
-Given temporal-sweep results at two operating points---cheap: cov=100\%/$s$=4 (4 effective
-frames); dense: cov=100\%/$s$=1 (16 frames)---we route video $v$ by threshold:
-\[
-  \hat{y}(v) = \begin{cases}
+Given temporal-sweep results at two operating points---cheap: cov=100\%/$s$=4 (4 effective frames); dense: cov=100\%/$s$=1 (16 frames)---we route video $v$ by threshold: \[ \hat{y}(v) = \begin{cases}
     \hat{y}_\text{cheap} & \text{if } \max_c\,p(c\mid v,s{=}4) > \tau \\
     \hat{y}_\text{dense} & \text{otherwise}
   \end{cases}
-\]
-We sweep $\tau\in[0.10,\,0.95]$ and report the Pareto-optimal point at avg frames~$\leq8$.
-No retraining is required; only the existing temporal-sweep inference is reused.
+\] We sweep $\tau\in[0.10,\,0.95]$ and report the Pareto-optimal point at avg frames~$\leq8$. No retraining is required; only the existing temporal-sweep inference is reused.
 
 % =========================================================
 \section{Results}
@@ -405,50 +233,23 @@ No retraining is required; only the existing temporal-sweep inference is reused.
 \subsection{Temporal Demand Score Validates Architecture-Independent Ranking}
 \label{sec:results_tds}
 
-Figure~\ref{fig:tds_spectral} (left) shows the \TDS{} ranking across 8 datasets.
-\textbf{FineGym (55.9pp)} is the most important new finding in this dimension:
-fine-grained gymnastics phase transitions (floor exercise, parallel bars, vault)
-\emph{surpass} sign language (AUTSL, 53.0pp) as the highest-demand domain,
-confirming that \emph{sport} is not inherently low-TDS---it depends on the
-granularity of the classification task.
-AUTSL requires dense sampling to discriminate fine handshape transitions (53.0pp),
-but FineGym's sub-second phase boundaries are even more temporally demanding.
-UCF-101 (4.9pp) is primarily appearance-driven: object identity alone suffices.
+Figure~\ref{fig:tds_spectral} (left) shows the \TDS{} ranking across 8 datasets. \textbf{FineGym (55.9pp)} is the most important new finding in this dimension: fine-grained gymnastics phase transitions (floor exercise, parallel bars, vault) \emph{rival} sign language (AUTSL, 53.0pp) as the highest-demand domain, confirming that \emph{sport} is not inherently low-TDS---it depends on the granularity of the classification task. AUTSL requires dense sampling to discriminate fine handshape transitions (53.0pp), but FineGym's sub-second phase boundaries are comparably demanding. UCF-101 (4.9pp) is primarily appearance-driven: object identity alone suffices.
 
-Crucially, this ranking is \emph{consistent} regardless of model family:
-R3D-18 (CNN), TimeSformer (Transformer), and VideoMamba (SSM) all order the 8 datasets
-in the same sequence with Spearman $\rho=0.97$, confirming that \TDS{} captures a
-\emph{dataset property}, not an architecture artifact.
+Crucially, the ranking for positions 3--8 is \emph{exactly} stable under leave-one-architecture-out: removing any single one of the 8 architectures and recomputing \TDS{} leaves SSv2, DriveAct, Diving-48, HMDB-51, EPIC-Kitchens, and UCF-101 in the same relative order in all 8 cases ($\rho=1.00$ for 7 of the 8 leave-one-out pools). The exception is the \#1/\#2 position: removing VideoMamba specifically swaps FineGym and AUTSL ($\rho=0.976$), because VideoMamba is comparatively robust on AUTSL (16.0pp, near the bottom of VideoMamba's own range) but comparatively fragile on FineGym (40.8pp, its single worst dataset)---so its inclusion is what tips FineGym narrowly above AUTSL. We report FineGym and AUTSL as effectively co-equal highest-demand domains rather than claiming a definitive order between them; full leave-one-out results are in supplementary~S11.
 
 \paragraph{Spectral validation.}
-Figure~\ref{fig:tds_spectral} (right) shows the Pearson correlation between
-per-class optical-flow magnitude and aliasing loss across 7 datasets
-(FineGym: optical-flow analysis in progress; per-class extraction requires
-egomotion-compensated flow at 97-class granularity).
-AUTSL ($r=0.285$, $p<0.001$) and DriveAct ($r=0.327$, $p=0.063$) show the
-strongest flow-aliasing correlation.
-EPIC-Kitchens shows near-zero correlation ($r=-0.002$), suggesting
-that in egocentric datasets, background camera motion dominates optical flow,
-decoupling it from action-relevant temporal demand (Table~\ref{tab:spectral}).
+Figure~\ref{fig:tds_spectral} (right) shows the Pearson correlation between per-class optical-flow magnitude and aliasing loss across all 8 datasets, including FineGym. AUTSL ($r=0.285$, $p<0.001$) and DriveAct ($r=0.327$, $p=0.063$) show the strongest flow-aliasing correlation. EPIC-Kitchens shows near-zero correlation ($r=-0.002$), suggesting that in egocentric datasets, background camera motion dominates optical flow, decoupling it from action-relevant temporal demand (Table~\ref{tab:spectral}).
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{images/main_fig3_tds_spectral.pdf}
-  \caption{\textbf{Left}: \TDS{} ranking---mean accuracy drop from stride=1 to 16
-    averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) is the highest-demand
-    domain; AUTSL (53.0pp) is second; UCF-101 (4.9pp) is appearance-dominated.
-    Ranking is consistent across all 8 architectures ($\rho=0.97$).
-    \textbf{Right}: Pearson correlation between optical-flow magnitude and per-class
-    aliasing loss (7 datasets). AUTSL and DriveAct show moderate-significant correlation;
-    EPIC-Kitchens near-zero (background camera motion confounds flow).}
+  \caption{\textbf{Left}: \TDS{} ranking---mean accuracy drop from stride=1 to 16 averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) and AUTSL (53.0pp) are co-equal highest-demand domains (order between them is leave-one-out sensitive, supplementary~S11); UCF-101 (4.9pp) is appearance-dominated. Positions 3--8 are exactly stable under leave-one-architecture-out. \textbf{Right}: Pearson correlation between optical-flow magnitude and per-class aliasing loss (8 datasets, including FineGym). AUTSL and DriveAct show moderate-significant correlation; EPIC-Kitchens near-zero (background camera motion confounds flow).}
   \label{fig:tds_spectral}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Spectral validation: Pearson $r$ between optical-flow magnitude and
-per-class aliasing loss. Flow alone partially explains temporal demand;
-camera-motion-heavy datasets (EPIC, UCF) show weak correlation.}
+\caption{Spectral validation: Pearson $r$ between optical-flow magnitude and per-class aliasing loss. Flow alone partially explains temporal demand; camera-motion-heavy datasets (EPIC, UCF) show weak correlation.}
 \label{tab:spectral}
 \scriptsize\tabtight
 \begin{tabular}{l r r c r}
@@ -462,6 +263,7 @@ HMDB-51       &  51 & 0.180 & $\times$   & Mixed motion types \\
 Diving-48     &  47 & 0.140 & $\times$   & Body rotation dominated \\
 UCF-101       & 101 & 0.031 & $\times$   & Appearance dominates \\
 EPIC-Kitchens &  89 & $-0.002$& $\times$ & Camera motion confounds \\
+FineGym       &  97 & \texttt{PENDING} & \texttt{PENDING} & Gymnastics phase transitions \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -469,69 +271,31 @@ EPIC-Kitchens &  89 & $-0.002$& $\times$ & Camera motion confounds \\
 \subsection{Cross-Architecture Temporal Aliasing}
 \label{sec:results_temporal}
 
-\paragraph{Attention type determines aliasing.}
-Table~\ref{tab:e1_full} shows accuracy at stride=1 and the drop at stride=16 for
-all 8 models across 8 datasets.
-The central finding is that aliasing follows \emph{attention mechanism type},
-not architecture family (Fig.~\ref{fig:aliasing_curves}).
+\paragraph{Attention type predicts aliasing.}
+Table~\ref{tab:e1_full} shows accuracy at stride=1 and the drop at stride=16 for all 8 models across 8 datasets. The central finding is that aliasing tracks \emph{attention mechanism type} more closely than architecture family (Fig.~\ref{fig:aliasing_curves}); we evaluate 8 architectures and cannot rule out that other unobserved factors (pretraining objective, parameter count, tokenization) covary with this grouping.
 
-\textbf{Robust group} (mean drop $\leq$12pp): TimeSformer (divided attention, 10.3pp)
-and VideoMamba (SSM, 11.4pp, all 8 datasets).
-Both preserve global temporal context under aggressive subsampling---VideoMamba via
-recurrent state accumulation, TimeSformer via full-clip cross-frame attention.
+\textbf{Robust group} (mean drop $\leq$12pp): TimeSformer (divided attention, 10.3pp) and VideoMamba (SSM, 11.4pp, all 8 datasets). Both preserve global temporal context under aggressive subsampling---VideoMamba via recurrent state accumulation, TimeSformer via full-clip cross-frame attention.
 
-VideoMamba's robustness is markedly \emph{bimodal} across datasets.
-On 5 of 8 datasets it aliases barely at all: UCF-101 (0.8pp), HMDB-51 (3.6pp),
-EPIC-Kitchens (1.2pp), Diving-48 (4.9pp), DriveAct (9.6pp).
-But on the three highest-TDS domains, VideoMamba suffers substantially:
-AUTSL (16.0pp), SSv2 (14.1pp), and \textbf{FineGym (40.8pp)}.
-Without FineGym, VideoMamba's 7-dataset average would be only 6.6pp---
-making it the most robust model by a large margin.
-FineGym alone adds 4.8pp to the average, revealing an SSM temporal bandwidth limit.
+VideoMamba's robustness is markedly \emph{bimodal} across datasets. On 5 of 8 datasets it aliases barely at all: UCF-101 (0.8pp), HMDB-51 (3.6pp), EPIC-Kitchens (1.2pp), Diving-48 (4.9pp), DriveAct (9.6pp)---averaging 4.0pp, which would make it the most robust model by a large margin. But on the three highest-TDS domains, VideoMamba suffers substantially: AUTSL (16.0pp), SSv2 (14.1pp), and \textbf{FineGym (40.8pp)}, lifting its full 8-dataset average to 11.4pp.
 
-\textbf{Critically, FineGym inverts the SSM-vs-Transformer ranking:}
-TimeSformer drops 36.1pp on FineGym vs.\ VideoMamba's 40.8pp---the one dataset
-where divided attention is \emph{more} temporally robust than the SSM.
-On SSv2, the gap is similarly small: VideoMamba 14.1pp vs.\ TimeSformer 12.8pp;
-on AUTSL, VideoMamba drops 16.0pp vs.\ TimeSformer's 16.0pp---both architectures
-show equivalent sensitivity to sign-language temporal structure.
-These high-TDS reversals trace to the same root cause: VideoMamba's recurrent state
-integrates temporal evidence as a running average, which smooths over high-frequency
-phase transitions rather than preserving the key-frame signal.
-TimeSformer's cross-frame attention \emph{selectively} attends to the most
-discriminative frames, a property that proves advantageous when transitions are dense.
+\textbf{FineGym most clearly inverts the SSM-vs-Transformer ranking:} TimeSformer drops 36.1pp on FineGym vs.\ VideoMamba's 40.8pp, a 4.7pp gap favoring divided attention. The same direction holds, more weakly, on SSv2 (VideoMamba 14.1pp vs.\ TimeSformer 12.8pp) and is tied on AUTSL (both 16.0pp)---so divided attention is not uniquely advantaged on FineGym, but the advantage is largest there. We hypothesize this traces to a common cause: VideoMamba's recurrent state integrates temporal evidence as a running average, which would smooth over high-frequency phase transitions rather than preserving the key-frame signal, while TimeSformer's cross-frame attention can \emph{selectively} attend to the most discriminative frames. We have not directly measured state dynamics or attention maps to confirm this mechanism; it remains a plausible explanation consistent with the accuracy patterns rather than a verified causal account.
 
-The SSv2 result (14.1pp for VideoMamba) extends beyond frequency: SSv2 tests causal
-\emph{temporal ordering} (``move cup left then right''), not just temporal density.
-SSM recurrence is not inherently order-preserving when frames are skipped---
-the state integrates a corrupted temporal sequence.
-This explains why VideoMamba aliases on SSv2 despite low-frequency class prototypes,
-while appearance-dominated UCF-101 remains unaffected (0.8pp).
+The SSv2 result (14.1pp for VideoMamba) extends beyond frequency: SSv2 tests causal \emph{temporal ordering} (``move cup left then right''), not just temporal density. SSM recurrence is not inherently order-preserving when frames are skipped---the state integrates a corrupted temporal sequence. This explains why VideoMamba aliases on SSv2 despite low-frequency class prototypes, while appearance-dominated UCF-101 remains unaffected (0.8pp).
 
-\textbf{Fragile group} (mean drop $\geq$22pp): SlowFast (42.1pp), VideoMAE (32.8pp),
-ViViT (30.0pp), R2+1D (30.0pp), R3D-18 (29.7pp), MC3-18 (22.6pp).
-ViViT's failure---despite being a Transformer---is the
-\emph{ViViT anomaly}: its factorized attention processes spatial features
-frame-independently, leaving the temporal aggregation module vulnerable to
-frame dropout.
+The VideoMamba/AUTSL value (65.6\%/16.0pp) uses the AUTSL-fine-tuned checkpoint at native resolution (224px), fine-tuned with the same 10-epoch recipe as every other model (supplementary~S8); a K400-pretrained VideoMamba checkpoint without AUTSL fine-tuning collapses to 0.4\% on AUTSL's 226 sign-language classes and is not used.
+
+\textbf{Fragile group} (mean drop $\geq$22pp): SlowFast (42.1pp), VideoMAE (32.8pp), ViViT (30.0pp), R2+1D (30.0pp), R3D-18 (29.7pp), MC3-18 (22.6pp). ViViT's failure---despite being a Transformer---is the \emph{ViViT anomaly}: its factorized attention processes spatial features frame-independently, leaving the temporal aggregation module vulnerable to frame dropout.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{images/main_fig1_aliasing_curves.pdf}
-  \caption{Accuracy vs.\ stride (cov=100\%) for three representative datasets.
-    \textbf{AUTSL} (\TDS{}=53.0pp): TimeSformer and VideoMamba remain most stable;
-    all other models cliff above stride=4.
-    \textbf{SSv2} (\TDS{}=27.6pp): clear two-tier separation between robust
-    (TSF, VMamba) and fragile models.
-    \textbf{UCF-101} (\TDS{}=4.9pp): minimal sensitivity across all architectures.
-    These three datasets cover the full \TDS{} range, validating the metric.}
+  \caption{Accuracy vs.\ stride (cov=100\%) for three representative datasets. \textbf{AUTSL} (\TDS{}=53.0pp): TimeSformer and VideoMamba remain most stable; all other models cliff above stride=4. \textbf{SSv2} (\TDS{}=27.6pp): clear two-tier separation between robust (TSF, VMamba) and fragile models. \textbf{UCF-101} (\TDS{}=4.9pp): minimal sensitivity across all architectures. These three datasets cover the full \TDS{} range, validating the metric.}
   \label{fig:aliasing_curves}
 \end{figure*}
 
 \begin{table*}[t]
 \centering
-\caption{Full temporal aliasing table: stride=1 accuracy (\%) / drop at stride=16 (pp), cov=100\%.
-  Rows sorted by average drop across all 8 datasets.}
+\caption{Full temporal aliasing table: stride=1 accuracy (\%) / drop at stride=16 (pp), cov=100\%. Rows sorted by average drop across all 8 datasets.}
 \label{tab:e1_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -554,42 +318,19 @@ SlowFast (dual)   & 87.6/15.4 & 49.5/43.0 & 79.3/37.4 & 50.5/39.7 & 78.2/71.5 & 
 \end{table*}
 
 \paragraph{Architecture-specific failure modes.}
-\textit{SlowFast cliff at stride 2$\to$4}:
-The fast pathway requires 32 frames and the slow pathway requires 8.
-At stride=4, effective inputs drop to 8 and 2 respectively---both are
-simultaneously starved, producing a precipitous cliff one stride earlier than
-other architectures.
-At stride=4 on AUTSL, SlowFast drops from 77\% to 41\%---a 36pp step.
-On FineGym, SlowFast reaches the highest base accuracy (78.2\%) but drops 71.5pp
-at stride=16---the largest single-dataset aliasing loss in the entire benchmark.
+\textit{SlowFast cliff at stride 2$\to$4}: The fast pathway requires 32 frames and the slow pathway requires 8. At stride=4, effective inputs drop to 8 and 2 respectively---both are simultaneously starved, producing a precipitous cliff one stride earlier than other architectures. At stride=4 on AUTSL, SlowFast drops from 77\% to 41\%---a 36pp step. On FineGym, SlowFast reaches the highest base accuracy (78.2\%) but drops 71.5pp at stride=16---the largest single-dataset aliasing loss in the entire benchmark.
 
-\textit{VideoMAE temporal paradox}:
-VideoMAE achieves the highest base accuracy on UCF-101 (95.4\%) and FineGym (78.0\%)
-yet suffers among the largest aliasing losses.
-The masked autoencoder objective teaches spatial robustness by reconstructing
-patches under heavy masking, but does not prepare the model for \emph{temporal}
-gaps, which differ fundamentally from spatially masked patches.
+\textit{VideoMAE temporal paradox}: VideoMAE achieves the highest base accuracy on UCF-101 (95.4\%) and FineGym (78.0\%) yet suffers among the largest aliasing losses. The masked autoencoder objective teaches spatial robustness by reconstructing patches under heavy masking, but does not prepare the model for \emph{temporal} gaps, which differ fundamentally from spatially masked patches.
 
-\textit{VideoMamba bimodal profile}:
-VideoMamba's aliasing is strongly bimodal across datasets (avg 6.6pp over 5 domains;
-40.8pp on FineGym, 16.0pp on AUTSL, 14.1pp on SSv2)---see Discussion for
-mechanistic analysis of these failure modes.
+\textit{VideoMamba bimodal profile}: VideoMamba's aliasing is strongly bimodal across datasets (avg 4.0pp over 5 domains; 40.8pp on FineGym, 16.0pp on AUTSL, 14.1pp on SSv2)---see Discussion for hypothesized failure modes.
 
 \paragraph{Cross-architecture sensitivity heatmap.}
-Figure~\ref{fig:heatmap} shows the full coverage$\times$stride sensitivity matrix
-averaged over 8 datasets, with models sorted by mean \TDS{}.
-The diagonal structure---robust models maintaining a flat plateau while fragile
-models show sharp gradients along the stride axis---is consistent across datasets
-(supplementary S1 provides per-model, per-dataset heatmaps).
+Figure~\ref{fig:heatmap} shows the full coverage$\times$stride sensitivity matrix averaged over 8 datasets, with models sorted by mean \TDS{}. The diagonal structure---robust models maintaining a flat plateau while fragile models show sharp gradients along the stride axis---is consistent across datasets (supplementary S1 provides per-model, per-dataset heatmaps).
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{images/main_fig2_aliasing_heatmap.pdf}
-  \caption{Cross-architecture sensitivity heatmap: accuracy (\%) averaged over 8 datasets
-    across the coverage$\times$stride grid. Models sorted left-to-right by mean aliasing
-    robustness. VideoMamba and TimeSformer maintain a flat high-accuracy plateau;
-    SlowFast and ViViT show dramatic stride-driven collapse (red gradient).
-    VideoMamba excludes AUTSL (feature collapse, domain gap not aliasing).}
+  \caption{Cross-architecture sensitivity heatmap: accuracy (\%) averaged over 8 datasets across the coverage$\times$stride grid. Models sorted left-to-right by mean aliasing robustness. VideoMamba and TimeSformer maintain a flat high-accuracy plateau; SlowFast and ViViT show dramatic stride-driven collapse (red gradient). VideoMamba/AUTSL uses the AUTSL-fine-tuned checkpoint, consistent with all other models' AUTSL checkpoints.}
   \label{fig:heatmap}
 \end{figure*}
 
@@ -597,17 +338,11 @@ models show sharp gradients along the stride axis---is consistent across dataset
 \label{sec:stats}
 
 \paragraph{Effect sizes.}
-Table~\ref{tab:anova} reports two-way ANOVA $\eta^2$ values (mean$\pm$std over 8 datasets).
-Coverage is the dominant factor across all models ($\eta^2_\text{cov}=0.53$--$0.90$).
-Stride effect size distinguishes the two groups: VideoMamba and TimeSformer have
-$\eta^2_\text{stride}\approx0.08$, while SlowFast reaches $0.35$---a 4.4$\times$
-difference confirming that stride is architecturally consequential for fragile models.
-Full per-dataset $\eta^2$ tables are provided in supplementary~S3.
+Table~\ref{tab:anova} reports two-way ANOVA $\eta^2$ values (mean$\pm$std over 8 datasets). Coverage is the dominant factor across all models ($\eta^2_\text{cov}=0.53$--$0.90$). Stride effect size distinguishes the two groups: VideoMamba and TimeSformer have $\eta^2_\text{stride}\approx0.08$, while SlowFast reaches $0.35$---a 4.4$\times$ difference confirming that stride is architecturally consequential for fragile models. Full per-dataset $\eta^2$ tables are provided in supplementary~S3.
 
 \begin{table}[t]
 \centering
-\caption{ANOVA effect sizes ($\eta^2$, mean$\pm$std over 8 datasets). All stride
-effects significant ($p{<}0.05$). Coverage dominates; stride separates robust from fragile.}
+\caption{ANOVA effect sizes ($\eta^2$, mean$\pm$std over 8 datasets). All stride effects significant ($p{<}0.05$). Coverage dominates; stride separates robust from fragile.}
 \label{tab:anova}
 \scriptsize\tabtight
 \begin{tabular}{l cc c}
@@ -627,38 +362,20 @@ SlowFast       & $0.35 \pm 0.07$ & $0.53 \pm 0.09$ & Most fragile \\
 \end{table}
 
 \paragraph{Variance inflation.}
-Levene's test shows that stride significantly inflates inter-class accuracy variance
-in 67\% of model-dataset pairs ($p<0.05$, Bonferroni-corrected).
-The worst cases: VideoMAE/HMDB-51 ($\sigma_{s=16}/\sigma_{s=1}=2.0\times$) and
-R3D-18/HMDB-51 ($1.85\times$).
-TimeSformer and VideoMamba show stable variance ($\approx1.1\times$), confirming that
-mean accuracy under sparse sampling is not stochastic for robust architectures.
-A model that \emph{on average} achieves 70\% under sparse sampling but with a
-variance ratio of $2\times$ will unpredictably fail on subsets of classes, a risk
-that mean accuracy alone does not reveal.
+Levene's test shows that stride significantly inflates inter-class accuracy variance in 67\% of model-dataset pairs ($p<0.05$, Bonferroni-corrected). The worst cases: VideoMAE/HMDB-51 ($\sigma_{s=16}/\sigma_{s=1}=2.0\times$) and R3D-18/HMDB-51 ($1.85\times$). TimeSformer and VideoMamba show stable variance ($\approx1.1\times$), confirming that mean accuracy under sparse sampling is not stochastic for robust architectures. A model that \emph{on average} achieves 70\% under sparse sampling but with a variance ratio of $2\times$ will unpredictably fail on subsets of classes, a risk that mean accuracy alone does not reveal.
 
 \subsection{Action Sensitivity Taxonomy}
 \label{sec:taxonomy}
 
-We classify each action class into three tiers by per-class aliasing loss
-(accuracy drop, stride=1$\to$16).
-Tier boundaries use the 33rd/67th percentiles.
+We classify each action class into three tiers by per-class aliasing loss (accuracy drop, stride=1$\to$16). Tier boundaries use the 33rd/67th percentiles.
 
-\textbf{High-sensitivity} actions (top 33\%) are temporally critical:
-in AUTSL, even the Low tier loses 38pp---confirming that the entire dataset requires
-dense sampling.
-In contrast, the UCF-101 Low tier loses only 0.3pp: static, appearance-driven actions
-(\emph{billiards}, \emph{typing}) are virtually unaffected.
+\textbf{High-sensitivity} actions (top 33\%) are temporally critical: in AUTSL, even the Low tier loses 38pp---confirming that the entire dataset requires dense sampling. In contrast, the UCF-101 Low tier loses only 0.3pp: static, appearance-driven actions (\emph{billiards}, \emph{typing}) are virtually unaffected.
 
-Table~\ref{tab:taxonomy_thresholds} reports per-dataset tier boundaries.
-AUTSL's Low-sensitivity threshold starts at 66.9pp---higher than the
-\emph{High-sensitivity} threshold of any other dataset---confirming that sign language
-constitutes an entirely different temporal frequency regime.
+Table~\ref{tab:taxonomy_thresholds} reports per-dataset tier boundaries. AUTSL's Low-sensitivity threshold starts at 66.9pp---higher than the \emph{High-sensitivity} threshold of any other dataset---confirming that sign language constitutes an entirely different temporal frequency regime.
 
 \begin{table}[t]
 \centering
-\caption{Taxonomy tier boundaries (accuracy drop pp): classes below Low threshold
-  alias minimally; above High threshold alias severely. Computed at cov=100\%, stride=1$\to$16.}
+\caption{Taxonomy tier boundaries (accuracy drop pp): classes below Low threshold alias minimally; above High threshold alias severely. Computed at cov=100\%, stride=1$\to$16.}
 \label{tab:taxonomy_thresholds}
 \scriptsize\tabtight
 \begin{tabular}{l r r r r}
@@ -676,43 +393,24 @@ UCF-101       &  1.4pp &  7.5pp & 35 & 31 \\
 \end{tabular}
 \end{table}
 
-\textbf{Clip duration effect.}
-Counter-intuitively, shorter clips alias more severely
-(Pearson $r=-0.3$ to $-0.8$ across models): short clips have less temporal
-redundancy, so each missed frame removes a larger fraction of available evidence.
-On UCF-101, clips $>$6s lose only 1.5pp at stride=16 vs.\ 16.2pp for clips $<$3s.
-On SSv2, the effect reverses for the 3--6s bin (29.1pp) compared to $>$6s (18.4pp),
-consistent with longer SSv2 clips encoding repeated physical interactions that
-maintain context under sparse sampling.
-This provides a novel routing feature: short clips should receive dense sampling
-irrespective of model confidence.
+\textbf{Clip duration effect.} Counter-intuitively, shorter clips alias more severely (Pearson $r=-0.3$ to $-0.8$ across models): short clips have less temporal redundancy, so each missed frame removes a larger fraction of available evidence. On UCF-101, clips $>$6s lose only 1.5pp at stride=16 vs.\ 16.2pp for clips $<$3s. On SSv2, the effect reverses for the 3--6s bin (29.1pp) compared to $>$6s (18.4pp), consistent with longer SSv2 clips encoding repeated physical interactions that maintain context under sparse sampling. This provides a novel routing feature: short clips should receive dense sampling irrespective of model confidence.
 
 \subsection{Spatial Resolution and Target-Resolution Fine-Tuning}
 \label{sec:results_spatial}
 
 \paragraph{Cross-resolution robustness.}
-Figure~\ref{fig:spatial} and Table~\ref{tab:spatial} show accuracy vs.\ input
-resolution for all 8 models on SSv2, evaluated \emph{without retraining}.
-The same attention-type split observed in the temporal domain reappears here.
-CNNs (native 112px) degrade sharply at higher resolutions:
-R2+1D drops from 42.6\% at 112px to 5.9\% at 336px ($-36.7$pp).
-Transformers and VideoMamba (native 224px) stay within $\pm$6pp across 96--336px.
+Figure~\ref{fig:spatial} and Table~\ref{tab:spatial} show accuracy vs.\ input resolution for all 8 models on SSv2, evaluated \emph{without retraining}. The same attention-type split observed in the temporal domain reappears here. CNNs (native 112px) degrade sharply at higher resolutions: R2+1D drops from 42.6\% at 112px to 5.9\% at 336px ($-36.6$pp). Transformers and VideoMamba (native 224px) stay within $\pm$7pp across 96--336px.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{images/main_fig5_spatial_resolution.pdf}
-  \caption{Accuracy vs.\ input resolution on SSv2 (no retraining).
-    CNNs (dashed, native=112px) degrade severely at higher resolutions;
-    Transformers and VideoMamba (solid, native=224px) stay within $\pm$6pp
-    across 96--336px.
-    Filled markers denote each model's native training resolution.}
+  \caption{Accuracy vs.\ input resolution on SSv2 (no retraining). CNNs (dashed, native=112px) degrade severely at higher resolutions; Transformers and VideoMamba (solid, native=224px) stay within $\pm$7pp across 96--336px. Filled markers denote each model's native training resolution.}
   \label{fig:spatial}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Spatial robustness on SSv2 (no retraining).
-  Bold = native resolution. $\Delta_\text{max}$ = largest drop from native.}
+\caption{Spatial robustness on SSv2 (no retraining). Bold = native resolution. $\Delta_\text{max}$ = largest drop from native.}
 \label{tab:spatial}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\columnwidth}
@@ -722,7 +420,7 @@ Model & Native & 96px & 112px & 160px & 224px & 336px & $\Delta_\text{max}$ \\
 \midrule
 R3D-18      & 112px & 35.9 & \textbf{37.1} & 30.3 & 17.2 &  5.8 & $-31.4$pp \\
 MC3-18      & 112px & 32.4 & \textbf{33.6} & 27.8 & 14.8 &  4.4 & $-29.2$pp \\
-R2+1D       & 112px & 40.1 & \textbf{42.6} & 36.2 & 20.8 &  5.9 & $-36.7$pp \\
+R2+1D       & 112px & 40.1 & \textbf{42.6} & 36.2 & 20.8 &  5.9 & $-36.6$pp \\
 SlowFast    & 224px & 27.7 & 32.4 & 45.7 & \textbf{49.5} & 36.0 & $-21.8$pp \\
 \midrule
 TimeSformer & 224px & 39.3 & 39.4 & 41.4 & \textbf{42.3} & 42.1 & $-3.0$pp \\
@@ -734,36 +432,14 @@ VideoMamba  & 224px & 37.5 & 39.3 & 42.5 & \textbf{43.9} & 43.8 & $-6.4$pp \\
 \end{adjustbox}
 \end{table}
 
-The CNN/Transformer split holds universally across all 8 datasets (full tables in
-supplementary~S9).
-and R2+1D from 75.9\% to 7.3\% ($-68.7$pp);
-On AUTSL, R3D-18 collapses from 75.0\% (native 112px) to 2.0\% at 336px ($-73.0$pp)
-on DriveAct, MC3-18 falls 64.5pp at 336px.
-These far exceed the worst SSv2 drop ($-36.7$pp), confirming that fine-grained
-discriminative content (handshape, gesture, body pose) imposes tighter
-spatial-frequency constraints on convolutional kernels.
-Transformers remain within $\pm$8pp across all 8 datasets.
+The CNN/Transformer split holds universally across all 8 datasets (full tables in supplementary~S9). On AUTSL, R3D-18 collapses from 75.0\% (native 112px) to 2.0\% at 336px ($-73.0$pp) and R2+1D from 75.9\% to 7.3\% ($-68.7$pp); on DriveAct, MC3-18 falls 64.5pp at 336px. These far exceed the worst SSv2 drop ($-36.6$pp), confirming that fine-grained discriminative content (handshape, gesture, body pose) imposes tighter spatial-frequency constraints on convolutional kernels. Transformers remain within $\pm$8pp on 7 of 8 datasets; EPIC-Kitchens is the exception, where TimeSformer degrades 12.5pp at 112px due to fine-grained egocentric content requiring higher spatial resolution.
 
 \paragraph{Target-resolution fine-tuning recovers CNN performance.}
-Table~\ref{tab:p3} shows family-level average accuracy across all 8 datasets after
-fine-tuning each model at the target deployment resolution.
-CNNs recover dramatically: at 224px (far off-native), cross-resolution accuracy
-is only 33.6\% on average, but target-resolution fine-tuning brings it to 69.2\%---a
-recovery of 35.6pp that nearly matches native-resolution accuracy.
-At 48px (extreme downscaling), CNN fine-tuning reaches 49.3\% vs.\ near-collapse
-without retraining.
-Transformers show modest improvement ($+7.7$pp at 224px from improved task adaptation)
-but are already robust cross-resolution; retraining at very small resolutions
-(48--96px) offers negligible or negative returns, confirming that their cross-resolution
-invariance comes from attention, not training data.
+Table~\ref{tab:p3} shows family-level average accuracy across all 8 datasets after fine-tuning each model at the target deployment resolution. CNNs recover dramatically: at 224px (far off-native), cross-resolution accuracy is only 30.0\% on average, but target-resolution fine-tuning brings it to 69.2\%---a recovery of 39.2pp that nearly matches native-resolution accuracy. At 48px (extreme downscaling), CNN fine-tuning reaches 49.3\% vs.\ near-collapse without retraining. Transformers show modest improvement ($+7.7$pp at 224px from improved task adaptation) but are already robust cross-resolution; retraining at very small resolutions (48--96px) offers negligible or negative returns, confirming that their cross-resolution invariance comes from attention, not training data.
 
 \begin{table}[t]
 \centering
-\caption{Target-resolution fine-tuning: family-level mean accuracy (\%) averaged over
-  all 8 datasets, after fine-tuning from the native-resolution checkpoint for 10 epochs
-  at each target spatial resolution.
-  CNNs benefit by up to 35.6pp at off-native resolutions.
-  Transformers already achieve near-native accuracy without retraining.}
+\caption{Target-resolution fine-tuning: family-level mean accuracy (\%) averaged over all 8 datasets, after fine-tuning from the native-resolution checkpoint for 10 epochs at each target spatial resolution. CNNs benefit by up to 39.2pp at off-native resolutions. Transformers already achieve near-native accuracy without retraining.}
 \label{tab:p3}
 \scriptsize\tabtight
 \begin{tabular}{l ccccc}
@@ -781,35 +457,17 @@ Dual-CNN (SlowFast) & 36.2 & 73.3 & 71.9 & 71.6 & 67.5 \\
 \subsection{Inference Latency and Deployment Budgeting}
 \label{sec:results_latency}
 
-Table~\ref{tab:latency} reports measured forward-pass latency for all 8 models
-across 5 resolutions (bfloat16 autocast, RTX PRO 6000 Blackwell, batch=1,
-100 iterations after 20 warmup).
-Three deployment-relevant patterns emerge.
+Table~\ref{tab:latency} reports measured forward-pass latency for all 8 models across 5 resolutions (bfloat16 autocast, RTX PRO 6000 Blackwell, batch=1, 100 iterations after 20 warmup). Three deployment-relevant patterns emerge.
 
-\textbf{VideoMamba is the slowest model by a large margin.}
-Despite SSMs' theoretical throughput advantages, VideoMamba runs at 8--15ms on
-a high-end server GPU---4--8$\times$ slower than VideoMAE (1.6--2.8ms) at the same
-resolution.
-On edge devices (latency $\times$50 for Jetson Nano), VideoMamba exceeds 400ms/clip,
-making it unusable for real-time inference on battery-powered systems.
+\textbf{VideoMamba is the slowest model by a large margin.} Despite SSMs' theoretical throughput advantages, VideoMamba runs at 8--15ms on a high-end server GPU---4--8$\times$ slower than VideoMAE (1.6--2.8ms) at the same resolution. On edge devices (latency $\times$50 for Jetson Nano), VideoMamba exceeds 400ms/clip, making it unusable for real-time inference on battery-powered systems.
 
-\textbf{VideoMAE is the efficiency leader among Transformers.}
-With only 1.6--2.8ms across all resolutions and the highest absolute accuracy on
-4 of 8 datasets (Table~\ref{tab:e1_full}), VideoMAE delivers the best
-accuracy-per-millisecond among Transformer and SSM models.
+\textbf{VideoMAE is the efficiency leader among Transformers.} With only 1.6--2.8ms across all resolutions and the highest absolute accuracy on 4 of 8 datasets (Table~\ref{tab:e1_full}), VideoMAE delivers the best accuracy-per-millisecond among Transformer and SSM models.
 
-\textbf{CNNs and SlowFast/TimeSformer are resolution-stable.}
-R3D-18 and MC3-18 scale linearly from 0.61ms at 48px to 2.8--3.2ms at 224px,
-making them predictable for latency budgeting.
-SlowFast and TimeSformer show near-flat latency (3.1--4.3ms) due to adaptive pooling
-and patch-based processing respectively---resolution changes barely affect their cost.
+\textbf{CNNs and SlowFast/TimeSformer are resolution-stable.} R3D-18 and MC3-18 scale linearly from 0.61ms at 48px to 2.8--3.2ms at 224px, making them predictable for latency budgeting. SlowFast and TimeSformer show near-flat latency (3.1--4.3ms) due to adaptive pooling and patch-based processing respectively---resolution changes barely affect their cost.
 
 \begin{table}[t]
 \centering
-\caption{Inference latency (ms/clip, bfloat16, batch=1, RTX PRO 6000 Blackwell).
-  VideoMamba is 4--8$\times$ slower than VideoMAE despite being an SSM.
-  Scale to other devices: RTX 4090 $\times$1.5, Jetson AGX Orin $\times$10,
-  Jetson Nano $\times$50.}
+\caption{Inference latency (ms/clip, bfloat16, batch=1, RTX PRO 6000 Blackwell). VideoMamba is 4--8$\times$ slower than VideoMAE despite being an SSM. Scale to other devices: RTX 4090 $\times$1.5, Jetson AGX Orin $\times$10, Jetson Nano $\times$50.}
 \label{tab:latency}
 \scriptsize\tabtight
 \begin{tabular}{l ccccc}
@@ -832,46 +490,31 @@ VideoMamba  & 8.06 & 8.15 & 8.18 & 10.03 & 15.44 \\
 \subsection{Entropy-Based Adaptive Routing}
 \label{sec:results_routing}
 
-Figure~\ref{fig:routing} shows the accuracy--compute trade-off curves for all 8 models
-on SSv2 under the entropy routing protocol.
+Figure~\ref{fig:routing} shows the accuracy--compute trade-off curves for all 8 models on SSv2 under the entropy routing protocol.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{images/main_fig4_routing_comparison.pdf}
-  \caption{Entropy routing: accuracy vs.\ average frames used on SSv2.
-    Each curve sweeps threshold $\tau\in[0.10,\,0.95]$ between 4-frame cheap inference
-    (left anchor) and 16-frame dense inference (right anchor).
-    \textbf{Left panel}: Per-model routing curves with literature baselines at 8 avg frames.
-    \textbf{Right panel}: Fraction routed to cheap inference vs.\ accuracy delta (relative
-    to dense baseline). VideoMAE and TimeSformer route $>80\%$ of videos cheaply
-    with no accuracy penalty.}
+  \caption{Entropy routing: accuracy vs.\ average frames used on SSv2. Each curve sweeps threshold $\tau\in[0.10,\,0.95]$ between 4-frame cheap inference (left anchor) and 16-frame dense inference (right anchor). \textbf{Left panel}: Per-model routing curves with literature baselines at 8 avg frames. \textbf{Right panel}: Fraction routed to cheap inference vs.\ accuracy delta (relative to dense baseline). VideoMAE and TimeSformer route $>80\%$ of videos cheaply with no accuracy penalty.}
   \label{fig:routing}
 \end{figure*}
 
-Table~\ref{tab:routing} compares our method at average frame budget $\leq8$.
-\textbf{Important caveat}: AdaFocus~\cite{wang2021adafocus} and AR-Net~\cite{meng2020arnet}
-use ResNet-50 as their backbone, while our method uses TimeSformer, making direct accuracy
-comparison indirect.
-The most apples-to-apples comparison is with FrameExit~\cite{ghodrati2021frameexit}, which
-also uses TimeSformer: our method achieves 42.5\% vs.\ 38.4\% ($+4.2$pp) at \emph{fewer}
-average frames (7.7 vs.\ 9.9).
-The oracle--system gap ($47.3\% - 42.5\% = 4.8$pp) represents headroom that a learned
-threshold or per-dataset calibration could partially close (supplementary~S5).
+Table~\ref{tab:routing} compares our method at average frame budget $\leq8$. \textbf{Important caveat}: AdaFocus~\cite{wang2021adafocus} and AR-Net~\cite{meng2020arnet} use ResNet-50 as their backbone, while our method uses TimeSformer, making direct accuracy comparison indirect. The most apples-to-apples comparison is with FrameExit~\cite{ghodrati2021frameexit}, which also uses TimeSformer: our method achieves 42.5\% vs.\ 38.4\% ($+4.2$pp) at \emph{fewer} average frames (7.7 vs.\ 9.9). The oracle--system gap ($47.3\% - 42.5\% = 4.8$pp) represents headroom that a learned threshold or per-dataset calibration could partially close (supplementary~S5).
 
 \begin{table}[t]
 \centering
-\caption{Routing comparison on SSv2 at avg $\leq$8 frames.
-  $\dagger$~ResNet-50 backbone (not directly comparable).
-  Fair comparison: Entropy (ours) vs.\ FrameExit (same TimeSformer backbone).}
+\caption{Routing comparison on SSv2 at avg $\leq$8 frames. The fair, same-backbone comparison is Entropy (ours) vs.\ FrameExit, both on TimeSformer. AdaFocus/AR-Net use a different backbone (ResNet-50) and are reported only as context for absolute numbers reported in their respective papers, not as a controlled comparison.}
 \label{tab:routing}
 \scriptsize\tabtight
 \begin{tabular}{l c c c}
 \toprule
 Method & Avg frames & SSv2 Top-1 & Backbone \\
 \midrule
-AdaFocus~\cite{wang2021adafocus}$\dagger$ & 8.0 & 54.7\% & ResNet-50 \\
-AR-Net~\cite{meng2020arnet}$\dagger$      & 8.0 & 48.6\% & ResNet-50 \\
+\multicolumn{4}{l}{\textit{Informational only --- different backbone, not directly comparable}} \\
+AdaFocus~\cite{wang2021adafocus} & 8.0 & 54.7\% & ResNet-50 \\
+AR-Net~\cite{meng2020arnet}      & 8.0 & 48.6\% & ResNet-50 \\
 \midrule
+\multicolumn{4}{l}{\textit{Controlled comparison --- same TimeSformer backbone}} \\
 Oracle upper bound      & 7.7  & 47.3\% & TimeSformer \\
 Fixed 16f (dense)       & 16.0 & 42.3\% & TimeSformer \\
 Fixed 8f                & 8.0  & 42.3\% & TimeSformer \\
@@ -882,134 +525,52 @@ FrameExit~\cite{ghodrati2021frameexit} & 9.9 & 38.4\% & TimeSformer \\
 \end{tabular}
 \end{table}
 
-Key aggregate results: on average, 77\% of videos are routed to cheap 4-frame inference
-across all model-dataset pairs (full cross-architecture routing results in
-supplementary~S5).
-VideoMAE dominates in absolute accuracy: routing capitalizes on its strong
-per-frame discriminative power, serving 69--100\% of videos cheaply while maintaining
-state-of-the-art accuracy on 7 of 8 datasets.
-TimeSformer achieves the highest cheap-routing rate on temporal-critical datasets
-(HMDB-51: 92\%, Diving-48: 93\%, DriveAct: 88\%), as its divided attention makes
-4-frame snapshots nearly as informative as 16-frame sequences.
+Key aggregate results: on average, 77\% of videos are routed to cheap 4-frame inference across all model-dataset pairs (full cross-architecture routing results in supplementary~S5). VideoMAE dominates in absolute accuracy: routing capitalizes on its strong per-frame discriminative power, serving 69--100\% of videos cheaply while maintaining state-of-the-art accuracy on 7 of 8 datasets. TimeSformer achieves the highest cheap-routing rate on temporal-critical datasets (HMDB-51: 92\%, Diving-48: 93\%, DriveAct: 88\%), as its divided attention makes 4-frame snapshots nearly as informative as 16-frame sequences.
 
 % =========================================================
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Why does attention type determine aliasing?}
-\emph{Divided attention} (TimeSformer) computes temporal context globally at each
-block: every frame attends to all others, \emph{selectively} weighting the most
-discriminative instants and suppressing the impact of any single missing frame.
-\emph{Factorized attention} (ViViT) extracts spatial features frame-independently
-before temporal aggregation; when frames are dropped, the temporal module receives
-impoverished per-frame representations it cannot recover from.
-\emph{SSM recurrence} (VideoMamba) integrates temporal context as a running state:
-on slowly-varying domains, missing frames perturb the state boundedly.
+\paragraph{Why does attention type predict aliasing?}
+\emph{Divided attention} (TimeSformer) computes temporal context globally at each block: every frame attends to all others, \emph{selectively} weighting the most discriminative instants and suppressing the impact of any single missing frame. \emph{Factorized attention} (ViViT) extracts spatial features frame-independently before temporal aggregation; when frames are dropped, the temporal module receives impoverished per-frame representations it cannot recover from. \emph{SSM recurrence} (VideoMamba) integrates temporal context as a running state: on slowly-varying domains, missing frames perturb the state boundedly.
 
-Full characterization across 7 datasets reveals VideoMamba has a \textbf{bimodal}
-aliasing profile---robust on 5 datasets (avg 5.1pp), severely aliased on 2.
-On \textbf{FineGym} (40.8pp), gymnastics phase transitions at $\sim$6--8\,Hz exceed
-the SSM's integration bandwidth: the running state absorbs inter-phase evidence into
-a temporally smeared representation.
-TimeSformer (36.1pp) outperforms VideoMamba on FineGym---the \emph{only} dataset in
-the benchmark where divided attention is more robust than an SSM.
-On \textbf{SSv2} (14.1pp), the failure mode is different: SSv2 requires discriminating
-fine-grained \emph{temporal ordering} (``move cup left-then-right'' vs.\
-``right-then-left''), and SSM recurrence over a subsampled sequence corrupts exactly
-this ordering signal, while TimeSformer's cross-frame attention can detect the
-direction of motion even from sparse frames.
-Together, FineGym and SSv2 expose two fundamental SSM limits: \emph{bandwidth}
-(too-fast transitions) and \emph{order sensitivity} (causal temporal reasoning)---a
-distinction not previously characterized in the video literature~\cite{huang2018makes,sevilla2021only}.
+Full characterization across all 8 datasets reveals VideoMamba has a \textbf{bimodal} aliasing profile---robust on 5 datasets (avg 4.0pp), severely aliased on 3. On \textbf{FineGym} (40.8pp), gymnastics phase transitions at $\sim$6--8\,Hz exceed the SSM's integration bandwidth: the running state absorbs inter-phase evidence into a temporally smeared representation. TimeSformer (36.1pp) outperforms VideoMamba on FineGym by the widest margin (4.7pp) and also on SSv2 (12.8pp vs.\ 14.1pp), with FineGym being the dataset that most dramatically exposes SSM bandwidth limits relative to divided attention. On \textbf{SSv2} (14.1pp), the failure mode is different: SSv2 requires discriminating fine-grained \emph{temporal ordering} (``move cup left-then-right'' vs.\ ``right-then-left''), and SSM recurrence over a subsampled sequence corrupts exactly this ordering signal, while TimeSformer's cross-frame attention can detect the direction of motion even from sparse frames. On \textbf{AUTSL} (16.0pp), sign-language handshape discrimination requires rapid fine-grained spatial-temporal transitions; the SSM state integrates these into a blurred trajectory that loses handshape identity under subsampling, unlike Transformers whose attention localizes the most discriminative hand configuration across the sequence. Together, FineGym, SSv2, and AUTSL expose three SSM failure modes: \emph{bandwidth} (too-fast transitions), \emph{order sensitivity} (causal temporal reasoning), and \emph{spatial-temporal precision} (fine-grained trajectory identity)---a taxonomy not previously characterized in the video literature~\cite{huang2018makes,sevilla2021only}.
 
 \paragraph{Spatial robustness mirrors temporal robustness.}
-Cross-resolution results confirmed across all 8 datasets show that the same
-architectural property governing temporal aliasing also governs spatial scale sensitivity.
-CNNs' strided convolutions learn features at a specific spatial scale; off-resolution,
-spatial frequency patterns shift relative to learned filter banks, causing
-catastrophic accuracy loss.
-Global attention and SSM recurrence aggregate tokens irrespective of absolute
-spatial scale.
-These results confirm: CNNs require target-resolution fine-tuning to recover
-performance, while Transformers are already scale-invariant.
+Cross-resolution results confirmed across all 8 datasets show that the same architectural property governing temporal aliasing also governs spatial scale sensitivity, with one exception. CNNs' strided convolutions learn features at a specific spatial scale; off-resolution, spatial frequency patterns shift relative to learned filter banks, causing catastrophic accuracy loss. Global attention aggregates tokens irrespective of absolute spatial scale, giving Transformers uniform robustness ($\leq$8pp on 7 of 8 datasets). VideoMamba's spatial robustness is \emph{not} uniform: it matches Transformers on SSv2, UCF-101, and Diving-48 ($\leq$7.5pp), but degrades sharply on DriveAct ($-22.8$pp) and EPIC-Kitchens ($-17.3$pp)---a spatial echo of the same bimodal pattern observed temporally, suggesting the SSM's recurrent state is sensitive to scale shifts specifically on fine-grained, cluttered scenes (in-cabin activities, egocentric cooking) where small objects carry the discriminative signal. CNNs require target-resolution fine-tuning to recover performance; Transformers are already scale-invariant; VideoMamba is scale-invariant only on coarse-grained domains.
 
-The ViViT result is particularly instructive: despite being a Transformer and
-temporally fragile, ViViT is \emph{spatially robust} ($-1.9$pp max drop on SSv2),
-confirming that patch tokenization followed by attention is the source of spatial
-invariance, \emph{independent} of whether temporal attention is factorized or divided.
-Temporal and spatial robustness arise from different architectural properties.
+The ViViT result is particularly instructive: despite being a Transformer and temporally fragile, ViViT is \emph{spatially robust} ($-1.9$pp max drop on SSv2), confirming that patch tokenization followed by attention is the source of spatial invariance, \emph{independent} of whether temporal attention is factorized or divided. Temporal and spatial robustness arise from different architectural properties.
+
+\paragraph{Resolution--latency--sampling convergence.}
+An underappreciated interaction arises when spatial resolution, latency, and sampling density are optimized jointly. Target-resolution fine-tuning turns resolution into a \emph{continuous} cost dial: CNNs at 96px (retrained, 64.9\% avg) run at 0.89ms, competitive with Transformer cross-resolution inference at 224px (71.4\%, 2.82ms)---a 3.2$\times$ latency reduction for a 6.5pp accuracy cost. At 48px, CNN fine-tuning reaches 49.3\% at 0.61ms---well below the floor of any Transformer configuration, enabling deployment in sub-millisecond embedded budgets where Transformers are entirely infeasible. On the temporal axis, a symmetric convergence occurs: temporally \emph{robust} architectures at aggressive stride can match \emph{fragile} ones at dense stride. R2+1D at stride=1 achieves 42.6\% on SSv2; TimeSformer with entropy routing at avg 7.7 frames reaches 42.5\%---identical accuracy at less than half the frames. This \emph{model convergence} under complementary operating points means the effective accuracy frontier is broader than any single architecture achieves alone: practitioners should search jointly over architecture, resolution, and sampling density rather than treating them as independent axes.
 
 \paragraph{Nyquist-aware deployment.}
 From \TDS{} and measured latency, we derive principled deployment rules:
 \begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
 \item \textbf{High-TDS domains} (FineGym, sign language, $\TDS{}>40$pp): require
-  stride$\leq$2. At 30fps source, this means $\geq$15fps effective.
-  On a server (RTX 4090), VideoMAE at 112--224px ($\leq$4ms) or TimeSformer ($\leq$4.3ms)
-  meet any realistic latency budget with Nyquist compliance.
-  On edge devices (Jetson Nano), only CNNs at $\leq$96px (0.61--0.89ms $\times$50 $\approx$30--45ms)
-  remain viable; VideoMamba (400--770ms on Nano) is infeasible.
+  stride$\leq$2. At 30fps source, this means $\geq$15fps effective. On a server (RTX 4090), VideoMAE at 112--224px ($\leq$4ms) or TimeSformer ($\leq$4.3ms) meet any realistic latency budget with Nyquist compliance. On edge devices (Jetson Nano), only CNNs at $\leq$96px (0.61--0.89ms $\times$50 $\approx$30--45ms) remain viable; VideoMamba (400--770ms on Nano) is infeasible.
 \item \textbf{Moderate-TDS domains} (SSv2, DriveAct, $15<\TDS{}\leq$40pp): stride$\leq$4
   is safe. Entropy routing routes 70--88\% of videos to 4-frame cheap inference.
 \item \textbf{Low-TDS domains} (UCF-101, EPIC-Kitchens, $\TDS{}\leq$15pp): stride$\leq$16;
-  any architecture at any resolution in 48--224px works.
-  CNN at 48px (0.61ms on server) provides an extreme efficiency option with $<$10pp loss.
+  any architecture at any resolution in 48--224px works. CNN at 48px (0.61ms on server) provides an extreme efficiency option with $<$10pp loss.
 \item \textbf{Resolution choice}: Deploy Transformers at any resolution 48--224px
-  without retraining ($\leq$8pp loss). CNNs must be fine-tuned at the target
-  resolution (especially critical for fine-grained domains where off-native loss $>$70pp).
+  without retraining ($\leq$8pp loss). CNNs must be fine-tuned at the target resolution (especially critical for fine-grained domains where off-native loss $>$70pp).
 \end{enumerate}
 
 \paragraph{The ViViT anomaly.}
-ViViT's fragility is a design lesson.
-The factorized attention topology was motivated by computational efficiency but
-inadvertently creates a temporal reasoning bottleneck: CLS tokens passed to the
-temporal Transformer carry impoverished representations when frames are dropped.
-Practitioners should not assume ``Transformer'' implies ``temporally robust'';
-the attention factorization strategy must be explicitly considered.
+ViViT's fragility is a design lesson. The factorized attention topology was motivated by computational efficiency but inadvertently creates a temporal reasoning bottleneck: CLS tokens passed to the temporal Transformer carry impoverished representations when frames are dropped. Practitioners should not assume ``Transformer'' implies ``temporally robust''; the attention factorization strategy must be explicitly considered.
 
 \paragraph{VideoMamba's latency paradox.}
-VideoMamba achieves competitive temporal robustness yet is 4--8$\times$ slower than
-VideoMAE on CUDA.
-SSMs' theoretical FLOPs advantage materializes primarily on sequence-length-sensitive
-hardware (e.g., long-sequence CPUs or dedicated accelerators), not on modern GPU
-matrix engines optimized for parallel attention.
-For GPU-deployed applications, VideoMAE dominates on accuracy-per-ms;
-TimeSformer dominates on robustness-per-ms for high-TDS domains.
+VideoMamba achieves competitive temporal robustness yet is 4--8$\times$ slower than VideoMAE on CUDA. SSMs' theoretical FLOPs advantage materializes primarily on sequence-length-sensitive hardware (e.g., long-sequence CPUs or dedicated accelerators), not on modern GPU matrix engines optimized for parallel attention. For GPU-deployed applications, VideoMAE dominates on accuracy-per-ms; TimeSformer dominates on robustness-per-ms for high-TDS domains.
 
 \paragraph{Limitations.}
-\emph{Spectral validation}: flow-magnitude correlation ($r=0.14$--$0.33$)
-is exploratory; egomotion-compensated flow and FineGym per-class analysis are pending.
-\emph{Clip duration}: correlation ($r=-0.3$ to $-0.8$) reported without controls for
-class distribution; the SSv2 3--6s bin reversal is unexplained.
-\emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could
-close the 4.8pp oracle gap. The two-tier budget (4f/16f) is fixed.
+\emph{Spectral validation}: flow-magnitude correlation ($r=0.14$--$0.33$) is exploratory; egomotion-compensated flow and FineGym per-class analysis are pending. \emph{Clip duration}: correlation ($r=-0.3$ to $-0.8$) reported without controls for class distribution; the SSv2 3--6s bin reversal is unexplained. \emph{Routing}: the global threshold $\tau$ is swept; per-dataset calibration could close the 4.8pp oracle gap. The two-tier budget (4f/16f) is fixed.
 
 % =========================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented the first large-scale cross-architecture study of spatiotemporal
-aliasing in video action recognition.
-Evaluating 8 architectures across 8 diverse datasets (8,000+ configurations),
-our findings establish:
-(\textit{i}) aliasing is governed by attention mechanism type rather than architecture
-family, with the ViViT anomaly demonstrating that Transformer $\neq$ robust;
-(\textit{ii}) the \TDS{} metric ranks 8 datasets consistently ($\rho{=}0.97$),
-with FineGym (55.9pp) surpassing sign language (AUTSL, 53.0pp) as the highest-demand domain,
-establishing fine-grained sport as a previously underappreciated high-aliasing regime;
-(\textit{iii}) full 8-dataset coverage of VideoMamba reveals a bimodal aliasing profile:
-highly robust on 5 domains (avg 6.6pp) but severely aliased on FineGym (40.8pp),
-AUTSL (16.0pp), and SSv2 (14.1pp)---exposing SSM limits in high-frequency phase
-detection, sign-language handshape discrimination, and causal temporal ordering
-respectively, and making TimeSformer the superior model on those critical domains;
-(\textit{iv}) target-resolution fine-tuning closes the CNN resolution gap by up to 35pp
-while Transformers require no retraining;
-(\textit{v}) VideoMAE is the best accuracy-per-ms Transformer (1.6--2.8ms vs.\
-VideoMamba's 8--15ms) despite VideoMamba's theoretical efficiency claims; and
-(\textit{vi}) entropy routing reduces inference cost by 52\% with no accuracy penalty.
-Together these results provide a principled, data-grounded framework for
-architecture and resolution selection under Nyquist sampling constraints.
-Code, evaluation scripts, and an interactive dashboard are available at
-\url{https://mi3-inforates.streamlit.app/} (repository: anonymized for review).
+We presented the first large-scale cross-architecture study of spatiotemporal aliasing in video action recognition. Evaluating 8 architectures across 8 diverse datasets (8,000+ configurations), our findings establish: (\textit{i}) aliasing is strongly associated with attention mechanism type rather than architecture family, with the ViViT anomaly demonstrating that Transformer $\neq$ robust; (\textit{ii}) the \TDS{} metric ranks 8 datasets consistently under leave-one-architecture-out for 6 of 8 datasets ($\rho{=}1.00$), with FineGym (55.9pp) and sign language (AUTSL, 53.0pp) as co-equal highest-demand domains---their exact order is sensitive to VideoMamba's inclusion---establishing fine-grained sport as a previously underappreciated high-aliasing regime; (\textit{iii}) full 8-dataset coverage of VideoMamba reveals a bimodal aliasing profile: highly robust on 5 domains (avg 4.0pp) but severely aliased on FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp)---exposing SSM limits in high-frequency phase detection, sign-language handshape discrimination, and causal temporal ordering respectively, and making TimeSformer the superior model on those critical domains; (\textit{iv}) target-resolution fine-tuning closes the CNN resolution gap by up to 39pp while Transformers require no retraining; (\textit{v}) VideoMAE is the best accuracy-per-ms Transformer (1.6--2.8ms vs.\ VideoMamba's 8--15ms) despite VideoMamba's theoretical efficiency claims; and (\textit{vi}) entropy routing reduces inference cost by 52\% with no accuracy penalty. Together these results provide a principled, data-grounded framework for architecture and resolution selection under Nyquist sampling constraints. Code, evaluation scripts, and an interactive dashboard are available at \url{https://mi3-inforates.streamlit.app/} (repository: anonymized for review).
 
 \bibliographystyle{splncs04}
 \bibliography{main}

@@ -30,120 +30,71 @@
 \renewcommand\thesection{S\arabic{section}}
 \renewcommand\thefigure{S\arabic{figure}}
 \renewcommand\thetable{S\arabic{table}}
-\setcounter{figure}{0}
-\setcounter{table}{0}
+\setcounter{figure}{0} \setcounter{table}{0}
 
-This document provides supplementary material for the main paper.
-We include:
-(S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets;
-(S2) Levene variance inflation analysis;
-(S3) full ANOVA effect size tables including FineGym;
-(S4) action sensitivity taxonomy detail;
-(S5) entropy routing curves for all models;
-(S6) clip duration analysis;
-(S7) spectral correlation detail;
-(S8) implementation details (target-resolution fine-tuning, positional embedding interpolation);
-(S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models);
-and (S10) interactive dashboard and code availability.
+This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) interactive dashboard and code availability; and (S11) leave-one-architecture-out stability analysis of the \TDS{} ranking.
 
 % ── S1: Full heatmaps ─────────────────────────────────────────────────────────
 \section{Full Coverage$\times$Stride Heatmaps}
 \label{sec:sup_heatmaps}
 
-Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete
-coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets.
-Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration.
-Color scale: green=high accuracy, red=low accuracy.
-FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis
-for FineGym is in progress (97-class egomotion-compensated flow extraction).
+Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets. Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration. Color scale: green=high accuracy, red=low accuracy. FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis for FineGym is in progress (97-class egomotion-compensated flow extraction).
 
-Row order (coverage): 10\%, 25\%, 50\%, 75\%, 100\%.
-Column order (stride): 1, 2, 4, 8, 16.
+Row order (coverage): 10\%, 25\%, 50\%, 75\%, 100\%. Column order (stride): 1, 2, 4, 8, 16.
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_r3d_18.pdf}
-  \caption{R3D-18 (CNN-3D) coverage$\times$stride accuracy (\%) across 8 datasets.
-    Sharp cliff at stride 4$\to$8 on AUTSL (75\%$\to$27\%) and similar cliff on
-    FineGym confirms the high temporal demand of fine-grained actions.
-    EPIC-Kitchens and UCF-101 retain high accuracy even at sparse sampling.}
+  \caption{R3D-18 (CNN-3D) coverage$\times$stride accuracy (\%) across 8 datasets. Sharp cliff at stride 4$\to$8 on AUTSL (75\%$\to$27\%) and similar cliff on FineGym confirms the high temporal demand of fine-grained actions. EPIC-Kitchens and UCF-101 retain high accuracy even at sparse sampling.}
   \label{fig:heatmap_r3d}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_mc3_18.pdf}
-  \caption{MC3-18 (CNN-mix, channel-separated 3D) heatmaps.
-    Similar pattern to R3D-18 but with slightly reduced aliasing on low-TDS datasets
-    (UCF-101, DriveAct), consistent with the regularizing effect of 2D-channel
-    separation.
-    FineGym shows the same severe cliff pattern as AUTSL.}
+  \caption{MC3-18 (CNN-mix, channel-separated 3D) heatmaps. Similar pattern to R3D-18 but with slightly reduced aliasing on low-TDS datasets (UCF-101, DriveAct), consistent with the regularizing effect of 2D-channel separation. FineGym shows the same severe cliff pattern as AUTSL.}
   \label{fig:heatmap_mc3}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_r2plus1d_18.pdf}
-  \caption{R2+1D-18 (separable spatiotemporal convolution) heatmaps.
-    Higher base accuracy than R3D-18 on several datasets (SSv2: 42.6\% vs 37.1\%),
-    but similar aliasing sensitivity pattern---cliff at stride 4$\to$8 on AUTSL
-    and FineGym.}
+  \caption{R2+1D-18 (separable spatiotemporal convolution) heatmaps. Higher base accuracy than R3D-18 on several datasets (SSv2: 42.6\% vs 37.1\%), but similar aliasing sensitivity pattern---cliff at stride 4$\to$8 on AUTSL and FineGym.}
   \label{fig:heatmap_r2p1d}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_slowfast_r50.pdf}
-  \caption{SlowFast-R50 (dual-pathway) heatmaps.
-    Cliff occurs at stride 2$\to$4 on AUTSL (77\%$\to$41\%)---one step earlier than
-    other CNNs---because the fast pathway requires 32 frames.
-    On FineGym, SlowFast achieves the highest base accuracy (78.2\%) among all models
-    but suffers the worst aliasing loss (71.5pp at stride=16).}
+  \caption{SlowFast-R50 (dual-pathway) heatmaps. Cliff occurs at stride 2$\to$4 on AUTSL (77\%$\to$41\%)---one step earlier than other CNNs---because the fast pathway requires 32 frames. On FineGym, SlowFast achieves the highest base accuracy (78.2\%) among all models but suffers the worst aliasing loss (71.5pp at stride=16).}
   \label{fig:heatmap_slowfast}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_timesformer.pdf}
-  \caption{TimeSformer (divided space--time attention) heatmaps.
-    Notably flat across most stride values, with steep degradation only at the
-    combined extreme of low coverage \emph{and} high stride.
-    FineGym exception: drops 36.1pp at stride=16, revealing that even global divided
-    attention cannot fully compensate for the 6--8Hz gymnastics phase transitions.}
+  \caption{TimeSformer (divided space--time attention) heatmaps. Notably flat across most stride values, with steep degradation only at the combined extreme of low coverage \emph{and} high stride. FineGym exception: drops 36.1pp at stride=16, revealing that even global divided attention cannot fully compensate for the 6--8Hz gymnastics phase transitions.}
   \label{fig:heatmap_timesformer}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_vivit.pdf}
-  \caption{ViViT (factorized attention) heatmaps.
-    Despite being a Transformer, ViViT aliases nearly as severely as 3D CNNs
-    (AUTSL: cliff at stride 2$\to$4, identical to SlowFast).
-    FineGym shows a 55.2pp drop at stride=16, confirming that factorized temporal
-    attention leaves the model vulnerable to frame dropout in high-TDS domains.}
+  \caption{ViViT (factorized attention) heatmaps. Despite being a Transformer, ViViT aliases nearly as severely as 3D CNNs (AUTSL: cliff at stride 2$\to$4, identical to SlowFast). FineGym shows a 55.2pp drop at stride=16, confirming that factorized temporal attention leaves the model vulnerable to frame dropout in high-TDS domains.}
   \label{fig:heatmap_vivit}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_videomae.pdf}
-  \caption{VideoMAE (masked autoencoder) heatmaps.
-    High base accuracy (SSv2: 52.4\%, UCF-101: 95.4\%, FineGym: 78.0\%) but steep
-    temporal degradation (AUTSL cliff at stride 4$\to$8; FineGym: 67.8pp drop).
-    The MAE pretraining objective is spatial---reconstructing patches---and does not
-    transfer to temporal robustness.}
+  \caption{VideoMAE (masked autoencoder) heatmaps. High base accuracy (SSv2: 52.4\%, UCF-101: 95.4\%, FineGym: 78.0\%) but steep temporal degradation (AUTSL cliff at stride 4$\to$8; FineGym: 67.8pp drop). The MAE pretraining objective is spatial---reconstructing patches---and does not transfer to temporal robustness.}
   \label{fig:heatmap_videomae}
 \end{figure}
 
 \begin{figure}[p]
   \centering
   \includegraphics[width=\textwidth]{images/sup1_heatmap_videomamba.pdf}
-  \caption{VideoMamba (SSM selective scan) heatmaps (all 8 datasets).
-    On 5 of 8 datasets, VideoMamba shows a flat heatmap with minimal degradation
-    across strides---the SSM recurrent state aggregates temporal context, providing
-    natural robustness.
-    FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp) are exceptions, revealing
-    the limit of SSM temporal integration under high-frequency transitions.}
+  \caption{VideoMamba (SSM selective scan) heatmaps (all 8 datasets). On 5 of 8 datasets, VideoMamba shows a flat heatmap with minimal degradation across strides---the SSM recurrent state aggregates temporal context, providing natural robustness. FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp) are exceptions, revealing the limit of SSM temporal integration under high-frequency transitions.}
   \label{fig:heatmap_videomamba}
 \end{figure}
 
@@ -151,31 +102,20 @@ Column order (stride): 1, 2, 4, 8, 16.
 \section{Levene Variance Inflation Analysis}
 \label{sec:sup_levene}
 
-Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 (x-axis)
-versus stride=16 (y-axis) for all model-dataset pairs.
-Points above the diagonal indicate that sparse sampling increases inter-class variability.
-Significant pairs ($p < 0.05$, Bonferroni-corrected) are highlighted in red.
+Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 (x-axis) versus stride=16 (y-axis) for all model-dataset pairs. Points above the diagonal indicate that sparse sampling increases inter-class variability. Significant pairs ($p < 0.05$, Bonferroni-corrected) are highlighted in red.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.8\columnwidth]{images/sup2_levene_variance.pdf}
-  \caption{Levene test: inter-class accuracy std at stride=1 vs.\ stride=16.
-    Points above the dashed diagonal have higher variance under sparse sampling.
-    Color encodes the variance ratio ($\sigma_{s16}/\sigma_{s1}$).
-    \textbf{Key finding}: 67\% of model-dataset pairs show significant variance
-    inflation ($p<0.05$), with the largest increases in VideoMAE/HMDB-51 (2.0$\times$)
-    and R3D-18/HMDB-51 (1.85$\times$).
-    TimeSformer and VideoMamba show stable variance ($\approx$1.1$\times$).}
+  \caption{Levene test: inter-class accuracy std at stride=1 vs.\ stride=16. Points above the dashed diagonal have higher variance under sparse sampling. Color encodes the variance ratio ($\sigma_{s16}/\sigma_{s1}$). \textbf{Key finding}: 67\% of model-dataset pairs show significant variance inflation ($p<0.05$), with the largest increases in VideoMAE/HMDB-51 (2.0$\times$) and R3D-18/HMDB-51 (1.85$\times$). TimeSformer and VideoMamba show stable variance ($\approx$1.1$\times$).}
   \label{fig:levene}
 \end{figure}
 
-Table~\ref{tab:levene_top} lists the 10 model-dataset pairs with highest variance
-inflation, quantifying the instability masked by mean accuracy.
+Table~\ref{tab:levene_top} lists the 10 model-dataset pairs with highest variance inflation, quantifying the instability masked by mean accuracy.
 
 \begin{table}[t]
 \centering
-\caption{Top-10 variance inflation cases (stride=1$\to$16, coverage=100\%).
-  All rows significant at $p{<}0.05$.}
+\caption{Top-10 variance inflation cases (stride=1$\to$16, coverage=100\%). All rows significant at $p{<}0.05$.}
 \label{tab:levene_top}
 \scriptsize\tabtight
 \begin{tabular}{l l r r r r}
@@ -200,55 +140,28 @@ VideoMAE    & UCF-101      & 0.094 & 0.121 & 1.29$\times$ & 0.0239 \\
 \section{Full ANOVA Effect Size Tables}
 \label{sec:sup_anova}
 
-Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid
-datasets), with error bars indicating standard deviation.
+Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid datasets), with error bars indicating standard deviation.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\columnwidth]{images/sup3_anova_eta2.pdf}
-  \caption{ANOVA effect sizes: $\eta^2(\text{coverage})$ + $\eta^2(\text{stride})$
-    per model. Coverage consistently dominates (blue bars, 53--90\% of variance).
-    The stride effect is large for CNNs and ViViT (red bars, 18--35\%) but small
-    for VideoMamba and TimeSformer ($<$12\%), confirming architecture-dependent aliasing.
-    Error bars: std across all 8 datasets.}
+  \caption{ANOVA effect sizes: $\eta^2(\text{coverage})$ + $\eta^2(\text{stride})$ per model. Coverage consistently dominates (blue bars, 53--90\% of variance). The stride effect is large for CNNs and ViViT (red bars, 18--35\%) but small for VideoMamba and TimeSformer ($<$12\%), confirming architecture-dependent aliasing. Error bars: std across all 8 datasets.}
   \label{fig:anova_bar}
 \end{figure}
 
-Table~\ref{tab:anova_full} provides the complete per-dataset $\eta^2$ values for all
-8 datasets.
-All stride effects are significant ($p < 0.05$); coverage effects are significant
-($p < 0.001$) in all cases.
-FineGym ($\eta^2_\text{stride}$ up to 0.50 for SlowFast) is the most aliasing-intensive
-dataset, with AUTSL second, consistent with the updated TDS ranking (FineGym=55.9pp, AUTSL=53.0pp).
+Table~\ref{tab:anova_full} provides the complete per-dataset $\eta^2$ values for all 8 datasets. All stride effects are significant ($p < 0.05$); coverage effects are significant ($p < 0.001$) in all cases. FineGym ($\eta^2_\text{stride}$ up to 0.50 for SlowFast) and AUTSL show the largest stride effects of all 8 datasets, consistent with their co-equal top ranking on TDS (FineGym=55.9pp, AUTSL=53.0pp; see main paper Sec.~3.1 and supplementary~S11 for the leave-one-out sensitivity of their relative order).
 
 \begin{table}[t]
 \centering
-\caption{Full ANOVA $\eta^2$ per model and dataset. Cov = $\eta^2(\text{coverage})$,
-  Str = $\eta^2(\text{stride})$. Rows shaded darker indicate larger stride effect.
-  FineGym column added with values computed from the full coverage$\times$stride sweep.}
+\caption{Full ANOVA $\eta^2$ per model and dataset. Cov = $\eta^2(\text{coverage})$, Str = $\eta^2(\text{stride})$. Rows shaded darker indicate larger stride effect. FineGym column added with values computed from the full coverage$\times$stride sweep.}
 \label{tab:anova_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{l *{8}{cc}}
 \toprule
-\multirow{2}{*}{Model}
- & \multicolumn{2}{c}{AUTSL}
- & \multicolumn{2}{c}{FineGym}
- & \multicolumn{2}{c}{SSv2}
- & \multicolumn{2}{c}{Diving-48}
- & \multicolumn{2}{c}{HMDB-51}
- & \multicolumn{2}{c}{DriveAct}
- & \multicolumn{2}{c}{EPIC}
+\multirow{2}{*}{Model} & \multicolumn{2}{c}{AUTSL} & \multicolumn{2}{c}{FineGym} & \multicolumn{2}{c}{SSv2} & \multicolumn{2}{c}{Diving-48} & \multicolumn{2}{c}{HMDB-51} & \multicolumn{2}{c}{DriveAct} & \multicolumn{2}{c}{EPIC}
  & \multicolumn{2}{c}{UCF-101} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
-\cmidrule(lr){10-11}\cmidrule(lr){12-13}\cmidrule(lr){14-15}\cmidrule(lr){16-17}
- & Cov & Str
- & Cov & Str
- & Cov & Str
- & Cov & Str
- & Cov & Str
- & Cov & Str
- & Cov & Str
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9} \cmidrule(lr){10-11}\cmidrule(lr){12-13}\cmidrule(lr){14-15}\cmidrule(lr){16-17} & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str
  & Cov & Str \\
 \midrule
 VMamba & .88 & .09 & .77 & .16 & .88 & .09 & .94 & .04 & .90 & .09 & .83 & .15 & .95 & .05 & .88 & .07 \\
@@ -271,24 +184,15 @@ SF     & .51 & .29 & .26 & .50 & .44 & .36 & .51 & .33 & .55 & .39 & .39 & .46 &
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{images/sup4_taxonomy.pdf}
-  \caption{Aliasing loss (pp) per sensitivity tier and dataset.
-    Each bar shows mean accuracy drop (stride=1$\to$16) within the tier,
-    annotated with the number of action classes.
-    UCF-101 Low tier: $-0.3$pp (static, appearance-dominated actions lose
-    essentially no accuracy under sparse sampling).
-    AUTSL: all three tiers remain high ($>38$pp), confirming that sign language
-    is fundamentally high-frequency regardless of action subclass.}
+  \caption{Aliasing loss (pp) per sensitivity tier and dataset. Each bar shows mean accuracy drop (stride=1$\to$16) within the tier, annotated with the number of action classes. UCF-101 Low tier: $-0.3$pp (static, appearance-dominated actions lose essentially no accuracy under sparse sampling). AUTSL: all three tiers remain high ($>38$pp), confirming that sign language is fundamentally high-frequency regardless of action subclass.}
   \label{fig:taxonomy_full}
 \end{figure}
 
-Table~\ref{tab:taxonomy_detail} lists the threshold values that define tier boundaries
-per dataset, derived from the 33rd and 67th percentiles of the per-class accuracy drop.
+Table~\ref{tab:taxonomy_detail} lists the threshold values that define tier boundaries per dataset, derived from the 33rd and 67th percentiles of the per-class accuracy drop.
 
 \begin{table}[t]
 \centering
-\caption{Taxonomy tier thresholds (accuracy drop, pp): classes below the Low threshold
-  alias negligibly; classes above the High threshold are severely affected.
-  Thresholds are dataset-specific and computed across all valid architectures.}
+\caption{Taxonomy tier thresholds (accuracy drop, pp): classes below the Low threshold alias negligibly; classes above the High threshold are severely affected. Thresholds are dataset-specific and computed across all valid architectures.}
 \label{tab:taxonomy_detail}
 \scriptsize\tabtight
 \begin{tabular}{l r r r r r}
@@ -310,30 +214,20 @@ UCF-101       & 101 &  1.4pp &  7.5pp & 35 & 31 \\
 \section{Entropy Routing Curves — All Models}
 \label{sec:sup_routing}
 
-Figure~\ref{fig:routing_all} shows accuracy vs.\ average frames for all 8 architectures
-on SSv2 under the entropy routing protocol.
-Each curve is the result of sweeping confidence threshold $\tau \in [0.10, 0.95]$.
-Dashed horizontal lines indicate fixed-budget baselines (4f, 16f) and the oracle.
+Figure~\ref{fig:routing_all} shows accuracy vs.\ average frames for all 8 architectures on SSv2 under the entropy routing protocol. Each curve is the result of sweeping confidence threshold $\tau \in [0.10, 0.95]$. Dashed horizontal lines indicate fixed-budget baselines (4f, 16f) and the oracle.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{images/sup5_routing_all_models.pdf}
-  \caption{Entropy routing: accuracy vs.\ avg frames (SSv2, 4f cheap $\to$ 16f dense).
-    For architectures with flat 4f$\approx$16f accuracy (TimeSformer, VideoMamba),
-    routing near-trivially selects 4f for most videos and matches dense accuracy.
-    For architectures with large 4f--16f gaps (SlowFast, ViViT), the routing curve
-    provides meaningful operating points between the fixed-budget extremes.}
+  \caption{Entropy routing: accuracy vs.\ avg frames (SSv2, 4f cheap $\to$ 16f dense). For architectures with flat 4f$\approx$16f accuracy (TimeSformer, VideoMamba), routing near-trivially selects 4f for most videos and matches dense accuracy. For architectures with large 4f--16f gaps (SlowFast, ViViT), the routing curve provides meaningful operating points between the fixed-budget extremes.}
   \label{fig:routing_all}
 \end{figure}
 
-Table~\ref{tab:routing_full} provides the full entropy routing results across all models
-and datasets at the optimal threshold (avg frames $\leq 8$).
+Table~\ref{tab:routing_full} provides the full entropy routing results across all models and datasets at the optimal threshold (avg frames $\leq 8$).
 
 \begin{table}[t]
 \centering
-\caption{Entropy routing: best accuracy at avg $\leq8$ frames per model/dataset.
-  Values are Top-1 accuracy (\%). Bold = highest per column.
-  $^*$VideoMamba/AUTSL: entropy routing not computed; value is direct stride=8 accuracy (65.0\%).}
+\caption{Entropy routing: best accuracy at avg $\leq8$ frames per model/dataset. Values are Top-1 accuracy (\%). Bold = highest per column. $^*$VideoMamba/AUTSL: entropy routing not computed; value is direct stride=8 accuracy (65.0\%).}
 \label{tab:routing_full}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -361,13 +255,7 @@ VideoMamba   & 65.0$^*$ & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 58.0 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\textwidth]{images/sup6_clip_duration.pdf}
-  \caption{Aliasing loss (pp) vs.\ clip duration bin for all 8 architectures across
-    multiple datasets. Counter-intuitive finding: \textbf{shorter clips alias more}
-    (Pearson $r=-0.3$ to $-0.8$ across models). Short clips have less temporal
-    redundancy; any frame drop removes a larger fraction of the available evidence.
-    Long clips (${>}4$s) contain natural temporal repetition that compensates for
-    sparse sampling. Exception: Diving-48 longer clips ($>$4s) alias more,
-    consistent with longer dives containing more distinct phase transitions.}
+  \caption{Aliasing loss (pp) vs.\ clip duration bin for all 8 architectures across multiple datasets. Counter-intuitive finding: \textbf{shorter clips alias more} (Pearson $r=-0.3$ to $-0.8$ across models). Short clips have less temporal redundancy; any frame drop removes a larger fraction of the available evidence. Long clips (${>}4$s) contain natural temporal repetition that compensates for sparse sampling. Exception: Diving-48 longer clips ($>$4s) alias more, consistent with longer dives containing more distinct phase transitions.}
   \label{fig:duration}
 \end{figure}
 
@@ -375,34 +263,13 @@ VideoMamba   & 65.0$^*$ & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 58.0 
 \section{Spectral Correlation Detail}
 \label{sec:sup_spectral}
 
-We estimated per-class temporal frequency demand using optical-flow magnitude
-(Farneback algorithm~\cite{farneback2003two}) computed on 5 representative videos
-per class, sampling 16 frames per video at 112$\times$112px.
-The mean inter-frame flow magnitude serves as a proxy for temporal activity level.
+We estimated per-class temporal frequency demand using optical-flow magnitude (Farneback algorithm~\cite{farneback2003two}) computed on 5 representative videos per class, sampling 16 frames per video at 112$\times$112px. The mean inter-frame flow magnitude serves as a proxy for temporal activity level. This analysis is exploratory and should not be read as confirmatory evidence for the Nyquist-aliasing hypothesis on its own; see the main paper (Sec.~3.1, Fig.~3 right) for the summary figure including FineGym.
 
-Table~\ref{tab:spectral} reports Pearson correlation between per-class mean flow
-magnitude and aliasing loss (accuracy drop stride=1$\to$16) per dataset.
-FineGym per-class flow analysis requires egomotion-compensated flow at 97-class
-granularity; this is in progress and will be added in a camera-ready revision.
-Prior studies on small closed-vocabulary datasets (UCF-101, Kinetics-400) have reported
-near-perfect optical-flow--aliasing correlations ($r{=}0.99$) using controlled synthetic
-flow protocols.
-Our large-scale evaluation on 7 diverse datasets yields moderate correlations
-($r=0.03$--$0.33$).
-This discrepancy has three plausible explanations:
-(1) complex background motion in egocentric datasets (EPIC-Kitchens) decorrelates
-flow from action content;
-(2) sign language (AUTSL) involves localized, subtle movements that optical flow
-at 112px partially misses;
-(3) our use of raw flow magnitude rather than class-conditioned frequency
-analysis is a coarser proxy.
+Table~\ref{tab:spectral} reports Pearson correlation between per-class mean flow magnitude and aliasing loss (accuracy drop stride=1$\to$16) per dataset. FineGym per-class flow analysis requires egomotion-compensated flow at 97-class granularity; this is in progress and will be added in a camera-ready revision. Prior studies on small closed-vocabulary datasets (UCF-101, Kinetics-400) have reported near-perfect optical-flow--aliasing correlations ($r{=}0.99$) using controlled synthetic flow protocols. Our large-scale evaluation on 7 diverse datasets yields moderate correlations ($r=0.03$--$0.33$). This discrepancy has three plausible explanations: (1) complex background motion in egocentric datasets (EPIC-Kitchens) decorrelates flow from action content; (2) sign language (AUTSL) involves localized, subtle movements that optical flow at 112px partially misses; (3) our use of raw flow magnitude rather than class-conditioned frequency analysis is a coarser proxy.
 
 \begin{table}[t]
 \centering
-\caption{Spectral correlation: Pearson $r$ between optical-flow magnitude and
-per-class aliasing loss. Positive $r$ supports the Nyquist hypothesis; near-zero
-values suggest flow magnitude is an insufficient proxy for temporal demand on
-complex datasets. FineGym: per-class flow extraction in progress.}
+\caption{Spectral correlation: Pearson $r$ between optical-flow magnitude and per-class aliasing loss. Positive $r$ supports the Nyquist hypothesis; near-zero values suggest flow magnitude is an insufficient proxy for temporal demand on complex datasets. FineGym: per-class flow extraction in progress.}
 \label{tab:spectral}
 \scriptsize\tabtight
 \begin{tabular}{l r r r}
@@ -426,66 +293,25 @@ FineGym       & \multicolumn{3}{c}{(per-class flow extraction in progress)} \\
 \label{sec:sup_impl}
 
 \paragraph{Hardware.}
-Training experiments used NVIDIA A100 (40GB) and H200 NVL (141GB) GPUs (CUDA 13.2).
-Temporal-sweep evaluation (1,600 configurations) was parallelized across 8 nodes
-using a custom Slurm auto-submitter.
-Inference latency measurements used an NVIDIA RTX PRO 6000 Blackwell GPU (96GB)
-with bfloat16 autocast, batch size=1, 20 warmup iterations, 100 benchmark iterations,
-and CUDA event timing with explicit synchronization.
+Training experiments used NVIDIA A100 (40GB) and H200 NVL (141GB) GPUs (CUDA 13.2). Temporal-sweep evaluation (1,600 configurations) was parallelized across 8 nodes using a custom Slurm auto-submitter. Inference latency measurements used an NVIDIA RTX PRO 6000 Blackwell GPU (96GB) with bfloat16 autocast, batch size=1, 20 warmup iterations, 100 benchmark iterations, and CUDA event timing with explicit synchronization.
 
 \paragraph{Training hyperparameters.}
-All models fine-tuned for 10 epochs from Kinetics-400 checkpoints.
-Transformers and VideoMamba: AdamW, lr=$2\times10^{-5}$, weight decay=0.05,
-batch size=32 per GPU.
-CNNs: AdamW, lr=$10^{-4}$, batch size=128 per GPU.
-SlowFast: AdamW, lr=$10^{-4}$, batch size=32 per GPU.
-All models use cosine learning rate decay with linear warmup (1 epoch).
-Spatial augmentation: random resized crop, horizontal flip, normalization
-(ImageNet statistics).
+All models fine-tuned for 10 epochs from Kinetics-400 checkpoints. Transformers and VideoMamba: AdamW, lr=$2\times10^{-5}$, weight decay=0.05, batch size=32 per GPU. CNNs: AdamW, lr=$10^{-4}$, batch size=128 per GPU. SlowFast: AdamW, lr=$10^{-4}$, batch size=32 per GPU. All models use cosine learning rate decay with linear warmup (1 epoch). Spatial augmentation: random resized crop, horizontal flip, normalization (ImageNet statistics).
 
 \paragraph{Positional embedding interpolation for Transformers and SSMs.}
-For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings
-must be adapted.
-\textit{The wrong approach}: passing \texttt{ignore\_mismatched\_sizes=True} in
-HuggingFace discards positional embeddings entirely, causing a large accuracy cliff
-(typically 10--20pp worse than our approach at any non-native resolution).
-\textit{Our approach}: load the native-resolution checkpoint, then bicubically
-interpolate spatial positional embeddings from the native grid
-($14{\times}14{=}196$ tokens at 224px) to the target grid
-($\lfloor r/16\rfloor^2$ tokens at resolution $r$) before copying weights to a
-model instantiated at the target resolution.
-This preserves the spatial topology learned during pretraining and ensures
-fine-tuning starts from a meaningful positional encoding rather than a random one.
-The same bicubic interpolation applies to TimeSformer, VideoMAE, ViViT, and VideoMamba.
+For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings must be adapted. \textit{The wrong approach}: passing \texttt{ignore\_mismatched\_sizes=True} in HuggingFace discards positional embeddings entirely, causing a large accuracy cliff (typically 10--20pp worse than our approach at any non-native resolution). \textit{Our approach}: load the native-resolution checkpoint, then bicubically interpolate spatial positional embeddings from the native grid ($14{\times}14{=}196$ tokens at 224px) to the target grid ($\lfloor r/16\rfloor^2$ tokens at resolution $r$) before copying weights to a model instantiated at the target resolution. This preserves the spatial topology learned during pretraining and ensures fine-tuning starts from a meaningful positional encoding rather than a random one. The same bicubic interpolation applies to TimeSformer, VideoMAE, ViViT, and VideoMamba.
 
 \paragraph{SlowFast spatial pooling fix.}
-The original SlowFast-R50 head uses a fixed $7\times7$ average pooling kernel,
-assuming 224px input.
-For non-native resolutions, we replace both head pooling layers with
-\texttt{AdaptiveAvgPool3d(1)}, enabling forward passes at arbitrary input resolutions
-without parameter changes.
+The original SlowFast-R50 head uses a fixed $7\times7$ average pooling kernel, assuming 224px input. For non-native resolutions, we replace both head pooling layers with \texttt{AdaptiveAvgPool3d(1)}, enabling forward passes at arbitrary input resolutions without parameter changes.
 
 \paragraph{FineGym dataset details.}
-FineGym~\cite{shao2020finegym} contains 97 fine-grained gymnastics action classes
-(floor exercise, uneven bars, balance beam, vault; parallel bars, horizontal bar,
-pommel horse, rings for men).
-We use the FineGym288 subset (1,960 clips), balanced to 20 clips per class for
-training and evaluation.
-Preprocessing: clips are trimmed to the annotated action boundary (mean duration
-3.2s at 25fps) and padded with the last frame if shorter than 16 frames.
+FineGym~\cite{shao2020finegym} contains 97 fine-grained gymnastics action classes (floor exercise, uneven bars, balance beam, vault; parallel bars, horizontal bar, pommel horse, rings for men). We use the FineGym288 subset (1,960 clips), balanced to 20 clips per class for training and evaluation. Preprocessing: clips are trimmed to the annotated action boundary (mean duration 3.2s at 25fps) and padded with the last frame if shorter than 16 frames.
 
 % ── S9: Multi-dataset spatial resolution ──────────────────────────────────────
 \section{Multi-Dataset Spatial Resolution Results}
 \label{sec:sup_spatial}
 
-Tables~\ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_finegym} extend the spatial robustness
-analysis from the main paper (Section~4.3) to all 8 datasets.
-Tables \ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_epic} show cross-resolution results
-(no retraining): the fine-tuned native-resolution checkpoint evaluated at 96--336px.
-Table~\ref{tab:sup_sp_finegym} shows FineGym target-resolution fine-tuning results
-(one fine-tuned checkpoint per resolution).
-\textbf{Bold} = native training resolution.
-$\Delta_\text{max}$ = largest accuracy drop from native across all tested resolutions.
+Tables~\ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_finegym} extend the spatial robustness analysis from the main paper (Section~4.3) to all 8 datasets. Tables \ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_epic} show cross-resolution results (no retraining): the fine-tuned native-resolution checkpoint evaluated at 96--336px. Table~\ref{tab:sup_sp_finegym} shows FineGym target-resolution fine-tuning results (one fine-tuned checkpoint per resolution). \textbf{Bold} = native training resolution. $\Delta_\text{max}$ = largest accuracy drop from native across all tested resolutions.
 
 \begin{table}[h]
 \centering
@@ -585,10 +411,7 @@ VideoMamba  & 224px & 29.2 & 29.1 & 36.1 & \textbf{36.6} & 36.2 & $-7.5$pp \\
 
 \begin{table}[h]
 \centering
-\caption{Spatial robustness on \textbf{AUTSL} (sign language; no retraining from AUTSL-fine-tuned checkpoint).
-  CNN degradation is most severe: R3D-18 collapses from 75.0\% to 2.0\% at 336px ($-73.0$pp).
-  VideoMamba excluded: K400-pretrained checkpoint not fine-tuned on AUTSL; temporal aliasing
-  results (Table~2) use the AUTSL-fine-tuned checkpoint.}
+\caption{Spatial robustness on \textbf{AUTSL} (sign language; no retraining from AUTSL-fine-tuned checkpoint). CNN degradation is most severe: R3D-18 collapses from 75.0\% to 2.0\% at 336px ($-73.0$pp). VideoMamba excluded: K400-pretrained checkpoint not fine-tuned on AUTSL; temporal aliasing results (Table~2) use the AUTSL-fine-tuned checkpoint.}
 \label{tab:sup_sp_autsl}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -660,13 +483,7 @@ VideoMamba  & 224px & 11.1 & 12.6 & 20.8 & \textbf{28.3} & 24.5 & $-17.3$pp \\
 
 \begin{table}[h]
 \centering
-\caption{\textbf{FineGym} spatial resolution results after target-resolution fine-tuning
-  (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint).
-  Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM).
-  Unlike other datasets in S9 (cross-resolution without retraining), FineGym
-  shows CNN performance that \emph{improves beyond native} after fine-tuning at
-  higher resolutions (R3D-18: 71.5\%@112px$\to$76.1\%@224px), confirming that
-  higher spatial resolution genuinely aids gymnastics pose discrimination.}
+\caption{\textbf{FineGym} spatial resolution results after target-resolution fine-tuning (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint). Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM). Unlike other datasets in S9 (cross-resolution without retraining), FineGym shows CNN performance that \emph{improves beyond native} after fine-tuning at higher resolutions (R3D-18: 71.5\%@112px$\to$76.1\%@224px), confirming that higher spatial resolution genuinely aids gymnastics pose discrimination.}
 \label{tab:sup_sp_finegym}
 \scriptsize\tabtight
 \begin{adjustbox}{max width=\textwidth}
@@ -693,8 +510,7 @@ VideoMamba  & 224px & 29.1 & 51.6 & 58.2 & 66.0 & \textbf{73.2} \\
 \label{sec:sup_dashboard}
 
 \paragraph{Interactive visualization dashboard.}
-All evaluation results from this paper are accessible through an interactive
-web dashboard at:
+All evaluation results from this paper are accessible through an interactive web dashboard at:
 \begin{center}
 \url{https://mi3-inforates.streamlit.app/}
 \end{center}
@@ -705,30 +521,77 @@ The dashboard provides:
 \item \textbf{Spatial resolution browser}: cross-resolution accuracy curves for all
   8 models across all 8 datasets; target-resolution fine-tuning results per architecture family.
 \item \textbf{Architecture recommender (hybrid AI)}: given a target dataset, hardware
-  latency budget, source frame rate, and deployment context, the system performs
-  structured data-driven analysis followed by LLM synthesis (Llama-3.3-70B via
-  Groq), recommending the optimal model--resolution--stride operating point.
-  Budget-constrained and unconstrained deployment paths are handled separately,
-  with Nyquist-guided stride selection.
+  latency budget, source frame rate, and deployment context, the system performs structured data-driven analysis followed by LLM synthesis (Llama-3.3-70B via Groq), recommending the optimal model--resolution--stride operating point. Budget-constrained and unconstrained deployment paths are handled separately, with Nyquist-guided stride selection.
 \item \textbf{TDS comparison}: rank any subset of the 8 datasets by temporal demand,
   with model-specific breakdowns and Spearman correlation display.
 \item \textbf{Routing simulator}: entropy threshold sweep for any model on any dataset,
   with visual Pareto-frontier display.
 \end{enumerate}
 
+\begin{figure}[h]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app1.png}
+  \small{(a) Accuracy Explorer: native resolution (stride=16, cov=100\%, 224px). Summary table shows top-1 across all 8 datasets.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app2.png}
+  \small{(b) Accuracy Explorer: low resolution (stride=1, cov=75\%, 48px). Retrained CNN checkpoints are used at 48px.}
+\end{minipage}\\[8pt]
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app3.png}
+  \small{(c) Architecture Recommender: FineGym example. The system identifies FineGym as a high-TDS domain (55.9pp), requires stride$\leq$2, and ranks models by accuracy under the user's latency budget.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app4.png}
+  \small{(d) Latency \& Efficiency: measured forward-pass latency (ms/clip, bfloat16, RTX PRO 6000) vs.\ spatial resolution for all 8 architectures. VideoMamba (green) is 4--8$\times$ slower than VideoMAE across all resolutions.}
+\end{minipage}
+\caption{Interactive dashboard screenshots (\url{https://mi3-inforates.streamlit.app/}). The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. The Architecture Recommender (c) provides AI-assisted deployment guidance grounded in measured data. The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.}
+\label{fig:dashboard_screenshots}
+\end{figure}
+
 \paragraph{Code availability.}
-Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline
-with bicubic positional embedding interpolation), and the Streamlit dashboard
-source code will be released at [anonymized for review].
-The repository includes:
+Evaluation scripts, model fine-tuning code (including the target-resolution fine-tuning pipeline with bicubic positional embedding interpolation), and the Streamlit dashboard source code will be released at [anonymized for review]. The repository includes:
 \begin{itemize}[leftmargin=*,topsep=2pt,itemsep=1pt]
 \item \texttt{scripts/accv2026/}: all evaluation and retraining scripts
 \item \texttt{src/info\_rates/}: model loading, temporal sweep, entropy routing
 \item \texttt{dashboard/}: Streamlit app with hybrid RAG+LLM recommender
 \item \texttt{evaluations/accv2026/paper\_results/}: all CSV result files
-  (\texttt{sweep\_summary.csv}, \texttt{retrained\_spatial.csv},
-  \texttt{latency\_by\_resolution.csv})
+  (\texttt{sweep\_summary.csv}, \texttt{retrained\_spatial.csv}, \texttt{latency\_by\_resolution.csv})
 \end{itemize}
+
+% ── S11: Leave-one-architecture-out TDS stability ─────────────────────────────
+\section{Leave-One-Architecture-Out \texorpdfstring{\TDS{}}{TDS} Stability}
+\label{sec:sup_loo}
+
+To assess whether the \TDS{} ranking depends on the specific 8-architecture pool evaluated, we recompute \TDS{} for all 8 datasets after removing each architecture in turn (7-architecture pools) and compare the resulting ranking to the full 8-architecture ranking via Spearman $\rho$.
+
+\begin{table}[h]
+\centering
+\caption{Leave-one-architecture-out \TDS{} ranking stability. $\rho$ is the Spearman correlation between the 8-dataset ranking computed with the named architecture excluded (7-architecture pool) and the full 8-architecture ranking.}
+\label{tab:loo_tds}
+\scriptsize\tabtight
+\begin{tabular}{l r r}
+\toprule
+Excluded architecture & Spearman $\rho$ & $p$ \\
+\midrule
+R3D-18       & 1.000 & $<10^{-4}$ \\
+MC3-18       & 1.000 & $<10^{-4}$ \\
+R2+1D        & 1.000 & $<10^{-4}$ \\
+SlowFast     & 1.000 & $<10^{-4}$ \\
+TimeSformer  & 1.000 & $<10^{-4}$ \\
+ViViT        & 1.000 & $<10^{-4}$ \\
+VideoMAE     & 1.000 & $<10^{-4}$ \\
+VideoMamba   & 0.976 & $3.3\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For 7 of 8 leave-one-out pools, the ranking is \emph{exactly} identical to the full-pool ranking ($\rho=1.00$). Removing VideoMamba is the single exception ($\rho=0.976$): it swaps the \#1/\#2 positions, since excluding VideoMamba raises AUTSL's average (58.3pp, from 53.0pp) and lowers FineGym's average (58.2pp, from 55.9pp)---VideoMamba is comparatively robust on AUTSL (16.0pp, below its own median drop) and comparatively fragile on FineGym (40.8pp, its worst dataset), so its presence in the pool is precisely what tips FineGym narrowly ahead of AUTSL. Ranks 3--8 (SSv2 through UCF-101) are unaffected by any single exclusion. We therefore report FineGym and AUTSL as co-equal highest-\TDS{} domains in the main paper rather than asserting a strict order, while the rest of the ranking is robust under leave-one-architecture-out by this test.
 
 \bibliographystyle{splncs04}
 \bibliography{main}
