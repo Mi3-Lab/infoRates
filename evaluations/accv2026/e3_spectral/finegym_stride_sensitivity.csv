@@ -1,0 +1,6 @@
+dataset,resolution,stride_sensitivity
+finegym,48,28.37
+finegym,96,45.46
+finegym,112,47.13
+finegym,160,53.53
+finegym,224,57.01
