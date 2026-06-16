@@ -33,7 +33,7 @@
 \renewcommand\thetable{S\arabic{table}}
 \setcounter{figure}{0} \setcounter{table}{0}
 
-This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) interactive dashboard and code availability; and (S11) leave-one-architecture-out stability analysis of the \TDS{} ranking.
+This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) interactive dashboard and code availability; and (S11) \TDS{} ranking robustness: leave-one-architecture-out, architecture-family ablation (CNN-only, Transformer-only, Transformer+SSM pools), and bootstrap confidence intervals.
 
 % ── S1: Full heatmaps ─────────────────────────────────────────────────────────
 \section{Full Coverage$\times$Stride Heatmaps}
@@ -588,6 +588,66 @@ VideoMamba   & 0.976 & $3.3\times10^{-5}$ \\
 \end{table}
 
 For 7 of 8 leave-one-out pools, the ranking is \emph{exactly} identical to the full-pool ranking ($\rho=1.00$). Removing VideoMamba is the single exception ($\rho=0.976$): it swaps the \#1/\#2 positions, since excluding VideoMamba raises AUTSL's average (58.3pp, from 53.0pp) and lowers FineGym's average (58.2pp, from 55.9pp)---VideoMamba is comparatively robust on AUTSL (16.0pp, below its own median drop) and comparatively fragile on FineGym (40.8pp, its worst dataset), so its presence in the pool is precisely what tips FineGym narrowly ahead of AUTSL. Ranks 3--8 (SSv2 through UCF-101) are unaffected by any single exclusion. We therefore report FineGym and AUTSL as co-equal highest-\TDS{} domains in the main paper rather than asserting a strict order, while the rest of the ranking is robust under leave-one-architecture-out by this test.
+
+\subsection{Architecture-Family Ablation}
+\label{sec:sup_family_ablation}
+
+Leave-one-out removes a single architecture at a time; a stronger test is to remove an entire architectural family. We recompute \TDS{} for all 8 datasets under three restricted pools: \textbf{CNN-only} ($n{=}4$: R3D-18, MC3-18, R2+1D, SlowFast), \textbf{Transformer-only} ($n{=}3$: TimeSformer, ViViT, VideoMAE), and \textbf{Transformer+SSM} ($n{=}4$: adding VideoMamba). Table~\ref{tab:family_ablation} reports \TDS{} under each pool and the Spearman $\rho$ against the full 8-architecture ranking.
+
+\begin{table}[!htbp]
+\centering
+\caption{\TDS{} per dataset under architecture-family ablation pools, compared to the full 8-architecture ranking (sorted by full-pool \TDS{}).}
+\label{tab:family_ablation}
+\scriptsize\tabtight
+\begin{tabular}{l r r r r}
+\toprule
+Dataset & Full ($n{=}8$) & CNN-only ($n{=}4$) & Transf.-only ($n{=}3$) & Transf.+SSM ($n{=}4$) \\
+\midrule
+FineGym       & 55.92 & 62.05 & 53.06 & 49.80 \\
+AUTSL         & 53.02 & 67.20 & 46.45 & 38.83 \\
+SSv2          & 27.29 & 32.16 & 25.95 & 22.43 \\
+DriveAct      & 21.48 & 24.05 & 23.21 & 18.92 \\
+Diving-48     & 19.16 & 21.74 & 20.59 & 16.59 \\
+HMDB-51       & 16.47 & 21.47 & 14.54 & 11.47 \\
+EPIC-Kitchens &  9.77 & 12.89 &  8.27 &  6.64 \\
+UCF-101       &  4.86 &  7.36 &  2.90 &  2.35 \\
+\midrule
+Spearman $\rho$ vs.\ full & --- & 0.976 & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ranking is essentially invariant to architecture-family composition: removing all four CNNs, keeping only the three Transformers, or keeping Transformers+SSM all leave ranks 3--8 in identical order, and only the CNN-only pool reproduces the same FineGym/AUTSL swap already characterized in the leave-one-out test above ($\rho=0.976$ in both cases, for the same reason: CNNs are comparatively more fragile on AUTSL's fine handshape transitions than on FineGym's phase boundaries, which narrows the gap). This directly addresses whether \TDS{} reflects a property of the dataset pool versus an artifact of including any one architecture family: under every family-restricted pool we tested, the ranking is the same dataset ordering reported in the main paper, with the sole exception of the already-disclosed \#1/\#2 ambiguity.
+
+\subsection{Bootstrap Confidence Intervals}
+\label{sec:sup_bootstrap}
+
+To quantify ranking uncertainty directly rather than only testing discrete leave-one-out/family pools, we bootstrap over architectures: we resample 8 architectures with replacement ($B{=}10{,}000$ resamples) from the original pool, recompute \TDS{} for each dataset on each resample, and report the resulting 95\% percentile confidence interval in Table~\ref{tab:bootstrap_ci}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Bootstrap 95\% CI for \TDS{} per dataset (resampling 8 architectures with replacement, $B{=}10{,}000$).}
+\label{tab:bootstrap_ci}
+\scriptsize\tabtight
+\begin{tabular}{l r r}
+\toprule
+Dataset & \TDS{} (bootstrap mean) & 95\% CI \\
+\midrule
+FineGym       & 55.99 & [47.24, 63.86] \\
+AUTSL         & 53.13 & [36.02, 67.03] \\
+SSv2          & 27.35 & [20.40, 33.92] \\
+DriveAct      & 21.57 & [13.92, 29.35] \\
+Diving-48     & 19.23 & [10.67, 28.37] \\
+HMDB-51       & 16.54 & [9.53, 24.21] \\
+EPIC-Kitchens &  9.80 & [6.25, 13.22] \\
+UCF-101       &  4.88 & [2.18, 8.36] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All eight 95\% CIs are disjoint from zero, confirming every dataset has a genuine non-zero temporal demand at the architecture-pool level. AUTSL's CI is the widest (width 31.0pp) because its per-architecture drops are the most heterogeneous (TimeSformer and VideoMamba near-flat, CNNs collapse sharply), while EPIC-Kitchens and UCF-101 have the narrowest CIs, consistent with their low and relatively architecture-independent \TDS{}.
+
+We additionally bootstrap the FineGym$-$AUTSL gap directly (same resampling procedure, computing $\TDS(\text{FineGym})-\TDS(\text{AUTSL})$ on each resample): mean $=+2.92$pp, 95\% CI $=[-4.58,\,+11.73]$, with FineGym exceeding AUTSL in 73.9\% of resamples. The confidence interval includes zero, which is the appropriate statistical test of the co-equal-ranking claim: the data are consistent with FineGym narrowly leading AUTSL in expectation, but do not support rejecting the null hypothesis of equal \TDS{} at the 95\% level. This is the quantitative basis, rather than only the leave-one-out swap, for reporting FineGym and AUTSL as co-equal highest-\TDS{} domains in the main paper.
 
 \bibliographystyle{splncs04}
 \bibliography{main}

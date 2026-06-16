@@ -1,0 +1,105 @@
+{
+  "tds_by_pool": {
+    "Full (n=8)": {
+      "autsl": 53.02,
+      "diving48": 19.16,
+      "ssv2": 27.29,
+      "hmdb51": 16.47,
+      "driveact": 21.48,
+      "epic_kitchens": 9.77,
+      "ucf101": 4.86,
+      "finegym": 55.92
+    },
+    "CNN-only (n=4)": {
+      "autsl": 67.2,
+      "diving48": 21.74,
+      "ssv2": 32.16,
+      "hmdb51": 21.47,
+      "driveact": 24.05,
+      "epic_kitchens": 12.89,
+      "ucf101": 7.36,
+      "finegym": 62.05
+    },
+    "Transformer-only (n=3)": {
+      "autsl": 46.45,
+      "diving48": 20.59,
+      "ssv2": 25.95,
+      "hmdb51": 14.54,
+      "driveact": 23.21,
+      "epic_kitchens": 8.27,
+      "ucf101": 2.9,
+      "finegym": 53.06
+    },
+    "Transformer+SSM (n=4)": {
+      "autsl": 38.83,
+      "diving48": 16.59,
+      "ssv2": 22.43,
+      "hmdb51": 11.47,
+      "driveact": 18.92,
+      "epic_kitchens": 6.64,
+      "ucf101": 2.35,
+      "finegym": 49.8
+    }
+  },
+  "spearman_vs_full": {
+    "CNN-only (n=4)": 0.9761904761904763,
+    "Transformer-only (n=3)": 1.0,
+    "Transformer+SSM (n=4)": 1.0
+  },
+  "bootstrap_ci": [
+    {
+      "dataset": "finegym",
+      "tds_mean": 55.99,
+      "ci_lo": 47.24,
+      "ci_hi": 63.86
+    },
+    {
+      "dataset": "autsl",
+      "tds_mean": 53.13,
+      "ci_lo": 36.02,
+      "ci_hi": 67.03
+    },
+    {
+      "dataset": "ssv2",
+      "tds_mean": 27.35,
+      "ci_lo": 20.4,
+      "ci_hi": 33.92
+    },
+    {
+      "dataset": "driveact",
+      "tds_mean": 21.57,
+      "ci_lo": 13.92,
+      "ci_hi": 29.35
+    },
+    {
+      "dataset": "diving48",
+      "tds_mean": 19.23,
+      "ci_lo": 10.67,
+      "ci_hi": 28.37
+    },
+    {
+      "dataset": "hmdb51",
+      "tds_mean": 16.54,
+      "ci_lo": 9.53,
+      "ci_hi": 24.21
+    },
+    {
+      "dataset": "epic_kitchens",
+      "tds_mean": 9.8,
+      "ci_lo": 6.25,
+      "ci_hi": 13.22
+    },
+    {
+      "dataset": "ucf101",
+      "tds_mean": 4.88,
+      "ci_lo": 2.18,
+      "ci_hi": 8.36
+    }
+  ],
+  "finegym_vs_autsl_gap": {
+    "gap_mean": 2.92,
+    "ci_lo": -4.58,
+    "ci_hi": 11.73,
+    "pct_favoring_a": 73.9
+  }
+}

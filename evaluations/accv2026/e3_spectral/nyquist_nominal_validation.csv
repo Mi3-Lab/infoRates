@@ -1,0 +1,8 @@
+dataset,n_videos,n_tried,cutoff_freq_mean,cutoff_freq_median,nyquist_safe_stride,tds
+autsl,30,30,0.1051,0.0943,4.76,53.02
+ssv2,30,30,0.2926,0.2636,1.71,27.29
+driveact,30,30,0.1898,0.1739,2.63,21.48
+diving48,30,30,0.1853,0.127,2.7,19.16
+hmdb51,30,30,0.4058,0.4444,1.23,16.47
+epic_kitchens,25,25,0.1689,0.1587,2.96,9.77
+ucf101,30,30,0.3778,0.3968,1.32,4.86
