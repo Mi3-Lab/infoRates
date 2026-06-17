@@ -215,8 +215,8 @@ for i in range(len(MODELS)):
         else:
             ax.text(j, i, "†", ha="center", va="center", fontsize=9, color="gray")
 
-ax.set_title("Fig 2: Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
-             "† = feature collapse (s1<5%). VideoMamba/AUTSL uses native-res fine-tuned checkpoint.",
+    ax.set_title("Fig 2: Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
+             "† = feature collapse (s1<5%).",
              fontsize=10, pad=10)
 
 # Add family brackets
@@ -422,7 +422,7 @@ for model in MODELS:
         ax.set_yticklabels([f"{c}%" for c in COVERAGES], fontsize=7)
         ax.set_title(DATASET_LABELS.get(ds, ds), fontsize=8)
         if is_collapse:
-            ax.text(2, 2, "COLLAPSE\n(domain gap)", ha="center", va="center",
+            ax.text(2, 2, "NOT\nCOMPARABLE", ha="center", va="center",
                     fontsize=8, color="red", fontweight="bold")
         else:
             for ci, cov in enumerate(COVERAGES):
