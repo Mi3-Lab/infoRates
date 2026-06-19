@@ -1,7 +1,7 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-14
+Last updated: 2026-06-19
 
 ---
 
@@ -31,17 +31,19 @@ Last updated: 2026-06-14
 | Experimento | Status | Resultado principal |
 |-------------|--------|---------------------|
 | Temporal sweep (coverage × stride) | ✅ **Completo** — 1,600/1,600 | VMamba+TSF avg 8pp; SlowFast 42pp; ViViT anomalia; FineGym 58.1pp |
-| Spectral validation (optical flow ↔ aliasing) | ✅ **Completo** | r=0.03–0.33; AUTSL r=0.285, UCF r=0.031 |
+| Spectral validation v1 (7 datasets) | ✅ **Completo** | r=0.03–0.33; AUTSL r=0.285, UCF r=0.031 (underpowered, n=7) |
+| Spectral validation v2 (7 datasets × 5 res = 35 pts) | ✅ **Completo** | Spearman ρ=−0.549, p=0.0006 — inversion: higher flow freq → lower TDS |
 | ANOVA η² effect sizes | ✅ **Completo** | η²(stride): 0.08 SSM/TSF vs 0.35 SlowFast |
 | Levene variance inflation | ✅ **Completo** | 67% pares inflam variância; VideoMAE/HMDB 2.0× |
 | Action sensitivity taxonomy | ✅ **Completo** | UCF Low: −0.3pp; AUTSL all tiers >38pp |
-| Spatial resolution sweep (cross-res eval) | ✅ **Completo** — 280 configs · 48/48 jobs | CNNs: −73pp (R3D-18/AUTSL@336px); SSv2 −37pp; Transformers ≤7.7pp |
+| Spatial resolution sweep (cross-res eval) | ✅ **Completo** — 308 configs · 56/56 jobs (incl. 48px + FineGym) | CNNs: −73pp (R3D-18/AUTSL); Transformers ≤7.7pp; 48px adicionado |
 | Entropy routing (E7) | ✅ **Completo** | 42.5% SSv2 · 7.7f · +4.2pp vs FrameExit |
 | Baseline comparison vs AdaFocus/AR-Net/FrameExit | ✅ **Completo** | Tabela comparação pronta |
 | Clip duration analysis | ✅ **Completo** | Clips curtos aliam mais (r=−0.3 a −0.8) |
 | Resolution retraining (96–224px, 7 datasets) | ✅ **256/280 done** | 256 checkpoints 96–224px prontos; 24 faltando = todos 336px |
-| Stride×Coverage×Resolution sweep (C3b) | ⏳ **122/140 done** | 18 restantes = todos VideoMamba; 4 PENDING + 14 em daemon |
-| Anomaly retraining campaign (Jun 14) | ⏳ **Em progresso** | 4 rodando; 9 em daemon (aguardando slot gpu); 13 total |
+| Stride×Coverage×Resolution sweep (C3b) | ✅ **Completo** | VideoMamba/EK fix aplicado (checkpoint leakage removido); job 148039 OK |
+| Anomaly retraining campaign | ⏳ **Em progresso** | Ver tabela abaixo |
+| TDS robustness analysis | ✅ **Completo** | Family ablation CNN-only ρ=0.976, Transformer-only ρ=1.000; bootstrap CI FineGym−AUTSL gap [−4.6, +11.7]pp |
 | VideoMAE PE bug fix (model_factory.py) | ✅ **Corrigido** | PE sinusoidal era tensor não-parameter → não salvo; fix: carrega HF base + interpola bicubic |
 | Resolution retraining (P3/336px investigation) | ❌ **Pausado** | Padrão anômalo (batch_size bug); investiga após sweep C3b terminar |
 
@@ -175,7 +177,10 @@ supplementary.tex (~630 linhas)
 ├── S6: Clip duration analysis
 ├── S7: Spectral correlation detail
 ├── S8: Implementation details
-└── S9: Multi-dataset spatial resolution results (7 datasets × 8 modelos × 5 res)
+├── S9: Multi-dataset spatial resolution results (7 datasets × 8 modelos × 5 res)
+├── S10: Best model per dataset breakdown
+├── S11: TDS robustness — leave-one-out + family ablation + bootstrap CI
+└── S12: Direct spectral test of Nyquist framing (n=35, ρ=−0.549, p=0.0006)
 ```
 
 ---
@@ -220,15 +225,11 @@ supplementary.tex (~630 linhas)
 
 ## Próximos Passos (Prioridade)
 
-### Curto prazo (próx. 1-2 semanas):
-1. **Compilar PDF** — via Overleaf ou `pdflatex` local (não há compilador no cluster)
-2. **Verificar figuras** — `paper/images/main_fig5_spatial_resolution.pdf` reflete dados corretos (8 modelos, SSv2, sem retraining)
-3. **Polimento draft** — abstract word count, page count, references check
+### Imediato (pré-submissão):
+1. **Compilar PDF** — via Overleaf ou `pdflatex` no PC com LaTeX instalado (sem compilador no cluster)
+2. **FineGym spectral (outro PC)** — rodar `scripts/accv2026/analyze_nyquist_finegym_flowonly.py` onde os vídeos FineGym estão acessíveis; copiar `evaluations/accv2026/e3_spectral/finegym_cutoff_freq.csv` de volta; re-merge → atualiza S12 com n=40 e p-value recalculado
+3. **Polimento final** — contagem de palavras abstract, page count, verificar referências
 
 ### Médio prazo (quando cluster liberar):
-4. **P3 retraining 336px** — rodar com `--partition=cenvalarc.gpu`, batch=64, daemon pronto em `scripts/accv2026/submit_p3_336px_2gpu.sh`
-5. **Começar processamento FLAME** — dataset menor, prioridade 1 para autonomous evacuation validation
-
-### Longo prazo (pós-deadline ACCV):
-6. **Ego4D + UCF-Crime** — processar em paralelo enquanto paper está em review
-7. **Atualizar paper com 10 datasets** — versão estendida para journal (aceitação esperada ACCV → versão journal com datasets extras)
+4. **P3 retraining 336px** — daemon `scripts/accv2026/submit_p3_336px_2gpu.sh`, fix de path `/scratch/` → já planejado em `slurm_336px_2gpu.sbatch`
+5. **Verificar figuras** — `paper/images/` confirmar que todas as figuras refletem dados finais (sem retraining p3, sem 336px)

@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it using the metadata below."
+type: software
+title: "InfoRates: Spatiotemporal Aliasing in Video Action Recognition"
+abstract: >
+  A cross-architecture empirical analysis of how spatial resolution, temporal
+  coverage, and frame stride jointly affect video recognition accuracy across
+  8 architectures and 8 datasets. Introduces the Temporal Demand Score (TDS)
+  for dataset ranking and characterizes how attention mechanism type governs
+  aliasing robustness.
+authors:
+  - family-names: Maia
+    given-names: Wesley
+    affiliation: "UC Merced, Mi3 Lab"
+    email: wesleymaia999@gmail.com
+  - family-names: Greer
+    given-names: Ross
+    affiliation: "UC Merced, Mi3 Lab"
+url: "https://mi3-inforates.streamlit.app/"
+license: MIT
+version: "1.0.0"
+date-released: "2026-06-01"
+preferred-citation:
+  type: conference-paper
+  title: >
+    Spatiotemporal Aliasing in Video Action Recognition:
+    A Cross-Architecture Analysis at Scale
+  authors:
+    - family-names: Maia
+      given-names: Wesley
+      affiliation: "UC Merced, Mi3 Lab"
+    - family-names: Greer
+      given-names: Ross
+      affiliation: "UC Merced, Mi3 Lab"
+  collection-title: "Proceedings of the Asian Conference on Computer Vision (ACCV)"
+  year: 2026
