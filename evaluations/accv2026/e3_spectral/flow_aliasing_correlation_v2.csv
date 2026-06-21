@@ -1,0 +1,2 @@
+dataset,n_classes,r_mean_flow,p_mean_flow,r_temporal_std,p_temporal_std,r_temporal_cv,p_temporal_cv,r_peak_ratio,p_peak_ratio,sig_mean,sig_tstd,sig_tcv,sig_peak
+finegym,97,-0.5532349812712536,4.1871979423323955e-09,-0.42124522967992856,1.7334753322560748e-05,0.21700267008459928,0.03275829725446699,0.11129199134742894,0.2778042719501149,True,True,True,False
