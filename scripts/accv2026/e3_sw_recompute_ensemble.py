@@ -22,7 +22,7 @@ ALL_MODELS = [
 
 DATASETS = [
     "ucf101", "ssv2", "hmdb51", "diving48",
-    "autsl", "driveact", "epic_kitchens",
+    "autsl", "driveact", "epic_kitchens", "finegym",
 ]
 
 y_col = "mean_abs_drop"
