@@ -1,0 +1,15 @@
+{
+  "image_mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "image_std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "size": 112,
+  "num_frames": 2,
+  "data_format": "B C T H W"
+}

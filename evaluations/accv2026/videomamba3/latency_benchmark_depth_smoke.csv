@@ -1,0 +1,2 @@
+variant,model_size,batch_size,num_frames,input_size,seq_len,depth,ssm_d_state,ssm_expand,ssm_headdim,ssm_mimo_rank,params,mean_inference_s,videos_per_second,peak_memory_mb,device,torch_compile
+complex,tiny,1,1,32,5,3,4,1,16,2,886181,0.23661288595758379,4.2263125102124155,0.0,cpu,0

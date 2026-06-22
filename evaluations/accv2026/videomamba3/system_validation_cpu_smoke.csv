@@ -1,0 +1,3 @@
+status,error,variant,model_size,depth,mode,batch_size,num_frames,input_size,seq_len,num_classes,ssm_d_state,ssm_expand,ssm_headdim,ssm_mimo_rank,amp,torch_compile,params,warmup,iters,mean_s,median_s,p95_s,videos_per_second,tokens_per_second,peak_allocated_mb,peak_reserved_mb,device,gpu_name
+ok,,complex,tiny,1,inference,1,1,32,5,101,16,1,32,2,1,0,411645,0,1,0.16545452806167305,0.16545452806167305,0.16545452806167305,6.043956679307385,30.219783396536926,0.0,0.0,cpu,cpu
+ok,,complex,tiny,1,train,1,1,32,5,101,16,1,32,2,1,0,411645,0,1,1.6042971829883754,1.6042971829883754,1.6042971829883754,0.6233259090670895,3.1166295453354476,0.0,0.0,cpu,cpu

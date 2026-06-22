@@ -1,0 +1,5 @@
+torch
+timm
+einops
+opencv-python
+av

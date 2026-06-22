@@ -1,0 +1,4 @@
+variant,model_size,batch_size,num_frames,input_size,seq_len,ssm_d_state,ssm_expand,ssm_headdim,ssm_mimo_rank,params,mean_inference_s,videos_per_second,peak_memory_mb,device,torch_compile
+trapezoidal,tiny,2,2,112,99,16,1,32,2,6004325,0.7354807270069917,2.719309869803002,57.48876953125,cuda,0
+complex,tiny,2,2,112,99,16,1,32,2,6004325,1.2622485366688732,1.5844740095940884,57.48876953125,cuda,0
+mimo,tiny,2,2,112,99,16,1,32,2,6363749,1.4862995283328928,1.3456237870460062,59.6142578125,cuda,0
