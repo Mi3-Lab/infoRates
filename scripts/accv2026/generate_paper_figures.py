@@ -1,19 +1,19 @@
 """Generate all paper and supplementary figures for ACCV 2026.
 
 Main paper (8 pages):
-  Fig 1: E1 aliasing curves — stride sensitivity per model family
-  Fig 2: Cross-architecture stride sensitivity heatmap
+  E1 aliasing curves — stride sensitivity per model family
+  Cross-architecture stride sensitivity heatmap
   Fig 3: TDS ranking bar chart + E3 spectral correlation scatter
-  Fig 4: E7 entropy routing — accuracy vs avg_frames
-  Fig 5: E6 spatial resolution curves (SSv2)
+  E7 entropy routing — accuracy vs avg_frames
+  E6 spatial resolution curves (SSv2)
 
 Supplementary:
-  Sup1: Full E1 coverage×stride heatmaps (8 models × 7 datasets)
-  Sup2: E2 Levene variance plots
-  Sup3: E4 ANOVA η² bar chart
-  Sup4: E5 action taxonomy
-  Sup5: E7 routing curves (all models)
-  Sup6: E10 clip duration
+  Full E1 coverage×stride heatmaps
+  E2 Levene variance plots
+  E4 ANOVA eta² bar chart
+  E5 action taxonomy
+  E7 routing curves (all models)
+  E10 clip duration
 
 Usage:
   python scripts/accv2026/generate_paper_figures.py
@@ -172,8 +172,6 @@ handles, labels_leg = axes[0].get_legend_handles_labels()
 fig.legend(handles, labels_leg, loc="lower center", ncol=4,
            bbox_to_anchor=(0.5, -0.18), fontsize=8.5,
            framealpha=0.9, edgecolor="0.8")
-fig.suptitle("Fig 1: Temporal Aliasing Curves — Accuracy vs Sampling Stride (coverage=100%)",
-             fontsize=11, y=1.02)
 plt.tight_layout()
 savefig(fig, "fig1_aliasing_curves")
 plt.close()
@@ -215,7 +213,7 @@ for i in range(len(MODELS)):
         else:
             ax.text(j, i, "†", ha="center", va="center", fontsize=9, color="gray")
 
-    ax.set_title("Fig 2: Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
+    ax.set_title("Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
              "† = feature collapse (s1<5%).",
              fontsize=10, pad=10)
 
@@ -254,7 +252,7 @@ colors_bar = plt.cm.Reds(np.linspace(0.4, 0.9, len(tds_sorted)))
 ax1.barh([DATASET_LABELS[d] for d, _ in tds_sorted],
          [v for _, v in tds_sorted], color=colors_bar, edgecolor="white")
 ax1.set_xlabel("Mean aliasing loss (pp), stride 1→16")
-ax1.set_title("Fig 3a: TDS Ranking\n(avg across 8 architectures)", fontsize=10)
+ax1.set_title("TDS Ranking\n(avg across 8 architectures)", fontsize=10)
 ax1.grid(True, axis="x", alpha=0.3, ls="--")
 for i, (ds, v) in enumerate(tds_sorted):
     ax1.text(v + 0.5, i, f"{v:.1f}pp", va="center", fontsize=8.5)
@@ -267,7 +265,7 @@ try:
                 s=80, zorder=5, edgecolors="0.3", lw=0.8)
     ax2.axvline(0, color="0.5", lw=1, ls="--")
     ax2.set_xlabel("Pearson r (optical flow ↔ aliasing loss)")
-    ax2.set_title("Fig 3b: Spectral Correlation\n(flow magnitude vs aliasing sensitivity)", fontsize=10)
+    ax2.set_title("Spectral Correlation\n(flow magnitude vs aliasing sensitivity)", fontsize=10)
     ax2.set_xlim(-0.55, 0.45)
     ax2.grid(True, axis="x", alpha=0.3, ls="--")
     ax2.annotate("Nyquist prediction:\nhigher flow → more aliasing", xy=(0.3, 0.5),
@@ -341,8 +339,6 @@ try:
         ax.grid(True, alpha=0.3, ls="--")
         ax.set_xlim(2, 20)
 
-    fig.suptitle("Fig 4: E7 Entropy Routing — Accuracy vs Avg Frames (4f→16f cascade)",
-                 fontsize=11, y=1.02)
     plt.tight_layout()
     savefig(fig, "fig4_routing_comparison")
 except Exception as e:
@@ -351,7 +347,7 @@ plt.close()
 
 # ── FIG 5: E6 Spatial resolution curves ──────────────────────────────────
 print("Generating Fig 5: Spatial resolution curves...")
-RESOLUTIONS = [96, 112, 160, 224, 336]
+RESOLUTIONS = [96, 112, 160, 224]
 SPATIAL_BASE = Path("evaluations/accv2026/spatial_resolution_sweep")
 NATIVE = {"r3d_18": 112, "mc3_18": 112, "r2plus1d_18": 112, "slowfast_r50": 224,
           "timesformer": 224, "vivit": 224, "videomae": 224, "videomamba": 224}
@@ -381,7 +377,7 @@ for model in MODELS:
 
 ax.set_xlabel("Spatial resolution (px)")
 ax.set_ylabel("Top-1 accuracy (%) on SSv2")
-ax.set_title("Fig 5: Spatial Aliasing — Accuracy vs Resolution (SSv2)\n"
+ax.set_title("Spatial Aliasing — Accuracy vs Resolution (SSv2)\n"
              "Filled markers = native resolution; dashed = CNN (native 112px)",
              fontsize=10)
 ax.set_xticks(RESOLUTIONS)
@@ -432,7 +428,7 @@ for model in MODELS:
                         ax.text(si, ci, f"{v:.0f}", ha="center", va="center",
                                 fontsize=5.5, color="white" if v < 20 else "black")
         plt.colorbar(im, ax=ax, shrink=0.8)
-    fig.suptitle(f"Sup1: {LABELS[model]} — Coverage×Stride accuracy (%) per dataset", fontsize=10)
+    fig.suptitle(f"{LABELS[model]} — Coverage×Stride accuracy (%) per dataset", fontsize=10)
     plt.tight_layout()
     savefig(fig, f"sup1_heatmap_{model}", folder=OUT_SUPP)
     plt.close()
@@ -452,7 +448,7 @@ try:
     ax.plot([0, 0.35], [0, 0.35], "k--", lw=1, alpha=0.5, label="No change line")
     ax.set_xlabel("Inter-class std at stride=1 (dense)")
     ax.set_ylabel("Inter-class std at stride=16 (sparse)")
-    ax.set_title("Sup2: E2 — Stride increases inter-class accuracy variance (Levene test)\n"
+    ax.set_title("Stride increases inter-class accuracy variance (Levene test)\n"
                  "Points above diagonal = higher variance at stride=16", fontsize=10)
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.3, ls="--")
@@ -482,7 +478,7 @@ try:
     ax.set_yticks(y)
     ax.set_yticklabels([LABELS[m] for m in agg["model"]], fontsize=9)
     ax.set_xlabel("Effect size (η²)")
-    ax.set_title("Sup3: E4 ANOVA — Effect Sizes\nη²(stride) + η²(coverage) per model (avg ± std across datasets)",
+    ax.set_title("ANOVA Effect Sizes\nη²(stride) + η²(coverage) per model (avg ± std across datasets)",
                  fontsize=10)
     ax.legend(fontsize=9)
     ax.axvline(0.14, color="gray", ls=":", lw=1, alpha=0.7)
@@ -515,7 +511,7 @@ try:
             ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
                     f"n={r['n_classes']}", ha="center", fontsize=7)
         ax.grid(True, axis="y", alpha=0.3, ls="--")
-    fig.suptitle("Sup4: E5 — Action Sensitivity Taxonomy: Aliasing loss by tier per dataset",
+    fig.suptitle("Action Sensitivity Taxonomy: Aliasing loss by tier per dataset",
                  fontsize=10)
     plt.tight_layout()
     savefig(fig, "sup4_taxonomy", folder=OUT_SUPP)
@@ -549,7 +545,7 @@ try:
         ax.legend(fontsize=6.5, loc="lower right")
         ax.grid(True, alpha=0.3, ls="--")
         ax.set_xlim(3, 17)
-    fig.suptitle("Sup5: E7 Entropy Routing — All Models on SSv2 (4f cheap → 16f dense)",
+    fig.suptitle("Entropy Routing — All Models on SSv2 (4f cheap → 16f dense)",
                  fontsize=11)
     plt.tight_layout()
     savefig(fig, "sup5_routing_all_models", folder=OUT_SUPP)
@@ -558,7 +554,7 @@ except Exception as e:
 plt.close()
 
 # Sup6: E10 clip duration
-print("  Sup6: E10 clip duration...")
+print("  E10 clip duration...")
 try:
     dur = pd.read_csv("evaluations/accv2026/e10_duration/duration_summary.csv")
     fig, axes = plt.subplots(2, 4, figsize=(16, 7))
@@ -585,7 +581,7 @@ try:
         ax.legend(fontsize=6, ncol=2)
         ax.grid(True, alpha=0.3, ls="--")
         ax.axhline(0, color="0.5", lw=0.8, ls="--")
-    fig.suptitle("Sup6: E10 Clip Duration vs Aliasing Loss\n"
+    fig.suptitle("Clip Duration vs Aliasing Loss\n"
                  "Negative trend: shorter clips alias more (less temporal redundancy)",
                  fontsize=10)
     plt.tight_layout()
