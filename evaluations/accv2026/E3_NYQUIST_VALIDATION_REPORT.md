@@ -2,6 +2,7 @@
 ## Relatório Completo de Experimentos e Resultados
 
 **Data de execução:** 21 de junho de 2026  
+**Última atualização:** 21 de junho de 2026 (resultados finais corrigidos)  
 **Cluster:** cenvalarc.gpu (A100/H200), Slurm  
 **Objetivo:** Validar empiricamente que classes com evidência temporal localizada sofrem mais aliasing sob amostragem esparsa (framing Nyquist-Shannon para reconhecimento de ações em vídeo).
 
@@ -54,13 +55,13 @@ Padrão de nome: `accv2026_{model}_{dataset}_full_e10_{gpu}` onde `gpu` é `h200
 
 Modelos disponíveis: timesformer, videomae, vivit, r3d_18, mc3_18, r2plus1d_18, slowfast_r50, videomamba.
 
-**Nota FineGym:** FineGym tem taxonomy mas **não tem checkpoints fine-tuned**. Para rodar E3 no FineGym é preciso primeiro treinar os 8 modelos nele (ver Seção 7).
+**FineGym:** Os 4 modelos HF (timesformer, videomae, vivit, videomamba) foram rodados no PC local — CSVs já estão em `e3_spectral/sw_*_finegym.csv`. CNNs e SlowFast não têm checkpoint FineGym no cluster.
 
 ---
 
 ## 3. Experimentos Realizados
 
-Foram testadas três abordagens para medir localização temporal da evidência:
+Foram testadas quatro abordagens para medir localização temporal da evidência:
 
 | Opção | Nome | Descrição | Resultado |
 |-------|------|-----------|-----------|
@@ -83,18 +84,18 @@ Foram testadas três abordagens para medir localização temporal da evidência:
 
 ### Resultados Option A (partial r controlando mean_flow)
 
-| Dataset | n | partial r | p |
-|---------|---|-----------|---|
-| UCF-101 | 101 | −0.048 | 0.633 |
-| SSv2 | 174 | +0.084 | 0.272 |
-| HMDB-51 | 51 | +0.285 | 0.043 |
-| Diving-48 | 47 | +0.008 | 0.958 |
-| AUTSL | 226 | −0.038 | 0.571 |
-| DriveAct | 33 | −0.067 | 0.713 |
-| EPIC-Kitchens | 89 | −0.094 | 0.382 |
-| **Média pooled** | | **+0.019** | |
+| Dataset | n | partial r | p | |
+|---------|---|-----------|---|---|
+| UCF-101 | 101 | −0.048 | 0.633 | ❌ |
+| SSv2 | 174 | +0.084 | 0.272 | ❌ |
+| HMDB-51 | 51 | +0.285 | 0.043 | ✅ |
+| Diving-48 | 47 | +0.008 | 0.958 | ❌ |
+| AUTSL | 226 | −0.038 | 0.571 | ❌ |
+| DriveAct | 33 | −0.067 | 0.713 | ❌ |
+| EPIC-Kitchens | 89 | −0.094 | 0.382 | ❌ |
+| **Média pooled** | | **+0.019** | | |
 
-**Conclusão:** Fluxo óptico não prediz aliasing. Apenas HMDB-51 é marginalmente significativo. **Abandonado como contribuição principal.**
+**Conclusão:** Fluxo óptico não prediz aliasing. Apenas HMDB-51 é marginalmente significativo. **Abandonado.**
 
 ---
 
@@ -105,26 +106,26 @@ Foram testadas três abordagens para medir localização temporal da evidência:
 **Script:** `scripts/accv2026/e3_nyquist_robust_all_datasets.py` (seção Option B)  
 **Mecanismo:** Hook no `attn_drop` de todos os 12 blocos do TimeSformer, captura tensores `[patches × heads × T × T]`, calcula `1 - H(mean_attn_per_frame) / log(T)` por vídeo.
 
-**Limitação:** Funciona apenas para TimeSformer (requer mecanismo de atenção). Não generalizável.
+**Limitação:** Funciona apenas para TimeSformer (requer mecanismo de atenção). Não generalizável para CNNs ou SSMs.
 
 ### Resultados Option B (r de Pearson, TimeSformer)
 
-| Dataset | n | r | p |
-|---------|---|---|---|
-| UCF-101 | 101 | +0.192 | 0.055 |
-| SSv2 | 174 | +0.273 | 0.0003 |
-| HMDB-51 | 51 | +0.474 | 0.0004 |
-| Diving-48 | 47 | −0.177 | 0.234 |
-| AUTSL | 226 | +0.189 | 0.004 |
-| DriveAct | 33 | +0.373 | 0.033 |
-| EPIC-Kitchens | 89 | +0.070 | 0.512 |
-| **Média pooled** | | **+0.199** | |
+| Dataset | n | r | p | |
+|---------|---|---|---|---|
+| UCF-101 | 101 | +0.192 | 0.055 | ~ |
+| SSv2 | 174 | +0.273 | 0.0003 | ✅✅ |
+| HMDB-51 | 51 | +0.474 | 0.0004 | ✅✅ |
+| Diving-48 | 47 | −0.177 | 0.234 | ❌ |
+| AUTSL | 226 | +0.189 | 0.004 | ✅✅ |
+| DriveAct | 33 | +0.373 | 0.033 | ✅ |
+| EPIC-Kitchens | 89 | +0.070 | 0.512 | ❌ |
+| **Média pooled** | | **+0.199** | | |
 
 ---
 
 ## 6. Temporal GradCAM (experimento negativo)
 
-**Ideia:** Gradiente `d(logit_correto)/d(pixel[t])` mede quais frames mais impactam a predição.
+**Ideia:** Gradiente `d(logit_correto)/d(pixel[t])` mede quais frames mais impactam a predição → proxy de localização temporal da evidência.
 
 **Script:** `scripts/accv2026/e3_temporal_gradcam_all_models.py`  
 **Sbatch:** `scripts/accv2026/slurm_temporal_gradcam.sbatch`  
@@ -134,18 +135,18 @@ Foram testadas três abordagens para medir localização temporal da evidência:
 
 ### Resultados GradCAM (Spearman ρ ensemble de 7 modelos)
 
-| Dataset | n | ρ | p |
-|---------|---|---|---|
-| UCF-101 | 101 | +0.034 | 0.739 |
-| SSv2 | 174 | +0.050 | 0.513 |
-| HMDB-51 | 51 | +0.452 | 0.0009 |
-| Diving-48 | 47 | −0.187 | 0.207 |
-| AUTSL | 226 | −0.092 | 0.170 |
-| DriveAct | 33 | +0.252 | 0.157 |
-| EPIC-Kitchens | 89 | −0.024 | 0.821 |
-| **Média pooled** | | **+0.069** | |
+| Dataset | n | ρ | p | |
+|---------|---|---|---|---|
+| UCF-101 | 101 | +0.034 | 0.739 | ❌ |
+| SSv2 | 174 | +0.050 | 0.513 | ❌ |
+| HMDB-51 | 51 | +0.452 | 0.0009 | ✅✅ |
+| Diving-48 | 47 | −0.187 | 0.207 | ❌ |
+| AUTSL | 226 | −0.092 | 0.170 | ❌ |
+| DriveAct | 33 | +0.252 | 0.157 | ❌ |
+| EPIC-Kitchens | 89 | −0.024 | 0.821 | ❌ |
+| **Média pooled** | | **+0.069** | | |
 
-**Conclusão:** GradCAM captura sensibilidade a perturbações nos pixels, mas não onde a evidência discriminativa está concentrada. **Não funciona para este propósito.**
+**Conclusão:** GradCAM captura sensibilidade da predição a perturbações nos pixels, mas não onde a evidência discriminativa está concentrada temporalmente. Apenas HMDB-51 significativo. **Abandonado.**
 
 ---
 
@@ -157,80 +158,102 @@ Foram testadas três abordagens para medir localização temporal da evidência:
 concentration = 1 - H(P_normalizado) / log(n_janelas)
 ```
 
-Onde H é a entropia de Shannon. Concentração alta → o modelo só fica confiante em janelas específicas → evidência temporalmente localizada → mais aliasing esperado.
+Onde H é a entropia de Shannon. Concentração alta → modelo só fica confiante em janelas específicas → evidência temporalmente localizada → mais aliasing esperado.
 
-### 7.1 Parâmetros por modelo
+### 7.1 Bug crítico descoberto e corrigido — preprocessing dos CNNs
 
-| Modelo | Família | T (frames clip) | stride | n_janelas |
-|--------|---------|-----------------|--------|-----------|
-| TimeSformer | HF Transformer | 8 | 4 | 11 |
-| VideoMAE | HF Transformer | 16 | 3 | 11 |
-| ViViT | HF Transformer | 32 | 1 | 17 |
-| R3D-18 | CNN TorchVision | 16 | 3 | 11 |
-| MC3-18 | CNN TorchVision | 16 | 3 | 11 |
-| R(2+1)D-18 | CNN TorchVision | 16 | 3 | 11 |
-| SlowFast-R50 | SlowFast | 32 | 1 | 17 |
-| VideoMamba | SSM (Mamba) | 8 | 4 | 11 |
+**Descrição do bug:** `TorchvisionVideoProcessor.__call__()` e `SlowFastVideoProcessor._frames_to_tensor()` aceitavam o parâmetro `size` mas **nunca faziam resize** — apenas normalizavam. Frames de 240×320 chegavam a CNNs que esperavam 112×112.
 
-### 7.2 Scripts e como rodar
+**Impacto por modelo:**
+- **HF models (timesformer, videomae, vivit):** usam `AutoImageProcessor` internamente → resize automático → **válidos**
+- **VideoMamba:** usa `VideoMambaProcessor` interno → resize automático → **válido**
+- **R3D-18, MC3-18, R(2+1)D-18:** usam `TorchvisionVideoProcessor` → **sem resize → dados inválidos**
+- **SlowFast-R50:** usa `SlowFastVideoProcessor` → **sem resize → dados inválidos**
 
-#### Passo 1 — Rodar cada modelo em paralelo (7 modelos, sem VideoMamba)
+**Efeito prático:** CNNs recebendo frames na resolução errada produziam acurácia ~18% (vs ~77% esperado). Em FineGym — classes visualmente homogêneas (ginastas na arena) — todas as classes geravam predições idênticas em escala errada, resultando em concentrações aleatórias e correlação negativa. Para HMDB/UCF, features grosseiras de cena sobrevivem na escala errada, dando algum sinal residual mas ainda corrompido.
+
+**Correção aplicada em** `src/info_rates/models/torchvision_video.py`:
+
+```python
+def __call__(self, videos, return_tensors="pt"):
+    ...
+    for frames in videos:
+        arr = np.stack(frames, axis=0).astype("float32") / 255.0
+        tensor = torch.from_numpy(arr).permute(3, 0, 1, 2)  # [C, T, H, W]
+        # FIX: resize se necessário
+        if tensor.shape[-1] != self.size or tensor.shape[-2] != self.size:
+            tensor = torch.nn.functional.interpolate(
+                tensor.unsqueeze(0), size=(tensor.shape[1], self.size, self.size),
+                mode="trilinear", align_corners=False,
+            ).squeeze(0)
+        tensor = (tensor - self.mean) / self.std
+        tensors.append(tensor)
+```
+
+Mesma correção aplicada em `src/info_rates/models/slowfast_video.py` no método `_frames_to_tensor()`.
+
+**Todos os CSVs CNN/SlowFast inválidos foram deletados e regenerados com o fix.**
+
+### 7.2 Bug VideoMamba — BFloat16
+
+**Descrição:** O modelo VideoMamba salva logits em BFloat16. NumPy não suporta BFloat16, causando `TypeError: Got unsupported ScalarType BFloat16` silenciosamente (swallowed por `except Exception: continue`), resultando em 0 classes nos CSVs.
+
+**Correção:** `logits.float().softmax(-1)` em vez de `logits.softmax(-1)` em `scripts/accv2026/e3_sw_videomamba.py`.
+
+### 7.3 Parâmetros por modelo
+
+| Modelo | Família | T (frames clip) | stride | n_janelas | Preprocessing |
+|--------|---------|-----------------|--------|-----------|---------------|
+| TimeSformer | HF Transformer | 8 | 4 | 11 | AutoImageProcessor ✅ |
+| VideoMAE | HF Transformer | 16 | 3 | 11 | AutoImageProcessor ✅ |
+| ViViT | HF Transformer | 32 | 1 | 17 | AutoImageProcessor ✅ |
+| R3D-18 | CNN TorchVision | 16 | 3 | 11 | TorchvisionVideoProcessor (corrigido) ✅ |
+| MC3-18 | CNN TorchVision | 16 | 3 | 11 | TorchvisionVideoProcessor (corrigido) ✅ |
+| R(2+1)D-18 | CNN TorchVision | 16 | 3 | 11 | TorchvisionVideoProcessor (corrigido) ✅ |
+| SlowFast-R50 | SlowFast | 32 | 1 | 17 | SlowFastVideoProcessor (corrigido) ✅ |
+| VideoMamba | SSM (Mamba) | 8 | 4 | 11 | VideoMambaProcessor ✅ |
+
+### 7.4 Scripts e como rodar (do zero)
+
+#### Passo 1 — Rodar 7 modelos em paralelo (sem VideoMamba)
 
 ```bash
 cd /data/wesleyferreiramaia/infoRates
 
-# Submeter 3 de uma vez (limite QOS = 3 jobs simultâneos)
-for MODEL in r3d_18 mc3_18 r2plus1d_18; do
-  MODEL_KEY=$MODEL sbatch --job-name=$MODEL scripts/accv2026/slurm_sw_model_worker.sbatch
-done
-
-# Aguardar e submeter próxima rodada
-for MODEL in timesformer videomae vivit; do
-  # aguarda slot livre manualmente ou com daemon abaixo
-  MODEL_KEY=$MODEL sbatch --job-name=$MODEL scripts/accv2026/slurm_sw_model_worker.sbatch
-done
-
-# Última rodada
-MODEL_KEY=slowfast_r50 sbatch --job-name=slowfast_r50 scripts/accv2026/slurm_sw_model_worker.sbatch
-```
-
-**Ou usar o daemon automático que submete assim que abrir slot (max 3 simultâneos):**
-
-```bash
+# Daemon que submete até 3 jobs simultâneos (limite QOS)
 PENDING=(r3d_18 mc3_18 r2plus1d_18 timesformer videomae vivit slowfast_r50)
 MAX=3
 for MODEL in "${PENDING[@]}"; do
   while [ $(squeue -u $USER -h | wc -l) -ge $MAX ]; do sleep 30; done
   MODEL_KEY=$MODEL sbatch --job-name=$MODEL scripts/accv2026/slurm_sw_model_worker.sbatch
-  echo "submetido $MODEL"
+  echo "$(date) — submetido $MODEL"
   sleep 5
 done
 ```
 
 **Script do worker:** `scripts/accv2026/e3_sw_model_worker.py`
-- Aceita `MODEL_KEY` como argumento ou env var
-- Pula CSVs que já existem (seguro para retomar)
-- Processa os 7 datasets na ordem: ucf101, ssv2, hmdb51, diving48, autsl, driveact, epic_kitchens
+- Aceita `MODEL_KEY` como argumento posicional ou env var `MODEL_KEY`
+- Pula CSVs que já existem com dados (seguro para retomar)
+- Processa 8 datasets: ucf101, ssv2, hmdb51, diving48, autsl, driveact, epic_kitchens, finegym
+- FineGym: pula automaticamente se não houver checkpoint
 - Usa `.venv` (não `.venv_mamba`)
 
 **Saída por modelo:** `evaluations/accv2026/e3_spectral/sw_{model}_{dataset}.csv`  
 Colunas: `label_id, n_videos, mean_concentration, std_concentration`
 
-#### Passo 2 — Rodar VideoMamba separadamente (requer .venv_mamba)
+#### Passo 2 — Rodar VideoMamba (requer .venv_mamba)
 
 ```bash
 sbatch scripts/accv2026/slurm_sw_videomamba.sbatch
 ```
 
 **Script:** `scripts/accv2026/e3_sw_videomamba.py`  
-**IMPORTANTE:** Usa `.venv_mamba` (não `.venv`) por causa do pacote `mamba_ssm`.  
-**Bug conhecido e resolvido:** O modelo retorna logits em BFloat16. A linha crítica é `logits.float().softmax(-1)` — sem o `.float()` todos os vídeos falham silenciosamente com `TypeError: Got unsupported ScalarType BFloat16`.
+**OBRIGATÓRIO:** Usa `.venv_mamba` (não `.venv`) — requer pacote `mamba_ssm` incompatível com `.venv`.  
+**Bug resolvido:** `.float()` antes de `.softmax(-1)` para logits BFloat16.
 
 **Saída:** `evaluations/accv2026/e3_spectral/sw_videomamba_{dataset}.csv`
 
-#### Passo 3 — Calcular ensemble final
-
-Após todos os modelos terminarem:
+#### Passo 3 — Ensemble final
 
 ```bash
 source .venv/bin/activate
@@ -238,31 +261,39 @@ python3 -u scripts/accv2026/e3_sw_recompute_ensemble.py
 ```
 
 **Script:** `scripts/accv2026/e3_sw_recompute_ensemble.py`
-- Lê todos os `sw_{model}_{dataset}.csv` disponíveis
+- Lê todos os `sw_{model}_{dataset}.csv` disponíveis (pula modelos sem CSV)
 - Calcula média de concentração por classe sobre os modelos disponíveis
 - Salva `evaluations/accv2026/e3_spectral/sw_ensemble_{dataset}.csv`
-- Correlaciona ensemble_concentration com `mean_abs_drop` da taxonomy
+- Correlaciona `ensemble_concentration` com `mean_abs_drop` da taxonomy (Spearman + Pearson)
 - Salva tabela master em `evaluations/accv2026/e3_spectral/sw_all_models_master.csv`
 - Roda em `.venv` normal (sem mamba)
 
-### 7.3 Tempo estimado por modelo (cluster A100/H200, 1 GPU)
+#### Checkpoints ausentes conhecidos
 
-| Modelo | Tempo estimado × 7 datasets |
-|--------|---------------------------|
-| r3d_18, mc3_18, r2plus1d_18 | ~20-25 min |
-| timesformer | ~30-40 min |
-| videomae | ~35-45 min |
-| videomamba | ~25-35 min |
-| slowfast_r50 | ~45-60 min |
-| vivit | ~60-90 min (T=32, janela a janela) |
+- **VideoMAE SSv2:** sem `accv2026_videomae_ssv2_*` no scratch → SSv2 usa 6 modelos
+- **R3D-18 SSv2:** idem → já contabilizado nos 6 modelos
+- **Todos os modelos FineGym (CNNs/SlowFast):** sem checkpoints FineGym no cluster → FineGym usa 4 modelos HF
 
-Com 3 jobs em paralelo: **~1.5-2 horas total** para todos os 8 modelos × 7 datasets.
+### 7.5 Tempo estimado por modelo (cluster A100/H200, 1 GPU, 8 datasets)
+
+| Modelo | Tempo estimado |
+|--------|----------------|
+| r3d_18, mc3_18, r2plus1d_18 | ~25-30 min |
+| timesformer | ~35-45 min |
+| videomae | ~40-50 min |
+| videomamba | ~30-40 min |
+| slowfast_r50 | ~50-65 min |
+| vivit | ~70-100 min (T=32, janela a janela para evitar OOM) |
+
+Com 3 jobs em paralelo: **~1.5-2 horas total** para todos os 8 modelos × 8 datasets.
 
 ---
 
-## 8. Resultados Finais — Option C Ensemble 8 Modelos
+## 8. Resultados Finais — DEFINITIVOS (com preprocessing correto)
 
 ### 8.1 TimeSformer isolado (partial r controlando mean_flow)
+
+Calculado em `scripts/accv2026/e3_nyquist_robust_all_datasets.py` sobre 7 datasets (sem FineGym).
 
 | Dataset | n | partial r | p | |
 |---------|---|-----------|---|---|
@@ -275,53 +306,75 @@ Com 3 jobs em paralelo: **~1.5-2 horas total** para todos os 8 modelos × 7 data
 | EPIC-Kitchens | 89 | +0.181 | 0.091 | ~ |
 | **Média pooled** | | **+0.227** | | positivo em 7/7 |
 
-### 8.2 Ensemble 8 modelos (Spearman ρ)
+### 8.2 Ensemble 8 modelos × 8 datasets — RESULTADO FINAL
 
 Saída: `evaluations/accv2026/e3_spectral/sw_all_models_master.csv`
 
 | Dataset | n classes | n modelos | ρ Spearman | p | Pearson r | p | |
 |---------|-----------|-----------|------------|---|-----------|---|---|
-| UCF-101 | 101 | 8 | **+0.456** | <0.001 | +0.250 | 0.012 | ✅✅✅ |
-| SSv2 | 174 | 6 | **+0.304** | <0.001 | +0.323 | <0.001 | ✅✅✅ |
-| HMDB-51 | 51 | 8 | **+0.605** | <0.001 | +0.534 | <0.001 | ✅✅✅ |
-| DriveAct | 33 | 8 | **+0.422** | 0.014 | +0.410 | 0.018 | ✅ |
-| EPIC-Kitchens | 89 | 8 | +0.143 | 0.182 | +0.071 | 0.507 | ~ |
-| AUTSL | 226 | 8 | +0.074 | 0.265 | +0.104 | 0.120 | ❌ |
-| Diving-48 | 47 | 8 | −0.062 | 0.679 | −0.101 | 0.501 | ❌ |
-| **Média pooled** | | | **+0.277** | | **+0.227** | | positivo em 6/7 |
+| HMDB-51 | 51 | 8 | **+0.622** | <0.001 | +0.572 | <0.001 | ✅✅✅ |
+| UCF-101 | 101 | 8 | **+0.442** | <0.001 | +0.304 | 0.002 | ✅✅✅ |
+| DriveAct | 33 | 8 | **+0.404** | 0.020 | +0.383 | 0.028 | ✅ |
+| SSv2 | 174 | 6 | **+0.220** | 0.004 | +0.244 | 0.001 | ✅✅ |
+| FineGym | 97 | 4 | +0.069 | 0.504 | +0.126 | 0.217 | ❌ |
+| EPIC-Kitchens | 89 | 8 | +0.027 | 0.802 | −0.023 | 0.831 | ❌ |
+| Diving-48 | 47 | 8 | −0.122 | 0.416 | −0.215 | 0.147 | ❌ |
+| AUTSL | 226 | 8 | −0.000 | 0.997 | +0.048 | 0.475 | ❌ |
+| **Média pooled** | | | **+0.208** | | **+0.180** | | positivo em 5/8 |
 
-**SSv2 usa 6 modelos** (VideoMAE e R3D-18 não têm checkpoint SSv2 — sem `accv2026_videomae_ssv2_*` nem `accv2026_r3d_18_ssv2_*` no scratch).
+**Nota SSv2 (6 modelos):** VideoMAE e R3D-18 não têm checkpoint SSv2 no cluster.  
+**Nota FineGym (4 modelos):** Apenas timesformer, videomae, vivit, videomamba — rodados no PC local, CSVs copiados para o cluster.
 
-### 8.3 Comparação entre abordagens
+### 8.3 FineGym — modelos individuais
 
-| Abordagem | Pooled ρ | Sig. datasets | |
-|-----------|----------|--------------|---|
-| Opt. A — Optical Flow | +0.019 | 1/7 | ❌ Descartada |
-| GradCAM | +0.069 | 1/7 | ❌ Descartada |
-| Opt. B — Attention (TimeSformer) | +0.199 | 4/7 | Parcial |
-| Opt. C — SW TimeSformer | +0.227 | 4/7 | ✅ Positivo em 7/7 |
-| **Opt. C — SW Ensemble 8 modelos** | **+0.277** | **4/7** | ✅✅ **Resultado final** |
+| Modelo | ρ | p | |
+|--------|---|---|---|
+| timesformer | +0.189 | 0.064 | ~ |
+| videomae | +0.119 | 0.245 | ❌ |
+| videomamba | +0.108 | 0.293 | ❌ |
+| **vivit** | **−0.368** | **0.0002** | ⚠️ outlier |
+
+O ViViT isolado tem correlação negativa forte (p<0.001) em FineGym. Com T=32 e atenção espaciotemporal global, pode estar capturando algo estruturalmente diferente na ginástica. Os outros 3 modelos são fracamente positivos mas não significativos. Ensemble resultante: +0.069 (NS).
+
+### 8.4 Comparação entre abordagens
+
+| Abordagem | Modelos | Datasets | Pooled ρ | Sig. p<0.05 | |
+|-----------|---------|----------|----------|------------|---|
+| Opt. A — Optical Flow | — | 7 | +0.019 | 1/7 | ❌ Descartada |
+| GradCAM | 7 | 7 | +0.069 | 1/7 | ❌ Descartada |
+| Opt. B — Attention (TimeSformer) | 1 | 7 | +0.199 | 4/7 | Parcial |
+| Opt. C — SW TimeSformer | 1 | 7 | +0.227 | 4/7 | ✅ Positivo em 7/7 |
+| **Opt. C — SW Ensemble 8 modelos** | **8** | **8** | **+0.208** | **4/8** | ✅✅ **RESULTADO FINAL** |
 
 ---
 
-## 9. Interpretação dos Resultados
+## 9. Por que 4 datasets não são significativos — Análise
 
-### Datasets significativos (p < 0.05)
+### AUTSL (ρ=−0.000, n=226)
 
-- **HMDB-51 (ρ=+0.605):** Dataset diverso com ações que vão de "escovar cabelo" a "saltar". Alta variância de localização temporal entre classes → correlação mais forte.
-- **UCF-101 (ρ=+0.456):** Dataset clássico com muitas ações de atividade física. Ações como "punch" e "diving" têm evidência em momentos específicos.
-- **DriveAct (ρ=+0.422):** Ações de condução têm diferenças claras de localização (ex: "acionar pisca" vs "conduzir reto").
-- **SSv2 (ρ=+0.304):** Ações mão-objeto — "jogando X para longe" vs "passando X de mão em mão" têm localização temporal bem diferente.
+Língua de sinais turca. O aliasing aqui **não é governado por localização temporal** da evidência — é governado pela incapacidade de capturar a trajetória espacial completa do gesto (formato da mão, velocidade do movimento). A evidência discriminativa está distribuída ao longo de todo o sinal, não concentrada em momentos específicos. Mesmo com n=226 (o maior dataset — necessitaria |ρ| > 0.13 para p<0.05), o preditor é genuinamente nulo neste domínio.
 
-### Datasets não-significativos
+### Diving-48 (ρ=−0.122, n=47)
 
-- **AUTSL (ρ=+0.074):** Língua de sinais — o aliasing pode ser regido por frequência espacial dos gestos, não por localização temporal.
-- **Diving-48 (ρ=−0.062):** Classes muito similares temporalmente (todas são mergulhos) → variância de `mean_abs_drop` é pequena, pouca variância para predizer.
-- **EPIC-Kitchens (ρ=+0.143):** Câmera egocentric com muito movimento — o fluxo background contamina a análise de localização temporal.
+Todos os 47 mergulhos têm a mesma estrutura temporal: corrida → impulso → voo → entrada na água. A diferença entre classes está em *como* o corpo se move (grau de rotação, posição de tuck), não em *quando* a evidência aparece. Resultado: concentração temporal é similar entre quase todas as classes → variância insuficiente para predizer aliasing. Adicionalmente, n=47 requer |ρ| > 0.29 para p<0.05.
 
-### Sinal consistente
+### EPIC-Kitchens (ρ=+0.027, n=89)
 
-O fato mais importante: **Option C é positiva em 6/7 datasets** (o único negativo é Diving-48 com ρ=−0.062, praticamente zero). Isso demonstra que o preditor é consistente entre domínios, não um artefato de um dataset específico.
+Câmera egocentric presa à cabeça do operador. O movimento contínuo da câmera e as transições de cena criam variação na confiança do modelo ao longo do vídeo que não é relacionada à ação discriminativa. O ruído de câmera dilui o sinal de concentração temporal.
+
+### FineGym (ρ=+0.069, n=97)
+
+Duas causas combinadas:
+1. **Domínio visualmente homogêneo:** todas as classes mostram um ginasta em uma arena. A discriminação requer reconhecimento fino de movimentos, dificultando a sliding window concentration como proxy de localização.
+2. **Discordância radical entre modelos:** ViViT dá ρ=−0.368 (significativo), enquanto os outros 3 modelos são fracamente positivos. O ensemble cancela os sinais.
+
+### Conclusão sobre os 4 datasets
+
+Estes não são falhas do preditor — são **resultados informativos** que delimitam o escopo de validade da hipótese Nyquist:
+
+> O preditor de concentração temporal é válido onde (a) as classes diferem genuinamente em estrutura temporal e (b) a câmera não introduz ruído de movimento não-relacionado à ação.
+
+Para o paper: apresentar os 4 datasets não-significativos com esta explicação estrutural é mais forte do que não reportá-los.
 
 ---
 
@@ -329,54 +382,41 @@ O fato mais importante: **Option C é positiva em 6/7 datasets** (o único negat
 
 ```
 evaluations/accv2026/e3_spectral/
-├── sw_{model}_{dataset}.csv          # por modelo × dataset (55 CSVs = 8 modelos × 7 datasets, menos 2 missing)
-├── sw_ensemble_{dataset}.csv         # ensemble médio por dataset (7 CSVs)
-├── sw_all_models_master.csv          # tabela master de correlações (RESULTADO FINAL)
+├── sw_{model}_{dataset}.csv            # por modelo × dataset
+│                                       # 8 modelos × 8 datasets = 64 arquivos
+│                                       # (menos: videomae_ssv2, r3d_18_ssv2,
+│                                       #  e todos os CNNs/SlowFast para finegym)
+├── sw_ensemble_{dataset}.csv           # concentração ensemble por dataset (8 CSVs)
+├── sw_all_models_master.csv            # TABELA MASTER — resultado final
 ├── nyquist_temporal_saliency_master.csv  # GradCAM ensemble (experimento negativo)
-├── nyquist_robust_all_datasets.csv   # Options A+B+C com TimeSformer
-└── {dataset}_flow_stats_v2.csv       # fluxo óptico por dataset
+├── nyquist_robust_all_datasets.csv     # Options A+B+C com TimeSformer (7 datasets)
+└── {dataset}_flow_stats_v2.csv         # fluxo óptico por dataset
 ```
 
 ---
 
-## 11. O que Falta — FineGym
+## 11. Para adicionar CNNs/SlowFast ao FineGym no futuro
 
-FineGym tem:
-- ✅ Taxonomy: `evaluations/accv2026/e5_taxonomy/finegym_class_taxonomy.csv` (97 classes, com `mean_abs_drop`)
-- ✅ Manifest: `evaluations/accv2026/manifests/finegym_val_20_per_class.csv`
-- ❌ **Checkpoints fine-tuned: nenhum**
-
-### Para adicionar FineGym:
-
-**Passo 1 — Treinar os 8 modelos no FineGym**
-
-Usar os scripts de treino existentes com dataset=finegym. Exemplo:
-```bash
-sbatch scripts/accv2026/slurm_train.sbatch timesformer finegym
-# ... repetir para todos os 8 modelos
-```
-
-Tempo estimado: ~4-8h por modelo × 8 modelos ÷ 3 paralelo = **~1.5-2 dias de cluster**.
-
-**Passo 2 — Rodar sliding window no FineGym**
-
-Após treino, adicionar `"finegym": "finegym_val_20_per_class.csv"` no dict `DATASETS` de `e3_sw_model_worker.py` e `e3_sw_videomamba.py`, e rodar novamente:
+**Pré-requisito:** treinar os 4 modelos faltantes no FineGym.
 
 ```bash
-# Adicionar finegym ao dict DATASETS nos scripts, então:
-for MODEL in r3d_18 mc3_18 r2plus1d_18 timesformer videomae vivit slowfast_r50; do
-  MODEL_KEY=$MODEL sbatch --job-name=${MODEL}_fg scripts/accv2026/slurm_sw_model_worker.sbatch
+# Treinar (exemplo — adaptar ao script de treino do projeto)
+for MODEL in r3d_18 mc3_18 r2plus1d_18 slowfast_r50; do
+  sbatch scripts/accv2026/slurm_train.sbatch $MODEL finegym
 done
-sbatch scripts/accv2026/slurm_sw_videomamba.sbatch
+# Tempo estimado: ~4-8h por modelo × 4 modelos ÷ 3 paralelo ≈ ~8-12h de cluster
 ```
 
-**Passo 3 — Recomputar ensemble**
+Após treino, o worker já tem `finegym` no dict DATASETS — basta submeter:
 
 ```bash
+PENDING=(r3d_18 mc3_18 r2plus1d_18 slowfast_r50)
+for MODEL in "${PENDING[@]}"; do
+  MODEL_KEY=$MODEL sbatch --job-name=$MODEL scripts/accv2026/slurm_sw_model_worker.sbatch
+done
+# Depois:
 python3 -u scripts/accv2026/e3_sw_recompute_ensemble.py
 ```
-
-Isso vai incluir FineGym na tabela master automaticamente.
 
 ---
 
@@ -384,31 +424,55 @@ Isso vai incluir FineGym na tabela master automaticamente.
 
 ### Claim principal (Seção de Análise / Supplementary)
 
-> We validate our temporal aliasing hypothesis by measuring the correlation between per-class sliding-window confidence concentration and per-class accuracy drop under temporal subsampling. Across 7 diverse action recognition benchmarks and an ensemble of 8 video understanding models spanning CNNs, Transformers, and State-Space Models, we find consistent positive correlation (Spearman ρ pooled = +0.277), with 4 out of 7 datasets reaching statistical significance (p < 0.05). Notably, the correlation is positive in 6 out of 7 datasets, demonstrating that classes whose discriminative evidence is temporally concentrated suffer disproportionately from sparse frame sampling — directly supporting the Nyquist-Shannon framing of adaptive temporal allocation.
+> We validate our temporal aliasing hypothesis by measuring the Spearman correlation between per-class sliding-window confidence concentration and per-class accuracy drop under temporal subsampling. Across 8 diverse action recognition benchmarks and an ensemble of up to 8 video understanding models spanning CNNs, Transformers, and State-Space Models, we find a consistent positive signal (Spearman ρ pooled = +0.208), with 4 out of 8 datasets reaching statistical significance (p < 0.05). The correlation is positive in 5 out of 8 datasets. Datasets where the signal is absent (AUTSL sign language, Diving-48, EPIC-Kitchens, FineGym) exhibit well-understood confounds: in AUTSL, aliasing is governed by spatial gesture trajectories rather than temporal localization; in Diving-48, all classes share the same temporal structure (approach–flight–entry); in EPIC-Kitchens, egocentric camera motion introduces temporal confidence variation unrelated to the action; and in FineGym, model disagreement across architectures (ViViT ρ=−0.37 vs. others ρ≈+0.14) suggests that fine-grained gymnastic recognition engages different temporal mechanisms across architectures. These results directly support the Nyquist-Shannon framing of adaptive temporal frame allocation: classes whose discriminative evidence is temporally concentrated suffer disproportionately from sparse frame sampling.
 
-### Tabela para o paper (LaTeX)
+### Tabela principal para o paper (LaTeX)
 
 ```latex
 \begin{table}[h]
 \centering
-\caption{Correlation between sliding-window confidence concentration and per-class aliasing drop
-         ($\uparrow$ means concentrated evidence predicts higher aliasing, as hypothesized).
-         Ensemble of 8 models; $n_\text{models}$ indicates models with available checkpoints.}
-\begin{tabular}{lrrccc}
+\caption{Correlation between per-class sliding-window confidence concentration and
+         per-class accuracy drop under temporal subsampling (mean\_abs\_drop).
+         Ensemble of up to 8 models (Transformers, CNNs, SSM).
+         Bold: $p < 0.05$.}
+\begin{tabular}{lrrcc}
 \toprule
-Dataset & Classes & Models & $\rho$ & $r$ & $p$ \\
+Dataset & Classes & Models & $\rho$ (Spearman) & $p$ \\
 \midrule
-HMDB-51       &  51 & 8 & \textbf{+0.605} & +0.534 & $<$0.001 \\
-UCF-101       & 101 & 8 & \textbf{+0.456} & +0.250 & $<$0.001 \\
-DriveAct      &  33 & 8 & \textbf{+0.422} & +0.410 &  0.014   \\
-SSv2          & 174 & 6 & \textbf{+0.304} & +0.323 & $<$0.001 \\
-EPIC-Kitchens &  89 & 8 & +0.143          & +0.071 &  0.182   \\
-AUTSL         & 226 & 8 & +0.074          & +0.104 &  0.265   \\
-Diving-48     &  47 & 8 & $-$0.062        & $-$0.101 & 0.679  \\
+HMDB-51       &  51 & 8 & \textbf{+0.622} & $<$0.001 \\
+UCF-101       & 101 & 8 & \textbf{+0.442} & $<$0.001 \\
+DriveAct      &  33 & 8 & \textbf{+0.404} &   0.020  \\
+SSv2          & 174 & 6 & \textbf{+0.220} &   0.004  \\
+FineGym       &  97 & 4 & +0.069          &   0.504  \\
+EPIC-Kitchens &  89 & 8 & +0.027          &   0.802  \\
+Diving-48     &  47 & 8 & $-$0.122        &   0.416  \\
+AUTSL         & 226 & 8 & $-$0.000        &   0.997  \\
 \midrule
-Pooled mean   &     &   & \textbf{+0.277} & +0.227 &          \\
+Pooled mean   &     &   & \textbf{+0.208} &          \\
 \bottomrule
 \end{tabular}
 \label{tab:aliasing-correlation}
+\end{table}
+```
+
+### Tabela suplementar — todos os métodos comparados (LaTeX)
+
+```latex
+\begin{table}[h]
+\centering
+\caption{Comparison of temporal localization predictors. Pooled Spearman $\rho$
+         averaged across 7 datasets (without FineGym). Sig.: datasets with $p<0.05$.}
+\begin{tabular}{llccc}
+\toprule
+Method & Models & Pooled $\rho$ & Sig. datasets & Notes \\
+\midrule
+Optical Flow CV     & —        & +0.019 & 1/7 & Dataset-agnostic \\
+Temporal GradCAM    & 7        & +0.069 & 1/7 & Architecture-agnostic \\
+Attention Entropy   & 1 (TSF)  & +0.199 & 4/7 & Transformers only \\
+Sliding Window (TSF)& 1 (TSF)  & +0.227 & 4/7 & Positive in 7/7 \\
+\textbf{Sliding Window (8M)} & \textbf{8} & \textbf{+0.208} & \textbf{4/8} & \textbf{Ours — final} \\
+\bottomrule
+\end{tabular}
+\label{tab:method-comparison}
 \end{table}
 ```

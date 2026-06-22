@@ -67,7 +67,12 @@ class TorchvisionVideoProcessor:
         tensors = []
         for frames in videos:
             arr = np.stack(frames, axis=0).astype("float32") / 255.0
-            tensor = torch.from_numpy(arr).permute(3, 0, 1, 2)
+            tensor = torch.from_numpy(arr).permute(3, 0, 1, 2)  # [C, T, H, W]
+            if tensor.shape[-1] != self.size or tensor.shape[-2] != self.size:
+                tensor = torch.nn.functional.interpolate(
+                    tensor.unsqueeze(0), size=(tensor.shape[1], self.size, self.size),
+                    mode="trilinear", align_corners=False,
+                ).squeeze(0)
             tensor = (tensor - self.mean) / self.std
             tensors.append(tensor)
         return TensorBatch({"pixel_values": torch.stack(tensors, dim=0)})

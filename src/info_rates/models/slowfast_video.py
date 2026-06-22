@@ -53,9 +53,14 @@ class SlowFastVideoProcessor:
         self.std = torch.tensor(std).view(3, 1, 1, 1)
 
     def _frames_to_tensor(self, frames: list[np.ndarray]) -> torch.Tensor:
-        """Stack list of HWC uint8 frames → C,T,H,W float tensor."""
+        """Stack list of HWC uint8 frames → C,T,H,W float tensor, resized to self.size."""
         arr = np.stack(frames, axis=0).astype("float32") / 255.0  # T,H,W,C
         tensor = torch.from_numpy(arr).permute(3, 0, 1, 2)  # C,T,H,W
+        if tensor.shape[-1] != self.size or tensor.shape[-2] != self.size:
+            tensor = torch.nn.functional.interpolate(
+                tensor.unsqueeze(0), size=(tensor.shape[1], self.size, self.size),
+                mode="trilinear", align_corners=False,
+            ).squeeze(0)
         return (tensor - self.mean) / self.std
 
     def __call__(self, videos, return_tensors: str = "pt") -> SlowFastBatch:

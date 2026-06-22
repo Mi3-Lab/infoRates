@@ -50,6 +50,7 @@ DATASETS = {
     "autsl":         "autsl_val_20_per_class.csv",
     "driveact":      "driveact_val_20_per_class.csv",
     "epic_kitchens": "epic_kitchens_val_20_per_class.csv",
+    "finegym":       "finegym_val_20_per_class.csv",
 }
 
 CKPT_SUFFIXES = ["_full_e10_h200", "_full_e10_a100", "_full_e10_h200_v2"]
