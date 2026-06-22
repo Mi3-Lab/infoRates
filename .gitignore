@@ -129,19 +129,11 @@ evaluations/accv2026/metrics/
 third_party/videomamba_repo/
 
 # =========================
-# Local VideoMamba3 / Mamba3 experiments
+# VideoMamba3 / AFA — arquivos de checkpoint locais (não commitar)
 # =========================
-docs/VIDEOMAMBA3_*.md
-docs/*MAMBA3*
-docs/*mamba3*
-experiments/videomamba3/
-experiments/*mamba3*/
 third_party/videomamba3_exp/
 third_party/*mamba3*/
-examples/videomamba3_*.py
-examples/*mamba3*
-evaluations/accv2026/videomamba3/
 evaluations/accv2026/fixed_budget/*videomamba3*/
-scripts/accv2026/*videomamba3*
-scripts/accv2026/*mamba3*
+experiments/videomamba3/__pycache__/
+experiments/videomamba3/*.pyc
 secrets.toml
