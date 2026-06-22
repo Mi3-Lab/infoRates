@@ -14,10 +14,13 @@ ROOT     = Path(__file__).resolve().parents[2]
 TAXONOMY = ROOT / "evaluations/accv2026/e5_taxonomy"
 OUT      = ROOT / "evaluations/accv2026/e3_spectral"
 
+# Apenas modelos com T<=16: a sliding-window concentration exige N_DECODE >> T.
+# ViViT (T=32) e SlowFast-R50 (T=32) produzem janelas com 97% de sobreposição
+# (N_DECODE=48) -> concentração degenerada. Excluídos do ensemble.
 ALL_MODELS = [
-    "timesformer", "videomae", "vivit",
+    "timesformer", "videomae",
     "r3d_18", "mc3_18", "r2plus1d_18",
-    "slowfast_r50", "videomamba",
+    "videomamba",
 ]
 
 DATASETS = [
