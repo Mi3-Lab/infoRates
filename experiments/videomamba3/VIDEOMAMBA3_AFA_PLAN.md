@@ -67,34 +67,34 @@ A discretização trapezoidal tem um erro de truncamento de O(Δt³) vs O(Δt²)
 ┌─────────────────────────────────────────────────────────┐
 │                    VideoMamba3-AFA                      │
 │                                                         │
-│  Input video (T_max frames, e.g. 48)                    │
-│       │                                                 │
-│       ▼                                                 │
+│       Input video (T_max frames, e.g. 48)               │
+│                      │                                  │
+│                      ▼                                  │
 │  ┌─────────────────────────────────────────────┐        │
 │  │  Stage 1: Sparse Scan (T_sparse = T_max/4)  │        │
-│  │  VideoMamba3-tiny (4 BiMamba3 blocks)        │        │
+│  │  VideoMamba3-tiny (4 BiMamba3 blocks)       │        │
 │  │  Temporal stride = 4                        │        │
 │  │  Output: hidden states [B, T_sparse, D]     │        │
 │  └─────────────────────────────────────────────┘        │
-│       │                                                 │
-│       ▼                                                 │
+│                       │                                 │
+│                       ▼                                 │
 │  ┌─────────────────────────────────────────────┐        │
 │  │  Temporal Concentration Head (TCH)          │        │
 │  │  2-layer MLP → score per frame [B, T_max]   │        │
 │  │  Trained with aliasing supervision signal   │        │
 │  └─────────────────────────────────────────────┘        │
-│       │                                                 │
-│       ▼                                                 │
+│                       │                                 │
+│                       ▼                                 │
 │  ┌─────────────────────────────────────────────┐        │
 │  │  Adaptive Frame Selector                    │        │
 │  │  Top-K frames by score (budget B)           │        │
 │  │  Differentiable via Gumbel-Top-K            │        │
 │  └─────────────────────────────────────────────┘        │
-│       │                                                 │
-│       ▼                                                 │
+│                       │                                 │
+│                       ▼                                 │
 │  ┌─────────────────────────────────────────────┐        │
 │  │  Stage 2: Dense Scan (B frames selecionados)│        │
-│  │  VideoMamba3-base (24 BiMamba3 blocks)       │        │
+│  │  VideoMamba3-base (24 BiMamba3 blocks)      │        │
 │  │  Output: class logits [B, num_classes]      │        │
 │  └─────────────────────────────────────────────┘        │
 └─────────────────────────────────────────────────────────┘

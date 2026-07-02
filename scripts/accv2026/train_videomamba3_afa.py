@@ -31,6 +31,8 @@ for _p in (ROOT, SRC, VM3):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+import gc
+
 import cv2
 import numpy as np
 import torch
@@ -49,31 +51,20 @@ from videomamba3_afa import (
 from afa_module import AFALoss
 
 # ---------------------------------------------------------------------------
-# Constants
+# Constants (espelha train_videomamba3.py)
 # ---------------------------------------------------------------------------
 
-_DATA_ROOTS = {
-    "ucf101":        "/scratch/wesleyferreiramaia/infoRates/ucf101",
-    "hmdb51":        "/scratch/wesleyferreiramaia/infoRates/hmdb51",
-    "ssv2":          "/scratch/wesleyferreiramaia/infoRates/something-something-v2",
-    "diving48":      "/scratch/wesleyferreiramaia/infoRates/Diving48",
-    "autsl":         "/scratch/wesleyferreiramaia/infoRates/AUTSL",
-    "driveact":      "/scratch/wesleyferreiramaia/infoRates/DriveAct",
-    "epic_kitchens": "/scratch/wesleyferreiramaia/infoRates/epic-kitchens",
-    "finegym":       "/scratch/wesleyferreiramaia/infoRates/FineGym",
-}
+_SCRATCH = "/scratch/wesleyferreiramaia/infoRates/data"
 
-_MANIFESTS = ROOT / "evaluations" / "accv2026" / "manifests"
-
-_MANIFEST_NAMES = {
-    "ucf101":        "ucf101_{split}_full.csv",
-    "hmdb51":        "hmdb51_{split}_full.csv",
-    "ssv2":          "somethingv2_{split}_full.csv",
-    "diving48":      "diving48_{split}_full.csv",
-    "autsl":         "autsl_{split}_full.csv",
-    "driveact":      "driveact_{split}_full.csv",
-    "epic_kitchens": "epic_kitchens_{split}_full.csv",
-    "finegym":       "finegym_{split}_full.csv",
+_DEFAULT_DATA_ROOTS = {
+    "ucf101":        f"{_SCRATCH}/UCF101_data",
+    "hmdb51":        f"{_SCRATCH}/HMDB51_data",
+    "ssv2":          f"{_SCRATCH}/Something_data",
+    "diving48":      f"{_SCRATCH}/Diving48_data",
+    "autsl":         f"{_SCRATCH}/AUTSL_data",
+    "driveact":      f"{_SCRATCH}/DriveAct_data",
+    "epic_kitchens": f"{_SCRATCH}/EPIC_data",
+    "finegym":       f"{_SCRATCH}/FineGym_data",
 }
 
 BAD_VIDEOS_LOG = ROOT / "evaluations" / "accv2026" / "bad_videos.txt"
@@ -173,31 +164,48 @@ def _log_bad(path):
 
 
 def prepare_data(dataset: str, data_root: Optional[str], max_train: int, max_val: int):
-    import pandas as pd
-    root = Path(data_root) if data_root else Path(_DATA_ROOTS[dataset])
+    root = data_root or _DEFAULT_DATA_ROOTS.get(dataset)
 
-    def load_split(split):
-        name = _MANIFEST_NAMES[dataset].format(split=split)
-        path = _MANIFESTS / name
-        if not path.exists():
-            # fallback: try val → test
-            alt = _MANIFESTS / _MANIFEST_NAMES[dataset].format(split="test")
-            if alt.exists():
-                path = alt
-            else:
-                return [], []
-        df = pd.read_csv(path)
-        if "exists" in df.columns:
-            df = df[df["exists"] == True]
-        files = [(str(root / r.video_path), int(r.label_id)) for _, r in df.iterrows()]
-        return files, sorted(df["label_name"].unique().tolist() if "label_name" in df.columns else [])
+    # alguns CSVs guardam paths relativos ao project root; resolver para absoluto
+    _SCRATCH_DATA = "/scratch/wesleyferreiramaia/infoRates"
 
-    train_files, class_names = load_split("train")
-    val_files, _            = load_split("val")
+    def resolve_path(p: str) -> str:
+        if os.path.exists(p):
+            return p
+        alt = os.path.join(_SCRATCH_DATA, p)
+        return alt if os.path.exists(alt) else p
 
-    if not class_names:
-        all_labels = sorted({lab for _, lab in train_files + val_files})
-        class_names = [str(c) for c in all_labels]
+    if dataset == "ssv2":
+        from info_rates.data.something import (
+            get_train_val_test_manifests, get_class_mapping,
+            get_numeric_labels, list_classes,
+        )
+        labels_path = Path(root) / "labels" / "labels.json"
+        class_names = list_classes(str(labels_path))
+        train_df, val_df, _ = get_train_val_test_manifests(root)
+        mapping  = get_class_mapping(str(labels_path))
+        train_df = get_numeric_labels(train_df, mapping)
+        val_df   = get_numeric_labels(val_df,   mapping)
+        train_df = train_df[train_df["video_path"].apply(os.path.exists)].copy()
+        val_df   = val_df[val_df["video_path"].apply(os.path.exists)].copy()
+        train_files = list(zip(train_df["video_path"].tolist(), train_df["label"].astype(int).tolist()))
+        val_files   = list(zip(val_df["video_path"].tolist(),   val_df["label"].astype(int).tolist()))
+    else:
+        from info_rates.data.datasets import load_dataset
+        class_names, train_files, val_files = load_dataset(dataset, root)
+        train_files = [(resolve_path(p), l) for p, l in train_files]
+        val_files   = [(resolve_path(p), l) for p, l in val_files]
+        train_files = [(p, l) for p, l in train_files if os.path.exists(p)]
+        val_files   = [(p, l) for p, l in val_files   if os.path.exists(p)]
+
+    bad = load_bad_video_paths()
+    if bad:
+        before = len(train_files)
+        train_files = [(p, l) for p, l in train_files if p not in bad]
+        val_files   = [(p, l) for p, l in val_files   if p not in bad]
+        removed = before - len(train_files)
+        if removed:
+            print(f"[DataFilter] Excluídos {removed} vídeos problemáticos")
 
     if max_train > 0:
         train_files = train_files[:max_train]
@@ -208,18 +216,19 @@ def prepare_data(dataset: str, data_root: Optional[str], max_train: int, max_val
 
 
 def make_loader(files, T_max, img_size, args, use_ddp: bool, train: bool) -> DataLoader:
-    bad = load_bad_video_paths()
-    ds = VideoAFADataset(files, T_max=T_max, img_size=img_size, train=train, bad_paths=bad)
+    ds = VideoAFADataset(files, T_max=T_max, img_size=img_size, train=train)
     sampler = DistributedSampler(ds, shuffle=train) if use_ddp else None
+    # Val uses batch_size=1 to avoid OOM after VRAM fragmentation from long training epochs
+    bs = args.batch_size if train else 1
     return DataLoader(
         ds,
-        batch_size=args.batch_size,
+        batch_size=bs,
         shuffle=(train and sampler is None),
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
         drop_last=train,
-        persistent_workers=(args.num_workers > 0),
+        persistent_workers=False,
     )
 
 
@@ -249,12 +258,109 @@ _VARIANTS = {
 }
 
 
+def load_videomamba_pretrained(
+    model: "VideoMamba3AFA",
+    ckpt_path: str,
+    is_main: bool = True,
+):
+    """Partially load VideoMamba (K400) weights into VideoMamba3-AFA.
+
+    Loads: patch_embed, pos_embed, cls_token, temporal_pos_embed (interpolated),
+           layer norms, norm_f.
+    Skips: all mixer/SSM params (BiMamba3 ≠ Mamba), head (different classes).
+    """
+    import torch.nn.functional as F
+
+    ckpt = torch.load(ckpt_path, map_location="cpu")
+    src = ckpt.get("model", ckpt.get("state_dict", ckpt))
+
+    loaded, skipped = [], []
+    raw = model.module if isinstance(model, DDP) else model
+
+    def _try_load(param, tensor, name):
+        if param.shape == tensor.shape:
+            param.data.copy_(tensor)
+            loaded.append(name)
+        else:
+            skipped.append(f"{name}: {tuple(param.shape)} vs src {tuple(tensor.shape)}")
+
+    def _interp_temporal(src_t, target_T):
+        """(1, T_src, D) → (1, target_T, D) via 1-D linear interpolation."""
+        T_src = src_t.shape[1]
+        if T_src == target_T:
+            return src_t
+        t = src_t.permute(0, 2, 1)  # (1, D, T_src)
+        t = F.interpolate(t.float(), size=target_T, mode="linear", align_corners=False)
+        return t.permute(0, 2, 1).to(src_t.dtype)
+
+    for stage_name in ("stage1", "stage2"):
+        stage = getattr(raw, stage_name)
+
+        # patch_embed
+        for k in ("patch_embed.proj.weight", "patch_embed.proj.bias"):
+            if k in src:
+                _try_load(getattr(stage.patch_embed.proj, k.split(".")[-1]),
+                          src[k], f"{stage_name}.{k}")
+
+        # spatial positional embedding + CLS token
+        if "pos_embed" in src:
+            _try_load(stage.pos_embed, src["pos_embed"], f"{stage_name}.pos_embed")
+        if "cls_token" in src:
+            _try_load(stage.cls_token, src["cls_token"], f"{stage_name}.cls_token")
+
+        # temporal positional embedding (key name differs: …_embedding vs …_embed)
+        if "temporal_pos_embedding" in src:
+            target_T = stage.temporal_pos_embed.shape[1]
+            t = _interp_temporal(src["temporal_pos_embedding"], target_T)
+            _try_load(stage.temporal_pos_embed, t,
+                      f"{stage_name}.temporal_pos_embed "
+                      f"(interp {src['temporal_pos_embedding'].shape[1]}→{target_T})")
+
+        # final layer norm
+        if "norm_f.weight" in src:
+            _try_load(stage.norm_f.weight, src["norm_f.weight"],
+                      f"{stage_name}.norm_f.weight")
+
+        # per-layer norms (skip mixer/SSM weights — BiMamba3 ≠ Mamba)
+        for i, layer in enumerate(stage.layers):
+            k = f"layers.{i}.norm.weight"
+            if k in src:
+                _try_load(layer.norm.weight, src[k], f"{stage_name}.{k}")
+
+    if is_main:
+        print(f"[pretrained] {ckpt_path}")
+        print(f"[pretrained] Loaded {len(loaded)} tensors — SSM+head skipped (incompatible)")
+        for s in skipped:
+            print(f"  [pretrained] WARN shape mismatch: {s}")
+
+    return loaded, skipped
+
+
 def build_model(args, num_classes: int) -> VideoMamba3AFA:
     factory = _VARIANTS[args.variant]
-    model = factory(
+    _probe = factory(num_classes=1)
+    T_max    = args.T_max if args.T_max else _probe.T_max
+    T_sparse = max(1, T_max // 4)
+    budget_B = args.budget_B if args.budget_B else min(_probe.budget_B, T_max // 2)
+    del _probe
+
+    mamba3_variant = None if getattr(args, "mamba3_variant", "complex") == "none" \
+                     else getattr(args, "mamba3_variant", "complex")
+    ssm_cfg = {"d_state": getattr(args, "d_state", 32)}
+
+    model = VideoMamba3AFA(
         num_classes=num_classes,
+        T_max=T_max,
+        T_sparse=T_sparse,
+        budget_B=budget_B,
+        s1_depth={"tiny": 4, "small": 4, "base": 8}[args.variant],
+        s1_dim={"tiny": 192, "small": 192, "base": 384}[args.variant],
+        s2_depth={"tiny": 12, "small": 24, "base": 24}[args.variant],
+        s2_dim={"tiny": 192, "small": 384, "base": 384}[args.variant],
         drop_path_rate=args.drop_path_rate,
         selector_temperature=args.selector_temperature,
+        mamba3_variant=mamba3_variant,
+        ssm_cfg=ssm_cfg,
     )
     return model
 
@@ -300,7 +406,8 @@ def init_wandb(args, num_classes, train_n, val_n):
 # ---------------------------------------------------------------------------
 
 def train_one_epoch(
-    model, loader, optimizer, criterion, device, epoch, dataset, is_main, wandb_run
+    model, loader, optimizer, criterion, device, epoch, dataset, is_main, wandb_run,
+    mid_epoch_save_fn=None, mid_epoch_interval: int = 10000,
 ):
     model.train()
     total_loss = total_cls = total_conc = total_budget = 0.0
@@ -313,22 +420,38 @@ def train_one_epoch(
         logits, scores = model(videos, return_scores=True)
         loss, breakdown = criterion(logits, labels, scores, dataset)
 
+        # Skip corrupted batches (bad video → NaN activations → NaN loss)
+        if not torch.isfinite(loss):
+            if is_main:
+                print(f"  [WARN] step {step+1}: NaN/Inf loss — skipping batch")
+            optimizer.zero_grad()
+            continue
+
         optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
 
         bs = labels.size(0)
-        total_loss   += breakdown["loss_total"]  * bs
-        total_cls    += breakdown["loss_cls"]    * bs
-        total_conc   += breakdown["loss_conc"]   * bs
-        total_budget += breakdown["loss_budget"] * bs
+        total_loss   += breakdown["loss_total"].item()  * bs
+        total_cls    += breakdown["loss_cls"].item()    * bs
+        total_conc   += breakdown["loss_conc"].item()   * bs
+        total_budget += breakdown["loss_budget"].item() * bs
         correct      += (logits.argmax(1) == labels).sum().item()
         n            += bs
 
         if is_main and (step + 1) % 50 == 0:
             print(f"  step {step+1}/{len(loader)} | "
                   f"loss={total_loss/n:.4f} acc={100*correct/n:.1f}%")
+
+        # Mid-epoch checkpoint to avoid losing full epoch on OOM during val
+        if mid_epoch_save_fn and (step + 1) % mid_epoch_interval == 0:
+            if is_main:
+                print(f"  [mid-epoch ckpt] step {step+1}")
+                mid_epoch_save_fn(step + 1)
+
+    if n == 0:
+        raise RuntimeError("Nenhuma amostra processada no epoch — verifique o dataset e os paths.")
 
     metrics = {
         "train/loss":        total_loss  / n,
@@ -346,7 +469,8 @@ def train_one_epoch(
 @torch.no_grad()
 def evaluate(model, loader, criterion, device, epoch, dataset, is_main, wandb_run):
     model.eval()
-    total_loss = correct = n = 0
+    total_loss = 0.0
+    correct = n = 0
 
     for videos, labels in loader:
         videos = videos.to(device, non_blocking=True)
@@ -354,7 +478,9 @@ def evaluate(model, loader, criterion, device, epoch, dataset, is_main, wandb_ru
         logits, scores = model(videos, return_scores=True)
         loss, breakdown = criterion(logits, labels, scores, dataset)
         bs = labels.size(0)
-        total_loss += breakdown["loss_total"] * bs
+        loss_val = breakdown["loss_total"]
+        if torch.isfinite(loss_val):
+            total_loss += loss_val.item() * bs
         correct    += (logits.argmax(1) == labels).sum().item()
         n          += bs
 
@@ -427,7 +553,7 @@ def load_checkpoint(model: nn.Module, ckpt_dir: Path, device):
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     # dataset
-    p.add_argument("--dataset", default="ucf101", choices=list(_DATA_ROOTS))
+    p.add_argument("--dataset", default="ucf101", choices=list(_DEFAULT_DATA_ROOTS))
     p.add_argument("--data-root", default=None)
     # model
     p.add_argument("--variant", default="small", choices=["tiny", "small", "base"])
@@ -437,6 +563,11 @@ def parse_args():
     p.add_argument("--img-size", dest="img_size", type=int, default=224)
     p.add_argument("--drop-path-rate", type=float, default=0.1)
     p.add_argument("--selector-temperature", type=float, default=1.0)
+    p.add_argument("--d-state", dest="d_state", type=int, default=32,
+                   help="SSM state size. 32 balances quality/memory; 64=default Mamba3 but OOM at large seqlen")
+    p.add_argument("--mamba3-variant", dest="mamba3_variant", default="complex",
+                   choices=["complex", "trapezoidal", "mimo", "none"],
+                   help="Mamba3 variant. 'none' → standard BiMamba CUDA kernels")
     # loss
     p.add_argument("--lambda-conc", type=float, default=0.5)
     p.add_argument("--lambda-budget", type=float, default=0.1)
@@ -450,6 +581,9 @@ def parse_args():
     p.add_argument("--num-workers", type=int, default=6)
     p.add_argument("--max-train-samples", type=int, default=0)
     p.add_argument("--max-val-samples", type=int, default=0)
+    p.add_argument("--pretrained", default=None,
+                   help="Path to VideoMamba K400 .pth checkpoint for partial init "
+                        "(loads patch_embed/pos_embed/cls_token/norms; skips SSM+head)")
     p.add_argument("--resume-from", default=None)
     # infra
     p.add_argument("--save-path", default=None)
@@ -507,6 +641,10 @@ def main():
               f"Total: {params['total']/1e6:.1f}M")
         print(f"T_max={T_max}, budget_B={budget_B} "
               f"({100*budget_B/T_max:.0f}% of frames)")
+
+    # pretrained init (partial — spatial layers only, SSM starts random)
+    if args.pretrained and not args.resume_from:
+        load_videomamba_pretrained(model, args.pretrained, is_main)
 
     # resume
     start_epoch = 1
@@ -567,10 +705,22 @@ def main():
             train_loader.sampler.set_epoch(epoch)
 
         t0 = time.time()
+
+        def _mid_ckpt(step):
+            mid_path = save_path.parent / f"{save_path.name}_mid_ep{epoch}_s{step}"
+            save_checkpoint(model, mid_path, epoch, -1.0, args, num_classes)
+
         train_m = train_one_epoch(
             model, train_loader, optimizer, criterion,
             device, epoch, args.dataset, is_main, wandb_run,
+            mid_epoch_save_fn=_mid_ckpt if is_main else None,
+            mid_epoch_interval=10000,
         )
+
+        # Release CUDA memory fragmentation accumulated during training before running val
+        torch.cuda.empty_cache()
+        gc.collect()
+
         val_m = evaluate(
             model, val_loader, criterion,
             device, epoch, args.dataset, is_main, wandb_run,

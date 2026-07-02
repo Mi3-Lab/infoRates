@@ -393,6 +393,45 @@ def load_kinetics400(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     return class_names, [], val_files  # no train split available
 
 
+def load_ssv2(data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
+    """Something-Something V2 — 174 classes, ~169k train / ~24k val."""
+    import json
+    base = Path(data_root) / "labels"
+    # SSv2 videos can live in videos_full/ or videos/ depending on the download
+    _vd = Path(data_root) / "videos_full"
+    videos_dir = _vd if _vd.exists() else Path(data_root) / "videos"
+
+    with open(base / "labels.json") as f:
+        raw = json.load(f)
+    if isinstance(raw, list):
+        class_names = sorted(raw)
+    else:
+        class_names = [k for k, v in sorted(raw.items(), key=lambda x: int(x[1]))]
+    label2idx = {name: i for i, name in enumerate(class_names)}
+
+    def _build(json_path: Path) -> DataSplit:
+        with open(json_path) as f:
+            data = json.load(f)
+        split: DataSplit = []
+        for item in data:
+            vid_id = str(item["id"])
+            template = item.get("template", item.get("label", ""))
+            # labels.json uses "something" but train.json uses "[something]"
+            key = template.replace("[something]", "something").replace("[Something]", "Something")
+            label_idx = label2idx.get(key, label2idx.get(template, -1))
+            if label_idx < 0:
+                continue
+            webm = videos_dir / f"{vid_id}.webm"
+            mp4  = videos_dir / f"{vid_id}.mp4"
+            path = webm if webm.exists() else (mp4 if mp4.exists() else webm)
+            split.append((str(path), label_idx))
+        return split
+
+    train_files = _build(base / "train.json")
+    val_files   = _build(base / "validation.json")
+    return class_names, train_files, val_files
+
+
 def load_from_manifest(manifest_name: str, data_root: str) -> Tuple[List[str], DataSplit, DataSplit]:
     """Load dataset from pre-computed CSV manifest (for FLAME, UFC-Crime, etc.)."""
     import pandas as pd
@@ -498,6 +537,7 @@ _LOADERS = {
     "autsl":        (load_autsl,        "data/AUTSL_data"),
     "driveact":     (load_driveact,     "data/DriveAct_data"),
     "kinetics400":  (load_kinetics400,  "data/Kinetics400_data"),
+    "ssv2":         (load_ssv2,         "/scratch/wesleyferreiramaia/infoRates/data/Something_data"),
     "flame":        (load_flame,        "data/FLAME_data"),
     "ufc_crime":    (load_ufc_crime,    "data/UCFCrime_data"),
     "finegym":      (load_finegym,      "data/FineGym_data"),

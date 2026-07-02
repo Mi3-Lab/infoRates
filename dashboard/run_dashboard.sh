@@ -12,10 +12,12 @@ echo "URL: http://localhost:${PORT}"
 echo "For SSH tunnel: ssh -L ${PORT}:localhost:${PORT} <cluster_user>@<cluster_host>"
 echo ""
 
-streamlit run dashboard/app.py \
-    --server.port "${PORT}" \
-    --server.headless true \
-    --server.address 0.0.0.0 \
-    --browser.gatherUsageStats false \
-    --theme.base light \
-    --theme.primaryColor "#2c7be5"
+echo "YOU SHOULD NOT BE RUNNING WEB APPS ON LOGIN NODES!!"
+
+#streamlit run dashboard/app.py \
+#    --server.port "${PORT}" \
+#    --server.headless true \
+#    --server.address 0.0.0.0 \
+#    --browser.gatherUsageStats false \
+#    --theme.base light \
+#    --theme.primaryColor "#2c7be5"

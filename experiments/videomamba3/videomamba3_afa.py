@@ -75,7 +75,7 @@ class Stage1Scanner(nn.Module):
         embed_dim: int = 192,
         depth: int = 4,
         num_frames: int = 12,
-        mamba3_variant: str = "complex",
+        mamba3_variant: Optional[str] = None,
         drop_rate: float = 0.0,
         drop_path_rate: float = 0.1,
         norm_epsilon: float = 1e-5,
@@ -111,6 +111,9 @@ class Stage1Scanner(nn.Module):
         self.pos_drop = nn.Dropout(p=drop_rate)
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        # mamba3_variant=None → standard BiMamba (mamba_ssm CUDA kernels)
+        # mamba3_variant="complex"|"trapezoidal"|"mimo" → BiMamba3 with vectorized GPU scan
+        bimamba = mamba3_variant is None
         self.layers = nn.ModuleList([
             create_block(
                 embed_dim,
@@ -120,9 +123,9 @@ class Stage1Scanner(nn.Module):
                 residual_in_fp32=residual_in_fp32,
                 fused_add_norm=fused_add_norm,
                 layer_idx=i,
-                bimamba=False,
+                bimamba=bimamba,
                 mamba3_variant=mamba3_variant,
-                mamba3_impl="auto",
+                mamba3_impl="reference",
                 drop_path=dpr[i],
                 **factory_kwargs,
             )
@@ -223,7 +226,7 @@ class Stage2Classifier(nn.Module):
         num_classes: int = 400,
         budget_B: int = 16,
         T_max: int = 48,
-        mamba3_variant: str = "complex",
+        mamba3_variant: Optional[str] = None,
         drop_rate: float = 0.0,
         drop_path_rate: float = 0.1,
         fc_drop_rate: float = 0.0,
@@ -256,12 +259,11 @@ class Stage2Classifier(nn.Module):
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, n_patches + 1, embed_dim))
-        # full-resolution temporal pos: shape [1, T_max, D]
-        # at runtime, interpolated to the selected positions
         self.temporal_pos_embed = nn.Parameter(torch.zeros(1, T_max, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_rate)
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        bimamba = mamba3_variant is None
         self.layers = nn.ModuleList([
             create_block(
                 embed_dim,
@@ -271,9 +273,9 @@ class Stage2Classifier(nn.Module):
                 residual_in_fp32=residual_in_fp32,
                 fused_add_norm=fused_add_norm,
                 layer_idx=i,
-                bimamba=False,
+                bimamba=bimamba,
                 mamba3_variant=mamba3_variant,
-                mamba3_impl="auto",
+                mamba3_impl="reference",
                 drop_path=dpr[i],
                 **factory_kwargs,
             )
@@ -386,8 +388,9 @@ class VideoMamba3AFA(nn.Module):
         Frames selected for Stage-2 classifier (e.g. 16).
     s1_depth, s1_dim : Stage-1 architecture.
     s2_depth, s2_dim : Stage-2 architecture.
-    mamba3_variant : str
-        BiMamba3 variant for both stages.
+    mamba3_variant : str or None
+        None → standard BiMamba (mamba_ssm CUDA kernels).
+        'complex'|'trapezoidal'|'mimo' → Mamba3 with vectorized GPU scan (paper default).
     selector_temperature : float
         Temperature for the soft straight-through in the selector.
     """
@@ -404,11 +407,12 @@ class VideoMamba3AFA(nn.Module):
         s1_dim: int = 192,
         s2_depth: int = 24,
         s2_dim: int = 384,
-        mamba3_variant: str = "complex",
+        mamba3_variant: Optional[str] = "complex",
         drop_rate: float = 0.0,
         drop_path_rate: float = 0.1,
         fc_drop_rate: float = 0.0,
         selector_temperature: float = 1.0,
+        ssm_cfg: Optional[dict] = None,
         device=None,
         dtype=None,
     ):
@@ -429,6 +433,7 @@ class VideoMamba3AFA(nn.Module):
             mamba3_variant=mamba3_variant,
             drop_rate=drop_rate,
             drop_path_rate=drop_path_rate,
+            ssm_cfg=ssm_cfg,
             device=device,
             dtype=dtype,
         )
@@ -458,6 +463,7 @@ class VideoMamba3AFA(nn.Module):
             drop_rate=drop_rate,
             drop_path_rate=drop_path_rate,
             fc_drop_rate=fc_drop_rate,
+            ssm_cfg=ssm_cfg,
             device=device,
             dtype=dtype,
         )

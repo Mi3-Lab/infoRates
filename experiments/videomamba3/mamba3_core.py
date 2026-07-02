@@ -110,7 +110,9 @@ class Mamba3Core(nn.Module):
         self.out_proj = nn.Linear(self.d_inner, d_model, bias=False, **factory_kwargs)
 
     def _rotate_qk(self, q: torch.Tensor, k: torch.Tensor, angles: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """Apply Mamba-3's data-dependent RoPE to Q/K state channels."""
+        """Apply Mamba-3's data-dependent RoPE to Q/K state channels.
+        Works for any leading dims: [..., N] tensors with angles [..., Ra].
+        """
         if not self.use_rope or self.rotary_dim < 2:
             return q, k
         rot = self.rotary_dim
@@ -122,6 +124,27 @@ class Mamba3Core(nn.Module):
         q_rot = torch.stack((q1 * cos - q2 * sin, q1 * sin + q2 * cos), dim=-1).flatten(-2)
         k_rot = torch.stack((k1 * cos - k2 * sin, k1 * sin + k2 * cos), dim=-1).flatten(-2)
         return torch.cat((q_rot, q_pass), dim=-1), torch.cat((k_rot, k_pass), dim=-1)
+
+    @staticmethod
+    def _parallel_linear_scan(decay: torch.Tensor, eff_b: torch.Tensor) -> torch.Tensor:
+        """Solve h_t = decay_t * h_{t-1} + eff_b_t in parallel.
+
+        h_t = exp(logcumA_t) * cumsum_t( exp(-logcumA_s) * eff_b_s )
+
+        decay : [B, L, H]          — per-step decay scalar (∈ (0,1))
+        eff_b : [B, L, H, P, N]   — effective input (outer-product of x and k)
+        Returns states [B, L, H, P, N].
+
+        Float64 is required: at L=1569, exp(-logcumA_last) reaches exp(78+)
+        which overflows float32.  Float64 headroom is exp(709) — no issue.
+        L40S FP64 = 2.8 TFLOPS (vs 181 FP32) but this is still correct.
+        """
+        logA    = torch.log(decay.double().clamp(min=1e-8))
+        logcumA = logA.cumsum(dim=1)
+        lcA     = logcumA.unsqueeze(-1).unsqueeze(-1)           # [B, L, H, 1, 1]
+        b_d     = eff_b.double()
+        cumsum  = (torch.exp(-lcA) * b_d).cumsum(dim=1)
+        return (torch.exp(lcA) * cumsum).to(eff_b.dtype)
 
     def _project(self, u: torch.Tensor):
         zxbcdta = self.in_proj(u)
@@ -151,17 +174,111 @@ class Mamba3Core(nn.Module):
         angles = angles.unsqueeze(2).expand(-1, -1, self.nheads, -1).float()
         return z, x, B, C, dt, A, trap, angles
 
+    # ------------------------------------------------------------------
+    # Vectorized scans — no Python loop, all parallel GPU ops
+    # ------------------------------------------------------------------
+
+    def _scan_siso_vec(self, batch, seqlen, z, x, B_proj, C_proj, dt, decay, trap, angles):
+        """Vectorized SISO scan — mathematically identical to _scan_siso but GPU-parallel.
+
+        Key steps (all O(1) Python ops, GPU kernels handle the bulk):
+          1. angle_state  : cumsum replaces the recurrent update
+          2. RoPE         : _rotate_qk works on any leading dims [B,L,H,...]
+          3. outer prods  : batched einsum with cat-shift for "prev"
+          4. linear scan  : closed-form h_t=exp(logcumA_t)*cumsum(exp(-logcumA_s)*b_s)
+        """
+        H, P = self.nheads, self.headdim
+
+        # 1. Angle accumulation: angle_t = sum_{s<=t} dt_s * angles_s  (monotone)
+        angle_states = (dt.unsqueeze(-1) * angles).cumsum(dim=1)  # [B,L,H,Ra]
+
+        # 2. K/Q for all timesteps
+        k = B_proj[:, :, 0] + self.B_bias[:, 0].to(B_proj.dtype).unsqueeze(0).unsqueeze(0)  # [B,L,H,N]
+        q = C_proj[:, :, 0] + self.C_bias[:, 0].to(C_proj.dtype).unsqueeze(0).unsqueeze(0)  # [B,L,H,N]
+
+        # 3. RoPE applied to all t at once — _rotate_qk is shape-agnostic via ...
+        q, k = self._rotate_qk(q, k, angle_states)  # [B,L,H,N] each
+
+        # 4. Outer products; "prev" = (x_{t-1}, k_{t-1}) via shift
+        now  = torch.einsum("blhp,blhn->blhpn", x, k)                              # [B,L,H,P,N]
+        k_p  = torch.cat([torch.zeros_like(k[:, :1]), k[:, :-1]], dim=1)
+        x_p  = torch.cat([torch.zeros_like(x[:, :1]), x[:, :-1]], dim=1)
+        prev = torch.einsum("blhp,blhn->blhpn", x_p, k_p)                          # [B,L,H,P,N]
+
+        # 5. Effective SSM input B_t = dt * [(1-trap)*now + trap*decay*prev]
+        d     = decay.unsqueeze(-1).unsqueeze(-1)    # [B,L,H,1,1]
+        dt_   = dt.unsqueeze(-1).unsqueeze(-1)
+        trap_ = trap.unsqueeze(-1).unsqueeze(-1)
+        eff_b = dt_ * ((1 - trap_) * now + trap_ * d * prev)                       # [B,L,H,P,N]
+
+        # 6. Parallel linear scan: h_t = decay_t * h_{t-1} + eff_b_t
+        states = self._parallel_linear_scan(decay, eff_b)                           # [B,L,H,P,N]
+
+        # 7. Output: y = <state,q> + D*x, gated by silu(z)
+        y = torch.einsum("blhpn,blhn->blhp", states, q)
+        y = y + self.D.view(1, 1, H, 1).to(y.dtype) * x
+        y = y * F.silu(z)
+        return rearrange(y, "b l h p -> b l (h p)")
+
+    def _scan_mimo_vec(self, batch, seqlen, z, x, B_proj, C_proj, dt, decay, trap, angles):
+        """Vectorized MIMO scan — no Python loop."""
+        H, P, N, R = self.nheads, self.headdim, self.d_state, self.mimo_rank
+
+        # MIMO input/gate mixing
+        x_r = torch.einsum("blhp,hrp->blrhp", x, self.mimo_x.to(x.dtype))   # [B,L,R,H,P]
+        z_r = torch.einsum("blhp,hrp->blrhp", z, self.mimo_z.to(z.dtype))
+
+        # 1. Angle accumulation
+        angle_states = (dt.unsqueeze(-1) * angles).cumsum(dim=1)              # [B,L,H,Ra]
+        angle_r = angle_states.unsqueeze(2).expand(-1, -1, R, -1, -1)         # [B,L,R,H,Ra]
+
+        # 2. K/Q [B,L,R,H,N]
+        B_bias_r = self.B_bias.permute(1, 0, 2).to(B_proj.dtype)              # [R,H,N]
+        C_bias_r = self.C_bias.permute(1, 0, 2).to(C_proj.dtype)
+        k = B_proj + B_bias_r.unsqueeze(0).unsqueeze(0)                        # [B,L,R,H,N]
+        q = C_proj + C_bias_r.unsqueeze(0).unsqueeze(0)
+
+        # 3. RoPE over [B,L,R,H,N] — _rotate_qk handles any leading dims
+        q, k = self._rotate_qk(q, k, angle_r)
+
+        # 4. Outer products; shift for "prev"
+        now   = torch.einsum("blrhp,blrhn->blrhpn", x_r, k)                   # [B,L,R,H,P,N]
+        k_p   = torch.cat([torch.zeros_like(k[:, :1]), k[:, :-1]], dim=1)
+        xr_p  = torch.cat([torch.zeros_like(x_r[:, :1]), x_r[:, :-1]], dim=1)
+        prev  = torch.einsum("blrhp,blrhn->blrhpn", xr_p, k_p)
+
+        # 5. Effective input [B,L,R,H,P,N]
+        d     = decay.unsqueeze(2).unsqueeze(-1).unsqueeze(-1)                 # [B,L,1,H,1,1]
+        dt_   = dt.unsqueeze(2).unsqueeze(-1).unsqueeze(-1)
+        trap_ = trap.unsqueeze(2).unsqueeze(-1).unsqueeze(-1)
+        eff_b = dt_ * ((1 - trap_) * now + trap_ * d * prev)                  # [B,L,R,H,P,N]
+
+        # 6. Parallel scan — fold R into batch, run scan, restore
+        B_ = batch
+        eff_b_r = eff_b.permute(0, 2, 1, 3, 4, 5).reshape(B_ * R, seqlen, H, P, N)
+        decay_r = decay.unsqueeze(1).expand(-1, R, -1, -1).reshape(B_ * R, seqlen, H)
+        states_r = self._parallel_linear_scan(decay_r, eff_b_r)               # [B*R,L,H,P,N]
+        states = states_r.reshape(B_, R, seqlen, H, P, N).permute(0, 2, 1, 3, 4, 5)  # [B,L,R,H,P,N]
+
+        # 7. Output with MIMO mixing
+        y = torch.einsum("blrhpn,blrhn->blrhp", states, q)                    # [B,L,R,H,P]
+        y = y + self.D.view(1, 1, 1, H, 1).to(y.dtype) * x_r
+        y = y * F.silu(z_r)
+        y = torch.einsum("blrhp,hrp->blhp", y, self.mimo_o.to(y.dtype))       # [B,L,H,P]
+        return rearrange(y, "b l h p -> b l (h p)")
+
     def forward(self, u: torch.Tensor, inference_params=None) -> torch.Tensor:
         z, x, B, C, dt, A, trap, angles = self._project(u)
         batch, seqlen = u.shape[:2]
         decay = torch.exp(A * dt)
 
         if self.is_mimo:
-            y = self._scan_mimo(batch, seqlen, z, x, B, C, dt, decay, trap, angles)
+            y = self._scan_mimo_vec(batch, seqlen, z, x, B, C, dt, decay, trap, angles)
         else:
-            y = self._scan_siso(batch, seqlen, z, x, B, C, dt, decay, trap, angles)
+            y = self._scan_siso_vec(batch, seqlen, z, x, B, C, dt, decay, trap, angles)
         return self.out_proj(y.to(x.dtype))
 
+    # Reference sequential scans (kept for unit-test comparison only)
     def _scan_siso(self, batch, seqlen, z, x, B, C, dt, decay, trap, angles):
         state = x.new_zeros(batch, self.nheads, self.headdim, self.d_state)
         prev_k = x.new_zeros(batch, self.nheads, self.d_state)
