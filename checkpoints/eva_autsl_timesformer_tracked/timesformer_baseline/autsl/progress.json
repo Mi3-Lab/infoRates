@@ -1,0 +1,12 @@
+{
+  "batch": 1100,
+  "batches": 1758,
+  "epoch": 3,
+  "epochs": 10,
+  "stage": "train_batch",
+  "train_losses": {
+    "cls": 1.3008263830705122,
+    "phase": 0.022866324544884263,
+    "total": 1.3236927081915466
+  }
+}

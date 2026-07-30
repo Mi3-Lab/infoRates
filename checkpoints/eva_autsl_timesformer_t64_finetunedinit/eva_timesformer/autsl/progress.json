@@ -1,0 +1,75 @@
+{
+  "acc": {
+    "1": 0.81,
+    "16": 0.8225,
+    "2": 0.81,
+    "4": 0.81375,
+    "8": 0.80875
+  },
+  "active_strides": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "args": {
+    "T": 64,
+    "backbone": "eva_timesformer",
+    "batch_size": 8,
+    "data_root": null,
+    "dataset": "autsl",
+    "epochs": 10,
+    "init_timesformer_encoder": "checkpoints/eva_autsl_timesformer_t64_cleanbaseline/timesformer_baseline/autsl/best_acc.pt",
+    "log_every_batches": 50,
+    "lr": 0.0002,
+    "max_train_batches": null,
+    "max_val_batches": 200,
+    "model_name": null,
+    "n_classes": 226,
+    "no_phase_loss": false,
+    "num_workers": 8,
+    "output": "checkpoints/eva_autsl_timesformer_t64_finetunedinit",
+    "resume": "checkpoints/eva_autsl_timesformer_t64_finetunedinit/eva_timesformer/autsl/last.pt",
+    "robust_tds_weight": 0.5,
+    "stride_warmup_epochs": 2,
+    "target_events": 2.0,
+    "train_split": "train",
+    "train_strides": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "unfreeze_at": 99,
+    "val_every": 1,
+    "warmup_strides": [
+      1
+    ],
+    "wd": 0.05
+  },
+  "epoch": 9,
+  "epoch_seconds": 1713.5464444160461,
+  "epochs": 10,
+  "mean_acc": 0.8130000000000001,
+  "robust_score": 0.8130000000000001,
+  "stage": "validation_done",
+  "stride_warmup_epochs": 2,
+  "tds": 0.0,
+  "train_losses": {
+    "cls": 0.056593995723572474,
+    "ent": 0.015758406943088003,
+    "evid": 0.0067970649880543564,
+    "kl": 0.013307039286745675,
+    "phase": 0.0033237426336775668,
+    "total": 0.09578024971868898
+  },
+  "train_strides": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ]
+}
