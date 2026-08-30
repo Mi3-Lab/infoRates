@@ -32,8 +32,9 @@ Reproduce: `scripts/accv2026/rebuttal_padding_diagnostic.py`
 
 - **C1 (TDS)** survives: ranking invariant under 5 metric definitions (ρ≥0.95).
 - **C2 (architecture)** is rewritten, not withdrawn: at *matched evidence*,
-  accuracy still tracks the published ordering (ρ=**0.821**, p=0.023), but the
-  3–5× magnitude was the frame-budget artifact (spread 4× → 1.4×).
+  accuracy still tracks the published ordering (ρ=**0.857**, p=0.007, all 8
+  models), while the budget confound collapses from ρ=0.849 (p=0.008) to
+  ρ=0.231 (p=0.58). The 3–5× magnitude was the artifact (spread 4× → 1.4×).
 - **Routing** does not survive: held-out, the SSv2 gain goes +0.21pp → **−0.03pp**
   (95% CI [−1.07, +0.83]); mean over 56 pairs is **−3.5pp**.
 - **ANOVA** re-run as repeated measures: coverage η²ₚ=0.292, stride 0.232,
@@ -43,16 +44,26 @@ Reproduce: `scripts/accv2026/rebuttal_padding_diagnostic.py`
   +10.6pp, so +39.2pp ≈ 32pp resolution + 7pp extra training.
 - **Convergence**: at 48px, 52.8% of runs still peak at the final epoch, but the
   last-3-epoch gain is only 1.38pp.
+- **Span sweep** (new): with frame count pinned and only window width varying,
+  accuracy *rises* with wider windows in **7/8 datasets** (ρ=+1.000 in four).
+  Over the tested range the binding constraint is context, not sampling density.
+- **Multi-stride augmentation** (new, reviewer XdvJ): recovers **28.4%** of the
+  cliff for TimeSformer and **37.0%** for R3D-18 (6.5%→31.9% at stride 16), at a
+  cost of 3.3/9.9pp dense accuracy. Training *through* the padding recovers
+  2.4–6.5× more than uniform resampling at matched dense accuracy.
+- **Anti-aliasing probe** (new): low-pass filtering never recovers accuracy, but
+  the test is inconclusive — models were fine-tuned on sharp frames, so filtered
+  input is out-of-distribution. Documented in S22; kept out of the rebuttal.
 
 ### Deliverables
 
 | File | State |
 |---|---|
 | `docs/ACCV_2026_REBUTTAL_DRAFT.md` | content + cut order |
-| `paper/rebuttal.tex` | ~750 words, one page |
+| `paper/rebuttal.tex` | 856 words, calibrated to answer only what was asked |
 | `paper/main2.tex` | revision, `\rev{}` blue / `\revdel{}` struck |
-| `paper/supplementary2.tex` | six new sections S14–S19 |
-| `docs/ACCV_2026_REBUTTAL_HANDOFF.md` | for the FineGym/VideoMamba machine |
+| `paper/supplementary2.tex` | nine new sections S14–S22 |
+| `docs/ACCV_2026_REBUTTAL_HANDOFF.md` | for the FineGym machine |
 
 ### Blocked or missing
 
@@ -61,8 +72,9 @@ Reproduce: `scripts/accv2026/rebuttal_padding_diagnostic.py`
   percentages mislabelled as "pp". The repo's own `taxonomy_summary.csv` agrees
   with recomputation, not with the paper.
 - **FineGym**: videos and checkpoints gone from /data and /scratch.
-- **VideoMamba**: `mamba-ssm 2.3.1` is a CUDA 13 build against cu128 torch; no
-  py39+torch2.8 wheel exists. Both go to the second machine.
+- **VideoMamba**: resolved. The import fails on the login node and succeeds on a
+  GPU node; the environment was never broken. All four rebuttal sweeps are
+  complete for all 8 datasets. Only **FineGym** goes to the second machine.
 - **Must be removed from the paper**: the ×1.5/×10/×50 hardware scaling factors
   (never measured) and "halves temporal budgets without accuracy loss".
 

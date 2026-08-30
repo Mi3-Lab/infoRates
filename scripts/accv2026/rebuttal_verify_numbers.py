@@ -54,6 +54,46 @@ def main() -> int:
         round(100 * lo.still_improving.mean(), 1), 0.1)
     chk("48px last-3-epoch gain 1.38pp", 1.38, round(lo.gain_last_3.mean(), 2), 0.02)
 
+    # Matched evidence: the two claims the architecture argument rests on.
+    from scipy.stats import spearmanr
+    PUBLISHED_DROP = {"timesformer": 10.29, "videomamba": 11.23, "mc3_18": 22.60,
+                      "r3d_18": 29.72, "r2plus1d_18": 30.03, "vivit": 30.05,
+                      "videomae": 32.77, "slowfast_r50": 42.11}
+    BUDGET = {"timesformer": 8, "videomamba": 8, "r3d_18": 16, "mc3_18": 16,
+              "r2plus1d_18": 16, "videomae": 16, "vivit": 32, "slowfast_r50": 32}
+    m = pd.read_csv(R / "matched_evidence_long.csv")
+    m = m[m.strictly_matched & (m.dataset != "kinetics400")]
+    full = m.model.nunique()
+    have = m.groupby("dataset").model.nunique()
+    m = m[m.dataset.isin(have[have == full].index)]
+    piv = m.pivot_table(index="model", columns="k", values="top1", aggfunc="mean")
+    idx = [i for i in piv.index if i in PUBLISHED_DROP]
+    r_acc, _ = spearmanr([piv.loc[i, 2] for i in idx],
+                         [-PUBLISHED_DROP[i] for i in idx])
+    chk("matched: accuracy at k=2 vs published rho=0.857", 0.857,
+        round(float(r_acc), 3), 0.005)
+    drop = piv[8] - piv[2]
+    r_bud, _ = spearmanr([drop[i] for i in idx], [BUDGET[i] for i in idx])
+    chk("matched: budget confound collapses to rho=0.231", 0.231,
+        round(float(r_bud), 3), 0.005)
+
+    # Span: the sampling-rate axis, and the count of context-bound datasets.
+    sp = pd.read_csv(R / "span_long.csv")
+    n_ctx = 0
+    for _, g in sp.groupby("dataset"):
+        mm = g.groupby("span_pct").top1.mean()
+        if len(mm) >= 3 and spearmanr(mm.index, mm.values)[0] > 0.5:
+            n_ctx += 1
+    chk("span: context-bound datasets = 7", 7, n_ctx, 0)
+
+    # TRA: the recovery figures quoted for both architectures.
+    tra = pd.read_csv(R / "tra_ablation.csv")
+    for model, expected in (("timesformer", 28.4), ("r3d_18", 37.0)):
+        row = tra[tra.model == model]
+        if not row.empty:
+            chk(f"TRA {model} paper arm recovers {expected}%", expected,
+                float(row.paper_recovered_pct.iloc[0]), 0.15)
+
     width = max(len(l) for l, *_ in checks)
     print(f"{'claim':<{width}}{'quoted':>10}{'actual':>10}")
     for label, claimed, actual, ok in checks:

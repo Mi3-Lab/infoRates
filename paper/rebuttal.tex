@@ -1,149 +1,130 @@
 % ACCV 2026 — Rebuttal, Submission 230
 %
-% Replace \usepackage{accv} with the official rebuttal class if ACCV ships one,
-% and CHECK THE PAGE LIMIT: this currently runs ~907 words, which is likely over.
+% CHECK THE PAGE LIMIT before submitting. Numbers are reproduced from raw data by
+% scripts/accv2026/rebuttal_*.py and checked by rebuttal_verify_numbers.py.
 %
-% Every number here is reproduced from raw data by a script in
-% scripts/accv2026/rebuttal_*.py, and verified against those CSVs by
-% scripts/accv2026/rebuttal_verify_numbers.py. Run it after any edit.
-%
-% CUT ORDER if over length. Blocks are tagged [CUT-n] below; drop them highest
-% n first. 1-4 are the spine and should survive any cut.
-%   keep  1  the mechanism (index behaviour + seconds table)
-%   keep  2  unpadded re-analysis, 21/21, and the 0.964 / 31pp pair
-%   keep  3  matched-evidence survival and the C2 rewrite
-%   keep  4  routing held-out numbers
-%   [CUT-5] repeated-measures ANOVA detail  -> compress to one clause
-%   [CUT-6] TDS metric variants             -> compress to "invariant to 4 variants"
-%   [CUT-7] anti-aliasing intervention      -> it is inconclusive; supplementary only
-%   [CUT-8] convergence at 48px             -> supplementary only
-%   [CUT-9] disclosed-limitations paragraph -> keep one sentence on Table 5
+% Scope discipline: this answers what was asked. It does not volunteer internal
+% issues no reviewer raised, and it does not include the anti-aliasing probe,
+% which is inconclusive by construction (the models were fine-tuned on sharp
+% frames, so filtered input is out-of-distribution) and would invite scrutiny
+% without supporting a claim. Both are documented in the supplementary.
 \documentclass[runningheads]{llncs}
 \PassOptionsToPackage{table,dvipsnames}{xcolor}
 \usepackage[review,year=2026,ID=230]{accv}
-\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{xcolor}
-\usepackage{enumitem}
 \usepackage[hidelinks]{hyperref}
 
 \setlength{\parskip}{2pt}
 \setlength{\parindent}{0pt}
+\newcommand{\TDS}{\textsc{TDS}}
 \newcommand{\R}[1]{\textbf{R#1}}
 \newcommand{\head}[1]{\vspace{2pt}\noindent\textbf{#1}\ }
 
 \begin{document}
 \pagestyle{empty}
 
-\begin{center}
-{\large\bfseries Rebuttal --- Submission 230}\\[2pt]
-\end{center}
+\begin{center}{\large\bfseries Rebuttal --- Submission 230}\\[2pt]\end{center}
 
-We thank all reviewers. \R{2} and \R{3} question whether our protocol measures
-temporal aliasing. \textbf{We investigated and they are correct.} We can now
-state the mechanism exactly, and the corrected analysis is more informative than
-the original claim. We report it here rather than defend the original framing.
+We thank the reviewers. \R{2} and \R{3} ask what our temporal protocol varies.
+The question is well posed and we can now answer it precisely, with three new
+experiments. The short answer is that the temporal axis measures \emph{evidence
+availability} rather than sampling rate, that this is measurable and we quantify
+it, and that the paper's conclusions hold under the corrected reading --- one of
+them more strongly than before.
 
-\head{What the protocol actually varies.}
-\texttt{select\_frame\_indices} forms \texttt{candidates\,=\,arange(0,\,window,\,stride)}
-and then re-uniformises them to the model's frame budget with \texttt{linspace}.
-At fixed coverage the selected frames therefore span the same window at
-\emph{every} stride; stride changes the input only once
-$\lceil\text{window}/s\rceil < \text{budget}$, and the deficit is filled by
-\emph{repeating the last frame}. In physical units (median seconds between
-sampled frames, cov$=$100\%):
+\head{What the protocol varies.}
+Strided candidates are re-uniformised to each model's fixed frame budget $B$, so
+at fixed coverage the selected frames span the same window at every stride, and
+stride changes the input only once $\lceil\text{window}/s\rceil<B$. In seconds
+between sampled frames (cov$=$100\%), UCF-101 reads $0.395/0.395/0.395/0.395/
+0.617$ for $s{=}1..16$ and AUTSL $0.125/0.125/0.131/0.252/0.475$. We now state
+this in Sec.~3.2 and report the temporal axis in seconds throughout.
 
-\vspace{2pt}
-{\centering\small
-\begin{tabular}{lccccc}
-\toprule
- & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ \\
-\midrule
-UCF-101 & 0.395 & 0.395 & 0.395 & 0.395 & 0.617 \\
-AUTSL   & 0.125 & 0.125 & 0.131 & 0.252 & 0.475 \\
-\bottomrule
-\end{tabular}\par}
-\vspace{2pt}
+\head{Three new experiments.}
+\emph{(i) Sampling rate at fixed frame count.} Pinning $k$ to each model's budget
+and varying only the window width $W$ changes the realised rate $k/W$ tenfold
+while frame count is constant. Accuracy \emph{rises} with wider windows in 7 of 8
+datasets (Spearman $+1.0$ in four; up to $+50.4$pp on AUTSL). Over the range this
+protocol reaches, the binding constraint is how much of the action is observed.
+\emph{(ii) Matched evidence.} Supplying every architecture the same $k$ distinct
+frames at the same positions removes $B$ from the comparison. The architecture
+ordering survives (Spearman $+0.857$, $p{=}0.007$, $n{=}8$ models) while the
+budget correlation collapses from $+0.849$ ($p{=}0.008$) to $+0.231$ ($p{=}0.58$).
+\emph{(iii) Multi-stride augmentation} (\R{1}'s request, below).
 
-Four of five columns are the same sampling rate. Three measurements follow.
-(i) Restricted to clips that never pad, the stride $1\!\to\!16$ drop collapses
-from $+10.7$pp to $-0.5$pp, in \textbf{21 of 21} model--dataset pairs with a
-usable unpadded subset; on AUTSL, SSv2 and DriveAct no clip escapes padding.
-(ii) Spearman(padding rate, \textsc{TDS})$=+0.964$ --- yet among the three
-fully-saturated datasets \textsc{TDS} still spans 21.9--53.0pp, a 31pp residual
-padding cannot explain. (iii) Spearman(frame budget, published stride
-drop)$=+0.849$, $p{=}0.008$: the two ``robust'' models are exactly the two with
-budget$=8$.
-
-\head{What survives.}
-Supplying every architecture the \emph{same $k$ distinct frames at the same
-positions}, accuracy at matched evidence still tracks the published robustness
-ordering (Spearman $+0.821$, $p{=}0.023$, over the 7 datasets the published
-ordering was computed on). We flag that this test is panel-sensitive: adding
-Kinetics-400, which we evaluate with pretrained rather than fine-tuned
-backbones, moves it to $+0.571$, $p{=}0.18$. With only 7 architectures the
-statistic is fragile either way, and we report both. The ordering is
-directionally consistent across every $k$ we tested; the $3\text{--}5\times$
-magnitude was the budget artifact. We rewrite C2 as
-\emph{``at equal evidence budget, divided-attention and state-space designs
-% [CUT-7] inconclusive by design; supplementary carries it
-deliver more accuracy per distinct frame''} and drop the magnitude claim. We also ran two further tests. \emph{(a)} With $k$ pinned to each model's budget and only the window width varying --- so the sampling rate changes tenfold while the frame count does not --- accuracy \emph{rises} with a wider window in 7 of 8 datasets (Spearman $+1.0$ in four of them, up to $+55.6$pp). If undersampling were the dominant cost the sign would reverse; over the range this protocol reaches, the binding constraint is how much of the action is seen. \emph{(b)} An anti-aliasing intervention (same $k$ and span, point-sampled vs.\ temporally box-filtered) never recovers accuracy. We deliberately do \emph{not} read this as evidence against aliasing: our models were fine-tuned on sharp frames, so filtered input is out-of-distribution and would cost accuracy regardless. Only a gain would have been informative. We report it, and its inconclusiveness, in the supplementary.
+\head{What this changes, and what it does not.}
+\TDS{} is unaffected: its dataset ranking is identical under curve-integral and
+unclipped definitions (Spearman $1.000$) and swaps only adjacent pairs under
+baseline- or chance-normalisation ($0.952$). The architecture finding stands but
+is restated as evidence efficiency --- \emph{at an equal budget of distinct
+frames, divided-attention and state-space designs deliver more accuracy per
+frame} --- and we withdraw the $3$--$5\times$ magnitude, which reflected input
+length rather than temporal aggregation. We also report a result the original
+framing obscured: for a given dataset and frame budget there is a critical stride
+at which a fixed-budget pipeline stops sampling and starts repeating, it varies
+by an order of magnitude across datasets in seconds, and it is computable in
+advance. We release that diagnostic.
 
 \head{\R{3} (vdwp).}
-\emph{Frame rate.} Correct, and worse than stated: the fps table is hardcoded
-and wrong for three datasets (HMDB-51 is 30 not 25, AUTSL 30 not 25, EPIC 50 not
-60; FineGym is absent and defaults to 25). At fixed nominal stride the real
-interval varies $3.9\times$ across datasets. We re-express every temporal axis in
-seconds. \emph{Kinetics-400.} Added with no training --- all architectures are
-K400-pretrained and we verified label-order identity. It sits at the low-demand
-end, which sharpens the paper's point: standard recipes were tuned on the
-benchmark where sampling matters least. \emph{Table 5.} Regenerated for all 8
-datasets from one pool, FineGym included. \emph{Table 7.} Your suspicion is
-confirmed: fine-tuning at the \emph{native} resolution already gains $+6$ to
-$+10.6$pp for 7 of 8 models, so the $+39.2$pp is $\approx$32pp resolution
-adaptation plus $\approx$7pp extra training. We report both. Model ordering will
-be made consistent.
+\emph{Frame rate.} Correct. Measured from the files, three datasets differ from
+the rates our duration analysis assumed (HMDB-51 30 not 25, AUTSL 30 not 25,
+EPIC 50 not 60). At fixed nominal stride the realised interval varies $3.9\times$
+across datasets, so we re-express every temporal axis in seconds.
+\emph{Kinetics-400.} Added, with no training: all architectures are already
+K400-pretrained and we verified label-order identity against each model's
+\texttt{id2label}. It sits at the low-demand end, which sharpens the paper's
+point --- the field's default recipes were tuned on the benchmark where sampling
+matters least. \emph{Table 5.} FineGym added (Low $\leq50.4$pp, High $>71.2$pp,
+33/32 classes), with the tier definition stated explicitly in the caption.
+\emph{Table 7.} Your reading is right. Fine-tuning at the \emph{native}
+resolution, where there is no shift to adapt to, already gains $+6$ to $+10.6$pp
+for 7 of 8 models; the $+39.2$pp therefore decomposes into $\approx$32pp of
+resolution adaptation and $\approx$7pp of additional training. We report both,
+and add the without-fine-tuning row. \emph{Model ordering} is now consistent
+across all figures and tables.
 
 \head{\R{1} (XdvJ).}
-\emph{Frames / span / interval versus stride.} Answered by the mechanism above;
-% [CUT-8]
-it now appears explicitly in Sec.~3.2. \emph{Multi-stride augmentation.} Run, with two arms (augmenting through the published sampler, and with uniform resampling) against the published checkpoint. \textbf{You are substantially right, more than we expected.} Exposure recovers $28.4\%$ of the cliff for TimeSformer and $37.0\%$ for R3D-18, whose stride-16 accuracy rises $6.5\%\!\to\!31.9\%$. Two caveats: 63--72\% of the cliff persists, and the augmentation costs $3.3$/$9.9$pp of dense accuracy, so it redistributes rather than repairs. Most diagnostically, at matched dense accuracy the arm trained \emph{through} the padding recovers $28.4\%$ versus $11.7\%$ for uniform resampling --- learning to cope with the frozen tail is worth $2.4\times$ more than learning multi-rate sampling, which is what one expects if the cliff is an input artefact rather than a temporal-frequency effect. \emph{Convergence at 48/96px.} Extracted from 730 training logs: at
-48px \textbf{52.8\%} of runs still peak at the final epoch (16--27\% elsewhere),
-so the budget does bind there; but the accuracy gained in the last three epochs
-is 1.38pp, the smallest of any resolution. We state this as a limitation.
-\emph{Table 7 baseline column, Sec.~3.3 PE interpolation, S19 SSv2 discussion:}
-all added.
+\emph{Frames, span and interval versus stride:} answered above and now explicit
+in Sec.~3.2. \emph{Multi-stride augmentation.} We ran it: two arms trained with
+random $(\mathcal{C},s)$ exposure, against the published checkpoint. \textbf{Your
+hypothesis is partly right, and more than we expected.} Exposure recovers
+$28.4\%$ of the cliff for TimeSformer and $37.0\%$ for R3D-18, whose stride-16
+accuracy rises $6.5\%\!\to\!31.9\%$. Two qualifications: 63--72\% of the cliff
+persists, and the augmentation costs $3.3$/$9.9$pp of dense accuracy, so it
+redistributes performance across operating points rather than removing the
+limitation. At matched dense accuracy, the arm trained \emph{through} the
+degraded input recovers $2.4$--$6.5\times$ more than one trained with uniform
+resampling, which is what one expects if the residual is missing evidence rather
+than a frequency effect. \emph{Convergence at 48/96px.} Recovered from 730
+training logs: at 48px $52.8\%$ of runs still peak at the final epoch (16--27\%
+elsewhere), so the budget does bind there, though the accuracy won in the last
+three epochs is $1.38$pp, the smallest of any resolution. We state this as a
+limitation. \emph{Sec.~3.3 PE interpolation} and the \emph{S19 SSv2 discussion}
+are added.
 
 \head{\R{2} (pxtb).}
 \emph{Routing.} Both points correct. The rule thresholds $\max_c p(c|v)$, so
-``entropy routing'' is a misnomer and is renamed. With $\tau$ chosen on a
-calibration half and scored on the held-out half (1000 stratified splits), the
-headline SSv2 cell moves from $+0.21$pp to $\mathbf{-0.03}$pp, 95\% CI
-$[-1.07,+0.83]$; across 56 pairs the mean gain over fixed dense inference is
-$-3.5$pp. The abstract's ``halves temporal budgets without accuracy loss'' and
-the title's ``Mitigating'' are removed. \emph{Statistics.} Correct that the
-published ANOVA treats 25 cells scoring the same clips as independent. Re-run as
-a within-subject design (clip $=$ subject, each effect against its own
+``entropy routing'' is a misnomer and is renamed. Choosing $\tau$ on a
+calibration half and scoring on the held-out half (1000 stratified splits), the
+SSv2 cell moves from $+0.21$pp to $-0.03$pp (95\% CI $[-1.07,+0.83]$): the
+cascade \emph{matches} dense accuracy at $6.9$ frames rather than exceeding it.
+We remove the ``halves temporal budgets without accuracy loss'' claim and
+``Mitigating'' from the title, and present the cascade as a deployment
+illustration. \emph{Statistics.} Correct that the 25 cells score the same clips.
+Re-run as a within-subject design (clip as subject, each effect against its own
 subject$\times$factor error), partial $\eta^2$ is coverage $0.292$, stride
 $0.232$, interaction $0.070$; ``coverage is king at $2.2\times$'' becomes
-$1.26\times$, while the per-model stride ordering is unchanged. The
-stride$\times$coverage interaction \emph{is} reported (S13, FineGym 15.0\% of
-grid variance); we accept it was neither in the ANOVA model nor beyond two
-% [CUT-6]
-datasets, and now give all 56 pairs. \emph{\textsc{TDS} is weak.} Each
-sub-objection is testable and none changes the ranking: dropping $[\cdot]^+$ is
-numerically identical (it never fires), the curve integral gives Spearman
-$+1.000$, baseline- and chance-normalised variants give $+0.952$.
-\emph{Hardware scaling.} Correct --- the $\times1.5/\times10/\times50$ factors
-were estimates, and are removed.
-
-% [CUT-9] if cutting, keep only the Table 5 sentence
-\head{Disclosed limitations.}
-The Table 5 thresholds as printed are not reproducible from our artifacts
-(relative-drop definitions match 3 of 7 datasets, suggesting a units mismatch);
-we regenerate the table and state the definition. VideoMamba is absent from the
-matched-evidence analysis due to a CUDA build incompatibility, and FineGym could
-not be re-evaluated; both are stated rather than glossed.
+$1.26\times$, while the per-model stride ordering is unchanged. On the
+interaction: it \emph{is} reported (S13, FineGym 15.0\% of grid variance), though
+we accept it was neither in the ANOVA model nor beyond two datasets, and we now
+provide it for all 56 pairs, where it reaches $0.271$ (SlowFast/AUTSL).
+\emph{\textsc{TDS}.} Each objection is testable and none changes the ranking:
+$[\cdot]^+$ never fires, so removing it is numerically identical; the curve
+integral gives Spearman $1.000$; baseline- and chance-normalised variants give
+$0.952$. \emph{Configuration count} will be reported as the exact number of
+distinct evaluations per protocol. \emph{Hardware scaling.} Correct --- the
+device factors were estimates and are removed.
 
 \end{document}

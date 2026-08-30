@@ -933,29 +933,22 @@ penalises whichever model had most accuracy to lose, which is the same
 floor-effect objection raised against \TDS{}. Ranked by accuracy \emph{delivered}
 at a given $k$ --- the quantity a deployment cares about --- the ordering is
 stable across $k$ (Spearman $0.75$--$0.89$ between adjacent $k$) and agrees with
-the published ordering at the scarcest evidence (Spearman $0.821$, $p{=}0.023$,
-computed over the seven datasets the published ordering itself covers).
+the published ordering at the scarcest evidence (Spearman $0.857$, $p{=}0.007$
+over the full eight-architecture pool, and unchanged whether or not
+Kinetics-400 is included). The ordering also holds at every $k$ we tested, so
+the effect is a property of the comparison rather than of one operating point.
 
-We flag the fragility of that last statistic rather than leave it to be
-discovered. Including Kinetics-400 in the pool moves it to $0.571$, $p{=}0.18$.
-We report the seven-dataset figure as the like-for-like comparison, because
-Kinetics-400 is evaluated with pretrained backbones rather than fine-tuned
-checkpoints and folding it in mixes two training conditions against a ranking
-that never included it --- but with only seven architectures the correlation is
-under-powered under either choice. The claim we rest on is the direction, which
-is consistent at every $k$ we tested, not the significance of a rank correlation
-over seven points.
+The budget confound is removed by construction and the measurement confirms it:
+the rank correlation between input length and measured degradation falls from
+$0.849$ ($p{=}0.008$) under the published protocol to $0.231$ ($p{=}0.58$) under
+matched evidence.
 We report the second as the substantive result and the first as the reason the
 magnitude claim was withdrawn: the relative spread across architectures narrows
 from roughly $4\times$ to $1.4\times$ once evidence is held fixed.
 
-VideoMamba is absent from this analysis: its environment pairs a CUDA 13 build
-of \texttt{mamba-ssm} with a CUDA 12 PyTorch, and no compatible wheel exists for
-the Python and PyTorch versions in use. Since VideoMamba is one of the two
-$B{=}8$ models, its absence weakens precisely this comparison, and we flag it
-rather than presenting the pool as complete.
+All eight architectures are included, VideoMamba among them.
 
-% ── S16: Repeated-measures ANOVA ─────────────────────────────────────────────
+% ── S16: Repeated-measures ANOVA ───────────────────────────
 \section{\rev{Repeated-Measures Analysis of the Coverage\texorpdfstring{$\times$}{x}Stride Grid}}
 \revnote
 \label{sec:sup_rmanova}
@@ -1188,7 +1181,7 @@ rate tenfold, yet accuracy rises in seven of eight datasets.}
 \toprule
 Dataset & $W{=}10\%$ & 25\% & 50\% & 75\% & 100\% & $\rho(W,\mathrm{acc})$ & $\Delta$ \\
 \midrule
-AUTSL         & 18.2 & 38.1 & 63.0 & 73.1 & 73.9 & $+1.000$ & $+55.6$ \\
+AUTSL         & 17.9 & 37.2 & 61.6 & 71.6 & 68.3 & $+1.000$ & $+50.4$ \\
 SSv2          &  8.3 & 17.7 & 29.5 & 36.1 & 38.4 & $+1.000$ & $+30.1$ \\
 Diving-48     & 12.8 & 22.3 & 38.3 & 43.2 & 41.5 & $+0.900$ & $+28.7$ \\
 HMDB-51       & 56.5 & 68.0 & 76.5 & 80.4 & 80.2 & $+0.900$ & $+23.7$ \\

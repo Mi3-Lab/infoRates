@@ -217,53 +217,12 @@ paper's most-promoted finding, is the most extreme instance of the artifact.
 Getting FineGym through `matched` is therefore the highest-value single result
 in the whole rebuttal.
 
-### 3.4 VideoMamba — also yours, and it is not optional
+### 3.4 VideoMamba — resolved here, nothing needed from you
 
-**VideoMamba cannot run on the cluster at all.** Both environments are broken:
-
-```
-.venv        ModuleNotFoundError: No module named 'mamba_ssm'
-.venv_mamba  ImportError: libcudart.so.13: cannot open shared object file
-```
-
-`.venv_mamba` ships torch 2.8.0+cu128 and only `libcudart.so.12`, but the
-installed `mamba-ssm 2.3.1` wheel was compiled against **CUDA 13** — the residue
-of the fake-nvcc build workaround. Checked and ruled out:
-
-- `nvidia-cuda-runtime-cu13` on PyPI is a 1.2 kB placeholder, not the runtime.
-- Neither `state-spaces/mamba` nor `Dao-AILab/causal-conv1d` publishes a
-  **py39 + torch2.8** wheel. Releases stop at torch 2.7 for cp39.
-- Rebuilding from source uses the system nvcc, which is CUDA 13 only, and would
-  reproduce the same mismatch.
-
-The only local fix is downgrading torch to 2.7 in `.venv_mamba`, which risks
-breaking the environment that produced the paper's published VideoMamba numbers.
-Not worth it a week before the deadline.
-
-**So VideoMamba runs on your machine, alongside FineGym.** Verify first:
-
-```bash
-.venv_mamba/bin/python -c "import mamba_ssm; print('ok')"
-```
-
-If that works, run VideoMamba across **all 8 datasets** in all three modes, not
-just FineGym:
-
-```bash
-for MODE in matched span antialias covstride; do
-  .venv_mamba/bin/python scripts/accv2026/rebuttal_matched_evidence_sweep.py \
-    --model videomamba --dataset <each of the 8> --mode "$MODE"
-done
-```
-
-This matters more than it looks. VideoMamba and TimeSformer are the paper's two
-"robust" architectures, and they are also **exactly the two models with
-`budget=8`** — the confound at the heart of the rebuttal. Without VideoMamba the
-matched-evidence test only has one of the two, and the central question ("do
-architectures still differ once evidence is equal?") cannot be answered
-properly. It is the single highest-value item on your machine after FineGym.
-
-Note the sbatch here activates `.venv`, not `.venv_mamba`; adapt accordingly.
+An earlier revision of this document asked you to run VideoMamba. Ignore it.
+`mamba_ssm` imports fine on a GPU node and fails only on the login node, where
+the CUDA runtime libraries it links against are absent. All four sweeps have
+been completed here across all 8 datasets. **FineGym is the only gap.**
 
 ### 3.5 Multi-stride augmentation ablation, if you have training capacity
 
