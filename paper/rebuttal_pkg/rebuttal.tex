@@ -1,0 +1,149 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+% ---------------------------------------------------------------
+% Include basic CVPR package in rebuttal mode
+
+\usepackage[rebuttal]{cvpr}
+
+% ---------------------------------------------------------------
+% Other packages
+
+% Commonly used abbreviations (\eg, \ie, \etc, \cf, \etal, etc.)
+\usepackage{accvabbrv}
+
+% Include other packages here, before hyperref.
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+% The "axessiblity" package can be found at: https://ctan.org/pkg/axessibility?lang=en
+\usepackage[accsupp]{axessibility}  % comment out if not installed  % Improves PDF readability for those with disabilities.
+
+
+% ---------------------------------------------------------------
+% Hyperref package
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+
+\definecolor{accvblue}{rgb}{0.12,0.49,0.85}
+\usepackage[pagebackref,breaklinks,colorlinks,citecolor=accvblue]{hyperref}
+
+
+% ---------------------------------------------------------------
+% If you wish to avoid re-using figure, table, and equation numbers from
+% the main paper, please uncomment the following and change the numbers
+% appropriately.
+%\setcounter{figure}{2}
+%\setcounter{table}{1}
+%\setcounter{equation}{2}
+
+% If you wish to avoid re-using reference numbers from the main paper,
+% please uncomment the following and change the counter for `enumiv' to
+% the number of references you have in the main paper (here, 6).
+%\let\oldthebibliography=\thebibliography
+%\let\oldendthebibliography=\endthebibliography
+%\renewenvironment{thebibliography}[1]{%
+%     \oldthebibliography{#1}%
+%     \setcounter{enumiv}{6}%
+%}{\oldendthebibliography}
+
+
+% ---------------------------------------------------------------
+% Paper ID for submission 230.
+\def\paperID{230}
+\def\confName{ACCV}
+\def\confYear{2026}
+
+\begin{document}
+
+\title{Measuring and Mitigating Spatiotemporal Aliasing in Video Action
+Recognition: A Cross-Architecture Analysis at Scale}
+
+\maketitle
+\thispagestyle{empty}
+\appendix
+
+We thank the reviewers, and we ran every experiment requested.
+
+\paragraph{What is unchanged.}
+\textsc{TDS}, our main contribution, is unaffected. \textbf{R2} asks whether its
+ranking is an artefact of the endpoint definition; it is not. Integrating the
+full stride curve rather than its endpoints gives an identical dataset ranking
+(Spearman $1.000$); removing the positive part is \emph{numerically} identical,
+since it never activates; normalising by baseline accuracy or by headroom above
+chance exchanges only adjacent pairs ($0.952$). The architecture ordering also
+holds: supplying every architecture the same distinct frames at the same
+positions --- the matched comparison \textbf{R2} asks for --- preserves it at
+Spearman $0.857$ ($p{=}0.007$, all 8 models). We withdraw only the
+$3$--$5\times$ magnitude, which tracks input length rather than temporal
+aggregation, and restate the finding as evidence efficiency: \emph{at an equal
+budget of distinct frames, divided-attention and state-space designs deliver
+more accuracy per frame}.
+
+\paragraph{Characterising the temporal axis (R2, R3).}
+\textbf{R3} is right that ``aliasing'' was imprecise for what we vary. Strided
+candidates are re-uniformised to each model's fixed frame budget $B$, so at
+fixed coverage the selected frames span the same window at every stride, and the
+input changes only once $\lceil\text{window}/s\rceil<B$. \cref{tab:seconds}
+shows this in seconds between sampled frames: four of five stride settings are
+the same sampling rate on UCF-101. The axis therefore measures available
+evidence, and we report it in seconds throughout, as \textbf{R3} suggests.
+
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Median s between frames & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ \\
+\midrule
+UCF-101 & 0.395 & 0.395 & 0.395 & 0.395 & 0.617 \\
+AUTSL   & 0.125 & 0.125 & 0.131 & 0.252 & 0.475 \\
+\bottomrule
+\end{tabular}
+\caption{Realised sampling interval at coverage 100\%, measured frame rates.}
+\label{tab:seconds}
+\end{table}
+
+Two consequences follow. Pinning the frame count and varying only the window
+width --- which changes the realised rate tenfold --- \emph{raises} accuracy in
+7 of 8 datasets (Spearman $+1.0$ in four), so the binding constraint over this
+range is temporal context, exactly \textbf{R3}'s reading. And the correlation
+between input length and measured degradation, $0.849$ ($p{=}0.008$) under the
+original protocol, falls to $0.231$ ($p{=}0.58$) once evidence is matched.
+
+\paragraph{R1: multi-stride augmentation.}
+We ran the ablation you proposed. \textbf{Your hypothesis is partly right, and
+more than we expected}: exposure recovers $28.4\%$ of the drop for TimeSformer
+and $37.0\%$ for R3D-18, whose stride-16 accuracy rises $6.5\%\!\to\!31.9\%$. It
+is a trade rather than a repair --- 63--72\% persists and dense accuracy costs
+$3.3$/$9.9$pp --- and at matched dense accuracy, training through the degraded
+input recovers $2.4$--$6.5\times$ more than uniform resampling. On convergence:
+across 730 training logs, 48px is indeed where the budget binds ($52.8\%$ of
+runs peak at the final epoch \vs 16--27\% elsewhere), though the last three
+epochs win only $1.38$pp; we state this as a limitation. Sec.~3.3 of the paper now gives the resize and PE-interpolation procedure, and Table~7 gains the
+without-fine-tuning row.
+
+\paragraph{R3: further items.}
+Frame rates are now measured, not assumed --- three datasets differed (HMDB-51
+30, AUTSL 30, EPIC 50) --- and at fixed nominal stride the realised interval
+varies $3.9\times$ across datasets. Kinetics-400 is added, requiring no training
+since all backbones are K400-pretrained; it sits at the low-demand end, which
+sharpens the paper's point. Table~5 gains FineGym with the tier definition stated
+explicitly, Table~7 the baseline column, and model ordering is now consistent
+throughout. On Table~7 you are right that native-resolution tuning already gains
+$+6$ to $+10.6$pp, so the $+39.2$pp separates into $\approx$32pp adaptation and
+$\approx$7pp additional training; we report both.
+
+\paragraph{R2: routing and statistics.}
+Both points are correct. The rule thresholds $\max_c p(c|v)$, not entropy, and is
+renamed. Under the held-out calibration you require (1000 stratified splits),
+SSv2 moves from $+0.21$pp to $-0.03$pp (95\% CI $[-1.07,+0.83]$): the cascade
+\emph{matches} dense accuracy at $6.9$ frames. We remove the corresponding
+abstract claim and ``Mitigating'' from the title. Re-running the ANOVA as a
+within-subject design gives partial $\eta^2$ of $0.292$ (coverage), $0.232$
+(stride) and $0.070$ (interaction), so coverage leads by $1.26\times$ rather than
+$2.2\times$ while the per-model ordering is unchanged; the interaction is now
+given for all 56 pairs. The device-scaling factors were estimates and are
+removed.
+
+\end{document}
