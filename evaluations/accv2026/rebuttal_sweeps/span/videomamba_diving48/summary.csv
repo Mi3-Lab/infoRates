@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.15881561238223418,743,7.574697173620458,videomamba,diving48,span,8
+span100,0.3633916554508748,743,8.0,videomamba,diving48,span,8
+span25,0.2543741588156124,743,7.995962314939435,videomamba,diving48,span,8
+span50,0.38088829071332436,743,8.0,videomamba,diving48,span,8
+span75,0.36877523553162855,743,8.0,videomamba,diving48,span,8

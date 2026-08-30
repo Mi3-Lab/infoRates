@@ -58,9 +58,24 @@ from sweep_coverage_stride import (  # noqa: E402
 # test. Label order was verified identical to the manifest for the six models
 # that expose an explicit class list; SlowFast and VideoMamba do not, and are
 # checked instead by whether their top-1 lands near the published ~76%.
+def _find_k400_weights(rel: str) -> Path:
+    """Locate a pretrained weight file across both checkpoint roots.
+
+    Fine-tuned checkpoints live under /scratch (see SCRATCH_CKPTS in
+    sweep_coverage_stride.py) while the repo tree is on /data, and the two are
+    not mirrored. Resolving against ROOT alone silently misses weights that are
+    only on scratch, which is how the VideoMamba/Kinetics-400 run failed.
+    """
+    for base in (Path("/scratch/wesleyferreiramaia/infoRates"), ROOT):
+        cand = base / rel
+        if cand.exists():
+            return cand
+    return ROOT / rel  # keep a definite path so the error names what is missing
+
+
 K400_PRETRAINED = {
-    "videomamba": ROOT / "fine_tuned_models/videomamba_pretrained"
-                       / "videomamba_m16_k400_f8_res224.pth",
+    "videomamba": _find_k400_weights(
+        "fine_tuned_models/videomamba_pretrained/videomamba_m16_k400_f8_res224.pth"),
 }
 
 # k <= 8 is the strictly matched regime: every model's budget is >= 8, so all k

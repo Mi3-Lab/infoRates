@@ -189,12 +189,35 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
     # for SlowFast and the Transformers but not for the three CNNs, so without
     # this fallback FineGym CNN runs cannot resolve a checkpoint at all.
     candidates.append(f"accv2026_{model}_{dataset}")
+    def _loadable(p: Path) -> bool:
+        """A directory can exist and still not be loadable.
+
+        VideoMamba's loader reads accv_meta.json, and a checkpoint is disabled in
+        this repo by renaming that file to .bak -- which is how the collapsed
+        videomamba/diving48 224px run (val_acc 6.8%) was taken out of service.
+        Returning such a directory produces a FileNotFoundError deep inside the
+        loader instead of falling through to the next candidate, so check here.
+        """
+        if not p.is_dir():
+            return False
+        cfg = p / "config.json"
+        if cfg.exists() and '"backend": "videomamba"' in cfg.read_text():
+            return (p / "accv_meta.json").exists()
+        return True
+
+    skipped = []
     for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
         for name in candidates:
             p = base / name
-            if p.exists():
-                return p
-    raise FileNotFoundError(f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}")
+            if not p.exists():
+                continue
+            if not _loadable(p):
+                skipped.append(name)
+                continue
+            return p
+    extra = f" (skipped as unloadable: {skipped})" if skipped else ""
+    raise FileNotFoundError(
+        f"Checkpoint not found for {model}/{dataset}. Tried: {candidates}{extra}")
 
 
 def load_model(model_name: str, dataset: str, train_res: int = None):
