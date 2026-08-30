@@ -1,0 +1,67 @@
+{
+  "acc": {
+    "1": 0.0,
+    "16": 0.0,
+    "2": 0.0,
+    "4": 0.0,
+    "8": 0.0
+  },
+  "active_strides": [
+    1
+  ],
+  "args": {
+    "T": 64,
+    "backbone": "eva_timesformer",
+    "batch_size": 2,
+    "data_root": null,
+    "dataset": "autsl",
+    "epochs": 1,
+    "init_timesformer_encoder": "checkpoints/eva_autsl_timesformer_t64_cleanbaseline/timesformer_baseline/autsl/best_acc.pt",
+    "log_every_batches": 1,
+    "lr": 0.0002,
+    "max_train_batches": 1,
+    "max_val_batches": 1,
+    "model_name": null,
+    "n_classes": 226,
+    "no_phase_loss": false,
+    "num_workers": 0,
+    "output": "checkpoints/eva_autsl_timesformer_t64_finetunedinit_smoke",
+    "robust_tds_weight": 0.5,
+    "stride_warmup_epochs": 1,
+    "target_events": 2.0,
+    "train_split": "train",
+    "train_strides": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "unfreeze_at": 4,
+    "val_every": 1,
+    "warmup_strides": [
+      1
+    ],
+    "wd": 0.05
+  },
+  "epoch": 0,
+  "epoch_seconds": 0.4896209239959717,
+  "epochs": 1,
+  "mean_acc": 0.0,
+  "robust_score": 0.0,
+  "stage": "validation_done",
+  "stride_warmup_epochs": 1,
+  "tds": 0.0,
+  "train_losses": {
+    "cls": 5.203125,
+    "ent": 0.04804530367255211,
+    "total": 5.2511701583862305
+  },
+  "train_strides": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ]
+}

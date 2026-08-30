@@ -1,0 +1,47 @@
+{
+  "acc": {
+    "1": 0.86375,
+    "16": 0.6675,
+    "2": 0.86,
+    "4": 0.86375,
+    "8": 0.85125
+  },
+  "args": {
+    "T": 64,
+    "backbone": "timesformer_baseline",
+    "batch_size": 8,
+    "data_root": null,
+    "dataset": "autsl",
+    "epochs": 10,
+    "log_every_batches": 50,
+    "lr": 0.0001,
+    "max_train_batches": null,
+    "max_val_batches": 200,
+    "model_name": null,
+    "n_classes": 226,
+    "no_phase_loss": false,
+    "num_workers": 8,
+    "output": "checkpoints/eva_autsl_timesformer_t64_cleanbaseline",
+    "target_events": 1.0,
+    "train_split": "train",
+    "train_strides": [
+      1
+    ],
+    "unfreeze_at": 10,
+    "val_every": 1,
+    "wd": 0.05
+  },
+  "epoch": 9,
+  "epoch_seconds": 394.06696581840515,
+  "epochs": 10,
+  "mean_acc": 0.82125,
+  "stage": "validation_done",
+  "tds": 0.19625000000000004,
+  "train_losses": {
+    "cls": 0.0313249963025252,
+    "total": 0.0313249963025252
+  },
+  "train_strides": [
+    1
+  ]
+}

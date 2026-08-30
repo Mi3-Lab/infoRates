@@ -1,0 +1,426 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[margin=0.9in,top=1in,bottom=1in,columnsep=18pt]{geometry}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% Tighter section spacing
+\titlespacing*{\section}{0pt}{10pt}{5pt}
+\titlespacing*{\subsection}{0pt}{8pt}{4pt}
+\titlespacing*{\paragraph}{0pt}{5pt}{5pt}
+
+% Tighter lists
+\setlist[enumerate]{itemsep=2pt, topsep=4pt, leftmargin=1.4em}
+\setlist[itemize]{itemsep=2pt, topsep=4pt, leftmargin=1.4em}
+
+% Tighter math spacing
+\setlength{\abovedisplayskip}{7pt}
+\setlength{\belowdisplayskip}{7pt}
+\setlength{\abovedisplayshortskip}{4pt}
+\setlength{\belowdisplayshortskip}{4pt}
+
+\newcommand{\EVA}{\textsc{Eva}}
+\newcommand{\TDS}{\ifmmode\mathrm{TDS}\else\textsc{TDS}\fi}
+\newcommand{\AAG}{\ifmmode\mathrm{AAG}\else\textsc{AAG}\fi}
+
+\title{\large\textbf{\EVA{}: Evidence-Preserving Temporal Window Compression\\for Stride-Robust Video Action Recognition}}
+\author{}
+\date{}
+
+\begin{document}
+\twocolumn[{%
+\maketitle
+\thispagestyle{empty}
+\begin{abstract}
+Temporal stride sampling is the default efficiency primitive in video action
+recognition, but it is a lossy measurement process: if a stride grid skips the
+few frames containing handshape changes, contacts, object-state transitions, or
+phase boundaries, the recogniser receives a distorted observation rather than a
+cheaper version of the same evidence. Prior large-scale analysis across 8
+architectures and 8 benchmarks documents this failure mode: FineGym and AUTSL
+reach architecture-averaged dense-to-stride-16 gaps of 55.9\,pp and 53.0\,pp
+(\emph{Temporal Demand Score}), while confidence concentration predicts
+per-class aliasing loss across all benchmarks.
+We propose \textbf{\EVA{}} (\textbf{E}vidence-preserving \textbf{V}ideo
+\textbf{A}nti-aliasing), a pre-decimation window-compression module for
+stride-robust recognition. Unlike frame-selection methods, \EVA{} observes every
+frame in a stride window before reducing temporal resolution; unlike classical
+low-pass anti-aliasing, it explicitly preserves high-frequency discriminative
+residuals instead of suppressing them. Each window is represented by
+low-frequency context and event-residual tokens, trained with dense-to-sparse
+consistency, evidence alignment, and sampling-phase robustness.
+We evaluate \EVA{} as a backbone-agnostic front-end and instantiate its strongest
+variant with a bidirectional Mamba-3 temporal backbone. Experiments target
+high-temporal-demand benchmarks (FineGym, AUTSL, SSv2) and low-demand controls
+(UCF-101, HMDB-51)~\cite{finegym,autsl,ssv2,ucf101,hmdb51}, reporting accuracy
+across $s \in \{1,2,4,8,16\}$, \TDS{} reduction, Anti-Aliasing Gain, phase
+robustness, and end-to-end accuracy--latency Pareto curves.
+\end{abstract}
+\vspace{6pt}
+}]
+
+% ── 1. Motivation ─────────────────────────────────────────────────────────────
+\section{Motivation}
+\label{sec:motivation}
+
+Standard sparse sampling with stride $s$ constructs
+$X_{\mathrm{stride}}^{(s)} = \{x_1, x_{1+s}, x_{1+2s}, \ldots\}$,
+discarding all intermediate frames. This is benign only when class evidence is
+redundant across the omitted frames. If a discriminative event occupies $d$
+frames inside a stride window of length $s$, a one-frame sampler with random
+phase observes that event with probability at most $\min(1,d/s)$. More generally,
+sampling $k$ frames without replacement misses the event with probability
+\[
+    \frac{\binom{s-d}{k}}{\binom{s}{k}},
+\]
+so high-stride inference is inherently phase-sensitive when $d \ll s$.
+
+Systematic empirical analysis~\cite{anon2026} across 8 architectures, including
+3D CNNs, efficient temporal modules, video transformers, and SSMs~\cite{c3d,slowfast,timesformer,vivit,videomae,videomamba},
+and 8 benchmarks reveals two key findings.
+First, accuracy degradation under aggressive stride is \emph{structured}:
+datasets whose identity hinges on brief events (FineGym, $\TDS{=}55.9$\,pp;
+AUTSL, $\TDS{=}53.0$\,pp; SSv2, $\TDS{=}27.3$\,pp) suffer consistently across
+all architectures, while appearance-dominated datasets are nearly unaffected
+(UCF-101, $\TDS{=}4.9$\,pp).
+Second, whole-frame optical-flow frequency is an \emph{anti}-correlated proxy
+for vulnerability ($\rho{=}{-}0.64$, $p{=}10^{-5}$, $n{=}40$):
+high-motion classes remain recognisable from any frame, while low-motion
+classes with brief key events are destroyed by the first dropped window.
+Instead, per-class \emph{confidence concentration}---the temporal localisation
+of the classifier's correct-class softmax under a sliding window---predicts
+aliasing loss positively ($\rho{=}{+}0.26$ pooled, positive in all 8 datasets).
+This agrees with prior temporal-dataset studies showing that some action
+categories require temporal order while others are solvable from static
+appearance~\cite{huang2018makes,sevilla2021only}.
+
+\textbf{Hypothesis.} \textit{Sparse recognition should not be implemented as
+frame dropping. Before reducing temporal resolution, the model should compress
+each stride window into an evidence-preserving representation.}
+
+% ── 2. Positioning ────────────────────────────────────────────────────────────
+\section{Positioning}
+\label{sec:positioning}
+
+\EVA{} is positioned against four related lines of work:
+
+\paragraph{Sparse temporal recipes.}
+Segment-based sampling and temporal shift modules made sparse video inference
+practical~\cite{tsn,tsm}, but they still assume that a small set of sampled
+frames is a sufficient statistic for the clip. Our premise is different:
+high-\TDS{} classes contain windows where the unsampled frames carry the only
+class-discriminative evidence.
+
+\paragraph{Adaptive frame selection.}
+AdaFrame~\cite{adaframe}, MGSampler~\cite{mgsampler}, SMART~\cite{smart},
+FrameExit~\cite{frameexit}, AdaFocus~\cite{adafocus}, and MAFormer~\cite{maformer}
+adapt computation by selecting frames, clips, regions, or exits. They reduce
+cost, but selected observations are still a subset of the window. If the
+discriminative event falls in an unselected frame it is irreversibly lost.
+\EVA{} compresses the full window before temporal decimation.
+
+\paragraph{Classical temporal anti-aliasing.}
+BlurPool~\cite{blurpool} applies a low-pass filter before downsampling to
+recover shift-invariance in spatial CNNs.
+Temporal action-localisation work has likewise shown that low-pass filtering can
+mitigate downsampling artifacts, while warning that high-frequency bands contain
+task-critical information~\cite{lpf_tal}. \EVA{} follows the sampling-theoretic
+principle of pre-decimation filtering, but is not a pure low-pass filter:
+it preserves the event residual $r_t = f_t - \ell_t$ in a separate branch.
+
+\paragraph{Video SSMs.}
+VideoMamba~\cite{videomamba} and related state-space architectures~\cite{s4,s4d,mamba,mamba2} apply an efficient SSM
+to whatever token sequence is fed as input.
+They do not prevent evidence loss that occurs \emph{before} the backbone:
+if the event frame was dropped, no SSM can recover it.
+\EVA{} and Mamba-3 address orthogonal failure modes of sparse video inference:
+\EVA{} protects evidence before sampling, while the backbone models the resulting
+compressed token sequence.
+
+% ── 3. Core Idea ──────────────────────────────────────────────────────────────
+\section{Core Idea}
+\label{sec:core}
+
+For stride $s$, the video is partitioned into windows
+$\mathcal{W}_i^{(s)} = \{x_{(i-1)s+1}, \ldots, x_{is}\}$.
+Instead of selecting one frame per window, \EVA{} produces
+\[
+    z_i^{(s)} = \EVA\!\left(\mathcal{W}_i^{(s)}\right),
+\]
+yielding $Z^{(s)} = \{z_i^{(s)}\}_{i=1}^{\lceil T/s \rceil}$---same length
+as a stride-$s$ sample, but each token summarises the full window.
+The objective is therefore to preserve a sufficient statistic for class
+evidence under a fixed output-token budget:
+\[
+    I\!\left(Y; z_i^{(s)}\right) \gg I\!\left(Y; x_{(i-1)s+\phi}\right)
+\]
+when evidence is localised inside $\mathcal{W}_i^{(s)}$.
+We do not claim that \EVA{} reconstructs the dropped frames; it only preserves
+the discriminative evidence needed by the classifier.
+
+The complete pipeline is:
+\[
+    X \xrightarrow{F} \{f_t\} \xrightarrow{\EVA_s} Z^{(s)}
+      \xrightarrow{\text{Mamba-3}} H^{(s)} \xrightarrow{\text{head}} p^{(s)},
+\]
+where $F$ is a spatial encoder producing per-frame features $f_t \in \mathbb{R}^C$.
+For fair deployment claims we evaluate two settings: \emph{feature-level EVA},
+which isolates the compression effect using dense frame features, and
+\emph{compute-aware EVA}, where latency includes decoding, spatial feature
+extraction, compression, and the temporal backbone. SOTA claims are made only on
+end-to-end accuracy--latency Pareto curves.
+
+% ── 4. Architecture ───────────────────────────────────────────────────────────
+\section{Architecture}
+\label{sec:arch}
+
+\subsection{EVA: Dual-Band Tokenizer}
+
+\paragraph{Dual-band decomposition.}
+Given dense features $\{f_t\}$, \EVA{} decomposes each frame into a smooth
+context signal and a high-frequency event residual:
+\begin{align}
+    \ell_t &= \sum_{k=-K}^{K} h_k\, f_{t+k}, \qquad
+             h_k \propto e^{-k^2/2\sigma_g^2}, \\
+    r_t &= f_t - \ell_t,
+\end{align}
+where $\sigma_g > 0$ is a learnable bandwidth (init $\sigma_g{=}1.5$, $K{=}3$).
+$\ell_t$ captures slowly varying motion and appearance; $r_t$ encodes
+deviations from local mean---brief transient events.
+
+\paragraph{Event scoring.}
+A discriminative salience score identifies frames that carry class-specific
+evidence:
+\begin{align}
+    u_t &= [f_t,\; |f_{t+1}-f_t|,\; |f_{t-1}-f_t|,\; |r_t|], \\
+    e_t &= \operatorname{sigmoid}\!\left(\mathrm{MLP}_e(u_t)\right) \in [0,1].
+\end{align}
+The inputs encode the frame's absolute feature, its forward and backward
+temporal derivatives, and the magnitude of its event residual.
+
+\paragraph{Window compression.}
+For each window, EVA produces two complementary tokens:
+\begin{align}
+    z_{i,\mathrm{ctx}}^{(s)} &= \sum_{t \in \mathcal{W}_i} \alpha_{i,t}^{\mathrm{ctx}}\, \ell_t, \\
+    z_{i,\mathrm{evt}}^{(s)} &= \sum_{t \in \mathcal{W}_i} \alpha_{i,t}^{\mathrm{evt}}\, r_t,
+\end{align}
+where $\alpha^{\mathrm{ctx}} = \operatorname{softmax}(q^T\ell_t/\sqrt{C})$
+with learned query $q$, and $\alpha^{\mathrm{evt}} = \operatorname{softmax}(e_t/\tau)$
+with temperature $\tau{=}0.1$.
+If the most salient frame in a window exceeds all others by margin $m$, this
+softmax assigns it weight at least
+\[
+    \left(1 + (s-1)e^{-m/\tau}\right)^{-1},
+\]
+so low temperature approximates event selection while remaining differentiable.
+The anti-aliased token is:
+\begin{equation}
+    z_i^{(s)} = \mathrm{LN}\!\left(W_{\mathrm{ctx}}\, z_{i,\mathrm{ctx}}^{(s)}
+        + W_{\mathrm{evt}}\, z_{i,\mathrm{evt}}^{(s)} + p_i^{(s)}\right),
+\end{equation}
+with $p_i^{(s)}$ a stride-conditioned learnable positional embedding.
+For large strides ($s \geq 8$), a two-token variant ($M{=}2$) exposes context
+and event as separate backbone tokens.
+
+\subsection{Backbone Instantiations}
+
+The primary implementation path uses TimeSformer~\cite{timesformer}, because it
+is a mature video-pretrained transformer with a well-established stride-sampling
+baseline. In \textbf{EVA-TimeSformer}, a frozen or lightly fine-tuned TimeSformer
+encoder maps dense frames to per-frame features, \EVA{} compresses those features
+into stride-window tokens, and a temporal transformer head classifies the
+compressed sequence. The matched baseline is the same TimeSformer checkpoint
+evaluated with uniform stride sampling, so any improvement can be attributed to
+pre-decimation evidence compression rather than a new backbone.
+
+We also test Mamba-2/VideoMamba and Mamba-3~\cite{mamba2,mamba3} as SSM
+instantiations. Mamba-3 is not the first experiment because its video weights are
+not yet established; it is an ablation for whether complex-valued selective
+states improve event tracking once \EVA{} has already preserved the evidence.
+The paper's primary claim is therefore backbone-agnostic compression, with
+TimeSformer as the main SOTA-facing instantiation and Mamba-3 as an exploratory
+SSM variant.
+
+% ── 5. Training Objective ─────────────────────────────────────────────────────
+\section{Training Objective}
+\label{sec:training}
+
+We sample $s \sim \mathcal{U}\{1,2,4,8,16\}$ per step and optimise:
+\begin{align}
+    \mathcal{L} &= \mathcal{L}_{\mathrm{cls}}
+    + \lambda_{\mathrm{KL}}\mathcal{L}_{\mathrm{KL}}
+    + \lambda_{\mathrm{evid}}\mathcal{L}_{\mathrm{evid}} \nonumber\\
+    &\quad + \lambda_{\mathrm{phase}}\mathcal{L}_{\mathrm{phase}}
+    + \lambda_{\mathrm{ent}}\mathcal{L}_{\mathrm{ent}}.
+\end{align}
+
+\noindent$\mathcal{L}_{\mathrm{cls}}$: cross-entropy at all strides.
+
+\noindent$\mathcal{L}_{\mathrm{KL}} = T_d^2\,\mathrm{D}_{\mathrm{KL}}\!\left(\mathrm{sg}(p^{(1)}) \| p^{(s)}\right)$:
+dense-to-sparse distillation; transfers calibrated confidence from the dense
+model to each sparse stride.
+
+\noindent$\mathcal{L}_{\mathrm{evid}}$: evidence-map alignment.
+The dense pass produces a frame-level teacher map $a^{(1)}$ using either
+leave-one-frame-out confidence drop or gradient attribution over $f_t$:
+\[
+    a_t^{(1)} \propto
+    p_y^{(1)}(X) - p_y^{(1)}(X_{\setminus t})
+    \quad \text{or} \quad
+    a_t^{(1)} \propto \left\|\frac{\partial \log p_y^{(1)}}{\partial f_t}\right\|_1 .
+\]
+Sparse event weights are lifted back to the dense frame grid as
+$\hat{a}^{(s)}$, and
+\[
+    \mathcal{L}_{\mathrm{evid}} =
+    \left\|\operatorname{norm}(a^{(1)}) -
+    \operatorname{norm}(\hat{a}^{(s)})\right\|_1 .
+\]
+This makes the event branch match dense evidence rather than merely discovering
+high-motion frames.
+
+\noindent$\mathcal{L}_{\mathrm{phase}} = \mathrm{D}_{\mathrm{JS}}\!\left(p^{(s,\phi_1)} \| p^{(s,\phi_2)}\right)$:
+sampling-phase consistency; penalises predictions that vary with the temporal
+offset of the stride grid.
+
+\noindent$\mathcal{L}_{\mathrm{ent}}$: target-entropy regularisation,
+\[
+    \mathcal{L}_{\mathrm{ent}} =
+    \frac{1}{T/s}\sum_i \left(H(\alpha_i^{\mathrm{evt}}) - \log k\right)^2 .
+\]
+Here $k$ is the expected number of useful subevents per window. This avoids the
+failure mode of forcing a single peak when signs, contacts, or gymnastic phases
+require multiple frames.
+
+% ── 6. Evaluation Plan ────────────────────────────────────────────────────────
+\section{Evaluation Plan}
+\label{sec:eval}
+
+\paragraph{Metrics.}
+Top-1 accuracy at each stride; $\TDS(m) = [a^{(1)} - a^{(16)}]_+$;
+Anti-Aliasing Gain
+\[
+    \AAG = \frac{1}{4}\sum_{s\in\{2,4,8,16\}}
+    \left(a_{\EVA}^{(s)} - a_{\mathrm{base}}^{(s)}\right);
+\]
+phase robustness $\sigma^2_{\mathrm{phase}}$ across stride offsets; and
+accuracy--latency Pareto curves. Latency includes decoding, resize, spatial
+encoding, \EVA{}, and the temporal backbone, measured at batch size 1 and 8.
+
+\paragraph{Datasets.}
+\textit{High demand}: FineGym~\cite{finegym} ($\TDS{=}55.9$\,pp),
+AUTSL~\cite{autsl} ($\TDS{=}53.0$\,pp),
+SSv2~\cite{ssv2} ($\TDS{=}27.3$\,pp).
+\textit{Medium}: Diving-48~\cite{diving48}, HMDB-51~\cite{hmdb51}.
+\textit{Low (control)}: UCF-101~\cite{ucf101} ($\TDS{=}4.9$\,pp).
+
+\paragraph{Baselines.}
+\textit{Sampling}: uniform stride, TSN-style segment sampling~\cite{tsn},
+random phase, center-window, and dense upper bound.
+\textit{Anti-aliasing}: temporal Gaussian low-pass, BlurPool-style filtering
+\cite{blurpool}, and dynamic-cutoff LPF adapted from temporal action
+localisation~\cite{lpf_tal}.
+\textit{Adaptive inference}: AdaFrame~\cite{adaframe}, MGSampler~\cite{mgsampler},
+SMART~\cite{smart}, FrameExit~\cite{frameexit}, and AdaFocus~\cite{adafocus}.
+\textit{Token compression}: ToMe~\cite{tome} and Eventful
+Transformers~\cite{eventful}.
+\textit{Backbones}: TimeSformer~\cite{timesformer}, VideoMAE~\cite{videomae},
+ViViT~\cite{vivit}, SlowFast~\cite{slowfast}, VideoMamba~\cite{videomamba},
+Mamba-2~\cite{mamba2}, and Mamba-3~\cite{mamba3}; each is tested with and
+without \EVA{}.
+
+% ── 7. Ablations ──────────────────────────────────────────────────────────────
+\section{Ablation Design}
+\label{sec:ablation}
+
+\begin{enumerate}
+    \item \textbf{Event branch vs.\ context-only}: ablate $z_{i,\mathrm{evt}}{=}0$;
+    expected finding---loss concentrated on FineGym, AUTSL, SSv2;
+    negligible on UCF-101. Validates the dual-band design.
+    \item \textbf{Low-pass only vs.\ residual-preserving}: compare classical
+    low-pass filtering to \EVA{}'s dual-band token. Validates that high-frequency
+    residuals are useful rather than noise.
+    \item \textbf{$\mathcal{L}_{\mathrm{KL}}$}: removal reduces sparse-stride
+    accuracy without affecting $s{=}1$, confirming distillation as a
+    stride-robustness mechanism independent of EVA.
+    \item \textbf{$\mathcal{L}_{\mathrm{phase}}$}: removal increases
+    $\sigma^2_{\mathrm{phase}}$ on high-demand datasets; no effect on
+    low-demand controls.
+    \item \textbf{$\mathcal{L}_{\mathrm{evid}}$}: removal causes the event
+    branch to diverge from dense evidence maps; measures the contribution
+    of supervised evidence alignment.
+    \item \textbf{Entropy target $k$}: compare $k{=}1$ against multi-event
+    settings; expected gain on sign language and fine-grained sports.
+    \item \textbf{Mamba-3 vs.\ Mamba-2 backbone}: complex states (Mamba-3)
+    vs.\ real states (Mamba-2) with identical parameter count; expected
+    gap largest on AUTSL (fine phoneme-level state tracking).
+    \item \textbf{Architecture generality}: \EVA{} prepended to TimeSformer,
+    VideoMAE, VideoMamba; EVA-TimeSformer is the primary SOTA-facing model,
+    while EVA-Mamba3 tests the SSM variant.
+    \item \textbf{End-to-end compute fairness}: feature-level \EVA{} vs. compute-aware
+    \EVA{}; gains must persist when spatial encoding cost is included.
+\end{enumerate}
+
+% ── 8. Acceptance-Critical Results ────────────────────────────────────────────
+\section{Acceptance-Critical Results}
+\label{sec:expected}
+
+The method should be considered successful only if it satisfies three empirical
+criteria. First, it must reduce \TDS{} on high-demand datasets without harming
+low-demand controls. Second, it must beat selection-only and low-pass baselines
+at matched end-to-end latency. Third, its event weights must align with dense
+evidence maps and human-interpretable key frames.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Main table template for FineGym/AUTSL/SSv2. Report end-to-end latency,
+not backbone-only latency.}
+\label{tab:main}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccccc}
+\toprule
+Method & $s{=}1$ & $s{=}8$ & $s{=}16$ & \TDS{}$\downarrow$ & ms$\downarrow$ \\
+\midrule
+Uniform stride          & -- & -- & -- & -- & -- \\
+LPF + stride            & -- & -- & -- & -- & -- \\
+Adaptive selector       & -- & -- & -- & -- & -- \\
+VideoMamba              & -- & -- & -- & -- & -- \\
+\EVA{}+VideoMamba       & -- & -- & -- & -- & -- \\
+\EVA{}+TimeSformer      & -- & -- & -- & -- & -- \\
+\textbf{\EVA{}-TimeSformer} & -- & -- & -- & \textbf{--} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── 9. Contributions ──────────────────────────────────────────────────────────
+\section{Contributions}
+\label{sec:contributions}
+
+\begin{enumerate}
+    \item \textbf{Problem framing}: stride-induced accuracy loss formalised as
+    pre-decimation evidence loss, grounded in large-scale empirical analysis
+    ($\rho{=}{+}0.26$ confidence concentration vs.\ aliasing loss, 8 datasets).
+    \item \textbf{\EVA{}}: architecture-agnostic dual-band temporal window
+    compression that preserves both low-frequency context and high-frequency
+    event residuals before reducing token rate.
+    \item \textbf{Evidence-supervised training}: dense-to-sparse distillation,
+    explicit evidence-map alignment, and phase-consistency losses targeting the
+    failure modes revealed by \TDS{}.
+    \item \textbf{Backbone-agnostic SOTA evaluation}: \EVA{} is tested across
+    transformer, SSM, and Mamba-3 backbones against adaptive sampling, low-pass
+    anti-aliasing, token compression, and end-to-end latency baselines.
+\end{enumerate}
+
+% ── References (stub) ─────────────────────────────────────────────────────────
+\bibliographystyle{ieeetr}
+\bibliography{main}
+
+\end{document}

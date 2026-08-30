@@ -457,13 +457,15 @@ def load_from_manifest(manifest_name: str, data_root: str) -> Tuple[List[str], D
     train_files: DataSplit = [
         (str(r["video_path"]), label_to_id[r["label"]])
         for _, r in df.iterrows()
-        if (r["split"] == "train" or r["split"] == "training") and Path(str(r["video_path"])).exists()
+        if str(r["split"]).lower() in {"train", "training"}
+        and Path(str(r["video_path"])).exists()
     ]
 
     val_files: DataSplit = [
         (str(r["video_path"]), label_to_id[r["label"]])
         for _, r in df.iterrows()
-        if (r["split"] == "valid" or r["split"] == "validation") and Path(str(r["video_path"])).exists()
+        if str(r["split"]).lower() in {"val", "valid", "validation", "test"}
+        and Path(str(r["video_path"])).exists()
     ]
 
     # Fallback: if no proper splits, use all data for validation only
