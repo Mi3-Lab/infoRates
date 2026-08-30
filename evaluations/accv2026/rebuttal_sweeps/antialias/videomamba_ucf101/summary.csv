@@ -1,0 +1,11 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k16_box,0.7608910891089109,2020,16.0,videomamba,ucf101,antialias,8
+k16_point,0.848019801980198,2020,16.0,videomamba,ucf101,antialias,8
+k1_box,0.3910891089108911,2020,1.0,videomamba,ucf101,antialias,8
+k1_point,0.657920792079208,2020,1.0,videomamba,ucf101,antialias,8
+k2_box,0.4420792079207921,2020,2.0,videomamba,ucf101,antialias,8
+k2_point,0.7866336633663367,2020,2.0,videomamba,ucf101,antialias,8
+k4_box,0.5886138613861386,2020,4.0,videomamba,ucf101,antialias,8
+k4_point,0.8386138613861386,2020,4.0,videomamba,ucf101,antialias,8
+k8_box,0.6861386138613862,2020,8.0,videomamba,ucf101,antialias,8
+k8_point,0.852970297029703,2020,8.0,videomamba,ucf101,antialias,8

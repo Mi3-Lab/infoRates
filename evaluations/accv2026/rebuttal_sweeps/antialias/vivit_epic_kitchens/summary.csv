@@ -1,0 +1,11 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k16_box,0.16176470588235295,1020,15.980392156862745,vivit,epic_kitchens,antialias,32
+k16_point,0.26176470588235295,1020,15.980392156862745,vivit,epic_kitchens,antialias,32
+k1_box,0.030392156862745098,1020,1.0,vivit,epic_kitchens,antialias,32
+k1_point,0.06666666666666667,1020,1.0,vivit,epic_kitchens,antialias,32
+k2_box,0.04215686274509804,1020,2.0,vivit,epic_kitchens,antialias,32
+k2_point,0.10490196078431373,1020,2.0,vivit,epic_kitchens,antialias,32
+k4_box,0.07254901960784314,1020,4.0,vivit,epic_kitchens,antialias,32
+k4_point,0.17941176470588235,1020,4.0,vivit,epic_kitchens,antialias,32
+k8_box,0.14607843137254903,1020,8.0,vivit,epic_kitchens,antialias,32
+k8_point,0.2950980392156863,1020,8.0,vivit,epic_kitchens,antialias,32

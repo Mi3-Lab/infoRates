@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.6587570621468927,885,6.968361581920904,timesformer,hmdb51,span,8
+span100,0.8,885,8.0,timesformer,hmdb51,span,8
+span25,0.7457627118644068,885,7.983050847457627,timesformer,hmdb51,span,8
+span50,0.7853107344632768,885,8.0,timesformer,hmdb51,span,8
+span75,0.807909604519774,885,8.0,timesformer,hmdb51,span,8

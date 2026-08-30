@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.657920792079208,2020,1.0,videomamba,ucf101,matched,8
+k16,0.8475247524752475,2020,16.0,videomamba,ucf101,matched,8
+k2,0.7856435643564357,2020,2.0,videomamba,ucf101,matched,8
+k4,0.8381188118811881,2020,4.0,videomamba,ucf101,matched,8
+k8,0.8534653465346534,2020,8.0,videomamba,ucf101,matched,8

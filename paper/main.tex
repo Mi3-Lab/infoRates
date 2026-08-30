@@ -5,7 +5,7 @@
 \PassOptionsToPackage{table,dvipsnames}{xcolor}
 % TODO REVIEW: Insert your submission number below by replacing '*****'
 % TODO FINAL: Comment out the following line for the camera-ready version
-\usepackage[review,year=2026,ID=*****]{accv}
+\usepackage[review,year=2026,ID=230]{accv}
 % TODO FINAL: Un-comment the following line for the camera-ready version
 %\usepackage{accv}
 
@@ -44,8 +44,7 @@
 \raggedbottom
 
 % ---------------------------------------------------------------
-\title{\texorpdfstring{Spatiotemporal Aliasing in Video Action Recognition:\\
-       A Cross-Architecture Analysis at Scale}{Spatiotemporal Aliasing in Video Action Recognition: A Cross-Architecture Analysis at Scale}}
+\title{Measuring and Mitigating Spatiotemporal Aliasing in Video Action Recognition: A Cross-Architecture Analysis at Scale}
 
 \titlerunning{Spatiotemporal Aliasing in Video Action Recognition}
 
@@ -56,8 +55,8 @@
 
 % =========================================================
 \begin{abstract}
-Temporal resolution in video action recognition is usually treated as a fixed hyperparameter rather than a sampling constraint. We present a large-scale study of empirical classifier-evidence loss under temporal and spatial subsampling across 8 architectures and 8 datasets (8,000 core evaluation configurations). Within this evaluated pool, aliasing sensitivity varies systematically across temporal aggregation designs: VideoMamba and TimeSformer lose 3--5$\times$ less accuracy than CNNs and ViViT under aggressive stride. We introduce the \textbf{Temporal Demand Score (\TDS{})}, an architecture-averaged accuracy drop under temporal subsampling. FineGym (55.9pp) rivals sign language (AUTSL, 53.0pp), establishing fine-grained sport as a high-aliasing regime. Cross-resolution evaluation shows CNNs degrade up to 63pp off-native, while Transformers stay within $\pm$8pp on 7 of 8 datasets; target-resolution fine-tuning recovers up to 39pp for CNNs. Measured latency identifies VideoMAE as the most efficient Transformer (1.6--2.8ms) and VideoMamba as 4--8$\times$ slower (8--15ms). Finally, a simple validation-set confidence cascade traces a 52\% lower-frame operating point on SSv2 without changing validation accuracy; we report it as a deployment illustration rather than a new routing method.
-\keywords{Temporal aliasing \and Video recognition \and Routing}
+Temporal resolution in video action recognition is usually treated as a fixed hyperparameter rather than a sampling constraint. We present a large-scale study of empirical classifier-evidence loss under temporal and spatial subsampling across 8 architectures and 8 datasets (8,000 core evaluation configurations). Within this evaluated pool, aliasing sensitivity varies systematically across temporal aggregation designs, as certain sequence models and divided-attention Transformers suffer 3--5$\times$ less degradation under frame reduction compared to standard Convolutional Neural Networks (CNNs). We introduce the \textbf{Temporal Demand Score (\TDS{})} to quantify accuracy loss under temporal subsampling which has demonstrated that fine-grained sports demand as much temporal density as sign language. In a cross-resolution evaluation, CNNs degrade at novel resolutions without fine-tuning, whereas Transformers natively maintain accuracy. Furthermore, hardware profiling shows video state-space models are 4--8$\times$ slower than efficient Transformers. To optimize deployment, we demonstrate an \textbf{entropy-based adaptive frame routing} cascade that halves temporal budgets without accuracy loss. Finally, we provide a reproducibility package and an interactive visualization dashboard to enable aliasing-aware engineering design of human-observing AI systems.
+\keywords{Temporal aliasing \and Video recognition \and Adaptive routing}
 \end{abstract}
 
 % =========================================================
@@ -66,10 +65,10 @@ Temporal resolution in video action recognition is usually treated as a fixed hy
 
 Applications of activity recognition include driving, healthcare, and surveillance~\cite{5771372,10484402}. The field has evolved from 3D ConvNets and dual-pathway networks~\cite{tran2015c3d,carreira2017i3d,tran2018r2plus1d,wang2018nonlocal,feichtenhofer2019slowfast} to video Transformers and state-space models~\cite{bertasius2021timesformer,arnab2021vivit,liu2022videoswin,fan2021mvit,tong2022videomae,wang2023videomaev2,li2024videomamba}.
 
-Despite this diversity, all models are evaluated using standardized sampling recipes (8--32 uniformly-sampled frames at fixed stride), treating temporal resolution as a static implementation detail. This assumption fails in resource-constrained deployments where dense sampling is infeasible~\cite{lin2019tsm}, and leaves two fundamental questions unanswered: \emph{when} does temporal subsampling become destructive, and \emph{why} do different architectures respond differently?
+Despite this diversity, all models are evaluated using standardized sampling recipes (8--32 uniformly-sampled frames at fixed stride), treating temporal resolution as a static implementation detail. This assumption fails in real-world deployments where constraints on computational hardware, power usage, sensor capabilities, or communication bandwidth make dense sampling infeasible~\cite{lin2019tsm}. This leaves two fundamental questions unanswered: \emph{when} does temporal subsampling become destructive, and \emph{why} do different architectures respond differently?
 
 \paragraph{Sampling perspective.}
-The Nyquist--Shannon theorem~\cite{shannon1949communication} motivates the intuition that undersampling can distort a temporal signal rather than merely compress it, a principle also relevant to perception~\cite{vanrullen2007wagon} and deep learning~\cite{zhang2019antialiased}. We use this as a conceptual guide, but our metric is empirical: \TDS{} measures how much classifier evidence is lost under controlled subsampling, not literal spectral aliasing of the raw video signal.
+The Nyquist--Shannon theorem~\cite{shannon1949communication} motivates the intuition that undersampling can distort a temporal signal rather than merely compress it, a principle also relevant to perception~\cite{vanrullen2007wagon} and deep learning~\cite{zhang2019antialiased}. We use this as a conceptual guide, but introduce an empirical Temporal Demand Score (\TDS{}) metric that measures how much classifier evidence is lost under controlled subsampling, not literal spectral aliasing of the raw video signal.
 
 \begin{figure}[t]
 \centering
@@ -104,15 +103,14 @@ The Nyquist--Shannon theorem~\cite{shannon1949communication} motivates the intui
 \paragraph{Contributions.}
 We conduct a systematic cross-architecture study of spatiotemporal aliasing:
 \begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
-\item \textbf{Temporal Demand Score (\TDS{})}: an architecture-averaged dataset
-metric that consistently ranks 8 datasets by aliasing sensitivity, with leave-one-architecture-out analysis, architecture-family ablation (CNN-only, Transformer-only), and bootstrap confidence intervals checking ranking stability (Sec.~\ref{sec:results_tds}; supplementary material). FineGym (55.9pp) rivals sign language (AUTSL, 53.0pp) as the highest-demand domain.
+\item \textbf{Temporal Demand Score (\TDS{})}: an architecture-averaged metric that measures a dataset's aliasing sensitivity. We demonstrate its utility by ranking 8 diverse datasets with leave-one-architecture-out analysis, architecture-family ablation (CNN-only, Transformer-only), and bootstrap confidence intervals checking ranking stability (Sec.~\ref{sec:results_tds}; supplementary material). 
+% FineGym (55.9pp) rivals sign language (AUTSL, 53.0pp) as the highest-demand domain.
 \item \textbf{Cross-architecture aliasing characterization}: 8,000 core evaluation
 configurations show strong empirical architecture-level differences within our pool, with VideoMamba and TimeSformer losing 3--5$\times$ less accuracy under stride stress than CNNs and ViViT; this is an association, not a controlled temporal-module ablation (Sec.~\ref{sec:results_temporal}).
-\item \textbf{Target-resolution fine-tuning}: Fine-tuning each model at the deployment
-resolution closes the cross-resolution gap by up to 39pp for CNNs while Transformers---already resolution-robust---require no retraining (Sec.~\ref{sec:results_spatial}).
+\item \textbf{Target-resolution fine-tuning}: Fine-tuning each model at the target spatial resolution closes the cross-resolution gap by up to 39pp for CNNs. In contrast, Transformers naturally maintain accuracy across different image sizes and require no retraining (Sec.~\ref{sec:results_spatial})
 \item \textbf{Measured inference latency}: GPU latency characterization
 across all 8 models $\times$ 5 target resolutions (bfloat16), enabling sampling-aware deployment budgeting per device class (Sec.~\ref{sec:results_latency}).
-\item \textbf{Practical illustration and reproducibility package}: as a low-cost downstream use of the temporal-sweep results above---rather than a new routing algorithm---a simple entropy-threshold cascade traces a validation Pareto frontier with 52\% fewer frames on SSv2 while matching dense-sampling accuracy. We also provide an anonymized supplementary package containing a deterministic dashboard, evaluation scripts, and result tables; public code will be released after review (Sec.~\ref{sec:results_routing}).
+\item \textbf{Practical illustration and reproducibility package}: as a low-cost downstream use of the temporal-sweep results above---rather than a new routing algorithm---a simple entropy-threshold cascade traces a validation Pareto frontier with 52\% fewer frames on the Something-Something (SSv2) temporal dataset while matching dense-sampling accuracy. We also provide a supplementary package containing a deterministic dashboard, evaluation scripts, and result tables; public code will be released after review (Sec.~\ref{sec:results_routing}).
 \end{enumerate}
 
 % =========================================================
@@ -149,9 +147,9 @@ Sampling theory predicts that undersampling a signal below its highest temporal 
   arr/.style={-{Stealth[length=2mm]},thick,draw=gray!70}
 }
 \node(ds)[data,text width=4.0cm]{\textbf{8 Datasets}\\AUTSL · FineGym · SSv2\\Diving-48 · HMDB-51\\DriveAct · EPIC · UCF-101};
-\node(ar)[data,right=6mm of ds,text width=4.0cm]{\textbf{8 Architectures}\\CNNs: R3D · MC3 · R2+1D\\Dual: SlowFast\\Transformers: TSF · ViViT · VMAE\\SSM: VideoMamba};
+\node(ar)[data,right=6mm of ds,text width=4.0cm]{\textbf{8 Architectures}\\\makebox[\linewidth]{CNNs: R3D · MC3 · R2+1D}\\Dual: SlowFast\\Transformers: TSF · ViViT · VMAE\\SSM: VideoMamba};
 \node(e1)[proc,right=6mm of ar]{\textbf{Temporal Sweep}\\$\mathcal{C}\in\{10,25,50,75,100\}\%$\\$s\in\{1,2,4,8,16\}$\\1,600 configs total};
-\node(e6)[p3,right=6mm of e1]{\textbf{Spatial Resolution Sweep}\\5 target resolutions: 48--224\,px\\cross-res eval + tuning};
+\node(e6)[p3,right=6mm of e1, text width=4.4cm]{\textbf{Spatial Resolution Sweep}\\5 target resolutions: 48--224\,px\\cross-res eval + tuning};
 \node(an)[eval,right=6mm of e6]{\textbf{Analysis}\\TDS metric · ANOVA\\Levene · Taxonomy\\Latency · Entropy routing};
 \draw[arr](ds)--(ar); \draw[arr](ar)--(e1); \draw[arr](e1)--(e6); \draw[arr](e6)--(an);
 \end{tikzpicture}}
@@ -189,7 +187,7 @@ UCF-101~\cite{soomro2012ucf101}      & 101 & 2,020 & Appearance         &  4.9pp
 We decouple \textit{temporal coverage} $\mathcal{C}$ (fraction of clip observed) from \textit{temporal stride} $s$ (sampling density), forming a 5$\times$5 grid: $\mathcal{C}\in\{10,25,50,75,100\}\%$ and $s\in\{1,2,4,8,16\}$. The temporal sweep at native resolution yields $8{\times}8{\times}25{=}\mathbf{1{,}600}$ model--dataset--configuration triples. Repeating this grid at the 5 target resolutions from 48--224px yields the \textbf{8,000} core configurations.
 
 \paragraph{Coverage implementation.}
-Coverage is applied from the \emph{beginning} of each clip: the first $\lfloor T\cdot\mathcal{C}/100\rfloor$ frames form the candidate pool, and $s$ controls sampling density within that window. This simulates a sensor that observes only a leading fraction of the action and gives the sharpest measurement of how early the model has enough temporal context. Random window placement would confound temporal structure with missing-data effects; a 10\% random-window check on SSv2 gives qualitatively similar coverage effects (supplementary material).
+Coverage is applied from the \emph{beginning} of each clip: the first $\lfloor T\cdot\mathcal{C}/100\rfloor$ frames form the candidate pool, and $s$ controls sampling density within that window. This simulates a sensor that observes only a leading fraction of the action and gives the sharpest measurement of how early the model has enough temporal context. Random window placement would confound temporal structure with missing-data effects; a 10\% random-window check on Something-Something (SSv2) gives qualitatively similar coverage effects (supplementary material).
 
 \subsection{Spatial Resolution Protocol}
 
@@ -523,7 +521,7 @@ Our architecture analysis is observational: temporal aggregation design covaries
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented a large-scale cross-architecture study of spatiotemporal aliasing in video action recognition. Across 8 architectures, 8 datasets, and 8,000 configurations, aliasing shows a strong empirical association with temporal aggregation design, with ViViT showing that Transformers are not automatically temporally robust. The \TDS{} metric identifies FineGym and AUTSL as co-equal high-demand domains, establishing fine-grained sport as a high-aliasing regime. VideoMamba is robust but bimodal and slow on GPU; target-resolution fine-tuning closes the CNN resolution gap by up to 39pp; and a validation-set entropy cascade illustrates a 52\% lower-frame operating point on SSv2. 
+We present a large-scale cross-architecture study of spatiotemporal aliasing in video action recognition. Across 8 architectures, 8 datasets, and 8,000 configurations, aliasing shows a strong empirical association with temporal aggregation design, with ViViT showing that Transformers are not automatically temporally robust. The \TDS{} metric identifies FineGym and AUTSL as co-equal high-demand domains, establishing fine-grained sport as a high-aliasing regime. VideoMamba is robust but bimodal and slow on GPU; target-resolution fine-tuning closes the CNN resolution gap by up to 39pp; and a validation-set entropy cascade illustrates a 52\% lower-frame operating point on SSv2. These results are useful beyond ranking models: they indicate when computation should be spent on denser temporal evidence, when frames can be removed with little cost, and when poor accuracy is caused by a sampling mismatch rather than by the recognizer alone. Reporting accuracy over stride, coverage, and resolution, therefore, gives practitioners a way to check whether an activity model has actually seen enough time to justify its prediction.
 
 \bibliographystyle{splncs04}
 \bibliography{main}

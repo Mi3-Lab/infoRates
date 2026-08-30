@@ -1,0 +1,1289 @@
+\documentclass[runningheads]{llncs}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\PassOptionsToPackage{table,dvipsnames}{xcolor}
+\usepackage[review,year=2026,ID=230]{accv}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[pagebackref,breaklinks,colorlinks,citecolor=blue]{hyperref}
+\usepackage{amsmath,amssymb}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{adjustbox}
+\usepackage{enumitem}
+\usepackage[section]{placeins}
+
+\newcommand{\tabtight}{\setlength{\tabcolsep}{3.5pt}\renewcommand{\arraystretch}{1.12}}
+\newcommand{\TDS}{\textsc{TDS}}
+
+% ---- Revision marking (rebuttal round) ----------------------------------
+% Mirrors main2.tex: \rev{...} for added or rewritten text, \revdel{...} for
+% removed text kept visible. Redefine both to be invisible for camera-ready.
+\usepackage{xcolor}
+\usepackage[normalem]{ulem}  % normalem: do not hijack \emph
+\definecolor{revblue}{RGB}{0,80,200}
+\newcommand{\rev}[1]{\textcolor{revblue}{#1}}
+\newcommand{\revdel}[1]{\textcolor{gray}{\sout{#1}}}
+% Marks a section added during the rebuttal round. Sections are flagged with
+% this note rather than wrapped in \rev{...}: colouring a whole section would
+% put floats inside a \textcolor group, and floats escape their group, so the
+% tables would render uncoloured or break outright.
+\newcommand{\revnote}{\noindent\textcolor{revblue}{\small\itshape
+  [New in this revision, in response to the reviews.]}\par\vspace{2pt}}
+\setlength{\emergencystretch}{4em}
+
+\begin{document}
+\raggedbottom
+
+\title{\texorpdfstring{Supplementary Material:\\
+  Spatiotemporal Aliasing in Video Action Recognition:\\
+  A Cross-Architecture Analysis at Scale}{Supplementary Material: Spatiotemporal Aliasing in Video Action Recognition: A Cross-Architecture Analysis at Scale}}
+
+\author{Anonymous ACCV Submission}
+\institute{}
+\maketitle
+
+\setcounter{section}{0}
+\renewcommand\thesection{S\arabic{section}}
+\renewcommand\thefigure{S\arabic{figure}}
+\renewcommand\thetable{S\arabic{table}}
+\setcounter{figure}{0} \setcounter{table}{0}
+
+This document provides supplementary material for the main paper. We include: (S1) full coverage$\times$stride heatmaps for all 8 models and 8 datasets; (S2) Levene variance inflation analysis; (S3) full ANOVA effect size tables including FineGym; (S4) action sensitivity taxonomy detail; (S5) entropy routing curves for all models; (S6) clip duration analysis; (S7) spectral correlation detail; (S8) implementation details (splits, sampling, frame normalization, target-resolution fine-tuning, positional embedding interpolation); (S9) full multi-dataset spatial resolution results (all 8 datasets $\times$ 8 models); (S10) deterministic interactive dashboard and code availability; (S11) \TDS{} ranking robustness: leave-one-architecture-out, architecture-family ablation (CNN-only, Transformer-only, Transformer+SSM pools), and bootstrap confidence intervals; (S12) exploratory spectral and label-space evidence-localization checks showing why whole-frame flow is not a literal Nyquist proxy; and (S13) additional robustness checks on optimization headroom, coverage--stride interaction, and entropy-threshold calibration.
+
+% ── S1: Full heatmaps ─────────────────────────────────────────────────────────
+\section{Full Coverage$\times$Stride Heatmaps}
+\label{sec:sup_heatmaps}
+
+Figures~\ref{fig:heatmap_r3d}--\ref{fig:heatmap_videomamba} show the complete coverage$\times$stride accuracy heatmaps for all 8 architectures across all 8 datasets. Each cell represents Top-1 accuracy (\%) at a specific (coverage, stride) configuration. Color scale: green=high accuracy, red=low accuracy. FineGym heatmaps (all 8 models) are included; per-class optical-flow analysis for FineGym is reported in supplementary~S7.
+
+Row order (coverage): 10\%, 25\%, 50\%, 75\%, 100\%. Column order (stride): 1, 2, 4, 8, 16.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_r3d_18.pdf}
+  \caption{R3D-18 (CNN-3D) coverage$\times$stride accuracy (\%) across 8 datasets. Sharp cliff at stride 4$\to$8 on AUTSL (75\%$\to$27\%) and similar cliff on FineGym are consistent with the high temporal demand of fine-grained actions. EPIC-Kitchens and UCF-101 retain high accuracy even at sparse sampling.}
+  \label{fig:heatmap_r3d}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_mc3_18.pdf}
+  \caption{MC3-18 (CNN-mix, channel-separated 3D) heatmaps. Similar pattern to R3D-18 but with slightly reduced aliasing on low-TDS datasets (UCF-101, DriveAct), consistent with the regularizing effect of 2D-channel separation. FineGym shows the same severe cliff pattern as AUTSL.}
+  \label{fig:heatmap_mc3}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_r2plus1d_18.pdf}
+  \caption{R2+1D-18 (separable spatiotemporal convolution) heatmaps. Higher base accuracy than R3D-18 on several datasets (SSv2: 42.6\% vs 37.1\%), but similar aliasing sensitivity pattern---cliff at stride 4$\to$8 on AUTSL and FineGym.}
+  \label{fig:heatmap_r2p1d}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_slowfast_r50.pdf}
+  \caption{SlowFast-R50 (dual-pathway) heatmaps. Cliff occurs at stride 2$\to$4 on AUTSL (77\%$\to$41\%)---one step earlier than other CNNs---because the fast pathway requires 32 frames. On FineGym, SlowFast achieves the highest base accuracy (78.2\%) among all models but suffers the worst aliasing loss (71.5pp at stride=16).}
+  \label{fig:heatmap_slowfast}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_timesformer.pdf}
+  \caption{TimeSformer (divided space--time attention) heatmaps. Notably flat across most stride values, with steep degradation only at the combined extreme of low coverage \emph{and} high stride. FineGym exception: drops 36.1pp at stride=16, revealing that even global divided attention cannot fully compensate for the 6--8Hz gymnastics phase transitions.}
+  \label{fig:heatmap_timesformer}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_vivit.pdf}
+  \caption{ViViT (factorized attention) heatmaps. Despite being a Transformer, ViViT aliases nearly as severely as 3D CNNs (AUTSL: cliff at stride 2$\to$4, identical to SlowFast). FineGym shows a 55.2pp drop at stride=16, consistent with factorized temporal attention being vulnerable to frame dropout in high-TDS domains.}
+  \label{fig:heatmap_vivit}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_videomae.pdf}
+  \caption{VideoMAE (masked autoencoder) heatmaps. High base accuracy (SSv2: 52.4\%, UCF-101: 95.4\%, FineGym: 78.0\%) but steep temporal degradation (AUTSL cliff at stride 4$\to$8; FineGym: 67.8pp drop). The MAE pretraining objective is spatial---reconstructing patches---and does not transfer to temporal robustness.}
+  \label{fig:heatmap_videomae}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup1_heatmap_videomamba.pdf}
+  \caption{VideoMamba (SSM selective scan) heatmaps (all 8 datasets). On 5 of 8 datasets, VideoMamba shows a flat heatmap with minimal degradation across strides---the SSM recurrent state aggregates temporal context, providing natural robustness. FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp) are exceptions, revealing the limit of SSM temporal integration under high-frequency transitions.}
+  \label{fig:heatmap_videomamba}
+\end{figure}
+
+% ── S2: Levene variance ───────────────────────────────────────────────────────
+\section{Levene Variance Inflation Analysis}
+\label{sec:sup_levene}
+
+Figure~\ref{fig:levene} plots inter-class standard deviation at stride=1 versus stride=16 for all model-dataset pairs. Points above the diagonal indicate that sparse sampling increases inter-class variability. Significant pairs ($p < 0.05$, Bonferroni-corrected) are highlighted in red.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.8\columnwidth]{images/sup2_levene_variance.pdf}
+  \caption{Levene test: inter-class accuracy std at stride=1 vs.\ stride=16. Points above the dashed diagonal have higher variance under sparse sampling. Color encodes the variance ratio ($\sigma_{s16}/\sigma_{s1}$). \textbf{Key finding}: 67\% of model-dataset pairs show significant variance inflation ($p<0.05$), with the largest increases in VideoMAE/HMDB-51 (2.0$\times$) and R3D-18/HMDB-51 (1.85$\times$). TimeSformer and VideoMamba show stable variance ($\approx$1.1$\times$).}
+  \label{fig:levene}
+\end{figure}
+
+Table~\ref{tab:levene_top} lists the 10 model-dataset pairs with highest variance inflation, quantifying the instability masked by mean accuracy.
+
+\begin{table}[!htbp]
+\centering
+\caption{Top-10 variance inflation cases (stride=1$\to$16, coverage=100\%). All rows significant at $p{<}0.05$.}
+\label{tab:levene_top}
+\scriptsize\tabtight
+\begin{tabular}{l l r r r r}
+\toprule
+Model & Dataset & $\sigma_{s=1}$ & $\sigma_{s=16}$ & Ratio & Levene $p$ \\
+\midrule
+VideoMAE    & HMDB-51      & 0.125 & 0.253 & 2.02$\times$ & $<$0.0001 \\
+R3D-18      & HMDB-51      & 0.164 & 0.303 & 1.85$\times$ & 0.0001 \\
+ViViT       & HMDB-51      & 0.158 & 0.277 & 1.75$\times$ & 0.0004 \\
+SlowFast    & HMDB-51      & 0.187 & 0.326 & 1.74$\times$ & $<$0.0001 \\
+SlowFast    & UCF-101      & 0.146 & 0.240 & 1.65$\times$ & $<$0.0001 \\
+R2+1D       & HMDB-51      & 0.205 & 0.310 & 1.51$\times$ & 0.0021 \\
+MC3-18      & HMDB-51      & 0.177 & 0.262 & 1.48$\times$ & 0.0187 \\
+ViViT       & UCF-101      & 0.110 & 0.147 & 1.34$\times$ & 0.0093 \\
+VideoMAE    & AUTSL        & 0.172 & 0.229 & 1.33$\times$ & 0.0324 \\
+VideoMAE    & UCF-101      & 0.094 & 0.121 & 1.29$\times$ & 0.0239 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── S3: Full ANOVA tables ─────────────────────────────────────────────────────
+\section{Full ANOVA Effect Size Tables}
+\label{sec:sup_anova}
+
+Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid datasets), with error bars indicating standard deviation.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.9\columnwidth]{images/sup3_anova_eta2.pdf}
+  \caption{ANOVA effect sizes: $\eta^2(\text{coverage})$ + $\eta^2(\text{stride})$ per model. Coverage consistently dominates (blue bars, 53--90\% of variance). The stride effect is large for CNNs and ViViT (red bars, 18--35\%) but small for VideoMamba and TimeSformer ($<$12\%), matching the architecture-level aliasing differences in the main sweep. Error bars: std across all 8 datasets.}
+  \label{fig:anova_bar}
+\end{figure}
+
+Table~\ref{tab:anova_full} provides the complete per-dataset $\eta^2$ values for all 8 datasets. All stride effects are significant ($p < 0.05$); coverage effects are significant ($p < 0.001$) in all cases. FineGym ($\eta^2_\text{stride}$ up to 0.50 for SlowFast) and AUTSL show the largest stride effects of all 8 datasets, consistent with their co-equal top ranking on TDS (FineGym=55.9pp, AUTSL=53.0pp; see main paper Sec.~3.1 and supplementary~S11 for the leave-one-out sensitivity of their relative order).
+
+\begin{table}[!htbp]
+\centering
+\caption{Full ANOVA $\eta^2$ per model and dataset. Cov = $\eta^2(\text{coverage})$, Str = $\eta^2(\text{stride})$. Rows shaded darker indicate larger stride effect. FineGym column added with values computed from the full coverage$\times$stride sweep.}
+\label{tab:anova_full}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l *{8}{cc}}
+\toprule
+\multirow{2}{*}{Model} & \multicolumn{2}{c}{AUTSL} & \multicolumn{2}{c}{FineGym} & \multicolumn{2}{c}{SSv2} & \multicolumn{2}{c}{Diving-48} & \multicolumn{2}{c}{HMDB-51} & \multicolumn{2}{c}{DriveAct} & \multicolumn{2}{c}{EPIC}
+ & \multicolumn{2}{c}{UCF-101} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9} \cmidrule(lr){10-11}\cmidrule(lr){12-13}\cmidrule(lr){14-15}\cmidrule(lr){16-17} & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str & Cov & Str
+ & Cov & Str \\
+\midrule
+VMamba & .88 & .09 & .77 & .16 & .88 & .09 & .94 & .04 & .90 & .09 & .83 & .15 & .95 & .05 & .88 & .07 \\
+TSF    & .92 & .06 & .74 & .19 & .87 & .10 & .97 & .02 & .92 & .07 & .84 & .14 & .91 & .08 & .85 & .07 \\
+MC3    & .66 & .18 & .50 & .33 & .54 & .28 & .81 & .13 & .81 & .18 & .75 & .22 & .89 & .11 & .79 & .18 \\
+R3D    & .60 & .21 & .47 & .34 & .60 & .26 & .77 & .15 & .68 & .31 & .58 & .33 & .75 & .24 & .70 & .25 \\
+R2+1D  & .63 & .20 & .50 & .32 & .62 & .26 & .76 & .17 & .72 & .27 & .49 & .38 & .80 & .18 & .76 & .20 \\
+VMAE   & .69 & .18 & .53 & .28 & .69 & .22 & .82 & .12 & .84 & .16 & .43 & .43 & .87 & .11 & .81 & .14 \\
+ViViT  & .61 & .24 & .53 & .32 & .51 & .33 & .69 & .20 & .71 & .27 & .60 & .31 & .80 & .19 & .68 & .26 \\
+SF     & .51 & .29 & .26 & .50 & .44 & .36 & .51 & .33 & .55 & .39 & .39 & .46 & .67 & .30 & .61 & .36 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+% ── S4: Taxonomy ──────────────────────────────────────────────────────────────
+\section{Action Sensitivity Taxonomy}
+\label{sec:sup_taxonomy}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup4_taxonomy.pdf}
+  \caption{Aliasing loss (pp) per sensitivity tier and dataset. Each bar shows mean accuracy drop (stride=1$\to$16) within the tier, annotated with the number of action classes. UCF-101 Low tier: $-0.3$pp (static, appearance-dominated actions lose essentially no accuracy under sparse sampling). AUTSL: all three tiers remain high ($>38$pp), consistent with sign language being high-demand across action subclasses.}
+  \label{fig:taxonomy_full}
+\end{figure}
+
+Table~\ref{tab:taxonomy_detail} lists the threshold values that define tier boundaries per dataset, derived from the 33rd and 67th percentiles of the per-class accuracy drop.
+
+\begin{table}[!htbp]
+\centering
+\caption{Taxonomy tier thresholds (accuracy drop, pp): classes below the Low threshold alias negligibly; classes above the High threshold are severely affected. Thresholds are dataset-specific and computed across all valid architectures.}
+\label{tab:taxonomy_detail}
+\scriptsize\tabtight
+\begin{tabular}{l r r r r r}
+\toprule
+Dataset & Classes & Low threshold & High threshold & High count & Low count \\
+\midrule
+AUTSL         & 226 & 66.9pp & 73.9pp & 75 & 74 \\
+Diving-48     &  47 & 25.0pp & 47.7pp & 16 & 16 \\
+SSv2          & 174 & 59.7pp & 76.9pp & 58 & 57 \\
+HMDB-51       &  51 &  8.4pp & 28.5pp & 17 & 17 \\
+EPIC-Kitchens &  89 &  0.0pp & 19.4pp & 30 & 11 \\
+DriveAct      &  33 & 14.8pp & 51.0pp & 11 & 11 \\
+UCF-101       & 101 &  1.4pp &  7.5pp & 35 & 31 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── S5: Routing curves ────────────────────────────────────────────────────────
+\section{Entropy Routing Curves --- All Models}
+\label{sec:sup_routing}
+
+Figure~\ref{fig:routing_all} shows accuracy vs.\ average frames for all 8 architectures on SSv2 under the entropy routing protocol. Each curve is the result of sweeping confidence threshold $\tau \in [0.10, 0.95]$. Dashed horizontal lines indicate fixed-budget baselines (4f, 16f) and the oracle.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup5_routing_all_models.pdf}
+  \caption{Entropy routing: accuracy vs.\ avg frames (SSv2, 4f cheap $\to$ 16f dense). For architectures with flat 4f$\approx$16f accuracy (TimeSformer, VideoMamba), routing near-trivially selects 4f for most videos and matches dense accuracy. For architectures with large 4f--16f gaps (SlowFast, ViViT), the routing curve provides meaningful operating points between the fixed-budget extremes.}
+  \label{fig:routing_all}
+\end{figure}
+
+Table~\ref{tab:routing_full} provides the full entropy routing results across all models and datasets at the optimal threshold (avg frames $\leq 8$).
+
+\begin{table}[!htbp]
+\centering
+\caption{Entropy routing: best accuracy at avg $\leq8$ frames per model/dataset. Values are Top-1 accuracy (\%). Bold = highest per column.}
+\label{tab:routing_full}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l cccccccc r}
+\toprule
+Model & AUTSL & FineGym & Diving & SSv2 & HMDB & DriveAct & EPIC & UCF & Avg \\
+\midrule
+R3D-18       & 73.3 & 68.5 & 27.6 & 34.6 & 80.2 & 66.1 & 36.7 & 81.6 & 58.6 \\
+MC3-18       & 63.4 & 62.9 & 31.8 & 32.4 & 78.5 & 69.4 & 36.5 & 85.6 & 57.6 \\
+R2+1D        & 74.2 & 72.9 & 36.3 & 40.8 & 73.3 & 59.6 & 34.8 & 89.0 & 60.1 \\
+SlowFast     & 59.5 & 57.8 & 46.6 & 35.0 & 76.3 & 67.4 & 37.4 & 87.9 & 58.5 \\
+TimeSformer  & 67.1 & 66.8 & 38.9 & 42.5 & 80.6 & 68.5 & 32.4 & 91.3 & \textbf{61.0} \\
+ViViT        & 67.2 & 66.1 & 48.9 & 32.2 & 80.1 & 64.3 & 31.3 & 94.3 & 60.6 \\
+VideoMAE     & \textbf{79.5} & \textbf{76.4} & \textbf{52.6} & \textbf{51.9} & \textbf{84.7} & \textbf{69.0} & \textbf{37.8} & \textbf{95.9} & \textbf{68.5} \\
+VideoMamba   & 65.0 & 73.2 & 37.4 & 44.4 & 69.8 & 57.6 & 28.4 & 88.5 & 58.0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+% ── S6: Clip duration ─────────────────────────────────────────────────────────
+\section{Clip Duration Analysis}
+\label{sec:sup_duration}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{images/sup6_clip_duration.pdf}
+  \caption{Aliasing loss (pp) vs.\ clip duration bin for all 8 architectures across multiple datasets. Counter-intuitive finding: \textbf{shorter clips alias more} (Pearson $r=-0.3$ to $-0.8$ across models). Short clips have less temporal redundancy; any frame drop removes a larger fraction of the available evidence. Long clips (${>}4$s) contain natural temporal repetition that compensates for sparse sampling. Exception: Diving-48 longer clips ($>$4s) alias more, consistent with longer dives containing more distinct phase transitions.}
+  \label{fig:duration}
+\end{figure}
+
+% ── S7: Spectral correlation ──────────────────────────────────────────────────
+\section{Spectral Correlation Detail}
+\label{sec:sup_spectral}
+
+We estimated per-class temporal frequency demand using optical-flow magnitude (Farneback algorithm~\cite{farneback2003two}) computed on 5 representative videos per class, sampling 16 frames per video at 112$\times$112px. The mean inter-frame flow magnitude serves as a proxy for temporal activity level. This analysis is exploratory and should not be read as confirmatory evidence for the Nyquist-aliasing hypothesis on its own; see the main paper (Sec.~3.1, Fig.~3 right) for the summary figure including FineGym.
+
+Table~\ref{tab:spectral} reports Pearson correlation between per-class mean flow magnitude and aliasing loss (accuracy drop stride=1$\to$16) per dataset. Prior studies on small closed-vocabulary datasets (UCF-101, Kinetics-400) have reported near-perfect optical-flow--aliasing correlations ($r{=}0.99$) using controlled synthetic flow protocols. Our large-scale evaluation on 8 diverse datasets yields a more nuanced picture ($r=-0.475$ to $0.327$). This has at least four plausible explanations: (1) complex background motion in egocentric datasets (EPIC-Kitchens) decorrelates flow from action content; (2) sign language (AUTSL) involves localized, subtle movements that optical flow at 112px partially misses; (3) our use of raw flow magnitude rather than class-conditioned frequency analysis is a coarser proxy; (4) FineGym's negative correlation suggests that for discrete-event classes (a held position, a precise landing), raw motion magnitude is the wrong signal entirely---what matters is whether sparse sampling catches the one brief moment that defines the class, which low-flow (slow, precise) actions are more likely to lose than high-flow (fast, sustained) ones.
+
+\begin{table}[!htbp]
+\centering
+\caption{Spectral correlation: Pearson $r$ between optical-flow magnitude and per-class aliasing loss. Positive $r$ supports the Nyquist hypothesis; near-zero or negative values suggest flow magnitude is an insufficient (or inverted) proxy for temporal demand.}
+\label{tab:spectral}
+\scriptsize\tabtight
+\begin{tabular}{l r r r}
+\toprule
+Dataset & Pearson $r$ & $p$-value & Significant ($p{<}0.05$) \\
+\midrule
+DriveAct      & 0.327 & 0.065 & Marginal \\
+AUTSL         & 0.285 & $<$0.001 & Yes \\
+SSv2          & 0.184 & $<$0.001 & Yes \\
+HMDB-51       & 0.180 & 0.206 & No \\
+Diving-48     & 0.140 & 0.349 & No \\
+UCF-101       & 0.031 & 0.762 & No \\
+EPIC-Kitchens & --0.002 & 0.985 & No \\
+FineGym       & --0.475 & $<$0.0001 & Yes (inverted) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ── S8: Implementation details ────────────────────────────────────────────────
+\section{Implementation Details}
+\label{sec:sup_impl}
+
+\paragraph{Hardware.}
+Training experiments used NVIDIA A100 (40GB) and H200 NVL (141GB) GPUs (CUDA 13.2). Temporal-sweep evaluation (1,600 configurations) was parallelized across 8 nodes using a custom Slurm auto-submitter. Inference latency measurements used an NVIDIA RTX PRO 6000 Blackwell GPU (96GB) with bfloat16 autocast, batch size=1, 20 warmup iterations, 100 benchmark iterations, and CUDA event timing with explicit synchronization.
+
+\paragraph{Splits, clip sampling, and evaluation determinism.}
+We use the official train/validation/test split when a dataset provides one. When the public split is larger than needed for the controlled sweep, we form a deterministic balanced evaluation subset with approximately 20 validation clips per class; if a class has fewer available clips, all available validation clips are used. The same clip list is reused across all architectures, resolutions, coverages, and strides for a dataset. This makes pairwise stride/resolution differences comparable and avoids model-specific sampling noise. Reported main-paper numbers are validation-set measurements; no test-set tuning is used.
+
+\paragraph{Seeds and uncertainty.}
+Because the full grid requires thousands of model--dataset--resolution evaluations, each model--dataset fine-tuning run uses one fixed training seed and deterministic evaluation. Confidence intervals in S11 are therefore not random-seed intervals: they bootstrap over the 8-architecture pool. Per-class taxonomy and Levene analyses use class-level variation, and routing curves use validation-set threshold sweeps rather than an independently calibrated test threshold.
+
+\paragraph{Frame and crop normalization.}
+Training uses random resized crop, horizontal flip, and ImageNet normalization. Evaluation uses deterministic resize/center-crop at the requested spatial resolution. For every coverage/stride setting, frames are selected from the same leading candidate window. Each architecture receives its expected input length; if a candidate window is too short, we pad by repeating the last available frame, so stride changes alter sampling density rather than tensor shape.
+
+\paragraph{Training hyperparameters.}
+All models fine-tuned for 10 epochs from Kinetics-400 checkpoints. Transformers and VideoMamba: AdamW, lr=$2\times10^{-5}$, weight decay=0.05, batch size=32 per GPU. CNNs: AdamW, lr=$10^{-4}$, batch size=128 per GPU. SlowFast: AdamW, lr=$10^{-4}$, batch size=32 per GPU. All models use cosine learning rate decay with linear warmup (1 epoch). Spatial augmentation: random resized crop, horizontal flip, normalization (ImageNet statistics).
+
+\paragraph{Positional embedding interpolation for Transformers and SSMs.}
+For target-resolution fine-tuning at non-native resolutions, Transformer and SSM positional embeddings must be adapted. \textit{The wrong approach}: using the HuggingFace mismatched-size flag discards positional embeddings entirely, causing a large accuracy cliff (typically 10--20pp worse than our approach). \textit{Our approach}: load the native-resolution checkpoint, then bicubically interpolate spatial positional embeddings from the native grid ($14{\times}14{=}196$ tokens at 224px) to the target grid ($\lfloor r/16\rfloor^2$ tokens at resolution $r$) before copying weights to a model instantiated at the target resolution. This preserves the spatial topology learned during pretraining and ensures fine-tuning starts from a meaningful positional encoding rather than a random one. The same bicubic interpolation applies to TimeSformer, VideoMAE, ViViT, and VideoMamba.
+
+\paragraph{SlowFast spatial pooling fix.}
+The original SlowFast-R50 head uses a fixed $7\times7$ average pooling kernel, assuming 224px input. For non-native resolutions, we replace both head pooling layers with \texttt{AdaptiveAvgPool3d(1)}, enabling forward passes at arbitrary input resolutions without parameter changes.
+
+\paragraph{FineGym dataset details.}
+FineGym~\cite{shao2020finegym} contains 97 fine-grained gymnastics action classes (floor exercise, uneven bars, balance beam, vault; parallel bars, horizontal bar, pommel horse, rings for men). We use the FineGym288 subset (1,960 clips), with deterministic balanced clip lists for the controlled sweeps. Preprocessing: clips are trimmed to the annotated action boundary (mean duration 3.2s at 25fps) and padded with the last frame if shorter than 16 frames.
+
+% ── S9: Multi-dataset spatial resolution ──────────────────────────────────────
+\section{Multi-Dataset Spatial Resolution Results}
+\label{sec:sup_spatial}
+
+Tables~\ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_finegym} extend the spatial robustness analysis from the main paper (Section~4.3) to all 8 datasets. Tables \ref{tab:sup_sp_ssv2}--\ref{tab:sup_sp_epic} show spatial-resolution results at 96--224px. Table~\ref{tab:sup_sp_finegym} shows FineGym target-resolution fine-tuning results at 48--224px (one fine-tuned checkpoint per resolution). \textbf{Bold} = native training resolution. $\Delta_\text{max}$ = largest accuracy drop from native across all tested resolutions.
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{SSv2} (repeated from main paper; no retraining).}
+\label{tab:sup_sp_ssv2}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 35.9 & \textbf{37.1} & 30.3 & 17.2 & $-19.9$pp \\
+MC3-18      & 112px & 32.4 & \textbf{33.6} & 27.8 & 14.8 & $-18.8$pp \\
+R2+1D       & 112px & 40.1 & \textbf{42.6} & 36.2 & 20.8 & $-21.8$pp \\
+SlowFast    & 224px & 27.7 & 32.4 & 45.7 & \textbf{49.5} & $-21.8$pp \\
+\midrule
+TimeSformer & 224px & 39.3 & 39.4 & 41.4 & \textbf{42.3} & $-3.0$pp \\
+ViViT       & 224px & 36.4 & 37.1 & 38.1 & \textbf{38.3} & $-1.9$pp \\
+VideoMAE    & 224px & 48.9 & 49.2 & 51.5 & \textbf{52.3} & $-3.4$pp \\
+VideoMamba  & 224px & 37.5 & 39.3 & 42.5 & \textbf{43.9} & $-6.4$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{UCF-101} (no retraining).}
+\label{tab:sup_sp_ucf}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 79.9 & \textbf{81.2} & 75.3 & 55.1 & $-26.1$pp \\
+MC3-18      & 112px & 82.9 & \textbf{85.4} & 81.0 & 63.9 & $-21.5$pp \\
+R2+1D       & 112px & 88.0 & \textbf{88.6} & 85.1 & 64.9 & $-23.7$pp \\
+SlowFast    & 224px & 69.7 & 75.8 & 87.5 & \textbf{91.4} & $-21.7$pp \\
+\midrule
+TimeSformer & 224px & 89.1 & 89.7 & 90.7 & \textbf{91.5} & $-2.4$pp \\
+ViViT       & 224px & 92.0 & 93.5 & 94.7 & \textbf{95.1} & $-3.1$pp \\
+VideoMAE    & 224px & 95.3 & 95.7 & 96.1 & \textbf{96.4} & $-1.1$pp \\
+VideoMamba  & 224px & 76.7 & 78.7 & 82.6 & \textbf{83.5} & $-6.8$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{HMDB-51} (no retraining).}
+\label{tab:sup_sp_hmdb}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 78.8 & \textbf{80.3} & 75.9 & 59.8 & $-20.5$pp \\
+MC3-18      & 112px & 76.7 & \textbf{78.6} & 74.2 & 51.0 & $-27.6$pp \\
+R2+1D       & 112px & 74.4 & \textbf{73.1} & 68.4 & 50.5 & $-22.6$pp \\
+SlowFast    & 224px & 59.5 & 67.2 & 80.5 & \textbf{81.6} & $-22.1$pp \\
+\midrule
+TimeSformer & 224px & 75.9 & 77.2 & 77.5 & \textbf{78.9} & $-3.0$pp \\
+ViViT       & 224px & 78.0 & 79.0 & 79.9 & \textbf{79.5} & $-1.5$pp \\
+VideoMAE    & 224px & 83.7 & 83.1 & 84.0 & \textbf{83.8} & $-0.7$pp \\
+VideoMamba  & 224px & 59.9 & 63.8 & 67.2 & \textbf{69.8} & $-9.9$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{Diving-48} (no retraining).}
+\label{tab:sup_sp_div}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 26.5 & \textbf{28.8} & 22.1 & 12.8 & $-16.0$pp \\
+MC3-18      & 112px & 30.8 & \textbf{31.6} & 27.3 & 13.7 & $-17.9$pp \\
+R2+1D       & 112px & 33.8 & \textbf{35.3} & 30.1 & 18.7 & $-16.6$pp \\
+SlowFast    & 224px & 18.4 & 25.0 & 43.3 & \textbf{50.5} & $-32.1$pp \\
+\midrule
+TimeSformer & 224px & 37.4 & 39.3 & 38.6 & \textbf{38.1} & $-0.7$pp \\
+ViViT       & 224px & 48.0 & 49.9 & 52.8 & \textbf{53.0} & $-5.0$pp \\
+VideoMAE    & 224px & 48.7 & 48.3 & 50.9 & \textbf{48.6} & $-0.3$pp \\
+VideoMamba  & 224px & 29.2 & 29.1 & 36.1 & \textbf{36.6} & $-7.5$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial resolution results on \textbf{AUTSL} (sign language). CNN degradation is severe under off-native evaluation; SlowFast drops from 79.2\% at 224px to 22.5\% at 96px ($-56.7$pp).}
+\label{tab:sup_sp_autsl}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 72.2 & \textbf{75.0} & 63.0 & 27.9 & $-47.1$pp \\
+MC3-18      & 112px & 59.1 & \textbf{63.7} & 52.7 & 12.2 & $-51.5$pp \\
+R2+1D       & 112px & 73.7 & \textbf{75.9} & 68.9 & 38.4 & $-37.5$pp \\
+SlowFast    & 224px & 22.5 & 32.6 & 70.0 & \textbf{79.2} & $-56.7$pp \\
+\midrule
+TimeSformer & 224px & 65.1 & 66.0 & 68.3 & \textbf{68.5} & $-3.4$pp \\
+ViViT       & 224px & 49.2 & 51.8 & 53.3 & \textbf{53.6} & $-4.4$pp \\
+VideoMAE    & 224px & 77.3 & 78.2 & 79.5 & \textbf{79.6} & $-2.3$pp \\
+VideoMamba  & 224px & 30.4 & 34.2 & 53.3 & \textbf{65.8} & $-35.4$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{DriveAct} (in-cabin activities; no retraining).}
+\label{tab:sup_sp_drive}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 65.0 & \textbf{68.3} & 52.7 & 19.0 & $-49.3$pp \\
+MC3-18      & 112px & 65.2 & \textbf{69.0} & 38.4 &  6.2 & $-62.8$pp \\
+R2+1D       & 112px & 67.4 & \textbf{62.5} & 40.0 & 12.9 & $-49.6$pp \\
+SlowFast    & 224px & 31.7 & 40.2 & 65.8 & \textbf{70.1} & $-38.4$pp \\
+\midrule
+TimeSformer & 224px & 68.3 & 69.2 & 69.6 & \textbf{70.3} & $-2.0$pp \\
+ViViT       & 224px & 59.4 & 58.7 & 62.1 & \textbf{63.4} & $-4.7$pp \\
+VideoMAE    & 224px & 71.4 & 69.9 & 71.7 & \textbf{73.0} & $-3.1$pp \\
+VideoMamba  & 224px & 35.0 & 38.2 & 46.9 & \textbf{57.8} & $-22.8$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Spatial robustness on \textbf{EPIC-Kitchens} (egocentric cooking; no retraining).}
+\label{tab:sup_sp_epic}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrr r}
+\toprule
+Model & Native & 96px & 112px & 160px & 224px & $\Delta_\text{max}$ \\
+\midrule
+R3D-18      & 112px & 33.3 & \textbf{37.2} & 26.7 &  8.6 & $-28.6$pp \\
+MC3-18      & 112px & 36.1 & \textbf{36.2} & 27.2 &  9.4 & $-26.8$pp \\
+R2+1D       & 112px & 32.8 & \textbf{35.5} & 27.6 & 11.8 & $-23.7$pp \\
+SlowFast    & 224px & 11.3 & 17.7 & 31.3 & \textbf{37.5} & $-26.2$pp \\
+\midrule
+TimeSformer & 224px & 20.5 & 19.2 & 25.6 & \textbf{31.7} & $-12.5$pp \\
+ViViT       & 224px & 30.2 & 34.1 & 36.1 & \textbf{37.9} & $-7.7$pp \\
+VideoMAE    & 224px & 30.9 & 32.6 & 36.5 & \textbf{38.6} & $-7.7$pp \\
+VideoMamba  & 224px & 11.1 & 12.6 & 20.8 & \textbf{28.3} & $-17.2$pp \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{\textbf{FineGym} spatial resolution results after target-resolution fine-tuning (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint). Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM). Unlike other datasets in S9 (cross-resolution without retraining), FineGym shows CNN performance that \emph{improves beyond native} after fine-tuning at higher resolutions (R3D-18: 71.5\%@112px$\to$76.1\%@224px), consistent with higher spatial resolution aiding gymnastics pose discrimination.}
+\label{tab:sup_sp_finegym}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l r rrrrr}
+\toprule
+Model & Native & 48px & 96px & 112px & 160px & 224px \\
+\midrule
+R3D-18      & 112px & 56.4 & 72.6 & \textbf{71.5} & 74.9 & 76.1 \\
+MC3-18      & 112px & 46.3 & 62.3 & \textbf{64.3} & 73.8 & 65.7 \\
+R2+1D       & 112px & 61.6 & 73.1 & \textbf{76.8} & 79.4 & 76.2 \\
+SlowFast    & 224px & 36.3 & 67.2 & 69.6 & 76.3 & \textbf{78.2} \\
+\midrule
+TimeSformer & 224px & 24.3 & 48.9 & 50.8 & 62.2 & \textbf{66.4} \\
+ViViT       & 224px & 21.3 & 39.1 & 40.8 & 49.6 & \textbf{69.9} \\
+VideoMAE    & 224px & 25.4 & 51.1 & 57.5 & 64.8 & \textbf{78.0} \\
+VideoMamba  & 224px & 29.1 & 51.6 & 58.2 & 66.0 & \textbf{73.2} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+% ── S10: Dashboard and code availability ──────────────────────────────────────
+\section{Interactive Dashboard and Code Availability}
+\label{sec:sup_dashboard}
+
+\paragraph{Interactive visualization dashboard.}
+An anonymized interactive dashboard is included with the supplementary material for review. The public dashboard URL will be released after the review period. The dashboard provides:
+\begin{enumerate}[leftmargin=*,topsep=2pt,itemsep=1pt]
+\item \textbf{Temporal explorer}: coverage$\times$stride heatmaps per model and
+  dataset, with configurable scaling and stride annotations.
+\item \textbf{Spatial browser}: accuracy curves across resolutions for all
+  8 models and datasets; target resolution tuning by family.
+\item \textbf{Recommender}: given a target dataset, latency budget, frame rate,
+  and deployment context, the system applies deterministic rules from the paper
+  tables to recommend a model--resolution--stride operating point. Any optional
+  natural-language summarizer is disabled by default for anonymous review and is
+  not used for any scientific result.
+\item \textbf{TDS comparison}: rank any subset of the 8 datasets by temporal demand,
+  with model-specific breakdowns and Spearman correlation display.
+\item \textbf{Routing simulator}: entropy threshold sweep for any model on any dataset,
+  with visual Pareto-frontier display.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+\centering
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app1.png}
+  \small{(a) Accuracy Explorer: native resolution (stride=16, cov=100\%, 224px). Summary table shows top-1 across all 8 datasets.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app2.png}
+  \small{(b) Accuracy Explorer: low resolution (stride=1, cov=75\%, 48px). Retrained CNN checkpoints are used at 48px.}
+\end{minipage}\\[8pt]
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app3.png}
+  \small{(c) Architecture Recommender: FineGym example. The deterministic rules identify FineGym as a high-TDS domain (55.9pp), require stride$\leq$2, and rank models by accuracy under the user's latency budget.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{images/app4.png}
+  \small{(d) Latency \& Efficiency: measured forward-pass latency (ms/clip, bfloat16, RTX PRO 6000) vs.\ spatial resolution for all 8 architectures. VideoMamba (green) is 4--8$\times$ slower than VideoMAE across all resolutions.}
+\end{minipage}
+\caption{Interactive dashboard screenshots from the anonymized supplementary package. The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. The Architecture Recommender (c) provides deterministic deployment guidance grounded in measured data. The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.}
+\label{fig:dashboard_screenshots}
+\end{figure}
+
+\paragraph{Code availability.}
+Evaluation scripts, model fine-tuning code, result tables, and the Streamlit dashboard source are provided as an anonymized supplementary package for review. This includes the target-resolution pipeline with bicubic positional embedding interpolation. The public repository will be released after review.
+
+% ── S11: Leave-one-architecture-out TDS stability ─────────────────────────────
+\section{Leave-One-Architecture-Out \texorpdfstring{\TDS{}}{TDS} Stability}
+\label{sec:sup_loo}
+
+To assess whether the \TDS{} ranking depends on the specific 8-architecture pool evaluated, we recompute \TDS{} for all 8 datasets after removing each architecture in turn (7-architecture pools) and compare the resulting ranking to the full 8-architecture ranking via Spearman $\rho$.
+
+\begin{table}[!htbp]
+\centering
+\caption{Leave-one-architecture-out \TDS{} ranking stability. $\rho$ is the Spearman correlation between the 8-dataset ranking computed with the named architecture excluded (7-architecture pool) and the full 8-architecture ranking.}
+\label{tab:loo_tds}
+\scriptsize\tabtight
+\begin{tabular}{l r r}
+\toprule
+Excluded architecture & Spearman $\rho$ & $p$ \\
+\midrule
+R3D-18       & 1.000 & $<10^{-4}$ \\
+MC3-18       & 1.000 & $<10^{-4}$ \\
+R2+1D        & 1.000 & $<10^{-4}$ \\
+SlowFast     & 1.000 & $<10^{-4}$ \\
+TimeSformer  & 1.000 & $<10^{-4}$ \\
+ViViT        & 1.000 & $<10^{-4}$ \\
+VideoMAE     & 1.000 & $<10^{-4}$ \\
+VideoMamba   & 0.976 & $3.3\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For 7 of 8 leave-one-out pools, the ranking is \emph{exactly} identical to the full-pool ranking ($\rho=1.00$). Removing VideoMamba is the single exception ($\rho=0.976$): it swaps the \#1/\#2 positions, since excluding VideoMamba raises AUTSL's average (58.3pp, from 53.0pp) and lowers FineGym's average (58.2pp, from 55.9pp)---VideoMamba is comparatively robust on AUTSL (16.0pp, below its own median drop) and comparatively fragile on FineGym (40.8pp, its worst dataset), so its presence in the pool is precisely what tips FineGym narrowly ahead of AUTSL. Ranks 3--8 (SSv2 through UCF-101) are unaffected by any single exclusion. We therefore report FineGym and AUTSL as co-equal highest-\TDS{} domains in the main paper rather than asserting a strict order, while the rest of the ranking is robust under leave-one-architecture-out by this test.
+
+\subsection{Architecture-Family Ablation}
+\label{sec:sup_family_ablation}
+
+Leave-one-out removes a single architecture at a time; a stronger test removes an entire family. We recompute \TDS{} under three restricted pools: \textbf{CNN-only} ($n{=}4$: R3D-18, MC3-18, R2+1D, SlowFast), \textbf{Transformer-only} ($n{=}3$: TimeSformer, ViViT, VideoMAE), and \textbf{Transformer+SSM} ($n{=}4$: adding VideoMamba). Table~\ref{tab:family_ablation} reports \TDS{} under each pool and Spearman $\rho$ against the full ranking.
+
+\begin{table}[!htbp]
+\centering
+\caption{\TDS{} per dataset under architecture-family ablation pools, compared to the full 8-architecture ranking (sorted by full-pool \TDS{}).}
+\label{tab:family_ablation}
+\scriptsize\tabtight
+\begin{tabular}{l r r r r}
+\toprule
+Dataset & Full ($n{=}8$) & CNN-only ($n{=}4$) & Transf.-only ($n{=}3$) & Transf.+SSM ($n{=}4$) \\
+\midrule
+FineGym       & 55.92 & 62.05 & 53.06 & 49.80 \\
+AUTSL         & 53.02 & 67.20 & 46.45 & 38.83 \\
+SSv2          & 27.29 & 32.16 & 25.95 & 22.43 \\
+DriveAct      & 21.48 & 24.05 & 23.21 & 18.92 \\
+Diving-48     & 19.16 & 21.74 & 20.59 & 16.59 \\
+HMDB-51       & 16.47 & 21.47 & 14.54 & 11.47 \\
+EPIC-Kitchens &  9.77 & 12.89 &  8.27 &  6.64 \\
+UCF-101       &  4.86 &  7.36 &  2.90 &  2.35 \\
+\midrule
+Spearman $\rho$ vs.\ full & --- & 0.976 & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ranking is essentially invariant to architecture-family composition: removing all four CNNs, keeping only the three Transformers, or keeping Transformers+SSM all leave ranks 3--8 in identical order, and only the CNN-only pool reproduces the same FineGym/AUTSL swap already characterized in the leave-one-out test above ($\rho=0.976$ in both cases, for the same reason: CNNs are comparatively more fragile on AUTSL's fine handshape transitions than on FineGym's phase boundaries, which narrows the gap). This directly addresses whether \TDS{} reflects a property of the dataset pool versus an artifact of including any one architecture family: under every family-restricted pool we tested, the ranking is the same dataset ordering reported in the main paper, with the sole exception of the already-disclosed \#1/\#2 ambiguity.
+
+\subsection{Bootstrap Confidence Intervals}
+\label{sec:sup_bootstrap}
+
+To quantify ranking uncertainty directly rather than only testing discrete leave-one-out/family pools, we bootstrap over architectures: we resample 8 architectures with replacement ($B{=}10{,}000$ resamples) from the original pool, recompute \TDS{} for each dataset on each resample, and report the resulting 95\% percentile confidence interval in Table~\ref{tab:bootstrap_ci}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Bootstrap 95\% CI for \TDS{} per dataset (resampling 8 architectures with replacement, $B{=}10{,}000$).}
+\label{tab:bootstrap_ci}
+\scriptsize\tabtight
+\begin{tabular}{l r r}
+\toprule
+Dataset & \TDS{} (bootstrap mean) & 95\% CI \\
+\midrule
+FineGym       & 55.99 & [47.24, 63.86] \\
+AUTSL         & 53.13 & [36.02, 67.03] \\
+SSv2          & 27.35 & [20.40, 33.92] \\
+DriveAct      & 21.57 & [13.92, 29.35] \\
+Diving-48     & 19.23 & [10.67, 28.37] \\
+HMDB-51       & 16.54 & [9.53, 24.21] \\
+EPIC-Kitchens &  9.80 & [6.25, 13.22] \\
+UCF-101       &  4.88 & [2.18, 8.36] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All eight 95\% CIs are disjoint from zero, indicating non-zero temporal demand at the architecture-pool level. AUTSL's CI is the widest (width 31.0pp) because its per-architecture drops are the most heterogeneous (TimeSformer and VideoMamba near-flat, CNNs collapse sharply), while EPIC-Kitchens and UCF-101 have the narrowest CIs, consistent with their low and relatively architecture-independent \TDS{}.
+
+We additionally bootstrap the FineGym$-$AUTSL gap directly (same resampling procedure, computing $\TDS(\text{FineGym})-\TDS(\text{AUTSL})$ on each resample): mean $=+2.92$pp, 95\% CI $=[-4.58,\,+11.73]$, with FineGym exceeding AUTSL in 73.9\% of resamples. The confidence interval includes zero, which is the appropriate statistical test of the co-equal-ranking claim: the data are consistent with FineGym narrowly leading AUTSL in expectation, but do not support rejecting the null hypothesis of equal \TDS{} at the 95\% level. This is the quantitative basis, rather than only the leave-one-out swap, for reporting FineGym and AUTSL as co-equal highest-\TDS{} domains in the main paper.
+
+% ── S12: Spectral and evidence-localization checks ───────────────────────────
+\section{Spectral and Evidence-Localization Checks}
+\label{sec:sup_nyquist}
+
+The main paper's Nyquist--Shannon framing (Sec.~\ref{sec:intro}) is conceptual: we characterize aliasing through accuracy degradation under controlled stride and coverage sweeps rather than by directly measuring action-frequency spectra. Here we report two diagnostics. The first is a deliberately literal whole-frame optical-flow spectral proxy, which fails in the opposite direction from a naive signal-level Nyquist prediction. The second asks whether classifier evidence is temporally localized, which is better aligned with \TDS{} but should still be read as a label-space diagnostic, not classical spectral validation.
+
+\paragraph{Methodology.} For each of 8 datasets and 5 resolutions (48, 96, 112, 160, 224\,px), we sample up to 12 classes $\times$ 2 videos. We decode up to 64 \emph{consecutive} frames in native order, resize to the target resolution, and compute inter-frame optical-flow magnitude (Farneback) as a temporal signal sampled once per original frame. We estimate each signal's spectral cutoff frequency $f_c$ (90\% cumulative periodogram power, cycles/frame) and average over sampled videos to obtain one $f_c$ per (dataset, resolution) pair. We pair each $f_c$ with empirical stride-sensitivity at the same resolution: mean accuracy drop from stride=1 to stride=16 at coverage=100\%, averaged over 8 architectures and read from the existing sweep. This yields $8\times5=40$ (dataset, resolution) points.
+
+\begin{table}[!htbp]
+\centering
+\caption{Mean flow-derived spectral cutoff frequency $f_c$, videos per resolution, and mean empirical stride-sensitivity, averaged over the 5 tested resolutions per dataset and sorted by stride-sensitivity.}
+\label{tab:nyquist_v2}
+\scriptsize\tabtight
+\begin{tabular}{l r r r}
+\toprule
+Dataset & Mean $f_c$ & $n$/res. & Mean stride-sens. \\
+\midrule
+FineGym       & 0.188 & 24 & 46.30 \\
+AUTSL         & 0.121 & 24 & 45.61 \\
+SSv2          & 0.339 & 24 & 25.70 \\
+DriveAct      & 0.192 & 21 & 18.65 \\
+HMDB-51       & 0.383 & 24 & 16.57 \\
+Diving-48     & 0.182 & 24 & 15.21 \\
+EPIC-Kitchens & 0.248 & 23 &  9.70 \\
+UCF-101       & 0.387 & 24 &  5.45 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Result.} Pooling across all 40 (dataset, resolution) points, $f_c$ is significantly \emph{negatively} correlated with stride-sensitivity (Spearman $\rho=-0.635$, permutation $p=1.0\times10^{-5}$, $n=40$)---the opposite sign from the naive prediction that higher whole-frame temporal-frequency content should require denser sampling. FineGym integrates cleanly into this pattern: it has the highest mean stride-sensitivity (46.30pp) but a moderate whole-frame cutoff frequency ($f_c=0.188$ cycles/frame), close to DriveAct and Diving-48 rather than UCF-101/HMDB-51.
+
+\paragraph{Interpretation.} This is the same qualitative inversion already reported for FineGym in the main paper ($r=-0.475$), now shown across all 8 datasets with real statistical power rather than being a single-dataset anomaly. UCF-101 and HMDB-51---appearance- and sports-driven domains with large whole-body and camera motion---have the highest flow-derived cutoff frequencies but among the lowest stride-sensitivity, because the action remains identifiable from almost any sampled frame. AUTSL and FineGym show the opposite behavior: their discriminative evidence is localized in handshape changes or brief gymnastics phase events, which are diluted by a whole-frame flow aggregate. We conclude that whole-frame optical-flow frequency content is a systematically \emph{anti-correlated}, not merely noisy, proxy for the temporal demand that matters to a classifier.
+
+\subsection*{Label-Space Evidence-Localization Checks}
+
+The inversion above arises because whole-frame optical flow measures \emph{pixel-level motion magnitude}, not the temporal localisation of \emph{discriminative evidence}. We conduct three complementary tests on FineGym ($n=97$ classes) using the fine-tuned TimeSformer checkpoint, which probe whether the model's evidence is temporally concentrated.
+
+\paragraph{Test A: Temporal burstiness of optical flow (CPU).} Per-class, we compute the temporal coefficient of variation of inter-frame flow magnitudes ($\mathrm{CV} = \sigma_\mathrm{time}/\mu_\mathrm{time}$). After controlling for mean flow via partial correlation, the temporal standard deviation positively predicts aliasing: $\partial r = +0.235$, $p=0.021$. This suggests that burstiness, not mean flow magnitude, is closer to the classifier-evidence signal, though the confound ($r(\sigma,\mu)=+0.909$) limits interpretability.
+
+\paragraph{Test B: TimeSformer temporal attention entropy (GPU).} We register forward hooks on the temporal self-attention Dropout layer in all 12 TimeSformer blocks, capturing the $[196\times12\times8\times8]$ temporal attention weight tensor per clip. The mean entropy of the time-over-time attention distribution (Nat, over spatial patches and heads) positively correlates with aliasing: $r=+0.317$, $p=0.0015$. Classes where the model spreads temporal attention broadly alias more, consistent with the idea that evidence distributed across several brief instants is more vulnerable to frame removal.
+
+\paragraph{Test C: Sliding-window confidence concentration (GPU, most direct).} For each clip we decode 48 consecutive frames, slide a window of width $T=8$ (the model input length) with stride 4, yielding 11 windows per clip, and record the softmax probability assigned to the correct class at each position. The temporal \emph{concentration} of this confidence profile ($1 - H/\log n_\mathrm{windows}$) measures how localised in time the model finds class evidence. Concentration positively predicts aliasing: $r=+0.263$, $p=0.009$. After controlling for mean optical-flow magnitude, the partial correlation strengthens: $\partial r = +0.385$, $p<0.001$ ($n=97$ classes).
+
+\paragraph{Summary.} Table~\ref{tab:label_space_nyquist} collects the three results.
+
+\begin{table}[!htbp]
+\centering
+\caption{Label-space evidence-localization checks on FineGym ($n=97$ classes). All three tests use a fine-tuned TimeSformer trained on FineGym. Partial $r$ controls for whole-frame optical-flow magnitude.}
+\label{tab:label_space_nyquist}
+\scriptsize\tabtight
+\begin{tabular}{l l r r r r}
+\toprule
+Test & Feature & $r$ & $p$ & partial $r$ & $p$ \\
+\midrule
+A: Optical flow burstiness & $\sigma_t(\text{flow}) / \mu_t(\text{flow})$ & $-0.421$ & ${<}0.001$ & $+0.235$ & $0.021$ \\
+B: Temporal attention entropy & Mean attention $H$ (nats) & $+0.317$ & $0.0015$ & --- & --- \\
+C: Sliding-window confidence & Confidence concentration & $+0.263$ & $0.009$ & $\mathbf{+0.385}$ & $\mathbf{<0.001}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Test C provides the clearest classifier-level diagnostic: temporal concentration of \emph{correct-class confidence} in a fine-tuned model positively predicts per-class aliasing after removing the motion-level confound. This supports an evidence-localization interpretation: classes where the model is confident only within a narrow temporal window are more likely to lose that window under coarse stride. It does not establish literal spectral aliasing of the video signal.
+
+\subsection*{Generalisation of Test C to All 8 Datasets}
+\label{sec:sup_sw_generalisation}
+
+We generalise the sliding-window confidence-concentration test (Test C) from the single FineGym/TimeSformer case to all 8 datasets and an ensemble of architectures. For each (model, dataset) we decode 48 consecutive frames per clip, slide a window of width $T$ (the model's input length) with stride chosen to yield ${\approx}11$ windows, and record the correct-class softmax probability at each position; per class we average the concentration $1-H/\log n_\mathrm{windows}$ over clips. We then correlate per-class concentration with the per-class aliasing loss (mean accuracy drop stride=1$\to$16 from the taxonomy) via Spearman $\rho$.
+
+\paragraph{Window-geometry constraint.} The metric requires the decoded sequence to be substantially longer than the window $T$, so that windows are well separated and concentration reflects genuine temporal localisation. With 48 decoded frames, models with $T\le16$ satisfy this (neighbouring-window overlap $\le81\%$), but the two models with $T=32$ (ViViT, SlowFast) collapse to stride 1 and $97\%$ overlap: their 17 windows differ by a single frame, the confidence profile is near-flat, and the concentration measure floors out (mean concentration $0.10$ vs.\ $0.22$--$0.36$ for $T\le16$ models). On short-clip datasets such as FineGym (median ${\approx}37$ source frames) a 32-frame window cannot be slid at all. We therefore restrict the ensemble to the 6 architectures with $T\le16$ (TimeSformer, VideoMAE, R3D-18, MC3-18, R2+1D, VideoMamba); the $T=32$ models are a measurement artifact of the protocol rather than a property of the data.
+
+\paragraph{Result.} Table~\ref{tab:sw_ensemble} reports the ensemble correlation per dataset. The relationship is \emph{positive in all 8 datasets} (pooled Spearman $\rho=+0.257$), and significant ($p<0.05$) in 4: HMDB-51, UCF-101, DriveAct, and SSv2. The four non-significant datasets are positive but weaker: FineGym ($\rho=+0.14$; Pearson $+0.20$, $p=0.045$) is damped by its visually homogeneous gymnastics domain, EPIC-Kitchens by egocentric camera motion, AUTSL because aliasing there is governed by spatial gesture trajectories rather than temporal localisation, and Diving-48 because all classes share the same approach--flight--entry structure, leaving little inter-class variance in concentration. We therefore treat this as converging evidence that temporal concentration of recognizer evidence is related to aliasing susceptibility, not as a causal or sampling-theoretic proof.
+
+\begin{table}[!htbp]
+\centering
+\caption{Sliding-window confidence-concentration test generalised to all 8 datasets. Spearman $\rho$ between per-class confidence concentration and per-class aliasing loss, using a 6-architecture ensemble with window $T\le16$ (ViViT and SlowFast, $T=32$, excluded; see window-geometry constraint). Positive in 8/8 datasets; \textbf{bold} = $p<0.05$. SSv2 uses 4 models because the sliding-window pass for VideoMAE and R3D-18 on SSv2 was unavailable.}
+\label{tab:sw_ensemble}
+\scriptsize\tabtight
+\begin{tabular}{l r r r r}
+\toprule
+Dataset & Classes & Models & Spearman $\rho$ & $p$ \\
+\midrule
+HMDB-51       &  51 & 6 & \textbf{+0.606} & ${<}0.001$ \\
+UCF-101       & 101 & 6 & \textbf{+0.442} & ${<}0.001$ \\
+DriveAct      &  33 & 6 & \textbf{+0.430} & 0.013 \\
+SSv2          & 174 & 4 & \textbf{+0.269} & ${<}0.001$ \\
+FineGym       &  97 & 6 & +0.138 & 0.177 \\
+EPIC-Kitchens &  89 & 6 & +0.093 & 0.386 \\
+AUTSL         & 226 & 6 & +0.074 & 0.270 \\
+Diving-48     &  47 & 6 & +0.001 & 0.994 \\
+\midrule
+Pooled mean   &     &   & \textbf{+0.257} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Generalisation of Test B (TimeSformer temporal attention entropy) to the remaining datasets requires per-dataset attention extraction and is left to future work; the sliding-window concentration test (Test C), being architecture-agnostic, is the one we generalise here.
+
+% ── S13: Additional robustness checks ───────────────────────────────────────
+\section{Additional Robustness Checks}
+\label{sec:sup_extra_checks}
+
+\paragraph{Observational architecture interpretation.}
+The architecture comparison in the main paper is intentionally phrased as an empirical association rather than a controlled causal ablation. Attention layout, state-space recurrence, tokenization, pretraining objective, parameter count, input length, native resolution, and optimization all covary across the evaluated architectures. A definitive mechanism test would require holding the backbone fixed while swapping only temporal aggregation modules. Our contribution is the large controlled sampling sweep showing that, within this architecture pool, models with global divided attention or recurrent state integration are consistently less sensitive to temporal subsampling than CNNs and factorized-attention Transformers.
+
+\paragraph{Dense-accuracy headroom does not explain \TDS{}.}
+Because several datasets are evaluated on balanced subsets or fixed 20-clips-per-class protocols, absolute gaps to external leaderboard numbers are not directly comparable. The relevant risk is whether under-optimized model--dataset pairs inflate \TDS{} simply because they have more room to lose accuracy. We therefore compute an internal dense-accuracy headroom: for each dataset, the gap between each model's stride=1 accuracy and the best stride=1 accuracy achieved by any model in our pool. If under-optimization drove aliasing loss, this headroom should correlate positively with stride=1$\to$16 drop. It does not: across the 64 model--dataset pairs, Spearman $\rho=-0.22$ ($p=0.079$); at the dataset level, mean headroom vs.\ \TDS{} gives $\rho=0.36$ ($p=0.385$).
+
+\begin{table}[!htbp]
+\centering
+\caption{Dense-accuracy headroom check. Headroom is the mean gap from each model's stride=1 accuracy to the best stride=1 accuracy achieved by any model on the same dataset. It is not significantly correlated with \TDS{}, suggesting that temporal sensitivity is not an artifact of under-optimized dense accuracy.}
+\label{tab:headroom_check}
+\scriptsize\tabtight
+\begin{tabular}{l r r r r}
+\toprule
+Dataset & Mean stride=1 & Best stride=1 & Mean headroom & \TDS{} \\
+\midrule
+FineGym       & 73.8 & 79.9 &  6.1 & 55.9 \\
+AUTSL         & 72.9 & 82.3 &  9.3 & 53.0 \\
+SSv2          & 42.5 & 52.4 &  9.9 & 27.6 \\
+DriveAct      & 67.4 & 73.9 &  6.5 & 21.9 \\
+Diving-48     & 40.3 & 53.0 & 12.7 & 19.2 \\
+HMDB-51       & 78.2 & 84.0 &  5.8 & 16.6 \\
+EPIC-Kitchens & 34.9 & 39.4 &  4.5 &  9.7 \\
+UCF-101       & 89.0 & 95.5 &  6.5 &  4.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Coverage--stride interaction.}
+Figures in S1 visualize the complete coverage$\times$stride grids. To test additivity, we average accuracy over architectures for one high-\TDS{} and one low-\TDS{} dataset, then decompose each 5$\times$5 grid into row/column effects plus an interaction residual. FineGym has a meaningful interaction component: 15.0\% of grid variance, with RMSE 8.3pp. Low coverage is poor regardless of stride, while high coverage exposes the stride cliff. UCF-101 is closer to additive (4.0\%; RMSE 1.7pp).
+
+\begin{table}[!htbp]
+\centering
+\caption{Mean accuracy (\%) over architectures for a high-\TDS{} dataset (FineGym) and a low-\TDS{} dataset (UCF-101). Rows are coverage; columns are stride.}
+\label{tab:coverage_stride_examples}
+\scriptsize\tabtight
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{l rrrrr @{\hskip18pt} l rrrrr}
+\toprule
+\multicolumn{6}{c}{FineGym} & \multicolumn{6}{c}{UCF-101} \\
+\cmidrule(lr){1-6}\cmidrule(lr){7-12}
+Coverage & s1 & s2 & s4 & s8 & s16 & Coverage & s1 & s2 & s4 & s8 & s16 \\
+\midrule
+10\%  &  8.0 &  7.2 &  6.4 &  5.8 &  5.8 & 10\%  & 74.5 & 73.2 & 69.5 & 64.2 & 57.7 \\
+25\%  & 16.9 & 15.6 & 12.4 &  8.3 &  6.4 & 25\%  & 81.7 & 81.6 & 80.1 & 75.0 & 67.8 \\
+50\%  & 42.9 & 40.7 & 28.7 & 17.1 &  9.3 & 50\%  & 86.6 & 86.6 & 85.7 & 82.9 & 76.6 \\
+75\%  & 63.4 & 59.6 & 42.3 & 25.1 & 13.1 & 75\%  & 88.4 & 88.7 & 88.5 & 86.8 & 81.4 \\
+100\% & 73.8 & 68.0 & 49.8 & 29.8 & 15.7 & 100\% & 89.0 & 89.0 & 89.0 & 88.1 & 84.1 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\paragraph{Entropy-threshold calibration.}
+The entropy router is not trained; it reuses two fixed inference outputs (4-frame cheap and 16-frame dense) and sweeps a scalar confidence threshold to trace a validation-set Pareto frontier. Thus the reported threshold should not be interpreted as calibrated on an independent test split. The threshold-free baselines (fixed 4f, fixed 8f, fixed 16f) and the oracle bound are included to expose this dependence. In deployment, the threshold should be selected on a held-out calibration split or with nested validation; the current result is best read as evidence that confidence contains useful routing signal, not as a fully validated routing policy.
+
+% ── S14: What the stride axis varies ─────────────────────────────────────────
+\section{\rev{What the Stride Axis Varies}}
+\revnote
+\label{sec:sup_padding}
+
+Reviewers asked whether our temporal sweep measures aliasing or evidence loss.
+This section documents the sampler's behaviour and the measurements that settle
+the question.
+
+\paragraph{Sampler.} For a clip of $T$ frames at coverage $\mathcal{C}$ and
+stride $s$, with model frame budget $B$, the candidate pool is
+$\{0,s,2s,\dots\}$ within the first $\lfloor T\mathcal{C}/100\rfloor$ frames.
+If the pool holds at least $B$ entries it is re-uniformised to exactly $B$ by
+linear interpolation over its index range; otherwise the shortfall is filled by
+repeating the last candidate. Table~\ref{tab:sup_indices} makes both regimes
+concrete.
+
+\begin{table}[!htbp]
+\centering
+\caption{Frame positions actually supplied to a $B{=}16$ model at
+$\mathcal{C}{=}100\%$. For a long clip the selected positions are nearly
+independent of stride; for a short clip the input degenerates into a few
+distinct frames followed by a static tail.}
+\label{tab:sup_indices}
+\scriptsize\tabtight
+\begin{tabular}{l l r l}
+\toprule
+Clip & $s$ & Distinct & Positions (last six) \\
+\midrule
+$T{=}400$ & 1  & 16 & 266, 293, 319, 346, 372, 399 \\
+$T{=}400$ & 4  & 16 & 264, 292, 316, 344, 368, 396 \\
+$T{=}400$ & 16 & 16 & 256, 288, 304, 336, 352, 384 \\
+\midrule
+$T{=}60$  & 1  & 16 & 39, 43, 47, 51, 55, 59 \\
+$T{=}60$  & 8  &  8 & 56, 56, 56, 56, 56, 56 \\
+$T{=}60$  & 16 &  4 & 48, 48, 48, 48, 48, 48 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Sampling interval in seconds.} Expressing the axis physically
+(Table~\ref{tab:sup_seconds}) shows the same thing without reference to the
+implementation: over most of its range the stride axis does not change the rate
+at which the clip is sampled. Frame rates here are measured from the files, not
+assumed; three datasets differ from the values used in our earlier duration
+analysis (HMDB-51 is 30 not 25\,fps, AUTSL 30 not 25, EPIC-Kitchens 50 not 60).
+
+\begin{table}[!htbp]
+\centering
+\caption{Median seconds between sampled frames at $\mathcal{C}{=}100\%$. At a
+fixed nominal stride the realised interval differs by up to $3.9\times$ across
+datasets, so equal-stride comparisons are not equal-rate comparisons.}
+\label{tab:sup_seconds}
+\scriptsize\tabtight
+\begin{tabular}{l r rrrrr}
+\toprule
+Dataset & fps & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ \\
+\midrule
+UCF-101       & 25 & 0.395 & 0.395 & 0.395 & 0.395 & 0.617 \\
+Diving-48     & 25 & 0.265 & 0.265 & 0.265 & 0.314 & 0.600 \\
+SSv2          & 12 & 0.255 & 0.255 & 0.325 & 0.620 & 1.167 \\
+DriveAct      & 15 & 0.183 & 0.183 & 0.256 & 0.500 & 1.000 \\
+HMDB-51       & 30 & 0.167 & 0.167 & 0.167 & 0.260 & 0.504 \\
+AUTSL         & 30 & 0.125 & 0.125 & 0.131 & 0.252 & 0.475 \\
+EPIC-Kitchens & 50 & 0.120 & 0.120 & 0.120 & 0.158 & 0.301 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The effect is confined to the shortfall regime.} Restricting to clips
+whose candidate pool never falls below $B$ at $s{=}16$, the stride $1\to16$
+accuracy difference is $-0.51$pp on average, against $+10.74$pp over all clips.
+This holds in \textbf{21 of 21} model--dataset pairs with at least 20 such clips.
+On AUTSL, SSv2 and DriveAct no clip escapes the shortfall regime at $s{=}16$, so
+the entire reported effect on those datasets is measured inside it. The unpadded
+subset is necessarily the longer clips, so this comparison is length-confounded
+on its own; it should be read together with the index and interval tables above,
+which do not depend on any subsetting.
+
+\paragraph{Relation to \TDS{}.} Across datasets, the fraction of clips in the
+shortfall regime correlates with \TDS{} at Spearman $0.964$. The relationship is
+gating rather than explanatory: among AUTSL, SSv2 and DriveAct, all of which are
+fully saturated, \TDS{} still spans $21.9$--$53.0$pp. Clip length relative to
+frame budget determines whether temporal demand is expressed at all; dataset
+content determines how large it is.
+
+% ── S15: Matched-evidence protocol ───────────────────────────────────────────
+\section{\rev{Matched-Evidence Architecture Comparison}}
+\revnote
+\label{sec:sup_matched}
+
+Because frame budget $B$ governs when each architecture enters the shortfall
+regime, and $B$ is rank-correlated with the reported drop at Spearman $0.849$
+($p{=}0.008$), the uncontrolled comparison cannot isolate temporal aggregation
+design. We therefore supply every architecture the same $k$ distinct frames at
+the same positions, uniformly spanning the clip, resampled to each model's own
+input length by uniform interpolation rather than end-repetition. Only
+$k\leq8$ is strictly matched, since the smallest budget in the pool is 8.
+
+Two readings of the result differ, and both belong in the record. Ranked by
+accuracy \emph{drop} between $k{=}8$ and $k{=}2$, the ordering does not
+reproduce the published one (Spearman $0.14$, $p{=}0.76$); but that statistic
+penalises whichever model had most accuracy to lose, which is the same
+floor-effect objection raised against \TDS{}. Ranked by accuracy \emph{delivered}
+at a given $k$ --- the quantity a deployment cares about --- the ordering is
+stable across $k$ (Spearman $0.75$--$0.89$ between adjacent $k$) and agrees with
+the published ordering at the scarcest evidence (Spearman $0.821$, $p{=}0.023$,
+computed over the seven datasets the published ordering itself covers).
+
+We flag the fragility of that last statistic rather than leave it to be
+discovered. Including Kinetics-400 in the pool moves it to $0.571$, $p{=}0.18$.
+We report the seven-dataset figure as the like-for-like comparison, because
+Kinetics-400 is evaluated with pretrained backbones rather than fine-tuned
+checkpoints and folding it in mixes two training conditions against a ranking
+that never included it --- but with only seven architectures the correlation is
+under-powered under either choice. The claim we rest on is the direction, which
+is consistent at every $k$ we tested, not the significance of a rank correlation
+over seven points.
+We report the second as the substantive result and the first as the reason the
+magnitude claim was withdrawn: the relative spread across architectures narrows
+from roughly $4\times$ to $1.4\times$ once evidence is held fixed.
+
+VideoMamba is absent from this analysis: its environment pairs a CUDA 13 build
+of \texttt{mamba-ssm} with a CUDA 12 PyTorch, and no compatible wheel exists for
+the Python and PyTorch versions in use. Since VideoMamba is one of the two
+$B{=}8$ models, its absence weakens precisely this comparison, and we flag it
+rather than presenting the pool as complete.
+
+% ── S16: Repeated-measures ANOVA ─────────────────────────────────────────────
+\section{\rev{Repeated-Measures Analysis of the Coverage\texorpdfstring{$\times$}{x}Stride Grid}}
+\revnote
+\label{sec:sup_rmanova}
+
+All 25 cells of the grid score the same clips, so treating them as independent
+observations, as our original two-way ANOVA did, understates the error term. We
+re-estimate with clip as subject and coverage and stride as fully crossed
+within-subject factors, testing each effect against its own subject$\times$factor
+interaction and reporting partial $\eta^2$. Only clips present in all 25 cells
+are used, so the design stays balanced.
+
+Over 56 model--dataset pairs, partial $\eta^2$ is $0.292\pm0.152$ for coverage,
+$0.232\pm0.145$ for stride and $0.070\pm0.081$ for their interaction. Coverage
+therefore remains dominant but by $1.26\times$ rather than the $2.2\times$
+implied by the between-cell analysis. The interaction, which the original model
+omitted entirely, is largest on the high-demand datasets, reaching $0.271$ on
+SlowFast/AUTSL, $0.262$ on R3D-18/AUTSL and $0.232$ on SlowFast/FineGym. The
+per-model ordering of the stride effect is unchanged under the corrected model
+(TimeSformer $0.124$, MC3-18 $0.197$, R3D-18 $0.226$, R(2+1)D $0.238$, ViViT
+$0.247$, VideoMAE $0.259$, SlowFast $0.331$), so the qualitative grouping in the
+main paper does not depend on the error term.
+
+% ── S17: Held-out routing ────────────────────────────────────────────────────
+\section{\rev{Held-Out Evaluation of the Confidence Cascade}}
+\revnote
+\label{sec:sup_routing_heldout}
+
+The cascade thresholds the maximum class probability, not the predictive
+entropy; our earlier name for it was inaccurate. More substantively, the
+threshold was previously selected and scored on the same split. We repeat the
+evaluation with $\tau$ chosen on a stratified calibration half and scored on the
+untouched half, over $1000$ resamples.
+
+On SSv2 with TimeSformer, the advantage over fixed dense inference falls from
+$+0.21$pp in-sample to $-0.03$pp held-out, with a 95\% interval of
+$[-1.07,+0.83]$: the cascade matches dense accuracy at $6.9$ average frames
+rather than exceeding it. That cell is also the most favourable one. Averaged
+over all 56 model--dataset pairs the held-out change relative to fixed dense
+inference is $-3.5$pp, and 25 of 56 pairs have intervals excluding zero, with
+losses reaching $-14.7$pp (ViViT/FineGym) and $-10.5$pp (VideoMAE/FineGym). The
+supportable claim is that confidence carries usable routing signal on some
+model--dataset pairs, not that temporal budgets can be halved without cost.
+
+% ── S18: Convergence at low resolution ───────────────────────────────────────
+\section{\rev{Convergence of Low-Resolution Fine-Tuning}}
+\revnote
+\label{sec:sup_convergence}
+
+To check whether the 10-epoch budget limits the reported off-native accuracies,
+we recovered the validation curve of every fine-tuning run from its training log
+($n{=}730$ logs) and asked whether each run was still improving when the budget
+ended.
+
+\begin{table}[!htbp]
+\centering
+\caption{Convergence by target resolution. ``Still improving'' counts runs whose
+best validation accuracy occurred at the final or penultimate epoch.}
+\label{tab:sup_convergence}
+\scriptsize\tabtight
+\begin{tabular}{r r r r r}
+\toprule
+Resolution & Runs & Mean best epoch & Still improving & Gain in last 3 epochs \\
+\midrule
+48px  &  36 & 6.97 & 52.8\% & 1.38pp \\
+96px  &  96 & 5.08 & 24.0\% & 4.21pp \\
+112px &  93 & 4.94 & 16.1\% & 3.89pp \\
+160px &  95 & 5.79 & 27.4\% & 3.27pp \\
+224px & 183 & 5.66 & 23.0\% & 2.89pp \\
+336px &  88 & 4.12 & 23.9\% & 5.08pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The concern is partly borne out: 48px is the resolution where the budget binds
+most, with over half the runs peaking at the final epoch against 16--27\%
+elsewhere. The accuracy still being won in the closing epochs there is however
+the smallest of any resolution, $1.38$pp, so the runs were converging slowly
+rather than being cut off mid-ascent. We report the 48px numbers with this
+limitation stated rather than claiming convergence.
+
+% ── S19: TDS metric variants ─────────────────────────────────────────────────
+\section{\rev{Sensitivity of the \texorpdfstring{\TDS{}}{TDS} Ranking to Its Definition}}
+\revnote
+\label{sec:sup_tds_variants}
+
+\TDS{} was criticised for using only the endpoints of the stride curve, for
+depending on baseline accuracy and floor effects, and for discarding negative
+drops through its positive part. Each objection defines a variant, and none
+changes the ranking (Table~\ref{tab:sup_tds_variants}).
+
+\begin{table}[!htbp]
+\centering
+\caption{Dataset demand under five definitions, and the rank correlation of each
+against the published \TDS{}. \emph{unclipped} removes $[\cdot]^+$;
+\emph{AUC} integrates the whole stride curve trapezoidally in $\log_2 s$;
+\emph{relative} divides by stride-1 accuracy; \emph{normalised} divides by the
+headroom above chance.}
+\label{tab:sup_tds_variants}
+\scriptsize\tabtight
+\begin{tabular}{l rrrrr}
+\toprule
+Dataset & Published & Unclipped & AUC & Relative & Normalised \\
+\midrule
+FineGym       & 55.92 & 55.92 & 24.33 & 76.92 & 78.03 \\
+AUTSL         & 53.02 & 53.02 & 17.74 & 71.22 & 71.65 \\
+SSv2          & 27.57 & 27.57 &  9.61 & 65.31 & 66.23 \\
+DriveAct      & 21.88 & 21.88 &  8.84 & 31.87 & 33.35 \\
+Diving-48     & 19.16 & 19.16 &  5.10 & 45.18 & 47.66 \\
+HMDB-51       & 16.64 & 16.64 &  4.94 & 21.05 & 21.58 \\
+EPIC-Kitchens &  9.74 &  9.74 &  3.02 & 26.86 & 27.73 \\
+UCF-101       &  4.88 &  4.88 &  0.81 &  5.54 &  5.61 \\
+\midrule
+Spearman vs.\ published & --- & 1.000 & 1.000 & 0.952 & 0.952 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The positive part never activates: no dataset has a negative mean drop, so
+\emph{unclipped} is numerically identical to the published metric. Integrating
+the full curve preserves the ordering exactly. Normalising by baseline accuracy
+or by headroom above chance exchanges only adjacent pairs (DriveAct with
+Diving-48, HMDB-51 with EPIC-Kitchens); the three highest-demand datasets are
+identical under all five definitions.
+
+% ── S20: Multi-stride augmentation ablation ──────────────────────────────────
+\section{\rev{Multi-Stride Augmentation Ablation}}
+\revnote
+\label{sec:sup_tra}
+
+\rev{A reviewer asked whether the measured cliffs reflect a mismatch between the
+training and inference sampling distributions rather than anything intrinsic. We
+tested this directly by fine-tuning with random $(\mathcal{C},s)$ exposure drawn
+from the same grid used at evaluation, and comparing against the published
+checkpoint. All three conditions are evaluated under the \emph{published}
+sampler: evaluating the augmented arms without its padding would remove the
+cliff by construction and answer nothing.
+
+Two augmented arms are trained. \textbf{paper} draws its augmentation through the
+published sampler, padding included; \textbf{fixed} draws from the same grid but
+resamples uniformly, with no repeated final frame. Within each architecture the
+two arms reach almost identical dense-sampling accuracy (TimeSformer 64.0\% and
+63.6\%), so any difference in the stride curve is attributable to the form of the
+augmentation rather than to one arm having trained better.
+
+\begin{table}[!htbp]
+\centering
+\caption{Both architectures on AUTSL, evaluated under the published sampler at
+coverage 100\%. ``Recovered'' is the share of the baseline stride-1 to stride-16
+cliff regained at stride 16; ``dense cost'' is the accuracy given up at stride 1.}
+\label{tab:sup_tra}
+\scriptsize\tabtight
+\begin{tabular}{l l rrrrr r r r}
+\toprule
+Model & Arm & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ & Cliff & Recov. & Dense cost \\
+\midrule
+\multirow{3}{*}{TimeSformer}
+ & baseline & 66.8 & 66.9 & 66.3 & 65.7 & 50.8 & 16.0 & --- & --- \\
+ & paper    & 63.5 & 63.6 & 63.1 & 62.6 & 55.3 &  8.2 & 28.4\% & $-3.3$ \\
+ & fixed    & 63.1 & 63.4 & 63.4 & 62.3 & 52.6 & 10.4 & 11.7\% & $-3.7$ \\
+\midrule
+\multirow{3}{*}{R3D-18}
+ & baseline & 75.0 & 75.3 & 68.0 & 27.2 &  6.5 & 68.5 & --- & --- \\
+ & paper    & 65.1 & 65.3 & 62.1 & 44.9 & 31.9 & 33.2 & 37.0\% & $-9.9$ \\
+ & fixed    & 63.8 & 63.2 & 59.9 & 28.0 & 10.4 & 53.3 &  5.7\% & $-11.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reviewer's hypothesis is substantially correct, and more so than we
+anticipated. Multi-stride exposure recovers \textbf{28.4\%} of the cliff for
+TimeSformer and \textbf{37.0\%} for R3D-18, whose stride-16 accuracy rises from
+$6.5\%$ to $31.9\%$ --- nearly a fivefold improvement at the most degraded
+operating point. A substantial component of the measured degradation is a
+training--inference sampling mismatch and is repairable by exposure. We thank the
+reviewer for the question; our own expectation was that it would not be.
+
+Two further observations sharpen rather than soften the picture. First, the
+majority of the cliff is not recovered: 63--72\% persists across both
+architectures, which is what the padding account predicts, since at stride 16 the
+sampler delivers roughly four distinct frames followed by repetitions and no
+training recipe recovers evidence never supplied. Second, the augmentation is
+paid for, costing $3.3$pp of dense-sampling accuracy for TimeSformer and $9.9$pp
+for R3D-18: it redistributes performance from dense to sparse operating points
+rather than removing the limitation.
+
+The comparison between arms is the most diagnostic result here, and it is
+consistent across both architectures. Both arms see the \emph{same} grid of
+$(\mathcal{C},s)$ during training and reach near-identical dense accuracy
+($63.5$ vs $63.1$ for TimeSformer, $65.1$ vs $63.8$ for R3D-18); they differ only
+in how the duplicated frames are arranged --- a frozen tail versus evenly spread
+repeats. Yet the arm trained \emph{through} the padding recovers $2.4\times$ more
+of the cliff for TimeSformer and $6.5\times$ more for R3D-18, where uniform
+resampling recovers almost nothing ($5.7\%$, taking stride-16 accuracy from
+$6.5\%$ only to $10.4\%$).
+
+Had the cliff been a temporal-frequency phenomenon, both arms should have helped
+comparably, since both expose the model to the same sampling rates. They do not.
+What separates them is that one arm learns the specific signature of the
+artefact, and an artefact is learnable precisely because it is one: there is a
+synthetic regularity to absorb rather than lost information to reconstruct.
+
+We therefore retain the conclusion that the dominant term is evidence loss, with
+the correction that a recoverable mismatch term of 28--37\% sits alongside it.}
+
+% ── S21: The sampling-rate axis ──────────────────────────────────────────────
+\section{\rev{Varying the Sampling Rate at Fixed Frame Count}}
+\revnote
+\label{sec:sup_span}
+
+\rev{A reviewer observed that our temporal protocol investigates ``how early the
+model has enough temporal context, rather than the aliasing due to frame
+sampling stride''. This sweep tests that reading directly. The frame count $k$ is
+pinned to each model's native budget and only the width $W$ of a centred window
+varies, so the realised sampling rate $k/W$ changes by an order of magnitude
+while the number of frames delivered never changes.
+
+At fixed $k$, widening $W$ lowers the sampling rate but also admits more of the
+action. These push in opposite directions, and no frame-subsampling design can
+separate them --- that is the identifiability limitation stated in
+Sec.~\ref{sec:intro}. What the sweep does decide is which one binds empirically.
+
+\begin{table}[!htbp]
+\centering
+\caption{Top-1 (\%) against window width, averaged over architectures, with $k$
+fixed at each model's frame budget. Widening the window reduces the sampling
+rate tenfold, yet accuracy rises in seven of eight datasets.}
+\label{tab:sup_span}
+\scriptsize\tabtight
+\begin{tabular}{l rrrrr r r}
+\toprule
+Dataset & $W{=}10\%$ & 25\% & 50\% & 75\% & 100\% & $\rho(W,\mathrm{acc})$ & $\Delta$ \\
+\midrule
+AUTSL         & 18.2 & 38.1 & 63.0 & 73.1 & 73.9 & $+1.000$ & $+55.6$ \\
+SSv2          &  8.3 & 17.7 & 29.5 & 36.1 & 38.4 & $+1.000$ & $+30.1$ \\
+Diving-48     & 12.8 & 22.3 & 38.3 & 43.2 & 41.5 & $+0.900$ & $+28.7$ \\
+HMDB-51       & 56.5 & 68.0 & 76.5 & 80.4 & 80.2 & $+0.900$ & $+23.7$ \\
+DriveAct      & 49.1 & 57.1 & 63.0 & 66.6 & 68.7 & $+1.000$ & $+19.6$ \\
+EPIC-Kitchens & 17.4 & 24.8 & 31.5 & 35.2 & 36.4 & $+1.000$ & $+19.0$ \\
+UCF-101       & 77.9 & 85.0 & 88.9 & 90.0 & 89.9 & $+0.900$ & $+12.0$ \\
+\midrule
+Kinetics-400  & 61.5 & 64.5 & 64.6 & 64.1 & 63.1 & $+0.100$ & $+1.6$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Seven of eight datasets are context-bound, four of them at $\rho=+1.000$: giving
+a model the same number of frames spread over the whole action beats giving it
+the same number of frames densely covering a tenth of it, by as much as $56$pp.
+If undersampling were the dominant cost, the sign would be the other way round.
+Over the range this protocol can reach, the binding constraint is how much of
+the action is observed, not how densely it is sampled --- which is the reviewer's
+reading, and we adopt it.
+
+Kinetics-400 is the single exception, and it is flat rather than reversed
+($\rho=+0.100$, $+1.6$pp across the whole range). This is interpretable: its
+clips are fixed 10-second segments with the labelled action near the centre, so
+the narrowest window already contains the discriminative evidence and widening it
+mostly admits unrelated context. That one dataset sits at zero while the other
+seven rise steeply is evidence that the measure discriminates rather than merely
+trending positive.
+
+We stress what this does \emph{not} establish. Because $W$ moves context and
+rate together, a density effect cannot be ruled out, only shown to be dominated.
+Isolating it requires holding $k$ and $W$ fixed and varying spectral content
+alone, which is the anti-aliasing intervention reported next.}
+
+% ── S22: Anti-aliasing intervention ──────────────────────────────────────────
+\section{\rev{An Anti-Aliasing Intervention, and Why It Is Inconclusive}}
+\revnote
+\label{sec:sup_antialias}
+
+\rev{The sweeps above show that the temporal axis is dominated by evidence
+availability, but domination is not exclusion: a genuine aliasing term could
+still sit underneath. Aliasing has a specific interventional signature ---
+removing above-Nyquist energy \emph{before} sampling recovers accuracy, because
+the folded energy that corrupted the sampled signal is gone. This is how spatial
+aliasing is demonstrated for anti-aliased CNNs, and we applied it on the temporal
+axis.
+
+Both arms deliver the same $k$ samples over the same span. In \textbf{point}, each
+sample is the frame at position $t_i$; in \textbf{box}, it is the mean of the
+frames in the window of width $T/k$ centred on $t_i$, so the clip is low-pass
+filtered to the Nyquist limit the sampling imposes before any frame is taken.
+
+\begin{table}[!htbp]
+\centering
+\caption{Box minus point accuracy (pp), averaged over architectures. Negative
+everywhere; at $k\geq4$ not a single model--dataset pair improves.}
+\label{tab:sup_antialias}
+\scriptsize\tabtight
+\begin{tabular}{l rrrrr}
+\toprule
+Dataset & $k{=}1$ & $k{=}2$ & $k{=}4$ & $k{=}8$ & $k{=}16$ \\
+\midrule
+UCF-101       & $-21.8$ & $-28.4$ & $-23.1$ & $-14.9$ & $-7.5$ \\
+HMDB-51       & $-13.9$ & $-18.3$ & $-17.0$ & $-12.6$ & $-8.1$ \\
+AUTSL         & $+0.3$  & $+1.1$  & $-16.9$ & $-20.7$ & $-9.7$ \\
+Diving-48     & $-1.5$  & $-2.6$  & $-6.9$  & $-11.4$ & $-13.6$ \\
+EPIC-Kitchens & $-3.4$  & $-4.8$  & $-9.6$  & $-7.4$  & $-6.1$ \\
+DriveAct      & $-1.3$  & $-4.2$  & $-5.4$  & $-4.8$  & $-3.1$ \\
+SSv2          & $+0.3$  & $-0.9$  & $-3.2$  & $-5.5$  & $-7.6$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Why we do not draw the obvious conclusion.} Low-pass filtering never
+recovers accuracy; at $k\geq4$ it costs $8$--$12$pp on average and improves zero
+of the tested pairs ($p<10^{-4}$). It would be convenient to read this as
+positive evidence that no aliasing is present. It is not, and we flag the reason
+rather than let a reader find it.
+
+Our models were fine-tuned on sharp frames. A box-filtered clip is therefore
+out-of-distribution, and they would lose accuracy on it even if aliasing were
+entirely absent. The anti-aliased-CNN literature avoids this by applying the
+filter during training as well; we applied it only at inference. The test is
+consequently asymmetric: a \emph{gain} would have been strong evidence for
+aliasing, since it would have had to overcome the distribution-shift handicap,
+whereas a \emph{loss} is consistent both with no aliasing and with the handicap
+alone. We observe a loss, and therefore learn little.
+
+We report the experiment because a reader would reasonably ask whether the
+Nyquist reading was tested directly rather than argued away. It was, and the
+design was not clean enough to settle it. Resolving it requires fine-tuning on
+filtered input so that both arms are in-distribution, which we leave to future
+work. The conclusions in this paper rest on Sec.~\ref{sec:sup_span} and
+Sec.~\ref{sec:sup_tra}, neither of which carries this confound.}
+
+\bibliographystyle{splncs04}
+\bibliography{main}
+
+\end{document}

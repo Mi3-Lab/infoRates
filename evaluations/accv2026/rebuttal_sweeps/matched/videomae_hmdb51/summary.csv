@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.2858757062146893,885,1.0,videomae,hmdb51,matched,16
+k16,0.8395480225988701,885,16.0,videomae,hmdb51,matched,16
+k2,0.3864406779661017,885,2.0,videomae,hmdb51,matched,16
+k4,0.5774011299435028,885,4.0,videomae,hmdb51,matched,16
+k8,0.688135593220339,885,8.0,videomae,hmdb51,matched,16

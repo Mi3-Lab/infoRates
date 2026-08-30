@@ -1,7 +1,83 @@
 # InfoRates — Research Progress
 
 **ACCV 2026** · Mi3 Lab · Wesley Maia · PI: Ross Greer (UC Merced)
-Last updated: 2026-06-19
+Last updated: 2026-08-28
+
+---
+
+## ⚠️ REBUTTAL ROUND — submission 230
+
+Reviews returned **XdvJ 5** (weak accept) / **vdwp 4** (borderline, confidence 5)
+/ **pxtb 1** (reject). Two reviewers argue the protocol does not measure
+aliasing. **They are right**, and the mechanism is in our own code.
+
+### The finding that reframes the paper
+
+`select_frame_indices` re-uniformises the strided candidate pool to the model's
+frame budget, so at fixed coverage the selected frames span the same window at
+*every* stride. Stride only changes the input once
+`ceil(window/stride) < budget`, and the shortfall is then filled by **repeating
+the last frame**. Measured consequences:
+
+| Measurement | Value |
+|---|---|
+| Stride 1→16 drop, clips that never pad | **−0.5pp** (vs +10.7pp overall), 21/21 pairs |
+| Spearman(padding rate, TDS) | **+0.964** |
+| Spearman(frame budget, published drop) | **+0.849**, p=0.008 |
+| TDS spread among fully-saturated datasets | **31pp** — content still matters |
+
+Reproduce: `scripts/accv2026/rebuttal_padding_diagnostic.py`
+
+### What survives, and what does not
+
+- **C1 (TDS)** survives: ranking invariant under 5 metric definitions (ρ≥0.95).
+- **C2 (architecture)** is rewritten, not withdrawn: at *matched evidence*,
+  accuracy still tracks the published ordering (ρ=**0.821**, p=0.023), but the
+  3–5× magnitude was the frame-budget artifact (spread 4× → 1.4×).
+- **Routing** does not survive: held-out, the SSv2 gain goes +0.21pp → **−0.03pp**
+  (95% CI [−1.07, +0.83]); mean over 56 pairs is **−3.5pp**.
+- **ANOVA** re-run as repeated measures: coverage η²ₚ=0.292, stride 0.232,
+  interaction 0.070. "Coverage is king at 2.2×" becomes **1.26×**; per-model
+  ordering unchanged.
+- **Table 7**: fine-tuning at the *native* resolution already gains +6 to
+  +10.6pp, so +39.2pp ≈ 32pp resolution + 7pp extra training.
+- **Convergence**: at 48px, 52.8% of runs still peak at the final epoch, but the
+  last-3-epoch gain is only 1.38pp.
+
+### Deliverables
+
+| File | State |
+|---|---|
+| `docs/ACCV_2026_REBUTTAL_DRAFT.md` | content + cut order |
+| `paper/rebuttal.tex` | ~750 words, one page |
+| `paper/main2.tex` | revision, `\rev{}` blue / `\revdel{}` struck |
+| `paper/supplementary2.tex` | six new sections S14–S19 |
+| `docs/ACCV_2026_REBUTTAL_HANDOFF.md` | for the FineGym/VideoMamba machine |
+
+### Blocked or missing
+
+- **Table 5 is not reproducible.** No model pool reproduces the printed
+  thresholds; relative drop matches 3/7 datasets, suggesting relative
+  percentages mislabelled as "pp". The repo's own `taxonomy_summary.csv` agrees
+  with recomputation, not with the paper.
+- **FineGym**: videos and checkpoints gone from /data and /scratch.
+- **VideoMamba**: `mamba-ssm 2.3.1` is a CUDA 13 build against cu128 torch; no
+  py39+torch2.8 wheel exists. Both go to the second machine.
+- **Must be removed from the paper**: the ×1.5/×10/×50 hardware scaling factors
+  (never measured) and "halves temporal budgets without accuracy loss".
+
+### Bugs found in the repo during this round
+
+1. `sweep_coverage_stride.py` imported `_interp_pos_embed`, which does not exist
+   — every HF-transformer load crashed. Fixed (lazy import).
+2. `get_checkpoint` preferred the 224px checkpoint for the 112px CNNs, a silent
+   ~15pp loss. `PROGRESS.md:111` claimed this was fixed; it was fixed in a
+   different script. Fixed here, and audited: **the published numbers are clean**
+   (all 21 CNN sweeps predate the 224px checkpoints by 3–10 days).
+3. FineGym CNN checkpoints were unresolvable (absent from `SPECIAL_CKPTS`).
+   Short-name fallback added.
+4. `e10_clip_duration.py` hardcodes fps: HMDB-51 is 30 not 25, AUTSL 30 not 25,
+   EPIC 50 not 60, FineGym absent and defaulting to 25.
 
 ---
 

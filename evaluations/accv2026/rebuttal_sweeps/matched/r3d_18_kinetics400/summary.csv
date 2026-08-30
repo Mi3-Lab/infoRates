@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.365,400,1.0,r3d_18,kinetics400,matched,16
+k16,0.45,400,16.0,r3d_18,kinetics400,matched,16
+k2,0.43,400,2.0,r3d_18,kinetics400,matched,16
+k4,0.42,400,4.0,r3d_18,kinetics400,matched,16
+k8,0.4575,400,8.0,r3d_18,kinetics400,matched,16

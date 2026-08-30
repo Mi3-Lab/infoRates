@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.022598870056497175,177,1.0,videomae,ssv2,matched,16
+k16,0.4971751412429379,177,15.875706214689265,videomae,ssv2,matched,16
+k2,0.05084745762711865,177,2.0,videomae,ssv2,matched,16
+k4,0.22598870056497175,177,4.0,videomae,ssv2,matched,16
+k8,0.2994350282485876,177,8.0,videomae,ssv2,matched,16

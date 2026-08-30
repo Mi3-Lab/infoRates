@@ -53,6 +53,10 @@ DATASET_CFG = {
     "driveact":      dict(manifest="driveact_val_20_per_class.csv",      name="driveact",     split="val"),
     "epic_kitchens": dict(manifest="epic_kitchens_val_20_per_class.csv", name="epic_kitchens",split="val"),
     "finegym":       dict(manifest="finegym_val_20_per_class.csv",       name="finegym",      split="val"),
+    # Kinetics-400 is evaluated with the K400-pretrained backbones themselves,
+    # so it has no fine-tuned checkpoint; see rebuttal_matched_evidence_sweep.py
+    # --pretrained. Added to answer reviewer vdwp ("Kinetics is not used").
+    "kinetics400":   dict(manifest="kinetics400_val_20_per_class.csv",   name="kinetics400",  split="val"),
 }
 
 # ── Special checkpoint names ──────────────────────────────────────────────
@@ -167,10 +171,24 @@ def get_checkpoint(model: str, dataset: str, train_res: int = None) -> Path:
     # VideoMamba/EK: v1/v3 leaky (num_labels=97, val_acc~50%); prefer v2 (val_acc~25%)
     if model == "videomamba" and dataset == "epic_kitchens":
         candidates.append(f"accv2026_{model}_{dataset}_224px_e10_v2_h200")
-    candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
-    # Fallback: nomenclatura antiga
     suffix = MODEL_CFG[model]["ckpt_suffix"]
-    candidates.append(f"accv2026_{model}_{dataset}_full_e10_{suffix}")
+    native = MODEL_CFG[model]["resize"]
+    # Native-resolution checkpoint must come first. For the 112px CNNs the
+    # _224px_e10_h200 retrain would otherwise win while this sweep feeds 112px
+    # frames, and that checkpoint/input mismatch silently costs ~15pp (r3d_18 on
+    # UCF-101: 66% instead of 81%). Transformers are native-224, so for them the
+    # 224px retrain is resolution-consistent and the order is unchanged.
+    if native == 224:
+        candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
+        candidates.append(f"accv2026_{model}_{dataset}_full_e10_{suffix}")
+    else:
+        candidates.append(f"accv2026_{model}_{dataset}_full_e10_{suffix}")
+        candidates.append(f"accv2026_{model}_{dataset}_{native}px_e10_h200")
+        candidates.append(f"accv2026_{model}_{dataset}_224px_e10_h200")
+    # Short form, used by the FineGym checkpoints. SPECIAL_CKPTS spells it out
+    # for SlowFast and the Transformers but not for the three CNNs, so without
+    # this fallback FineGym CNN runs cannot resolve a checkpoint at all.
+    candidates.append(f"accv2026_{model}_{dataset}")
     for base in [SCRATCH_CKPTS, ROOT / "fine_tuned_models"]:
         for name in candidates:
             p = base / name
@@ -203,7 +221,6 @@ def load_model(model_name: str, dataset: str, train_res: int = None):
     else:
         # HuggingFace transformer (TimeSformer, ViViT, VideoMAE)
         from transformers import AutoImageProcessor, AutoModelForVideoClassification
-        from info_rates.models.model_factory import ModelFactory, _interp_pos_embed
         import json as _json_local
         processor = AutoImageProcessor.from_pretrained(str(ckpt))
         cfg = _json_local.loads(config_text)
@@ -214,6 +231,10 @@ def load_model(model_name: str, dataset: str, train_res: int = None):
             # Non-native resolution: PE was NOT saved (plain tensor, not nn.Parameter).
             # Must load base model at 224px (correct PE), interpolate PE to train_res,
             # then overlay fine-tuned weights from checkpoint (PE stays interpolated).
+            # Imported here rather than at branch top: native-resolution loading
+            # does not need it, and _interp_pos_embed is currently missing from
+            # model_factory (only ModelFactory._interpolate_pos_embed exists).
+            from info_rates.models.model_factory import ModelFactory, _interp_pos_embed
             info = ModelFactory.get_model_info(model_name)
             model = AutoModelForVideoClassification.from_pretrained(
                 info["model_id"], num_labels=num_labels_ckpt, ignore_mismatched_sizes=True,

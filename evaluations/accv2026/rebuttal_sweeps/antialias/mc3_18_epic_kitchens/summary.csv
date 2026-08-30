@@ -1,0 +1,11 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k16_box,0.27941176470588236,1020,15.980392156862745,mc3_18,epic_kitchens,antialias,16
+k16_point,0.36176470588235293,1020,15.980392156862745,mc3_18,epic_kitchens,antialias,16
+k1_box,0.049019607843137254,1020,1.0,mc3_18,epic_kitchens,antialias,16
+k1_point,0.07941176470588235,1020,1.0,mc3_18,epic_kitchens,antialias,16
+k2_box,0.058823529411764705,1020,2.0,mc3_18,epic_kitchens,antialias,16
+k2_point,0.09215686274509804,1020,2.0,mc3_18,epic_kitchens,antialias,16
+k4_box,0.1,1020,4.0,mc3_18,epic_kitchens,antialias,16
+k4_point,0.2019607843137255,1020,4.0,mc3_18,epic_kitchens,antialias,16
+k8_box,0.23529411764705882,1020,8.0,mc3_18,epic_kitchens,antialias,16
+k8_point,0.3392156862745098,1020,8.0,mc3_18,epic_kitchens,antialias,16

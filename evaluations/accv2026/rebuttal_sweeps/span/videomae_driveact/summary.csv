@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.45089285714285715,448,3.669642857142857,videomae,driveact,span,16
+span100,0.7366071428571429,448,15.491071428571429,videomae,driveact,span,16
+span25,0.59375,448,9.401785714285714,videomae,driveact,span,16
+span50,0.6852678571428571,448,14.189732142857142,videomae,driveact,span,16
+span75,0.71875,448,15.0625,videomae,driveact,span,16

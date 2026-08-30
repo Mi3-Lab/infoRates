@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.05787348586810229,743,1.0,slowfast_r50,diving48,matched,32
+k16,0.26244952893674295,743,16.0,slowfast_r50,diving48,matched,32
+k2,0.06729475100942127,743,2.0,slowfast_r50,diving48,matched,32
+k4,0.12516823687752354,743,4.0,slowfast_r50,diving48,matched,32
+k8,0.19650067294751009,743,8.0,slowfast_r50,diving48,matched,32

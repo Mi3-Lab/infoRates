@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.6905940594059405,2020,1.0,timesformer,ucf101,matched,8
+k16,0.9158415841584159,2020,16.0,timesformer,ucf101,matched,8
+k2,0.8633663366336634,2020,2.0,timesformer,ucf101,matched,8
+k4,0.9034653465346535,2020,4.0,timesformer,ucf101,matched,8
+k8,0.9153465346534654,2020,8.0,timesformer,ucf101,matched,8

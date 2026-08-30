@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.579875,8000,15.886375,r2plus1d_18,kinetics400,span,16
+span100,0.539375,8000,15.999875,r2plus1d_18,kinetics400,span,16
+span25,0.592375,8000,15.975875,r2plus1d_18,kinetics400,span,16
+span50,0.576375,8000,15.994125,r2plus1d_18,kinetics400,span,16
+span75,0.56325,8000,15.998625,r2plus1d_18,kinetics400,span,16

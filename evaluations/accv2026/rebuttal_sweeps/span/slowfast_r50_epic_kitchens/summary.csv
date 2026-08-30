@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.14313725490196078,1020,13.201960784313725,slowfast_r50,epic_kitchens,span,32
+span100,0.37745098039215685,1020,31.45,slowfast_r50,epic_kitchens,span,32
+span25,0.2196078431372549,1020,22.215686274509803,slowfast_r50,epic_kitchens,span,32
+span50,0.31666666666666665,1020,28.300980392156863,slowfast_r50,epic_kitchens,span,32
+span75,0.3686274509803922,1020,30.59607843137255,slowfast_r50,epic_kitchens,span,32

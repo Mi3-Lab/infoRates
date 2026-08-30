@@ -2,7 +2,7 @@
 
 % ── Packages ──────────────────────────────────────────────────────────────────
 \PassOptionsToPackage{table,dvipsnames}{xcolor}
-\usepackage[review,year=2026,ID=*****]{accv}
+\usepackage[review,year=2026,ID=230]{accv}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage[pagebackref,breaklinks,colorlinks,citecolor=blue]{hyperref}
@@ -565,13 +565,7 @@ An anonymized interactive dashboard is included with the supplementary material 
 \end{figure}
 
 \paragraph{Code availability.}
-Evaluation scripts, model fine-tuning code, result tables, and the Streamlit dashboard source are provided as an anonymized supplementary package for review. This includes the target-resolution pipeline with bicubic positional embedding interpolation. The public repository will be released after review. The package includes:
-\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=1pt]
-\item \texttt{scripts/accv2026/}: all evaluation and retraining scripts
-\item \texttt{src/info\_rates/}: model loading, temporal sweep, entropy routing
-\item \texttt{dashboard/}: Streamlit app with deterministic recommender; optional language summarization is disabled by default
-\item \texttt{evaluations/accv2026/paper\_results/}: CSV result files used in the paper.
-\end{itemize}
+Evaluation scripts, model fine-tuning code, result tables, and the Streamlit dashboard source are provided as an anonymized supplementary package for review. This includes the target-resolution pipeline with bicubic positional embedding interpolation. The public repository will be released after review.
 
 % ── S11: Leave-one-architecture-out TDS stability ─────────────────────────────
 \section{Leave-One-Architecture-Out \texorpdfstring{\TDS{}}{TDS} Stability}

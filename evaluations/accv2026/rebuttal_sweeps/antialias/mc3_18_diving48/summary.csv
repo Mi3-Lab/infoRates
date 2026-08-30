@@ -1,0 +1,11 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k16_box,0.15746971736204576,743,16.0,mc3_18,diving48,antialias,16
+k16_point,0.3162853297442799,743,16.0,mc3_18,diving48,antialias,16
+k1_box,0.039030955585464336,743,1.0,mc3_18,diving48,antialias,16
+k1_point,0.06056527590847914,743,1.0,mc3_18,diving48,antialias,16
+k2_box,0.03633916554508748,743,2.0,mc3_18,diving48,antialias,16
+k2_point,0.05518169582772544,743,2.0,mc3_18,diving48,antialias,16
+k4_box,0.03768506056527591,743,4.0,mc3_18,diving48,antialias,16
+k4_point,0.11036339165545088,743,4.0,mc3_18,diving48,antialias,16
+k8_box,0.07267833109017496,743,8.0,mc3_18,diving48,antialias,16
+k8_point,0.22207267833109018,743,8.0,mc3_18,diving48,antialias,16

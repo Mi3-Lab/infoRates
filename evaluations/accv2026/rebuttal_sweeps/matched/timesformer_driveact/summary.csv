@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.1875,64,1.0,timesformer,driveact,matched,8
+k16,0.546875,64,15.453125,timesformer,driveact,matched,8
+k2,0.46875,64,2.0,timesformer,driveact,matched,8
+k4,0.546875,64,4.0,timesformer,driveact,matched,8
+k8,0.5625,64,8.0,timesformer,driveact,matched,8

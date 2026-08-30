@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+span10,0.11864406779661017,177,4.028248587570621,timesformer,ssv2,span,8
+span100,0.3785310734463277,177,8.0,timesformer,ssv2,span,8
+span25,0.1864406779661017,177,6.745762711864407,timesformer,ssv2,span,8
+span50,0.2994350282485876,177,7.954802259887006,timesformer,ssv2,span,8
+span75,0.384180790960452,177,8.0,timesformer,ssv2,span,8

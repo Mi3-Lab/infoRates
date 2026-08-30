@@ -1,0 +1,11 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k16_box,0.7288135593220338,885,16.0,r3d_18,hmdb51,antialias,16
+k16_point,0.8192090395480226,885,16.0,r3d_18,hmdb51,antialias,16
+k1_box,0.22824858757062147,885,1.0,r3d_18,hmdb51,antialias,16
+k1_point,0.3694915254237288,885,1.0,r3d_18,hmdb51,antialias,16
+k2_box,0.29491525423728815,885,2.0,r3d_18,hmdb51,antialias,16
+k2_point,0.49830508474576274,885,2.0,r3d_18,hmdb51,antialias,16
+k4_box,0.4610169491525424,885,4.0,r3d_18,hmdb51,antialias,16
+k4_point,0.6361581920903955,885,4.0,r3d_18,hmdb51,antialias,16
+k8_box,0.6361581920903955,885,8.0,r3d_18,hmdb51,antialias,16
+k8_point,0.7468926553672316,885,8.0,r3d_18,hmdb51,antialias,16

@@ -18,11 +18,37 @@
 
 We study how **spatial resolution**, **temporal coverage**, and **frame stride** jointly affect video recognition accuracy across **8 architectures** and **8 datasets**, spanning CNNs, Transformers, and State Space Models. Using **8,000+ evaluation configurations** (5 resolutions × 5 coverages × 5 strides per architecture), we identify the dominant aliasing factors, rank datasets by temporal demand, and characterize architectural robustness profiles.
 
+> ### ⚠️ Under revision — ACCV 2026 rebuttal round
+>
+> Reviewers argued that the temporal sweep does not measure aliasing, and on
+> investigation **they were right**. `select_frame_indices` re-uniformises the
+> strided candidate pool to each model's frame budget, so stride changes the
+> input only once the pool falls below that budget — and the shortfall is then
+> filled by repeating the last frame. The sweep measures **evidence loss**, not
+> sampling rate. See `PROGRESS.md` for the full account and
+> `scripts/accv2026/rebuttal_padding_diagnostic.py` to reproduce it.
+>
+> Several takeaways below are superseded; each is marked. Revised paper:
+> `paper/main2.tex`.
+
 **Key takeaways:**
-- **Coverage dominates** (ANOVA F=178.94, η²=0.63–0.88) — 13.6× the effect of resolution and 2.2× stride
-- **Attention type, not architecture family, governs aliasing robustness** — TimeSformer degrades just 10.3 pp vs. SlowFast's 42.1 pp at stride 16
-- **Dataset temporal demand is stable** — Spearman ρ=0.97 across 8 architectures; CNN-only / Transformer-only / Transformer+SSM sub-pools all reproduce the same ranking (ρ ≥ 0.976)
-- **Spectral validation** — higher inter-frame optical flow frequency correlates negatively with stride sensitivity (Spearman ρ=−0.549, p=0.0006, n=35 across 7 datasets × 5 resolutions)
+- **Coverage dominates** — ~~ANOVA η²=0.63–0.88, 2.2× stride~~ **superseded**: a
+  repeated-measures model (clip as subject, which the grid requires since all 25
+  cells score the same clips) gives partial η² of 0.292 for coverage against
+  0.232 for stride, a ratio of **1.26×**, plus an interaction term of 0.070 that
+  the original model omitted
+- **Attention type governs robustness** — ~~TimeSformer 10.3 pp vs. SlowFast 42.1
+  pp~~ **superseded**: that ordering is confounded with input frame budget
+  (Spearman **0.849**, p=0.008 — the two "robust" models are exactly the two with
+  8-frame inputs). At *matched evidence* an architecture effect survives in a
+  narrower form (Spearman **0.821**, p=0.023), but the 3–5× magnitude does not
+- **Dataset temporal demand is stable** — holds. Spearman ρ=0.97 across
+  architectures, and the ranking is additionally invariant to five definitions of
+  the metric (curve-integral, unclipped, baseline- and chance-normalised, ρ≥0.95)
+- **Spectral validation** — higher inter-frame optical flow frequency correlates
+  negatively with stride sensitivity (Spearman ρ=−0.549, p=0.0006, n=35). The
+  negative sign is now explained: the stride axis varies available evidence
+  rather than sampling rate
 
 ---
 
@@ -93,9 +119,17 @@ Native-resolution checkpoints evaluated at other input sizes (no retraining). CN
 
 | Family | @48 px | @96 px | @112 px | @224 px |
 |--------|-------:|-------:|--------:|--------:|
-| CNN | 48.2% | 58.0% | 59.7% | 33.6% |
-| Transformer | 10.4% | 57.7% | 58.8% | 63.7% |
-| SSM | 6.3% | 37.7% | 40.0% | 49.2% |
+| CNN | 24.6% | 58.5% | 59.7% | 30.0% |
+| Transformer | 50.3% | 60.5% | 61.3% | 63.6% |
+| SSM | 17.7% | 39.7% | 41.4% | 49.1% |
+
+> **Corrected 2026-08-28.** The 48px row previously read CNN 48.2% / Transformer
+> 10.4% / SSM 6.3%, which inverted the family ordering. Those values predate the
+> bicubic positional-embedding fix — 10.4% is the collapsed accuracy that
+> supplementary S8 describes as "the wrong approach" (a Transformer at 48px has
+> only 3×3=9 patch tokens, and discarding the PE collapses it). The numbers above
+> come from `dashboard/data/p3_results.csv`, which is post-fix and authoritative.
+> The stale values never appeared in the submitted paper.
 
 ### Best Model per Dataset
 

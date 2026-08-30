@@ -1,0 +1,6 @@
+config,top1,n,mean_distinct,model,dataset,mode,budget
+k1,0.2858757062146893,885,1.0,r2plus1d_18,hmdb51,matched,16
+k16,0.7378531073446327,885,16.0,r2plus1d_18,hmdb51,matched,16
+k2,0.43389830508474575,885,2.0,r2plus1d_18,hmdb51,matched,16
+k4,0.5581920903954802,885,4.0,r2plus1d_18,hmdb51,matched,16
+k8,0.6971751412429379,885,8.0,r2plus1d_18,hmdb51,matched,16
