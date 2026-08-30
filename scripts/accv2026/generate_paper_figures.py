@@ -211,10 +211,9 @@ for i in range(len(MODELS)):
             ax.text(j, i, f"{v:.0f}", ha="center", va="center",
                     fontsize=8, color=color, fontweight="bold")
         else:
-            ax.text(j, i, "†", ha="center", va="center", fontsize=9, color="gray")
+            ax.text(j, i, "N/A", ha="center", va="center", fontsize=8, color="gray")
 
-    ax.set_title("Temporal Aliasing Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)\n"
-             "† = feature collapse (s1<5%).",
+ax.set_title("Temporal Evidence Sensitivity — Accuracy Drop (stride 1→16, coverage=100%)",
              fontsize=10, pad=10)
 
 # Add family brackets
@@ -251,7 +250,7 @@ tds_sorted = sorted(tds_data.items(), key=lambda x: -x[1])
 colors_bar = plt.cm.Reds(np.linspace(0.4, 0.9, len(tds_sorted)))
 ax1.barh([DATASET_LABELS[d] for d, _ in tds_sorted],
          [v for _, v in tds_sorted], color=colors_bar, edgecolor="white")
-ax1.set_xlabel("Mean aliasing loss (pp), stride 1→16")
+ax1.set_xlabel("Mean evidence loss (pp), stride 1→16")
 ax1.set_title("TDS Ranking\n(avg across 8 architectures)", fontsize=10)
 ax1.grid(True, axis="x", alpha=0.3, ls="--")
 for i, (ds, v) in enumerate(tds_sorted):
@@ -264,11 +263,11 @@ try:
                 c=["#E64B35" if r > 0.2 else "#4DBBD5" for r in corr["pearson_r_abs"]],
                 s=80, zorder=5, edgecolors="0.3", lw=0.8)
     ax2.axvline(0, color="0.5", lw=1, ls="--")
-    ax2.set_xlabel("Pearson r (optical flow ↔ aliasing loss)")
-    ax2.set_title("Spectral Correlation\n(flow magnitude vs aliasing sensitivity)", fontsize=10)
+    ax2.set_xlabel("Pearson r (optical flow ↔ evidence loss)")
+    ax2.set_title("Motion-Proxy Correlation\n(flow magnitude vs. evidence loss)", fontsize=10)
     ax2.set_xlim(-0.55, 0.45)
     ax2.grid(True, axis="x", alpha=0.3, ls="--")
-    ax2.annotate("Nyquist prediction:\nhigher flow → more aliasing", xy=(0.3, 0.5),
+    ax2.annotate("Naive sampling prediction:\nhigher flow → more loss", xy=(0.3, 0.5),
                  xycoords="axes fraction", fontsize=7.5, color="#E64B35")
 except Exception as e:
     ax2.text(0.5, 0.5, f"E3 data not found\n{e}", ha="center", va="center",
@@ -320,7 +319,7 @@ try:
         if routing_csv.exists():
             r_df = pd.read_csv(routing_csv)
             ax.plot(r_df["avg_frames"], r_df["accuracy"]*100,
-                    color="#E64B35", lw=2, label="E7-Entropy (ours)", zorder=6)
+                    color="#E64B35", lw=2, label="Max-probability cascade", zorder=6)
 
         # Oracle
         oracle = existing[
@@ -375,10 +374,10 @@ for model in MODELS:
             ax.scatter([native], [native_acc], color=COLORS[model], s=80,
                        zorder=10, edgecolors="black", lw=1.2)
 
-ax.set_xlabel("Spatial resolution (px)")
+ax.set_xlabel("Pre-resize resolution (px)")
 ax.set_ylabel("Top-1 accuracy (%) on SSv2")
-ax.set_title("Spatial Aliasing — Accuracy vs Resolution (SSv2)\n"
-             "Filled markers = native resolution; dashed = CNN (native 112px)",
+ax.set_title("Input-Scale Sensitivity — Accuracy vs. Pre-resize Resolution (SSv2)\n"
+             "Native checkpoint; filled = native resolution; dashed = CNN (native 112px)",
              fontsize=10)
 ax.set_xticks(RESOLUTIONS)
 ax.legend(fontsize=8, ncol=2, loc="lower right")
@@ -531,7 +530,7 @@ try:
             continue
         r_df = pd.read_csv(routing_csv)
         ax.plot(r_df["avg_frames"], r_df["accuracy"]*100,
-                color=COLORS[model], lw=2, label="E7-Entropy")
+                color=COLORS[model], lw=2, label="Max-probability cascade")
         # Fixed baselines
         ax.axhline(r_df["fixed_cheap_acc"].iloc[0]*100, color="gray", ls=":",
                    lw=1.2, alpha=0.7, label="Fixed 4f")

@@ -1,0 +1,175 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{arnab2021vivit}
+Arnab, A., Dehghani, M., Heigold, G., Sun, C., Lucic, M., Schmid, C.: {ViViT}:
+  A video vision transformer. In: ICCV (2021)
+
+\bibitem{5771372}
+Baltru{\v{s}}aitis, T., McDuff, D., Banda, N., Mahmoud, M., el~Kaliouby, R.,
+  Robinson, P., Picard, R.: Real-time inference of mental states from facial
+  expressions and upper body gestures. In: IEEE International Conference on
+  Automatic Face \& Gesture Recognition (2011). \doi{10.1109/FG.2011.5771372}
+
+\bibitem{bertasius2021timesformer}
+Bertasius, G., Wang, H., Torresani, L.: Is space-time attention all you need
+  for video understanding? In: ICML (2021)
+
+\bibitem{carreira2017i3d}
+Carreira, J., Zisserman, A.: Quo vadis, action recognition? {A} new model and
+  the kinetics dataset. In: CVPR (2017)
+
+\bibitem{damen2022epic}
+Damen, D., Doughty, H., Farinella, G.M., et~al.: Rescaling egocentric vision:
+  Collection, pipeline and challenges for {EPIC-Kitchens-100}. IJCV
+  \textbf{130},  33--55 (2022)
+
+\bibitem{dao2024mamba2}
+Dao, T., Gu, A.: Transformers are {SSM}s: Generalized models and efficient
+  algorithms through structured state space duality. In: ICML. pp. 10041--10071
+  (2024)
+
+\bibitem{fan2021mvit}
+Fan, H., Xiong, B., Mangalam, K., Li, Y., Yan, Z., Malik, J., Feichtenhofer,
+  C.: Multiscale vision transformers. In: ICCV. pp. 6824--6835 (2021)
+
+\bibitem{feichtenhofer2019slowfast}
+Feichtenhofer, C., Fan, H., Malik, J., He, K.: {SlowFast} networks for video
+  recognition. In: ICCV (2019)
+
+\bibitem{ghodrati2021frameexit}
+Ghodrati, A., Bejnordi, B.E., Habibian, A.: {FrameExit}: Conditional early
+  exiting for efficient video recognition. In: CVPR (2021)
+
+\bibitem{goyal2017ssv2}
+Goyal, R., Kahou, S.E., Michalski, V., et~al.: The ``something something''
+  video database for learning and evaluating visual common sense. In: ICCV. pp.
+  5843--5851 (2017)
+
+\bibitem{gu2023mamba}
+Gu, A., Dao, T.: Mamba: Linear-time sequence modeling with selective state
+  spaces. arXiv preprint arXiv:2312.00752  (2023)
+
+\bibitem{huang2018makes}
+Huang, D.A., Ramanathan, V., Mahajan, D., Torresani, L., Paluri, M., Fei-Fei,
+  L., Niebles, J.C.: What makes a video a video: Analyzing temporal information
+  in video understanding models and datasets. In: CVPR. pp. 7366--7374 (2018)
+
+\bibitem{10484402}
+Keshtkaran, E., von Berg, B., Regan, G., Suter, D., Gilani, S.Z.: Estimating
+  blood alcohol level through facial features for driver impairment assessment.
+  In: WACV. pp. 4527--4536 (2024). \doi{10.1109/WACV57701.2024.00448}
+
+\bibitem{kuehne2011hmdb}
+Kuehne, H., Jhuang, H., Garrote, E., Poggio, T., Serre, T.: {HMDB}: A large
+  video database for human motion recognition. In: ICCV (2011)
+
+\bibitem{li2024videomamba}
+Li, K., Li, X., Wang, Y., He, Y., Wang, Y., Wang, L., Qiao, Y.: {VideoMamba}:
+  State space model for efficient video understanding. In: ECCV. pp. 237--255
+  (2024). \doi{10.1007/978-3-031-73347-5_14}
+
+\bibitem{li2018diving48}
+Li, Y., Li, Y., Vasconcelos, N.: Resound: Towards action recognition without
+  representation bias. In: ECCV. pp. 513--528 (2018)
+
+\bibitem{lin2019tsm}
+Lin, J., Gan, C., Han, S.: {TSM}: Temporal shift module for efficient video
+  understanding. In: ICCV (2019)
+
+\bibitem{liu2022videoswin}
+Liu, Z., Ning, J., Cao, Y., Wei, Y., Zhang, Z., Lin, S., Hu, H.: Video swin
+  transformer. In: CVPR. pp. 3202--3211 (2022)
+
+\bibitem{martin2019driveact}
+Martin, M., Roitberg, A., Haurilet, M., et~al.: {Drive\&Act}: A multi-modal
+  dataset for fine-grained driver behavior recognition in autonomous vehicles.
+  In: ICCV. pp. 2801--2810 (2019). \doi{10.1109/ICCV.2019.00289}
+
+\bibitem{meng2020arnet}
+Meng, Y., Lin, C.C., Panda, R., Sattigeri, P., Karlinsky, L., Oliva, A.,
+  Saenko, K., Feris, R.: {AR-Net}: Adaptive frame resolution for efficient
+  action recognition. In: ECCV (2020)
+
+\bibitem{schiappa2023robustness}
+Schiappa, M.C., Biyani, N., Kamtam, P., Vyas, S., Palangi, H., Vineet, V.,
+  Rawat, Y.S.: A large-scale robustness analysis of video action recognition
+  models. In: CVPR. pp. 14698--14708 (2023)
+
+\bibitem{sevilla2021only}
+Sevilla-Lara, L., Zha, S., Yan, Z., Goswami, V., Feiszli, M., Torresani, L.:
+  Only time can tell: Discovering temporal data for temporal modeling. In:
+  WACV. pp. 3015--3024 (2021)
+
+\bibitem{shannon1949communication}
+Shannon, C.E.: Communication in the presence of noise. Proceedings of the IRE
+  \textbf{37}(1),  10--21 (1949)
+
+\bibitem{shao2020finegym}
+Shao, D., Zhao, Y., Dai, B., Loy, C.C.: {FineGym}: A hierarchical video dataset
+  for fine-grained action understanding. In: CVPR. pp. 2616--2625 (2020).
+  \doi{10.1109/CVPR42600.2020.00266}
+
+\bibitem{sincan2020autsl}
+Sincan, O.M., Keles, H.Y.: {AUTSL}: A large scale multi-modal turkish sign
+  language dataset and baseline methods. IEEE Access  \textbf{8},
+  181340--181355 (2020)
+
+\bibitem{soomro2012ucf101}
+Soomro, K., Zamir, A.R., Shah, M.: {UCF101}: A dataset of 101 human actions
+  classes from videos in the wild. arXiv preprint arXiv:1212.0402  (2012)
+
+\bibitem{tong2022videomae}
+Tong, Z., Song, Y., Wang, J., Wang, L.: {VideoMAE}: Masked autoencoders are
+  data-efficient learners for self-supervised video pre-training. In: NeurIPS
+  (2022)
+
+\bibitem{tran2014frequency}
+Tran, A., Guan, J., Pilantanakitti, T., Cohen, P.: Action recognition in the
+  frequency domain. arXiv preprint arXiv:1409.0908  (2014)
+
+\bibitem{tran2015c3d}
+Tran, D., Bourdev, L., Fergus, R., Torresani, L., Paluri, M.: Learning
+  spatiotemporal features with {3D} convolutional networks. In: ICCV (2015)
+
+\bibitem{tran2019video}
+Tran, D., Wang, H., Torresani, L., Feiszli, M.: Video classification with
+  channel-separated convolutional networks. In: ICCV (2019)
+
+\bibitem{tran2018r2plus1d}
+Tran, D., Wang, H., Torresani, L., Ray, J., LeCun, Y., Paluri, M.: A closer
+  look at spatiotemporal convolutions for action recognition. In: CVPR (2018)
+
+\bibitem{vanrullen2007wagon}
+VanRullen, R.: The continuous wagon wheel illusion depends on, but is not
+  identical to neuronal adaptation. Vision Research  \textbf{47}(16),
+  2143--2149 (2007)
+
+\bibitem{wang2023videomaev2}
+Wang, L., Huang, B., Zhao, Z., Tong, Z., He, Y., Wang, Y., Wang, Y., Qiao, Y.:
+  {VideoMAE V2}: Scaling video masked autoencoders with dual masking. In: CVPR.
+  pp. 14549--14560 (2023)
+
+\bibitem{wang2016tsn}
+Wang, L., Xiong, Y., Wang, Z., Qiao, Y., Lin, D., Tang, X., Van~Gool, L.:
+  Temporal segment networks: Towards good practices for deep action
+  recognition. In: ECCV (2016)
+
+\bibitem{wang2018nonlocal}
+Wang, X., Girshick, R., Gupta, A., He, K.: Non-local neural networks. In: CVPR
+  (2018)
+
+\bibitem{wang2021adafocus}
+Wang, Y., Chen, Z., Jiang, H., Song, S., Han, Y., Huang, G.: {AdaFocus}:
+  Adaptive focus for efficient video recognition. In: ICCV (2021)
+
+\bibitem{wu2019adaframe}
+Wu, Z., Xiong, C., Ma, C.Y., Socher, R., Davis, L.S.: {AdaFrame}: Adaptive
+  frame selection for fast video recognition. In: CVPR (2019)
+
+\bibitem{zhang2019antialiased}
+Zhang, R.: Making convolutional networks shift-invariant again. In: ICML (2019)
+
+\end{thebibliography}

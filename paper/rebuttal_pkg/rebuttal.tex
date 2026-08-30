@@ -15,9 +15,6 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 
-% The "axessiblity" package can be found at: https://ctan.org/pkg/axessibility?lang=en
-\usepackage[accsupp]{axessibility}  % comment out if not installed  % Improves PDF readability for those with disabilities.
-
 
 % ---------------------------------------------------------------
 % Hyperref package
@@ -56,94 +53,78 @@
 
 \begin{document}
 
-\title{Measuring and Mitigating Spatiotemporal Aliasing in Video Action
-Recognition: A Cross-Architecture Analysis at Scale}
+\title{Rebuttal for Submission 230}
 
 \maketitle
 \thispagestyle{empty}
 \appendix
 
-We thank the reviewers, and we ran every experiment requested.
+We thank the reviewers. We agree that our original terminology and some
+mechanistic language were too strong. The requested checks below distinguish
+fixed-budget sampling sensitivity from literal signal aliasing, while preserving
+the dataset-ranking result.
 
-\paragraph{What is unchanged.}
-\textsc{TDS}, our main contribution, is unaffected. \textbf{R2} asks whether its
-ranking is an artefact of the endpoint definition; it is not. Integrating the
-full stride curve rather than its endpoints gives an identical dataset ranking
-(Spearman $1.000$); removing the positive part is \emph{numerically} identical,
-since it never activates; normalising by baseline accuracy or by headroom above
-chance exchanges only adjacent pairs ($0.952$). The architecture ordering also
-holds: supplying every architecture the same distinct frames at the same
-positions --- the matched comparison \textbf{R2} asks for --- preserves it at
-Spearman $0.857$ ($p{=}0.007$, all 8 models). We withdraw only the
-$3$--$5\times$ magnitude, which tracks input length rather than temporal
-aggregation, and restate the finding as evidence efficiency: \emph{at an equal
-budget of distinct frames, divided-attention and state-space designs deliver
-more accuracy per frame}.
+\paragraph{TDS and architecture claim (R2).}
+\textsc{TDS} is not an endpoint artefact: replacing the endpoint drop with the
+full stride-curve integral gives the identical ranking (Spearman $1.000$), the
+positive part never activates, and baseline/headroom normalisation only swaps
+adjacent datasets ($0.952$). We also ran the requested matched-evidence control:
+every model receives the same $k$ distinct positions before resampling to its
+native input length. At $k=2$, its accuracy ranking agrees with the original
+ordering (Spearman $0.857$, $p{=}0.007$, all 8 models); agreement is weaker at
+the other budgets. Thus the evidence supports a robust dataset ranking and a
+narrow observational architecture association, not the prior $3$--$5\times$
+claim or a causal temporal-module explanation.
 
-\paragraph{Characterising the temporal axis (R2, R3).}
-\textbf{R3} is right that ``aliasing'' was imprecise for what we vary. Strided
-candidates are re-uniformised to each model's fixed frame budget $B$, so at
-fixed coverage the selected frames span the same window at every stride, and the
-input changes only once $\lceil\text{window}/s\rceil<B$. \cref{tab:seconds}
-shows this in seconds between sampled frames: four of five stride settings are
-the same sampling rate on UCF-101. The axis therefore measures available
-evidence, and we report it in seconds throughout, as \textbf{R3} suggests.
+\paragraph{What stride changes (R2, R3).}
+Every model consumes a fixed budget $B$. Strided candidates are re-uniformised
+to $B$ while sufficient candidates remain, then repeat-last padded. The sweep
+therefore changes distinct evidence as well as nominal stride; we will rename it
+sampling sensitivity and report the realised intervals in seconds:
 
 \begin{table}[t]
 \centering\footnotesize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccccc}
 \toprule
-Median s between frames & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ \\
+Dataset & $s{=}1$ & $s{=}2$ & $s{=}4$ & $s{=}8$ & $s{=}16$ \\
 \midrule
 UCF-101 & 0.395 & 0.395 & 0.395 & 0.395 & 0.617 \\
 AUTSL   & 0.125 & 0.125 & 0.131 & 0.252 & 0.475 \\
 \bottomrule
 \end{tabular}
-\caption{Realised sampling interval at coverage 100\%, measured frame rates.}
+\caption{Median seconds between selected frames at 100\% coverage.}
 \label{tab:seconds}
 \end{table}
 
-Two consequences follow. Pinning the frame count and varying only the window
-width --- which changes the realised rate tenfold --- \emph{raises} accuracy in
-7 of 8 datasets (Spearman $+1.0$ in four), so the binding constraint over this
-range is temporal context, exactly \textbf{R3}'s reading. And the correlation
-between input length and measured degradation, $0.849$ ($p{=}0.008$) under the
-original protocol, falls to $0.231$ ($p{=}0.58$) once evidence is matched.
+For clips that never shortfall, the mean $s{=}1\to16$ change is $-0.5$pp versus
+$+10.7$pp overall (21/21 usable model--dataset pairs); matched evidence reduces
+the frame-budget/drop correlation from $0.849$ ($p=.008$) to $0.231$ ($p=.58$).
+Pinning frame count while varying only span changes realised rate tenfold yet
+raises accuracy in 7/8 datasets, showing that context and evidence must be
+separated. Measured frame rates also make a fixed nominal stride vary $3.9\times$
+in realised interval across datasets.
 
-\paragraph{R1: multi-stride augmentation.}
-We ran the ablation you proposed. \textbf{Your hypothesis is partly right, and
-more than we expected}: exposure recovers $28.4\%$ of the drop for TimeSformer
-and $37.0\%$ for R3D-18, whose stride-16 accuracy rises $6.5\%\!\to\!31.9\%$. It
-is a trade rather than a repair --- 63--72\% persists and dense accuracy costs
-$3.3$/$9.9$pp --- and at matched dense accuracy, training through the degraded
-input recovers $2.4$--$6.5\times$ more than uniform resampling. On convergence:
-across 730 training logs, 48px is indeed where the budget binds ($52.8\%$ of
-runs peak at the final epoch \vs 16--27\% elsewhere), though the last three
-epochs win only $1.38$pp; we state this as a limitation. Sec.~3.3 of the paper now gives the resize and PE-interpolation procedure, and Table~7 gains the
-without-fine-tuning row.
+\paragraph{Training, spatial protocol, and statistics (R1, R2, R3).}
+The requested multi-stride ablation confirms a training--inference mismatch:
+exposure recovers 28.4\% of the TimeSformer drop and 37.0\% for R3D-18
+($6.5\%\!\to\!31.9\%$ at stride 16), but costs 3.3/9.9pp dense accuracy and
+leaves 63--72\% of the drop. The zero-shot spatial sweep is an input-scale
+resampling test, not new-grid Transformer transfer; we will state the exact
+resize/preprocessing protocol and add no-fine-tuning baselines. At 48px, 52.8\%
+of 503 runs peak in the final epoch, but the final-three-epoch gain is only
+1.38pp, so we will report this convergence limitation. Repeated-measures ANOVA
+gives partial $\eta^2{=}0.292$ (coverage), $0.232$ (stride), and $0.070$
+(interaction). Kinetics-400 is the shared pretraining source, not a new
+evaluation domain; we will clarify this, add FineGym where requested, and make
+model ordering consistent.
 
-\paragraph{R3: further items.}
-Frame rates are now measured, not assumed --- three datasets differed (HMDB-51
-30, AUTSL 30, EPIC 50) --- and at fixed nominal stride the realised interval
-varies $3.9\times$ across datasets. Kinetics-400 is added, requiring no training
-since all backbones are K400-pretrained; it sits at the low-demand end, which
-sharpens the paper's point. Table~5 gains FineGym with the tier definition stated
-explicitly, Table~7 the baseline column, and model ordering is now consistent
-throughout. On Table~7 you are right that native-resolution tuning already gains
-$+6$ to $+10.6$pp, so the $+39.2$pp separates into $\approx$32pp adaptation and
-$\approx$7pp additional training; we report both.
-
-\paragraph{R2: routing and statistics.}
-Both points are correct. The rule thresholds $\max_c p(c|v)$, not entropy, and is
-renamed. Under the held-out calibration you require (1000 stratified splits),
-SSv2 moves from $+0.21$pp to $-0.03$pp (95\% CI $[-1.07,+0.83]$): the cascade
-\emph{matches} dense accuracy at $6.9$ frames. We remove the corresponding
-abstract claim and ``Mitigating'' from the title. Re-running the ANOVA as a
-within-subject design gives partial $\eta^2$ of $0.292$ (coverage), $0.232$
-(stride) and $0.070$ (interaction), so coverage leads by $1.26\times$ rather than
-$2.2\times$ while the per-model ordering is unchanged; the interaction is now
-given for all 56 pairs. The device-scaling factors were estimates and are
-removed.
+\paragraph{Routing (R2).}
+The rule thresholds $\max_c p(c|v)$, not entropy. With held-out calibration
+(1000 stratified splits), SSv2/TimeSformer changes from $+0.21$pp in-sample to
+$-0.03$pp (95\% CI $[-1.07,+0.83]$): it matches dense inference at 6.9 frames.
+We therefore rename it a confidence cascade and remove the general ``no
+penalty'' mitigation claim; over 56 model--dataset pairs its mean change is
+$-3.5$pp. Device-scaling extrapolations are removed.
 
 \end{document}
