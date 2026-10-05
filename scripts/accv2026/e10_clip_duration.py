@@ -24,10 +24,12 @@ MODELS   = ["r3d_18", "mc3_18", "r2plus1d_18", "slowfast_r50",
             "timesformer", "vivit", "videomae", "videomamba"]
 DATASETS = ["ucf101", "ssv2", "hmdb51", "diving48", "autsl", "driveact", "epic_kitchens", "finegym"]
 
-# Approximate FPS per dataset (for duration estimation)
+# FPS per dataset, measured from the video files (see rebuttal_seconds_axis.py).
+# FineGym is not listed: its source videos are not on this machine, so it falls
+# back to the 25 fps default below.
 DATASET_FPS = {
-    "ssv2": 12, "ucf101": 25, "hmdb51": 25,
-    "diving48": 25, "autsl": 25, "driveact": 15, "epic_kitchens": 60,
+    "ssv2": 12, "ucf101": 25, "hmdb51": 30,
+    "diving48": 25, "autsl": 30, "driveact": 15, "epic_kitchens": 50,
 }
 
 # Duration bins in seconds

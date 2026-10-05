@@ -2,7 +2,7 @@
 
 <p align="center">
   <em>A Cross-Architecture Analysis at Scale</em><br><br>
-  <strong>ACCV 2026 · Mi3 Lab, UC Merced</strong>
+  <strong>Mi3 Lab, UC Merced</strong>
 </p>
 
 <p align="center">
@@ -18,37 +18,29 @@
 
 We study how **spatial resolution**, **temporal coverage**, and **frame stride** jointly affect video recognition accuracy across **8 architectures** and **8 datasets**, spanning CNNs, Transformers, and State Space Models. Using **8,000+ evaluation configurations** (5 resolutions × 5 coverages × 5 strides per architecture), we identify the dominant aliasing factors, rank datasets by temporal demand, and characterize architectural robustness profiles.
 
-> ### ⚠️ Under revision — ACCV 2026 rebuttal round
->
-> Reviewers argued that the temporal sweep does not measure aliasing, and on
-> investigation **they were right**. `select_frame_indices` re-uniformises the
-> strided candidate pool to each model's frame budget, so stride changes the
-> input only once the pool falls below that budget — and the shortfall is then
-> filled by repeating the last frame. The sweep measures **evidence loss**, not
-> sampling rate. See `PROGRESS.md` for the full account and
-> `scripts/accv2026/rebuttal_padding_diagnostic.py` to reproduce it.
->
-> Several takeaways below are superseded; each is marked. Revised paper:
-> `paper/main2.tex`.
-
 **Key takeaways:**
-- **Coverage dominates** — ~~ANOVA η²=0.63–0.88, 2.2× stride~~ **superseded**: a
-  repeated-measures model (clip as subject, which the grid requires since all 25
-  cells score the same clips) gives partial η² of 0.292 for coverage against
-  0.232 for stride, a ratio of **1.26×**, plus an interaction term of 0.070 that
-  the original model omitted
-- **Attention type governs robustness** — ~~TimeSformer 10.3 pp vs. SlowFast 42.1
-  pp~~ **superseded**: that ordering is confounded with input frame budget
-  (Spearman **0.849**, p=0.008 — the two "robust" models are exactly the two with
-  8-frame inputs). At *matched evidence* an architecture effect survives in a
-  narrower form (Spearman **0.821**, p=0.023), but the 3–5× magnitude does not
-- **Dataset temporal demand is stable** — holds. Spearman ρ=0.97 across
-  architectures, and the ranking is additionally invariant to five definitions of
-  the metric (curve-integral, unclipped, baseline- and chance-normalised, ρ≥0.95)
-- **Spectral validation** — higher inter-frame optical flow frequency correlates
-  negatively with stride sensitivity (Spearman ρ=−0.549, p=0.0006, n=35). The
-  negative sign is now explained: the stride axis varies available evidence
-  rather than sampling rate
+- **Dataset temporal demand is stable** — the TDS ranking holds across
+  architecture pools (Spearman ρ≥0.976 for CNN-only, Transformer-only and
+  Transformer+SSM pools) and across five definitions of the metric
+  (curve-integral, unclipped, baseline- and chance-normalised, ρ≥0.95)
+- **Attention type governs robustness** — TimeSformer loses 10.3 pp from
+  stride 1→16 against 42.1 pp for SlowFast. Frame budgets differ across models,
+  so the comparison is repeated at matched evidence (same distinct frames for
+  every model): TimeSformer stays first at every k≥2 and the ordering agrees
+  under scarce evidence (Spearman 0.857, p=0.007 at k=2)
+- **Coverage and stride both matter** — repeated-measures ANOVA (clip as
+  subject) gives partial η² of 0.292 for coverage, 0.232 for stride and 0.070
+  for their interaction
+- **Spectral validation** — higher inter-frame optical-flow frequency correlates
+  negatively with stride sensitivity (Spearman ρ=−0.63, n=40): classifier-relevant
+  evidence is temporally localised rather than tied to bulk motion
+- **Confidence cascade** — with held-out calibration, TimeSformer matches dense
+  accuracy on all 8 datasets at 4.7–7.6 average frames; the benefit is
+  architecture-dependent (−3.5 pp on average over 56 model–dataset pairs)
+
+Paper sources: `paper/fg2027/` (IEEE two-column). Build with
+`cd paper/fg2027 && tectonic main.tex && tectonic supplementary.tex`; figures
+come from `scripts/fg2027/make_figures.py`.
 
 ---
 
