@@ -154,7 +154,7 @@ VideoMAE    & UCF-101      & 0.094 & 0.121 & 1.29$\times$ & 0.0239 \\
 \section{Between-Cell ANOVA Effect Size Tables}
 \label{sec:sup_anova}
 
-This section reports the classical between-cell decomposition, which treats the 25 grid cells of a model--dataset pair as independent observations and covers all 8 architectures. The main paper reports the repeated-measures analysis, detailed in Sec.~\ref{sec:sup_rmanova}; both order the architectures identically by stride effect. Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid datasets), with error bars indicating standard deviation.
+This section reports the classical between-cell decomposition, which treats the 25 grid cells of a model--dataset pair as independent observations. The main paper reports the repeated-measures analysis, detailed in Sec.~\ref{sec:sup_rmanova}; both order the architectures identically by stride effect. Figure~\ref{fig:anova_bar} shows the mean $\eta^2$ per model (averaged over all valid datasets), with error bars indicating standard deviation.
 
 \begin{figure}[!htbp]
   \centering
@@ -949,15 +949,13 @@ All 25 cells of the grid score the same clips. We therefore analyse the grid
 with the clip as subject and coverage and stride as fully crossed within-subject
 factors, testing each effect against its own subject$\times$factor error term
 and reporting partial $\eta^2$. Only clips present in all 25 cells are used, so
-the design is balanced. The analysis covers the seven architectures whose
-per-clip outputs are available (56 model--dataset pairs); VideoMamba is reported
-in the between-cell analysis of Sec.~\ref{sec:sup_anova}.
+the design is balanced. The analysis covers all 64 model--dataset pairs.
 
-Partial $\eta^2$ is $0.292\pm0.152$ for coverage, $0.232\pm0.145$ for stride and
-$0.070\pm0.081$ for their interaction. The interaction is largest on the
+Partial $\eta^2$ is $0.286\pm0.156$ for coverage, $0.216\pm0.146$ for stride and
+$0.064\pm0.078$ for their interaction. The interaction is largest on the
 high-demand datasets, reaching $0.271$ on SlowFast/AUTSL, $0.262$ on
-R3D-18/AUTSL and $0.232$ on SlowFast/FineGym. The per-model ordering of the
-stride effect (TimeSformer $0.124$, MC3-18 $0.197$, R3D-18 $0.226$, R(2+1)D
+R3D-18/AUTSL and $0.254$ on R(2+1)D/AUTSL. The per-model ordering of the
+stride effect (VideoMamba $0.103$, TimeSformer $0.124$, MC3-18 $0.197$, R3D-18 $0.226$, R(2+1)D
 $0.238$, ViViT $0.247$, VideoMAE $0.259$, SlowFast $0.331$) matches the
 between-cell analysis, so the grouping of architectures does not depend on the
 choice of error term.
@@ -971,14 +969,13 @@ exceeds $\tau$ and the stride-1 prediction otherwise. Cost is counted in
 acquired frames (16 for stride 1, 4 for stride 4). We choose $\tau$ on a
 stratified calibration half of the validation split, subject to an average cost
 of at most 8 frames, and score it on the other half, over $1000$ resamples.
-Intervals are 95\% percentile intervals over resamples. Seven architectures have
-the per-clip outputs this requires.
+Intervals are 95\% percentile intervals over resamples.
 
 \begin{table}[!htbp]
 \centering
 \caption{Held-out cascade against fixed dense inference. Left: mean over the 8
 datasets per architecture, with the number of datasets whose interval includes
-zero. Right: TimeSformer per dataset.}
+zero. Right: per-dataset results for TimeSformer (TSF) and VideoMamba (VM).}
 \label{tab:sup_cascade}
 \scriptsize\tabtight
 \begin{tabular}{l r r r}
@@ -986,6 +983,7 @@ zero. Right: TimeSformer per dataset.}
 Model & Gain (pp) & Frames & CI $\ni0$ \\
 \midrule
 TimeSformer & $-0.06$  & 6.13 & 8/8 \\
+VideoMamba  & $-0.23$  & 6.13 & 8/8 \\
 VideoMAE    & $-1.65$  & 6.70 & 6/8 \\
 MC3-18      & $-1.92$  & 6.47 & 6/8 \\
 R(2+1)D     & $-2.65$  & 6.62 & 4/8 \\
@@ -995,28 +993,30 @@ SlowFast    & $-10.72$ & 7.13 & 1/8 \\
 \bottomrule
 \end{tabular}
 \hspace{1.5em}
-\begin{tabular}{l r r r l}
+\begin{tabular}{l r r l r r l}
 \toprule
-TimeSformer & Top-1 & Frames & Gain (pp) & 95\% CI \\
+ & \multicolumn{3}{c}{TSF} & \multicolumn{3}{c}{VM} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Dataset & Frames & Gain & 95\% CI & Frames & Gain & 95\% CI \\
 \midrule
-UCF-101       & 91.2 & 4.71 & $+0.14$ & $[-0.50,+0.50]$ \\
-HMDB-51       & 80.4 & 5.21 & $+0.32$ & $[-1.32,+1.32]$ \\
-Diving-48     & 37.9 & 5.73 & $+0.10$ & $[-2.13,+2.40]$ \\
-DriveAct      & 67.7 & 5.84 & $+0.02$ & $[-3.07,+1.75]$ \\
-EPIC-Kitchens & 31.8 & 6.43 & $-0.31$ & $[-1.56,+0.78]$ \\
-AUTSL         & 66.9 & 6.64 & $+0.10$ & $[-0.81,+0.67]$ \\
-SSv2          & 42.2 & 6.89 & $-0.03$ & $[-1.07,+0.83]$ \\
-FineGym       & 65.0 & 7.62 & $-0.85$ & $[-2.35,+0.37]$ \\
+UCF-101       & 4.71 & $+0.14$ & $[-0.50,+0.50]$ & 5.03 & $-0.06$ & $[-0.79,+0.20]$ \\
+HMDB-51       & 5.21 & $+0.32$ & $[-1.32,+1.32]$ & 5.63 & $-0.57$ & $[-1.97,+0.44]$ \\
+Diving-48     & 5.73 & $+0.10$ & $[-2.13,+2.40]$ & 6.42 & $+0.01$ & $[-2.93,+2.67]$ \\
+DriveAct      & 5.84 & $+0.02$ & $[-3.07,+1.75]$ & 5.92 & $-0.90$ & $[-3.51,+0.88]$ \\
+EPIC-Kitchens & 6.43 & $-0.31$ & $[-1.56,+0.78]$ & 5.47 & $-0.20$ & $[-1.17,+0.58]$ \\
+AUTSL         & 6.64 & $+0.10$ & $[-0.81,+0.67]$ & 6.85 & $+0.16$ & $[-0.90,+0.85]$ \\
+SSv2          & 6.89 & $-0.03$ & $[-1.07,+0.83]$ & 6.39 & $+0.22$ & $[-0.71,+1.07]$ \\
+FineGym       & 7.62 & $-0.85$ & $[-2.35,+0.37]$ & 7.34 & $-0.50$ & $[-2.23,+0.74]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For TimeSformer the cascade is statistically indistinguishable from dense
-inference on all 8 datasets at $4.7$--$7.6$ average frames
-(Table~\ref{tab:sup_cascade}). Over all 56 pairs the mean change is $-3.5$pp at
-$6.7$ frames, and 25 pairs have intervals that exclude zero. The losses
-concentrate where stride-4 inference is itself degraded: FineGym (mean
-$-13.8$pp) and SlowFast (mean $-10.7$pp, down to $-33.4$pp on FineGym). The
+For TimeSformer and VideoMamba the cascade is statistically indistinguishable
+from dense inference on all 8 datasets, at $4.7$--$7.6$ and $5.0$--$7.3$ average
+frames respectively (Table~\ref{tab:sup_cascade}). Over all 64 pairs the mean
+change is $-3.1$pp at $6.7$ frames, and 25 pairs have intervals that exclude
+zero. The losses concentrate where stride-4 inference is itself degraded:
+FineGym (mean $-12.2$pp) and SlowFast (mean $-10.7$pp, down to $-33.4$pp on FineGym). The
 cascade is thus a useful operating point for backbones that are robust to
 sparse sampling, in line with the temporal results of the main paper.
 
