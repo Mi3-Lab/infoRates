@@ -62,13 +62,14 @@ main point; only open issues are being worked on.
   longer called controlled), Table I sizes (FineGym 1,600 clips, Diving-48 47
   classes), spectral p-values, FineGym columns of Tables S2/S4.
 - Not audited cell by cell: supplementary spatial tables (S9) and S11–S13.
-- Framing for FG scope (2026-10-04): title is now "Measuring and Mitigating
-  Spatiotemporal Aliasing in Human Action and Gesture Recognition: A
-  Cross-Architecture Analysis at Scale"; abstract, introduction, Table I domain
-  labels and conclusion describe the datasets as human hand/body movement
+- Scope: the CMT subject areas include "Action Recognition" and "Activity
+  Recognition", so the paper is in scope as is. Title kept as the original
+  ("...Aliasing in Video Action Recognition..."). The abstract, introduction and
+  Table I domain labels describe the datasets by the kind of human movement
   (sign-language gestures, hand–object interaction, driver behaviour,
-  fine-grained body motion). Results and claims unchanged. Previous version:
-  only the wording differs; revert by restoring "Video Action Recognition".
+  fine-grained body motion); results and claims unchanged.
+- CMT subject areas: primary **Action Recognition**; secondary Activity
+  Recognition and Gesture Recognition, Analysis & Synthesis.
 - Paper type: **long paper, main track** (rejected long papers are not
   reconsidered as short; no special session fits).
 - VideoMamba row of Table III corrected against the CSVs (4 cells + UCF sign);
