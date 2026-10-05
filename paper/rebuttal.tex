@@ -72,7 +72,7 @@ and $37.0\%$ for R3D-18, whose stride-16 accuracy rises $6.5\%\!\to\!31.9\%$. It
 is a trade rather than a repair --- 63--72\% persists and dense accuracy costs
 $3.3$/$9.9$pp --- and at matched dense accuracy, training through the degraded
 input recovers $2.4$--$6.5\times$ more than uniform resampling. On convergence:
-across 730 training logs, 48px is indeed where the budget binds ($52.8\%$ of
+across 503 training logs at the five reported resolutions, 48px is indeed where the budget binds ($52.8\%$ of
 runs peak at the final epoch vs.\ 16--27\% elsewhere), though the last three
 epochs win only $1.38$pp; we state this as a limitation. Sec.~3.3 now gives the
 resize and PE-interpolation procedure, and Table~7 gains the
@@ -81,9 +81,9 @@ without-fine-tuning row.
 \head{\R{3}: further items.}
 Frame rates are now measured, not assumed --- three datasets differed
 (HMDB-51 30, AUTSL 30, EPIC 50) --- and at fixed nominal stride the realised
-interval varies $3.9\times$ across datasets. Kinetics-400 is added, requiring no
-training since all backbones are K400-pretrained; it sits at the low-demand end,
-which sharpens the paper's point. Table~5 gains FineGym, Table~7 the baseline
+interval varies $3.9\times$ across datasets. We will clarify that Kinetics-400
+is the common pretraining source, not an evaluation domain, and make no new
+Kinetics comparison. Table~5 gains FineGym, Table~7 the baseline
 column, and model ordering is now consistent throughout. On Table~7 you are
 right that native-resolution tuning already gains $+6$ to $+10.6$pp, so the
 $+39.2$pp separates into $\approx$32pp adaptation and $\approx$7pp additional

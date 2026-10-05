@@ -1,0 +1,256 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand*\HyPL@Entry[1]{}
+\HyPL@Entry{0<</S/D>>}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {title}{Supplementary Material:\unskip \ \ignorespaces  \leavevmode {\color  {revblue}Measuring Spatiotemporal Sampling Sensitivity in Video Action Recognition:\unskip \ \ignorespaces  A Cross-Architecture Analysis at Scale}}{1}{chapter.1}\protected@file@percent }
+\@writefile{toc}{\authcount {1}}
+\@writefile{toc}{\contentsline {author}{Anonymous ACCV 2026{} Submission}{1}{chapter.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {S1}Full Coverage$\times $Stride Heatmaps}{1}{section.1.1}\protected@file@percent }
+\newlabel{sec:sup_heatmaps}{{S1}{1}{Full Coverage$\times $Stride Heatmaps}{section.1.1}{}}
+\newlabel{sec:sup_heatmaps@cref}{{[section][1][]S1}{[1][1][]1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S1}{\ignorespaces R3D-18 (CNN-3D) coverage$\times $stride accuracy (\%) across 8 datasets. Sharp cliff at stride 4$\to $8 on AUTSL (75\%$\to $27\%) and similar cliff on FineGym are consistent with the high temporal demand of fine-grained actions. EPIC-Kitchens and UCF-101 retain high accuracy even at sparse sampling.\relax }}{2}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:heatmap_r3d}{{S1}{2}{R3D-18 (CNN-3D) coverage$\times $stride accuracy (\%) across 8 datasets. Sharp cliff at stride 4$\to $8 on AUTSL (75\%$\to $27\%) and similar cliff on FineGym are consistent with the high temporal demand of fine-grained actions. EPIC-Kitchens and UCF-101 retain high accuracy even at sparse sampling.\relax }{figure.caption.2}{}}
+\newlabel{fig:heatmap_r3d@cref}{{[figure][1][]S1}{[1][1][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S2}{\ignorespaces MC3-18 (CNN-mix, channel-separated 3D) heatmaps. Similar pattern to R3D-18 but with slightly reduced \ \leavevmode {\color  {revblue}evidence loss} on low-TDS datasets (UCF-101, DriveAct). FineGym shows the same severe cliff pattern as AUTSL.\relax }}{2}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:heatmap_mc3}{{S2}{2}{MC3-18 (CNN-mix, channel-separated 3D) heatmaps. Similar pattern to R3D-18 but with slightly reduced \revdel {aliasing}\ \rev {evidence loss} on low-TDS datasets (UCF-101, DriveAct). FineGym shows the same severe cliff pattern as AUTSL.\relax }{figure.caption.3}{}}
+\newlabel{fig:heatmap_mc3@cref}{{[figure][2][]S2}{[1][1][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S3}{\ignorespaces R2+1D-18 (separable spatiotemporal convolution) heatmaps. Higher base accuracy than R3D-18 on several datasets (SSv2: 42.6\% vs 37.1\%), but a similar \ \leavevmode {\color  {revblue}sampling-sensitivity} pattern.\relax }}{2}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:heatmap_r2p1d}{{S3}{2}{R2+1D-18 (separable spatiotemporal convolution) heatmaps. Higher base accuracy than R3D-18 on several datasets (SSv2: 42.6\% vs 37.1\%), but a similar \revdel {aliasing-sensitivity}\ \rev {sampling-sensitivity} pattern.\relax }{figure.caption.4}{}}
+\newlabel{fig:heatmap_r2p1d@cref}{{[figure][3][]S3}{[1][1][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S4}{\ignorespaces \leavevmode {\color  {revblue}SlowFast-R50 (dual-pathway) heatmaps. The AUTSL cliff occurs at stride 2$\to $4 (77\%$\to $41\%), one step earlier than for the other CNNs under the original fixed-budget protocol. This difference is consistent with SlowFast's larger frame budget but does not isolate its causal role. On FineGym, SlowFast achieves the highest base accuracy (78.2\%) but suffers the largest evidence loss (71.5pp at stride=16) under this protocol.}\relax }}{2}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:heatmap_slowfast}{{S4}{2}{\rev {SlowFast-R50 (dual-pathway) heatmaps. The AUTSL cliff occurs at stride 2$\to $4 (77\%$\to $41\%), one step earlier than for the other CNNs under the original fixed-budget protocol. This difference is consistent with SlowFast's larger frame budget but does not isolate its causal role. On FineGym, SlowFast achieves the highest base accuracy (78.2\%) but suffers the largest evidence loss (71.5pp at stride=16) under this protocol.}\relax }{figure.caption.5}{}}
+\newlabel{fig:heatmap_slowfast@cref}{{[figure][4][]S4}{[1][1][]2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S5}{\ignorespaces \leavevmode {\color  {revblue}TimeSformer (divided space--time attention) heatmaps. Accuracy is relatively flat across much of the original grid, with steeper degradation at the combined extreme of low coverage and high stride. FineGym drops 36.1pp at stride=16. These are descriptive fixed-budget curves; they do not identify the contribution of divided attention.}\relax }}{3}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:heatmap_timesformer}{{S5}{3}{\rev {TimeSformer (divided space--time attention) heatmaps. Accuracy is relatively flat across much of the original grid, with steeper degradation at the combined extreme of low coverage and high stride. FineGym drops 36.1pp at stride=16. These are descriptive fixed-budget curves; they do not identify the contribution of divided attention.}\relax }{figure.caption.6}{}}
+\newlabel{fig:heatmap_timesformer@cref}{{[figure][5][]S5}{[1][1][]3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S6}{\ignorespaces \leavevmode {\color  {revblue}ViViT (factorized attention) heatmaps. Despite being a Transformer, ViViT shows large fixed-budget drops (AUTSL: cliff at stride 2$\to $4, comparable to SlowFast); FineGym drops 55.2pp at stride=16. The comparison is observational and does not attribute this pattern to factorized temporal attention.}\relax }}{3}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:heatmap_vivit}{{S6}{3}{\rev {ViViT (factorized attention) heatmaps. Despite being a Transformer, ViViT shows large fixed-budget drops (AUTSL: cliff at stride 2$\to $4, comparable to SlowFast); FineGym drops 55.2pp at stride=16. The comparison is observational and does not attribute this pattern to factorized temporal attention.}\relax }{figure.caption.7}{}}
+\newlabel{fig:heatmap_vivit@cref}{{[figure][6][]S6}{[1][1][]3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S7}{\ignorespaces \leavevmode {\color  {revblue}VideoMAE (masked autoencoder) heatmaps. Base accuracy is high on SSv2 (52.4\%), UCF-101 (95.4\%), and FineGym (78.0\%), while its original-protocol curve falls sharply on AUTSL (stride 4$\to $8) and FineGym (67.8pp at stride=16). This pattern cannot isolate the contribution of the MAE pretraining objective.}\relax }}{3}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:heatmap_videomae}{{S7}{3}{\rev {VideoMAE (masked autoencoder) heatmaps. Base accuracy is high on SSv2 (52.4\%), UCF-101 (95.4\%), and FineGym (78.0\%), while its original-protocol curve falls sharply on AUTSL (stride 4$\to $8) and FineGym (67.8pp at stride=16). This pattern cannot isolate the contribution of the MAE pretraining objective.}\relax }{figure.caption.8}{}}
+\newlabel{fig:heatmap_videomae@cref}{{[figure][7][]S7}{[1][1][]3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S8}{\ignorespaces VideoMamba (SSM selective scan) heatmaps (all 8 datasets). \leavevmode {\color  {revblue}Sensitivity is low on five datasets and higher on FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp); these observational differences do not isolate the effect of the temporal module.}\relax }}{3}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:heatmap_videomamba}{{S8}{3}{VideoMamba (SSM selective scan) heatmaps (all 8 datasets). \revdel {On 5 of 8 datasets, VideoMamba shows a flat heatmap with minimal degradation across strides---the SSM recurrent state aggregates temporal context, providing natural robustness. FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp) are exceptions, revealing the limit of SSM temporal integration under high-frequency transitions.}\rev {Sensitivity is low on five datasets and higher on FineGym (40.8pp), AUTSL (16.0pp), and SSv2 (14.1pp); these observational differences do not isolate the effect of the temporal module.}\relax }{figure.caption.9}{}}
+\newlabel{fig:heatmap_videomamba@cref}{{[figure][8][]S8}{[1][1][]3}}
+\@writefile{toc}{\contentsline {section}{\numberline {S2}Levene Variance Inflation Analysis}{4}{section.1.2}\protected@file@percent }
+\newlabel{sec:sup_levene}{{S2}{4}{Levene Variance Inflation Analysis}{section.1.2}{}}
+\newlabel{sec:sup_levene@cref}{{[section][2][]S2}{[1][4][]4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S9}{\ignorespaces Levene test: inter-class accuracy std at stride=1 vs.\ stride=16. Points above the dashed diagonal have higher variance under sparse sampling. Color encodes the variance ratio ($\sigma _{s16}/\sigma _{s1}$). \textbf  {Key finding}: 67\% of model-dataset pairs show significant variance inflation ($p<0.05$), with the largest increases in VideoMAE/HMDB-51 (2.0$\times $) and R3D-18/HMDB-51 (1.85$\times $). TimeSformer and VideoMamba show stable variance ($\approx $1.1$\times $).\relax }}{4}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:levene}{{S9}{4}{Levene test: inter-class accuracy std at stride=1 vs.\ stride=16. Points above the dashed diagonal have higher variance under sparse sampling. Color encodes the variance ratio ($\sigma _{s16}/\sigma _{s1}$). \textbf {Key finding}: 67\% of model-dataset pairs show significant variance inflation ($p<0.05$), with the largest increases in VideoMAE/HMDB-51 (2.0$\times $) and R3D-18/HMDB-51 (1.85$\times $). TimeSformer and VideoMamba show stable variance ($\approx $1.1$\times $).\relax }{figure.caption.10}{}}
+\newlabel{fig:levene@cref}{{[figure][9][]S9}{[1][4][]4}}
+\@writefile{lot}{\contentsline {table}{\numberline {S1}{\ignorespaces Top-10 variance inflation cases (stride=1$\to $16, coverage=100\%). All rows significant at $p{<}0.05$.\relax }}{5}{table.caption.11}\protected@file@percent }
+\newlabel{tab:levene_top}{{S1}{5}{Top-10 variance inflation cases (stride=1$\to $16, coverage=100\%). All rows significant at $p{<}0.05$.\relax }{table.caption.11}{}}
+\newlabel{tab:levene_top@cref}{{[table][1][]S1}{[1][4][]5}}
+\@writefile{toc}{\contentsline {section}{\numberline {S3}\leavevmode {\color  {revblue}Original Between-Cell ANOVA Effect Sizes}}{5}{section.1.3}\protected@file@percent }
+\newlabel{sec:sup_anova}{{S3}{5}{\rev {Original Between-Cell ANOVA Effect Sizes}}{section.1.3}{}}
+\newlabel{sec:sup_anova@cref}{{[section][3][]S3}{[1][5][]5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S10}{\ignorespaces \leavevmode {\color  {revblue}Originally submitted between-cell $\eta ^2$ values. These descriptive bars are superseded by the repeated-measures partial $\eta ^2$ estimates in Sec.\nobreakspace  {}\ref  {sec:sup_rmanova}.}\relax }}{5}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:anova_bar}{{S10}{5}{\rev {Originally submitted between-cell $\eta ^2$ values. These descriptive bars are superseded by the repeated-measures partial $\eta ^2$ estimates in Sec.~\ref {sec:sup_rmanova}.}\revdel {ANOVA effect sizes confirming architecture-dependent aliasing.}\relax }{figure.caption.12}{}}
+\newlabel{fig:anova_bar@cref}{{[figure][10][]S10}{[1][5][]5}}
+\@writefile{lot}{\contentsline {table}{\numberline {S2}{\ignorespaces \leavevmode {\color  {revblue}Original between-cell $\eta ^2$ per model and dataset, retained for traceability only. Cov = $\eta ^2(\text  {coverage})$; Str = $\eta ^2(\text  {stride})$. See Sec.\nobreakspace  {}\ref  {sec:sup_rmanova} for corrected inference.}\relax }}{6}{table.caption.13}\protected@file@percent }
+\newlabel{tab:anova_full}{{S2}{6}{\rev {Original between-cell $\eta ^2$ per model and dataset, retained for traceability only. Cov = $\eta ^2(\text {coverage})$; Str = $\eta ^2(\text {stride})$. See Sec.~\ref {sec:sup_rmanova} for corrected inference.}\relax }{table.caption.13}{}}
+\newlabel{tab:anova_full@cref}{{[table][2][]S2}{[1][6][]6}}
+\@writefile{toc}{\contentsline {section}{\numberline {S4}Action Sensitivity Taxonomy}{6}{section.1.4}\protected@file@percent }
+\newlabel{sec:sup_taxonomy}{{S4}{6}{Action Sensitivity Taxonomy}{section.1.4}{}}
+\newlabel{sec:sup_taxonomy@cref}{{[section][4][]S4}{[1][6][]6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S11}{\ignorespaces \ \leavevmode {\color  {revblue}Evidence loss} (pp) per sensitivity tier and dataset. Each bar shows mean accuracy drop (stride=1$\to $16) within the tier, annotated with the number of action classes. UCF-101 Low tier: $-0.3$pp; AUTSL remains high across tiers.\relax }}{6}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:taxonomy_full}{{S11}{6}{\revdel {Aliasing loss}\ \rev {Evidence loss} (pp) per sensitivity tier and dataset. Each bar shows mean accuracy drop (stride=1$\to $16) within the tier, annotated with the number of action classes. UCF-101 Low tier: $-0.3$pp; AUTSL remains high across tiers.\relax }{figure.caption.14}{}}
+\newlabel{fig:taxonomy_full@cref}{{[figure][11][]S11}{[1][6][]6}}
+\@writefile{lot}{\contentsline {table}{\numberline {S3}{\ignorespaces Taxonomy tier thresholds (accuracy drop, pp): classes below the Low threshold alias negligibly; classes above the High threshold are severely affected. Thresholds are dataset-specific and computed across all valid architectures.\relax }}{7}{table.caption.15}\protected@file@percent }
+\newlabel{tab:taxonomy_detail}{{S3}{7}{Taxonomy tier thresholds (accuracy drop, pp): classes below the Low threshold alias negligibly; classes above the High threshold are severely affected. Thresholds are dataset-specific and computed across all valid architectures.\relax }{table.caption.15}{}}
+\newlabel{tab:taxonomy_detail@cref}{{[table][3][]S3}{[1][6][]7}}
+\@writefile{toc}{\contentsline {section}{\numberline {S5}\leavevmode {\color  {revblue}Maximum-Probability Confidence-Cascade Curves --- All Models}}{7}{section.1.5}\protected@file@percent }
+\newlabel{sec:sup_routing}{{S5}{7}{\rev {Maximum-Probability Confidence-Cascade Curves --- All Models}}{section.1.5}{}}
+\newlabel{sec:sup_routing@cref}{{[section][5][]S5}{[1][7][]7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S12}{\ignorespaces \leavevmode {\color  {revblue}Maximum-probability cascade: descriptive in-sample accuracy vs. average frames on SSv2 (4f cheap $\to $ 16f dense). Held-out threshold selection is analysed separately in Sec.\nobreakspace  {}\ref  {sec:sup_routing_heldout}.}\relax }}{7}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:routing_all}{{S12}{7}{\rev {Maximum-probability cascade: descriptive in-sample accuracy vs. average frames on SSv2 (4f cheap $\to $ 16f dense). Held-out threshold selection is analysed separately in Sec.~\ref {sec:sup_routing_heldout}.}\revdel {Entropy routing: accuracy vs. average frames on SSv2.}\relax }{figure.caption.16}{}}
+\newlabel{fig:routing_all@cref}{{[figure][12][]S12}{[1][7][]7}}
+\citation{farneback2003two}
+\@writefile{lot}{\contentsline {table}{\numberline {S4}{\ignorespaces \leavevmode {\color  {revblue}In-sample maximum-probability cascade frontier: best Top-1 accuracy at avg $\leq 8$ frames per model/dataset. Held-out results and uncertainty are in Sec.\nobreakspace  {}\ref  {sec:sup_routing_heldout}.}\relax }}{8}{table.caption.17}\protected@file@percent }
+\newlabel{tab:routing_full}{{S4}{8}{\rev {In-sample maximum-probability cascade frontier: best Top-1 accuracy at avg $\leq 8$ frames per model/dataset. Held-out results and uncertainty are in Sec.~\ref {sec:sup_routing_heldout}.}\revdel {Entropy routing: best accuracy at avg $\leq 8$ frames per model/dataset.}\relax }{table.caption.17}{}}
+\newlabel{tab:routing_full@cref}{{[table][4][]S4}{[1][7][]8}}
+\@writefile{toc}{\contentsline {section}{\numberline {S6}Clip Duration Analysis}{8}{section.1.6}\protected@file@percent }
+\newlabel{sec:sup_duration}{{S6}{8}{Clip Duration Analysis}{section.1.6}{}}
+\newlabel{sec:sup_duration@cref}{{[section][6][]S6}{[1][8][]8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {S13}{\ignorespaces \ \leavevmode {\color  {revblue}Evidence loss} (pp) vs.\ clip duration. \leavevmode {\color  {revblue}Shorter clips lose more accuracy} (Pearson $r=-0.3$ to $-0.8$ across models), consistent with lower temporal redundancy. Diving-48 is the exception.\relax }}{8}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:duration}{{S13}{8}{\revdel {Aliasing loss}\ \rev {Evidence loss} (pp) vs.\ clip duration. \rev {Shorter clips lose more accuracy} (Pearson $r=-0.3$ to $-0.8$ across models), consistent with lower temporal redundancy. Diving-48 is the exception.\relax }{figure.caption.18}{}}
+\newlabel{fig:duration@cref}{{[figure][13][]S13}{[1][8][]8}}
+\@writefile{toc}{\contentsline {section}{\numberline {S7}\leavevmode {\color  {revblue}Exploratory Motion-Proxy Analysis}}{8}{section.1.7}\protected@file@percent }
+\newlabel{sec:sup_spectral}{{S7}{8}{\rev {Exploratory Motion-Proxy Analysis}}{section.1.7}{}}
+\newlabel{sec:sup_spectral@cref}{{[section][7][]S7}{[1][8][]8}}
+\@writefile{brf}{\backcite{farneback2003two}{{8}{S7}{section.1.7}}}
+\@writefile{lot}{\contentsline {table}{\numberline {S5}{\ignorespaces \leavevmode {\color  {revblue}Pearson $r$ between whole-frame optical-flow magnitude and per-class evidence loss. The mixed signs show that flow magnitude is not a literal Nyquist proxy.}\relax }}{9}{table.caption.19}\protected@file@percent }
+\newlabel{tab:spectral}{{S5}{9}{\rev {Pearson $r$ between whole-frame optical-flow magnitude and per-class evidence loss. The mixed signs show that flow magnitude is not a literal Nyquist proxy.}\revdel {Positive $r$ supports the Nyquist hypothesis.}\relax }{table.caption.19}{}}
+\newlabel{tab:spectral@cref}{{[table][5][]S5}{[1][9][]9}}
+\@writefile{toc}{\contentsline {section}{\numberline {S8}Implementation Details}{9}{section.1.8}\protected@file@percent }
+\newlabel{sec:sup_impl}{{S8}{9}{Implementation Details}{section.1.8}{}}
+\newlabel{sec:sup_impl@cref}{{[section][8][]S8}{[1][9][]9}}
+\@writefile{toc}{\contentsline {paragraph}{Hardware.}{9}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Splits, clip sampling, and evaluation determinism.}{9}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Seeds and uncertainty.}{9}{section*.22}\protected@file@percent }
+\citation{shao2020finegym}
+\@writefile{toc}{\contentsline {paragraph}{Frame and crop normalization.}{10}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Training hyperparameters.}{10}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Positional embedding interpolation for Transformers and SSMs.}{10}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{SlowFast spatial pooling fix.}{10}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{FineGym dataset details.}{10}{section*.27}\protected@file@percent }
+\@writefile{brf}{\backcite{shao2020finegym}{{10}{S8}{section*.27}}}
+\@writefile{toc}{\contentsline {section}{\numberline {S9}Multi-Dataset Spatial Resolution Results}{10}{section.1.9}\protected@file@percent }
+\newlabel{sec:sup_spatial}{{S9}{10}{Multi-Dataset Spatial Resolution Results}{section.1.9}{}}
+\newlabel{sec:sup_spatial@cref}{{[section][9][]S9}{[1][10][]10}}
+\@writefile{lot}{\contentsline {table}{\numberline {S6}{\ignorespaces \leavevmode {\color  {revblue}Input-scale sensitivity on \textbf  {SSv2} under source-frame pre-resizing and unchanged native checkpoint preprocessing (repeated from main paper; no fine-tuning).}\relax }}{11}{table.caption.28}\protected@file@percent }
+\newlabel{tab:sup_sp_ssv2}{{S6}{11}{\rev {Input-scale sensitivity on \textbf {SSv2} under source-frame pre-resizing and unchanged native checkpoint preprocessing (repeated from main paper; no fine-tuning).}\relax }{table.caption.28}{}}
+\newlabel{tab:sup_sp_ssv2@cref}{{[table][6][]S6}{[1][11][]11}}
+\@writefile{lot}{\contentsline {table}{\numberline {S7}{\ignorespaces Spatial robustness on \textbf  {UCF-101} (no retraining).\relax }}{11}{table.caption.29}\protected@file@percent }
+\newlabel{tab:sup_sp_ucf}{{S7}{11}{Spatial robustness on \textbf {UCF-101} (no retraining).\relax }{table.caption.29}{}}
+\newlabel{tab:sup_sp_ucf@cref}{{[table][7][]S7}{[1][11][]11}}
+\@writefile{lot}{\contentsline {table}{\numberline {S8}{\ignorespaces Spatial robustness on \textbf  {HMDB-51} (no retraining).\relax }}{12}{table.caption.30}\protected@file@percent }
+\newlabel{tab:sup_sp_hmdb}{{S8}{12}{Spatial robustness on \textbf {HMDB-51} (no retraining).\relax }{table.caption.30}{}}
+\newlabel{tab:sup_sp_hmdb@cref}{{[table][8][]S8}{[1][11][]12}}
+\@writefile{lot}{\contentsline {table}{\numberline {S9}{\ignorespaces Spatial robustness on \textbf  {Diving-48} (no retraining).\relax }}{12}{table.caption.31}\protected@file@percent }
+\newlabel{tab:sup_sp_div}{{S9}{12}{Spatial robustness on \textbf {Diving-48} (no retraining).\relax }{table.caption.31}{}}
+\newlabel{tab:sup_sp_div@cref}{{[table][9][]S9}{[1][11][]12}}
+\@writefile{lot}{\contentsline {table}{\numberline {S10}{\ignorespaces Spatial resolution results on \textbf  {AUTSL} (sign language). CNN degradation is severe under off-native evaluation; SlowFast drops from 79.2\% at 224px to 22.5\% at 96px ($-56.7$pp).\relax }}{12}{table.caption.32}\protected@file@percent }
+\newlabel{tab:sup_sp_autsl}{{S10}{12}{Spatial resolution results on \textbf {AUTSL} (sign language). CNN degradation is severe under off-native evaluation; SlowFast drops from 79.2\% at 224px to 22.5\% at 96px ($-56.7$pp).\relax }{table.caption.32}{}}
+\newlabel{tab:sup_sp_autsl@cref}{{[table][10][]S10}{[1][11][]12}}
+\@writefile{lot}{\contentsline {table}{\numberline {S11}{\ignorespaces Spatial robustness on \textbf  {DriveAct} (in-cabin activities; no retraining).\relax }}{12}{table.caption.33}\protected@file@percent }
+\newlabel{tab:sup_sp_drive}{{S11}{12}{Spatial robustness on \textbf {DriveAct} (in-cabin activities; no retraining).\relax }{table.caption.33}{}}
+\newlabel{tab:sup_sp_drive@cref}{{[table][11][]S11}{[1][11][]12}}
+\@writefile{lot}{\contentsline {table}{\numberline {S12}{\ignorespaces Spatial robustness on \textbf  {EPIC-Kitchens} (egocentric cooking; no retraining).\relax }}{13}{table.caption.34}\protected@file@percent }
+\newlabel{tab:sup_sp_epic}{{S12}{13}{Spatial robustness on \textbf {EPIC-Kitchens} (egocentric cooking; no retraining).\relax }{table.caption.34}{}}
+\newlabel{tab:sup_sp_epic@cref}{{[table][12][]S12}{[1][11][]13}}
+\@writefile{lot}{\contentsline {table}{\numberline {S13}{\ignorespaces \textbf  {FineGym} spatial resolution results after target-resolution fine-tuning (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint). Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM). Unlike other datasets in S9 (cross-resolution without retraining), FineGym shows CNN performance that \emph  {improves beyond native} after fine-tuning at higher resolutions (R3D-18: 71.5\%@112px$\to $76.1\%@224px), consistent with higher spatial resolution aiding gymnastics pose discrimination.\relax }}{13}{table.caption.35}\protected@file@percent }
+\newlabel{tab:sup_sp_finegym}{{S13}{13}{\textbf {FineGym} spatial resolution results after target-resolution fine-tuning (one checkpoint per resolution, 10 fine-tuning epochs from native checkpoint). Bold = native training resolution (112px for CNNs, 224px for Transformers/SSM). Unlike other datasets in S9 (cross-resolution without retraining), FineGym shows CNN performance that \emph {improves beyond native} after fine-tuning at higher resolutions (R3D-18: 71.5\%@112px$\to $76.1\%@224px), consistent with higher spatial resolution aiding gymnastics pose discrimination.\relax }{table.caption.35}{}}
+\newlabel{tab:sup_sp_finegym@cref}{{[table][13][]S13}{[1][11][]13}}
+\@writefile{toc}{\contentsline {section}{\numberline {S10}Interactive Dashboard and Code Availability}{14}{section.1.10}\protected@file@percent }
+\newlabel{sec:sup_dashboard}{{S10}{14}{Interactive Dashboard and Code Availability}{section.1.10}{}}
+\newlabel{sec:sup_dashboard@cref}{{[section][10][]S10}{[1][14][]14}}
+\@writefile{toc}{\contentsline {paragraph}{Interactive visualization dashboard.}{14}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Code availability.}{14}{section*.38}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {S14}{\ignorespaces Interactive dashboard screenshots from the anonymized supplementary package. The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. \leavevmode {\color  {revblue}The Architecture Recommender (c) uses deterministic rules grounded in packaged measurements; no external API is required.} The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.\relax }}{15}{figure.caption.37}\protected@file@percent }
+\newlabel{fig:dashboard_screenshots}{{S14}{15}{Interactive dashboard screenshots from the anonymized supplementary package. The Accuracy Explorer (a,b) lets users sweep coverage, stride, and resolution interactively and view per-dataset top-1 accuracy tables. \rev {The Architecture Recommender (c) uses deterministic rules grounded in packaged measurements; no external API is required.} The Latency \& Efficiency tab (d) displays GPU latency curves across all model--resolution pairs.\relax }{figure.caption.37}{}}
+\newlabel{fig:dashboard_screenshots@cref}{{[figure][14][]S14}{[1][14][]15}}
+\@writefile{toc}{\contentsline {section}{\numberline {S11}Leave-One-Architecture-Out \textsc  {TDS}{} Stability}{16}{section.1.11}\protected@file@percent }
+\newlabel{sec:sup_loo}{{S11}{16}{Leave-One-Architecture-Out \texorpdfstring {\TDS {}}{TDS} Stability}{section.1.11}{}}
+\newlabel{sec:sup_loo@cref}{{[section][11][]S11}{[1][16][]16}}
+\@writefile{lot}{\contentsline {table}{\numberline {S14}{\ignorespaces Leave-one-architecture-out \textsc  {TDS}{} ranking stability. $\rho $ is the Spearman correlation between the 8-dataset ranking computed with the named architecture excluded (7-architecture pool) and the full 8-architecture ranking.\relax }}{16}{table.caption.39}\protected@file@percent }
+\newlabel{tab:loo_tds}{{S14}{16}{Leave-one-architecture-out \TDS {} ranking stability. $\rho $ is the Spearman correlation between the 8-dataset ranking computed with the named architecture excluded (7-architecture pool) and the full 8-architecture ranking.\relax }{table.caption.39}{}}
+\newlabel{tab:loo_tds@cref}{{[table][14][]S14}{[1][16][]16}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S11.1}Architecture-Family Ablation}{16}{subsection.1.11.1}\protected@file@percent }
+\newlabel{sec:sup_family_ablation}{{S11.1}{16}{Architecture-Family Ablation}{subsection.1.11.1}{}}
+\newlabel{sec:sup_family_ablation@cref}{{[subsection][1][11]S11.1}{[1][16][]16}}
+\@writefile{lot}{\contentsline {table}{\numberline {S15}{\ignorespaces \textsc  {TDS}{} per dataset under architecture-family ablation pools, compared to the full 8-architecture ranking (sorted by full-pool \textsc  {TDS}{}).\relax }}{17}{table.caption.40}\protected@file@percent }
+\newlabel{tab:family_ablation}{{S15}{17}{\TDS {} per dataset under architecture-family ablation pools, compared to the full 8-architecture ranking (sorted by full-pool \TDS {}).\relax }{table.caption.40}{}}
+\newlabel{tab:family_ablation@cref}{{[table][15][]S15}{[1][16][]17}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {S11.2}Bootstrap Confidence Intervals}{17}{subsection.1.11.2}\protected@file@percent }
+\newlabel{sec:sup_bootstrap}{{S11.2}{17}{Bootstrap Confidence Intervals}{subsection.1.11.2}{}}
+\newlabel{sec:sup_bootstrap@cref}{{[subsection][2][11]S11.2}{[1][17][]17}}
+\@writefile{lot}{\contentsline {table}{\numberline {S16}{\ignorespaces Bootstrap 95\% CI for \textsc  {TDS}{} per dataset (resampling 8 architectures with replacement, $B{=}10{,}000$).\relax }}{17}{table.caption.41}\protected@file@percent }
+\newlabel{tab:bootstrap_ci}{{S16}{17}{Bootstrap 95\% CI for \TDS {} per dataset (resampling 8 architectures with replacement, $B{=}10{,}000$).\relax }{table.caption.41}{}}
+\newlabel{tab:bootstrap_ci@cref}{{[table][16][]S16}{[1][17][]17}}
+\@writefile{toc}{\contentsline {section}{\numberline {S12}\leavevmode {\color  {revblue}Spectral and Evidence-Localization Checks}}{18}{section.1.12}\protected@file@percent }
+\newlabel{sec:sup_nyquist}{{S12}{18}{\rev {Spectral and Evidence-Localization Checks}}{section.1.12}{}}
+\newlabel{sec:sup_nyquist@cref}{{[section][12][]S12}{[1][18][]18}}
+\@writefile{toc}{\contentsline {paragraph}{Methodology.}{18}{section*.42}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S17}{\ignorespaces Mean flow-derived spectral cutoff frequency $f_c$, videos per resolution, and mean empirical stride-sensitivity, averaged over the 5 tested resolutions per dataset and sorted by stride-sensitivity.\relax }}{18}{table.caption.43}\protected@file@percent }
+\newlabel{tab:nyquist_v2}{{S17}{18}{Mean flow-derived spectral cutoff frequency $f_c$, videos per resolution, and mean empirical stride-sensitivity, averaged over the 5 tested resolutions per dataset and sorted by stride-sensitivity.\relax }{table.caption.43}{}}
+\newlabel{tab:nyquist_v2@cref}{{[table][17][]S17}{[1][18][]18}}
+\@writefile{toc}{\contentsline {paragraph}{Result.}{18}{section*.44}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Interpretation.}{19}{section*.45}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Test A: Temporal burstiness of optical flow (CPU).}{19}{section*.47}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Test B: TimeSformer temporal attention entropy (GPU).}{19}{section*.48}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Test C: Sliding-window confidence concentration (GPU, most direct).}{19}{section*.49}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S18}{\ignorespaces Label-space evidence-localization checks on FineGym ($n=97$ classes). All three tests use a fine-tuned TimeSformer trained on FineGym. Partial $r$ controls for whole-frame optical-flow magnitude.\relax }}{20}{table.caption.51}\protected@file@percent }
+\newlabel{tab:label_space_nyquist}{{S18}{20}{Label-space evidence-localization checks on FineGym ($n=97$ classes). All three tests use a fine-tuned TimeSformer trained on FineGym. Partial $r$ controls for whole-frame optical-flow magnitude.\relax }{table.caption.51}{}}
+\newlabel{tab:label_space_nyquist@cref}{{[table][18][]S18}{[1][19][]20}}
+\@writefile{toc}{\contentsline {paragraph}{Summary.}{20}{section*.50}\protected@file@percent }
+\newlabel{sec:sup_sw_generalisation}{{S12}{20}{Generalisation of Test C to All 8 Datasets}{section*.52}{}}
+\newlabel{sec:sup_sw_generalisation@cref}{{[section][12][]S12}{[1][20][]20}}
+\@writefile{toc}{\contentsline {paragraph}{Window-geometry constraint.}{20}{section*.53}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Result.}{20}{section*.54}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S19}{\ignorespaces Sliding-window confidence-concentration test across all 8 datasets. Spearman $\rho $ relates per-class confidence concentration to per-class \leavevmode {\color  {revblue}evidence loss}. The ensemble uses models with window $T\le 16$; \textbf  {bold} denotes $p<0.05$.\relax }}{21}{table.caption.55}\protected@file@percent }
+\newlabel{tab:sw_ensemble}{{S19}{21}{Sliding-window confidence-concentration test across all 8 datasets. Spearman $\rho $ relates per-class confidence concentration to per-class \rev {evidence loss}\revdel {aliasing loss}. The ensemble uses models with window $T\le 16$; \textbf {bold} denotes $p<0.05$.\relax }{table.caption.55}{}}
+\newlabel{tab:sw_ensemble@cref}{{[table][19][]S19}{[1][20][]21}}
+\@writefile{toc}{\contentsline {section}{\numberline {S13}Additional Robustness Checks}{21}{section.1.13}\protected@file@percent }
+\newlabel{sec:sup_extra_checks}{{S13}{21}{Additional Robustness Checks}{section.1.13}{}}
+\newlabel{sec:sup_extra_checks@cref}{{[section][13][]S13}{[1][21][]21}}
+\@writefile{toc}{\contentsline {paragraph}{Observational architecture interpretation.}{21}{section*.56}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Dense-accuracy headroom does not explain \textsc  {TDS}{}.}{21}{section*.57}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Coverage--stride interaction.}{21}{section*.59}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\leavevmode {\color  {revblue}Confidence-cascade calibration.}}{21}{section*.61}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S20}{\ignorespaces Dense-accuracy headroom check. Headroom is the mean gap from each model's stride=1 accuracy to the best stride=1 accuracy achieved by any model on the same dataset. It is not significantly correlated with \textsc  {TDS}{}, suggesting that temporal sensitivity is not an artifact of under-optimized dense accuracy.\relax }}{22}{table.caption.58}\protected@file@percent }
+\newlabel{tab:headroom_check}{{S20}{22}{Dense-accuracy headroom check. Headroom is the mean gap from each model's stride=1 accuracy to the best stride=1 accuracy achieved by any model on the same dataset. It is not significantly correlated with \TDS {}, suggesting that temporal sensitivity is not an artifact of under-optimized dense accuracy.\relax }{table.caption.58}{}}
+\newlabel{tab:headroom_check@cref}{{[table][20][]S20}{[1][21][]22}}
+\@writefile{lot}{\contentsline {table}{\numberline {S21}{\ignorespaces Mean accuracy (\%) over architectures for a high-\textsc  {TDS}{} dataset (FineGym) and a low-\textsc  {TDS}{} dataset (UCF-101). Rows are coverage; columns are stride.\relax }}{22}{table.caption.60}\protected@file@percent }
+\newlabel{tab:coverage_stride_examples}{{S21}{22}{Mean accuracy (\%) over architectures for a high-\TDS {} dataset (FineGym) and a low-\TDS {} dataset (UCF-101). Rows are coverage; columns are stride.\relax }{table.caption.60}{}}
+\newlabel{tab:coverage_stride_examples@cref}{{[table][21][]S21}{[1][21][]22}}
+\@writefile{toc}{\contentsline {section}{\numberline {S14}\leavevmode {\color  {revblue}What the Stride Axis Varies}}{22}{section.1.14}\protected@file@percent }
+\newlabel{sec:sup_padding}{{S14}{22}{\rev {What the Stride Axis Varies}}{section.1.14}{}}
+\newlabel{sec:sup_padding@cref}{{[section][14][]S14}{[1][22][]22}}
+\@writefile{toc}{\contentsline {paragraph}{Sampler.}{22}{section*.62}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Sampling interval in seconds.}{22}{section*.64}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {S22}{\ignorespaces Frame positions actually supplied to a $B{=}16$ model at $\mathcal  {C}{=}100\%$. For a long clip the selected positions are nearly independent of stride; for a short clip the input degenerates into a few distinct frames followed by a static tail.\relax }}{23}{table.caption.63}\protected@file@percent }
+\newlabel{tab:sup_indices}{{S22}{23}{Frame positions actually supplied to a $B{=}16$ model at $\mathcal {C}{=}100\%$. For a long clip the selected positions are nearly independent of stride; for a short clip the input degenerates into a few distinct frames followed by a static tail.\relax }{table.caption.63}{}}
+\newlabel{tab:sup_indices@cref}{{[table][22][]S22}{[1][22][]23}}
+\@writefile{lot}{\contentsline {table}{\numberline {S23}{\ignorespaces Median seconds between sampled frames at $\mathcal  {C}{=}100\%$. At a fixed nominal stride the realised interval differs by up to $3.9\times $ across datasets, so equal-stride comparisons are not equal-rate comparisons.\relax }}{23}{table.caption.65}\protected@file@percent }
+\newlabel{tab:sup_seconds}{{S23}{23}{Median seconds between sampled frames at $\mathcal {C}{=}100\%$. At a fixed nominal stride the realised interval differs by up to $3.9\times $ across datasets, so equal-stride comparisons are not equal-rate comparisons.\relax }{table.caption.65}{}}
+\newlabel{tab:sup_seconds@cref}{{[table][23][]S23}{[1][23][]23}}
+\@writefile{toc}{\contentsline {paragraph}{The effect is confined to the shortfall regime.}{23}{section*.66}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Relation to \textsc  {TDS}{}.}{23}{section*.67}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {S15}\leavevmode {\color  {revblue}Matched-Evidence Architecture Comparison}}{24}{section.1.15}\protected@file@percent }
+\newlabel{sec:sup_matched}{{S15}{24}{\rev {Matched-Evidence Architecture Comparison}}{section.1.15}{}}
+\newlabel{sec:sup_matched@cref}{{[section][15][]S15}{[1][24][]24}}
+\@writefile{lot}{\contentsline {table}{\numberline {S24}{\ignorespaces Matched-evidence Top-1 accuracy (\%), averaged over the seven datasets with complete outputs for all eight architectures. Every model receives the same $k$ distinct frame positions. $\Delta _{8\to 2}$ is the absolute accuracy drop from $k=8$ to $k=2$.\relax }}{24}{table.caption.68}\protected@file@percent }
+\newlabel{tab:sup_matched_models}{{S24}{24}{Matched-evidence Top-1 accuracy (\%), averaged over the seven datasets with complete outputs for all eight architectures. Every model receives the same $k$ distinct frame positions. $\Delta _{8\to 2}$ is the absolute accuracy drop from $k=8$ to $k=2$.\relax }{table.caption.68}{}}
+\newlabel{tab:sup_matched_models@cref}{{[table][24][]S24}{[1][24][]24}}
+\@writefile{toc}{\contentsline {section}{\numberline {S16}\leavevmode {\color  {revblue}Repeated-Measures Analysis of the Coverage$\times $Stride Grid}}{24}{section.1.16}\protected@file@percent }
+\newlabel{sec:sup_rmanova}{{S16}{25}{\rev {Repeated-Measures Analysis of the Coverage\texorpdfstring {$\times $}{x}Stride Grid}}{section.1.16}{}}
+\newlabel{sec:sup_rmanova@cref}{{[section][16][]S16}{[1][24][]25}}
+\@writefile{toc}{\contentsline {section}{\numberline {S17}\leavevmode {\color  {revblue}Held-Out Evaluation of the Confidence Cascade}}{25}{section.1.17}\protected@file@percent }
+\newlabel{sec:sup_routing_heldout}{{S17}{25}{\rev {Held-Out Evaluation of the Confidence Cascade}}{section.1.17}{}}
+\newlabel{sec:sup_routing_heldout@cref}{{[section][17][]S17}{[1][25][]25}}
+\@writefile{toc}{\contentsline {section}{\numberline {S18}\leavevmode {\color  {revblue}Convergence of Low-Resolution Fine-Tuning}}{25}{section.1.18}\protected@file@percent }
+\newlabel{sec:sup_convergence}{{S18}{25}{\rev {Convergence of Low-Resolution Fine-Tuning}}{section.1.18}{}}
+\newlabel{sec:sup_convergence@cref}{{[section][18][]S18}{[1][25][]25}}
+\@writefile{lot}{\contentsline {table}{\numberline {S25}{\ignorespaces Convergence by target resolution. ``Still improving'' counts runs whose best validation accuracy occurred at the final or penultimate epoch.\relax }}{26}{table.caption.69}\protected@file@percent }
+\newlabel{tab:sup_convergence}{{S25}{26}{Convergence by target resolution. ``Still improving'' counts runs whose best validation accuracy occurred at the final or penultimate epoch.\relax }{table.caption.69}{}}
+\newlabel{tab:sup_convergence@cref}{{[table][25][]S25}{[1][25][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {S19}\leavevmode {\color  {revblue}Sensitivity of the \textsc  {TDS}{} Ranking to Its Definition}}{26}{section.1.19}\protected@file@percent }
+\newlabel{sec:sup_tds_variants}{{S19}{26}{\rev {Sensitivity of the \texorpdfstring {\TDS {}}{TDS} Ranking to Its Definition}}{section.1.19}{}}
+\newlabel{sec:sup_tds_variants@cref}{{[section][19][]S19}{[1][26][]26}}
+\@writefile{lot}{\contentsline {table}{\numberline {S26}{\ignorespaces Dataset demand under five definitions, and the rank correlation of each against the published \textsc  {TDS}{}. \emph  {unclipped} removes $[\cdot ]^+$; \emph  {AUC} integrates the whole stride curve trapezoidally in $\qopname  \relax o{log}_2 s$; \emph  {relative} divides by stride-1 accuracy; \emph  {normalised} divides by the headroom above chance.\relax }}{26}{table.caption.70}\protected@file@percent }
+\newlabel{tab:sup_tds_variants}{{S26}{26}{Dataset demand under five definitions, and the rank correlation of each against the published \TDS {}. \emph {unclipped} removes $[\cdot ]^+$; \emph {AUC} integrates the whole stride curve trapezoidally in $\log _2 s$; \emph {relative} divides by stride-1 accuracy; \emph {normalised} divides by the headroom above chance.\relax }{table.caption.70}{}}
+\newlabel{tab:sup_tds_variants@cref}{{[table][26][]S26}{[1][26][]26}}
+\@writefile{toc}{\contentsline {section}{\numberline {S20}\leavevmode {\color  {revblue}Multi-Stride Augmentation Ablation}}{27}{section.1.20}\protected@file@percent }
+\newlabel{sec:sup_tra}{{S20}{27}{\rev {Multi-Stride Augmentation Ablation}}{section.1.20}{}}
+\newlabel{sec:sup_tra@cref}{{[section][20][]S20}{[1][27][]27}}
+\@writefile{lot}{\contentsline {table}{\numberline {S27}{\ignorespaces Both architectures on AUTSL, evaluated under the published sampler at coverage 100\%. ``Recovered'' is the share of the baseline stride-1 to stride-16 cliff regained at stride 16; ``dense cost'' is the accuracy given up at stride 1.\relax }}{27}{table.caption.71}\protected@file@percent }
+\newlabel{tab:sup_tra}{{S27}{27}{Both architectures on AUTSL, evaluated under the published sampler at coverage 100\%. ``Recovered'' is the share of the baseline stride-1 to stride-16 cliff regained at stride 16; ``dense cost'' is the accuracy given up at stride 1.\relax }{table.caption.71}{}}
+\newlabel{tab:sup_tra@cref}{{[table][27][]S27}{[1][27][]27}}
+\@writefile{toc}{\contentsline {section}{\numberline {S21}\leavevmode {\color  {revblue}Varying the Sampling Rate at Fixed Frame Count}}{28}{section.1.21}\protected@file@percent }
+\newlabel{sec:sup_span}{{S21}{28}{\rev {Varying the Sampling Rate at Fixed Frame Count}}{section.1.21}{}}
+\newlabel{sec:sup_span@cref}{{[section][21][]S21}{[1][28][]28}}
+\@writefile{lot}{\contentsline {table}{\numberline {S28}{\ignorespaces Top-1 (\%) against window width, averaged over architectures, with $k$ fixed at each model's frame budget. Widening the window reduces the sampling rate tenfold, yet accuracy rises in seven of eight datasets.\relax }}{28}{table.caption.72}\protected@file@percent }
+\newlabel{tab:sup_span}{{S28}{28}{Top-1 (\%) against window width, averaged over architectures, with $k$ fixed at each model's frame budget. Widening the window reduces the sampling rate tenfold, yet accuracy rises in seven of eight datasets.\relax }{table.caption.72}{}}
+\newlabel{tab:sup_span@cref}{{[table][28][]S28}{[1][28][]28}}
+\bibstyle{splncs04}
+\bibdata{main}
+\bibcite{farneback2003two}{1}
+\bibcite{shao2020finegym}{2}
+\gdef \@abspage@last{29}

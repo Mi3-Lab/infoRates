@@ -1,0 +1,15 @@
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{farneback2003two}
+Farneb{\"a}ck, G.: Two-frame motion estimation based on polynomial expansion.
+  In: Scandinavian Conference on Image Analysis (SCIA). pp. 363--370 (2003)
+
+\bibitem{shao2020finegym}
+Shao, D., Zhao, Y., Dai, B., Loy, C.C.: {FineGym}: A hierarchical video dataset
+  for fine-grained action understanding. In: CVPR. pp. 2616--2625 (2020).
+  \doi{10.1109/CVPR42600.2020.00266}
+
+\end{thebibliography}

@@ -1,0 +1,278 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand*\HyPL@Entry[1]{}
+\citation{5771372,10484402}
+\citation{tran2015c3d,carreira2017i3d,tran2018r2plus1d,wang2018nonlocal,feichtenhofer2019slowfast}
+\citation{bertasius2021timesformer,arnab2021vivit,liu2022videoswin,fan2021mvit,tong2022videomae,wang2023videomaev2,li2024videomamba}
+\HyPL@Entry{0<</S/D>>}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {title}{\leavevmode {\color  {revblue}Measuring Spatiotemporal Sampling Sensitivity in Video Action Recognition: A Cross-Architecture Analysis at Scale}}{1}{chapter.1}\protected@file@percent }
+\@writefile{toc}{\authcount {1}}
+\@writefile{toc}{\contentsline {author}{Anonymous ACCV 2026{} Submission}{1}{chapter.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1.1}{}}
+\newlabel{sec:intro@cref}{{[section][1][]1}{[1][1][]1}}
+\@writefile{brf}{\backcite{5771372,10484402}{{1}{1}{section.1.1}}}
+\citation{lin2019tsm}
+\citation{shannon1949communication}
+\citation{vanrullen2007wagon}
+\citation{zhang2019antialiased}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \leavevmode {\color  {revblue}Temporal evidence loss}: sparse sampling can miss or distort the frames a recognizer needs, especially for temporally localized actions.\relax }}{2}{figure.caption.3}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:aliasing_concept}{{1}{2}{\rev {Temporal evidence loss}: sparse sampling can miss or distort the frames a recognizer needs, especially for temporally localized actions.\relax }{figure.caption.3}{}}
+\newlabel{fig:aliasing_concept@cref}{{[figure][1][]1}{[1][2][]2}}
+\@writefile{brf}{\backcite{tran2015c3d,carreira2017i3d,tran2018r2plus1d,wang2018nonlocal,feichtenhofer2019slowfast}{{2}{1}{section.1.1}}}
+\@writefile{brf}{\backcite{bertasius2021timesformer,arnab2021vivit,liu2022videoswin,fan2021mvit,tong2022videomae,wang2023videomaev2,li2024videomamba}{{2}{1}{section.1.1}}}
+\@writefile{brf}{\backcite{lin2019tsm}{{2}{1}{section.1.1}}}
+\@writefile{toc}{\contentsline {paragraph}{Sampling perspective.}{2}{section*.2}\protected@file@percent }
+\@writefile{brf}{\backcite{shannon1949communication}{{2}{1}{section*.2}}}
+\@writefile{brf}{\backcite{vanrullen2007wagon}{{2}{1}{section*.2}}}
+\@writefile{brf}{\backcite{zhang2019antialiased}{{2}{1}{section*.2}}}
+\@writefile{toc}{\contentsline {paragraph}{Contributions.}{2}{section*.4}\protected@file@percent }
+\citation{tran2015c3d,carreira2017i3d}
+\citation{wang2018nonlocal}
+\citation{tran2018r2plus1d,tran2019video}
+\citation{feichtenhofer2019slowfast}
+\citation{bertasius2021timesformer}
+\citation{arnab2021vivit}
+\citation{tong2022videomae,wang2023videomaev2}
+\citation{li2024videomamba}
+\citation{gu2023mamba,dao2024mamba2}
+\citation{schiappa2023robustness}
+\citation{wang2016tsn,lin2019tsm}
+\citation{wu2019adaframe}
+\citation{wang2021adafocus}
+\citation{meng2020arnet}
+\citation{ghodrati2021frameexit}
+\citation{huang2018makes}
+\citation{sevilla2021only}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{3}{section.1.2}\protected@file@percent }
+\newlabel{sec:related}{{2}{3}{Related Work}{section.1.2}{}}
+\newlabel{sec:related@cref}{{[section][2][]2}{[1][3][]3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Video Recognition Architectures}{3}{subsection.1.2.1}\protected@file@percent }
+\@writefile{brf}{\backcite{tran2015c3d,carreira2017i3d}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{wang2018nonlocal}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{tran2018r2plus1d,tran2019video}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{feichtenhofer2019slowfast}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{bertasius2021timesformer}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{arnab2021vivit}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{tong2022videomae,wang2023videomaev2}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{li2024videomamba}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{gu2023mamba,dao2024mamba2}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{brf}{\backcite{schiappa2023robustness}{{3}{2.1}{subsection.1.2.1}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Temporal Sampling and Adaptive Inference}{3}{subsection.1.2.2}\protected@file@percent }
+\@writefile{brf}{\backcite{wang2016tsn,lin2019tsm}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{wu2019adaframe}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{wang2021adafocus}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{meng2020arnet}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{ghodrati2021frameexit}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{huang2018makes}{{3}{2.2}{subsection.1.2.2}}}
+\@writefile{brf}{\backcite{sevilla2021only}{{3}{2.2}{subsection.1.2.2}}}
+\citation{shannon1949communication}
+\citation{vanrullen2007wagon}
+\citation{zhang2019antialiased}
+\citation{tran2014frequency}
+\citation{tran2019video}
+\citation{tran2018r2plus1d}
+\citation{feichtenhofer2019slowfast}
+\citation{bertasius2021timesformer}
+\citation{arnab2021vivit}
+\citation{tong2022videomae}
+\citation{li2024videomamba}
+\citation{shao2020finegym}
+\citation{sincan2020autsl}
+\citation{goyal2017ssv2}
+\citation{martin2019driveact}
+\citation{li2018diving48}
+\citation{kuehne2011hmdb}
+\citation{damen2022epic}
+\citation{soomro2012ucf101}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Pipeline: the core factorial sweep uses 8 architectures $\times $ 8 datasets $\times $ 5 target resolutions (48--224px) $\times $ 5 coverages $\times $ 5 strides = \textbf  {8,000 configurations}.\relax }}{4}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:pipeline}{{2}{4}{Pipeline: the core factorial sweep uses 8 architectures $\times $ 8 datasets $\times $ 5 target resolutions (48--224px) $\times $ 5 coverages $\times $ 5 strides = \textbf {8,000 configurations}.\relax }{figure.caption.5}{}}
+\newlabel{fig:pipeline@cref}{{[figure][2][]2}{[1][4][]4}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces \textsc  {TDS}{} = mean accuracy drop (stride=1$\to $16, cov=100\%) per Eq.\nobreakspace  {}\ref  {eq:tds}, averaged over all 8 architectures ($n{=}8$). Sorted by \textsc  {TDS}{}. \textbf  {Bold} = the two co-equal highest-demand domains (their relative order is leave-one-out sensitive; ranks 3--8 are stable under the supplementary robustness analysis).\relax }}{4}{table.caption.6}\protected@file@percent }
+\newlabel{tab:datasets}{{1}{4}{\TDS {} = mean accuracy drop (stride=1$\to $16, cov=100\%) per Eq.~\ref {eq:tds}, averaged over all 8 architectures ($n{=}8$). Sorted by \TDS {}. \textbf {Bold} = the two co-equal highest-demand domains (their relative order is leave-one-out sensitive; ranks 3--8 are stable under the supplementary robustness analysis).\relax }{table.caption.6}{}}
+\newlabel{tab:datasets@cref}{{[table][1][]1}{[1][4][]4}}
+\@writefile{brf}{\backcite{shao2020finegym}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{sincan2020autsl}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{goyal2017ssv2}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{martin2019driveact}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{li2018diving48}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{kuehne2011hmdb}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{damen2022epic}{{4}{1}{table.caption.6}}}
+\@writefile{brf}{\backcite{soomro2012ucf101}{{4}{1}{table.caption.6}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Sampling Theory in Deep Learning}{4}{subsection.1.2.3}\protected@file@percent }
+\@writefile{brf}{\backcite{shannon1949communication}{{4}{2.3}{subsection.1.2.3}}}
+\@writefile{brf}{\backcite{vanrullen2007wagon}{{4}{2.3}{subsection.1.2.3}}}
+\@writefile{brf}{\backcite{zhang2019antialiased}{{4}{2.3}{subsection.1.2.3}}}
+\@writefile{brf}{\backcite{tran2014frequency}{{4}{2.3}{subsection.1.2.3}}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology}{4}{section.1.3}\protected@file@percent }
+\newlabel{sec:method}{{3}{4}{Methodology}{section.1.3}{}}
+\newlabel{sec:method@cref}{{[section][3][]3}{[1][4][]4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Datasets and Architectures}{4}{subsection.1.3.1}\protected@file@percent }
+\@writefile{brf}{\backcite{tran2019video}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{tran2018r2plus1d}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{feichtenhofer2019slowfast}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{bertasius2021timesformer}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{arnab2021vivit}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{tong2022videomae}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{brf}{\backcite{li2024videomamba}{{4}{3.1}{subsection.1.3.1}}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Temporal Sampling Protocol}{4}{subsection.1.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Coverage implementation.}{5}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Spatial Resolution Protocol}{5}{subsection.1.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cross-resolution evaluation.}{5}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Target-resolution fine-tuning.}{5}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Temporal Demand Score (\textsc  {TDS}{})}{5}{subsection.1.3.4}\protected@file@percent }
+\newlabel{eq:tds}{{1}{5}{Temporal Demand Score (\texorpdfstring {\TDS {}}{TDS})}{equation.1.3.1}{}}
+\newlabel{eq:tds@cref}{{[equation][1][]1}{[1][5][]5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Statistical Analysis}{6}{subsection.1.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}\leavevmode {\color  {revblue}Maximum-Probability Cascade}}{6}{subsection.1.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Results}{6}{section.1.4}\protected@file@percent }
+\newlabel{sec:results}{{4}{6}{Results}{section.1.4}{}}
+\newlabel{sec:results@cref}{{[section][4][]4}{[1][6][]6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}\leavevmode {\color  {revblue}Temporal Demand Score and Ranking Robustness}}{6}{subsection.1.4.1}\protected@file@percent }
+\newlabel{sec:results_tds}{{4.1}{6}{\rev {Temporal Demand Score and Ranking Robustness}}{subsection.1.4.1}{}}
+\newlabel{sec:results_tds@cref}{{[subsection][1][4]4.1}{[1][6][]6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Left}: \textsc  {TDS}{} ranking---mean accuracy drop from stride=1 to 16 averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) and AUTSL (53.0pp) are co-equal highest-demand domains (order between them is leave-one-out sensitive; see supplementary material); UCF-101 (4.9pp) is appearance-dominated. Positions 3--8 are exactly stable under leave-one-architecture-out. \textbf  {Right}: Pearson correlation between optical-flow magnitude and per-class \leavevmode {\color  {revblue}evidence loss} (8 datasets). AUTSL and DriveAct show a positive correlation; EPIC-Kitchens is near-zero (background camera motion confounds flow); FineGym shows the strongest correlation in the opposite direction ($r=-0.475$): \leavevmode {\color  {revblue}discrete-event classes lose more evidence than sustained-motion classes under this protocol}.\relax }}{7}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:tds_spectral}{{3}{7}{\textbf {Left}: \TDS {} ranking---mean accuracy drop from stride=1 to 16 averaged over all 8 architectures ($n{=}8$). FineGym (55.9pp) and AUTSL (53.0pp) are co-equal highest-demand domains (order between them is leave-one-out sensitive; see supplementary material); UCF-101 (4.9pp) is appearance-dominated. Positions 3--8 are exactly stable under leave-one-architecture-out. \textbf {Right}: Pearson correlation between optical-flow magnitude and per-class \rev {evidence loss} (8 datasets). AUTSL and DriveAct show a positive correlation; EPIC-Kitchens is near-zero (background camera motion confounds flow); FineGym shows the strongest correlation in the opposite direction ($r=-0.475$): \rev {discrete-event classes lose more evidence than sustained-motion classes under this protocol}.\relax }{figure.caption.12}{}}
+\newlabel{fig:tds_spectral@cref}{{[figure][3][]3}{[1][7][]7}}
+\@writefile{toc}{\contentsline {paragraph}{\leavevmode {\color  {revblue}Exploratory motion-proxy analysis.}}{7}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The inversion generalizes beyond FineGym.}{7}{section*.11}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces \leavevmode {\color  {revblue}Exploratory motion-proxy analysis: Pearson $r$ between whole-frame optical-flow magnitude and per-class evidence loss. Mixed signs show that flow magnitude is not a literal proxy for temporal demand.}\relax }}{8}{table.caption.13}\protected@file@percent }
+\newlabel{tab:spectral}{{2}{8}{\rev {Exploratory motion-proxy analysis: Pearson $r$ between whole-frame optical-flow magnitude and per-class evidence loss. Mixed signs show that flow magnitude is not a literal proxy for temporal demand.}\relax }{table.caption.13}{}}
+\newlabel{tab:spectral@cref}{{[table][2][]2}{[1][7][]8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \leavevmode {\color  {revblue}Top-1 accuracy under the original fixed-budget stride protocol (cov=100\%) for representative high-, medium-, and low-\textsc  {TDS}{} datasets. Curves are descriptive: their drop combines distinct-frame loss with architecture and frame-budget effects; matched-evidence results are reported in Sec.\nobreakspace  {}\ref  {sec:results_temporal}.}\relax }}{8}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:aliasing_curves}{{4}{8}{\rev {Top-1 accuracy under the original fixed-budget stride protocol (cov=100\%) for representative high-, medium-, and low-\TDS {} datasets. Curves are descriptive: their drop combines distinct-frame loss with architecture and frame-budget effects; matched-evidence results are reported in Sec.~\ref {sec:results_temporal}.}\relax }{figure.caption.15}{}}
+\newlabel{fig:aliasing_curves@cref}{{[figure][4][]4}{[1][8][]8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Cross-Architecture \leavevmode {\color  {revblue}Temporal Sampling Sensitivity}}{8}{subsection.1.4.2}\protected@file@percent }
+\newlabel{sec:results_temporal}{{4.2}{8}{Cross-Architecture \rev {Temporal Sampling Sensitivity}}{subsection.1.4.2}{}}
+\newlabel{sec:results_temporal@cref}{{[subsection][2][4]4.2}{[1][7][]8}}
+\@writefile{toc}{\contentsline {paragraph}{}{8}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{}{8}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Cross-architecture sensitivity heatmap.}{8}{section*.18}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Full temporal \leavevmode {\color  {revblue}sensitivity} table: stride=1 accuracy (\%) / drop at stride=16 (pp), cov=100\%. Rows sorted by average drop across all 8 datasets.\relax }}{9}{table.caption.16}\protected@file@percent }
+\newlabel{tab:e1_full}{{3}{9}{Full temporal \rev {sensitivity} table: stride=1 accuracy (\%) / drop at stride=16 (pp), cov=100\%. Rows sorted by average drop across all 8 datasets.\relax }{table.caption.16}{}}
+\newlabel{tab:e1_full@cref}{{[table][3][]3}{[1][8][]9}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \leavevmode {\color  {revblue}Cross-architecture evidence-loss heatmap: accuracy drop (percentage points) from stride=1 to stride=16 at cov=100\% under the original fixed-budget protocol. Models are sorted by increasing mean drop. The cells show drop, not Top-1 accuracy, and should be interpreted together with the matched-evidence control.}\relax }}{9}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:heatmap}{{5}{9}{\rev {Cross-architecture evidence-loss heatmap: accuracy drop (percentage points) from stride=1 to stride=16 at cov=100\% under the original fixed-budget protocol. Models are sorted by increasing mean drop. The cells show drop, not Top-1 accuracy, and should be interpreted together with the matched-evidence control.}\relax }{figure.caption.19}{}}
+\newlabel{fig:heatmap@cref}{{[figure][5][]5}{[1][9][]9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Statistical Validation (ANOVA and Levene's Test)}{9}{subsection.1.4.3}\protected@file@percent }
+\newlabel{sec:stats}{{4.3}{9}{Statistical Validation (ANOVA and Levene's Test)}{subsection.1.4.3}{}}
+\newlabel{sec:stats@cref}{{[subsection][3][4]4.3}{[1][9][]9}}
+\@writefile{toc}{\contentsline {paragraph}{Effect sizes.}{9}{section*.20}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces \leavevmode {\color  {revblue}Clip-level repeated-measures analysis of the coverage$\times $stride grid. Values are partial $\eta ^2$ (mean$\pm $std over 56 model--dataset analyses with complete per-clip grids).}\relax }}{10}{table.caption.21}\protected@file@percent }
+\newlabel{tab:anova}{{4}{10}{\rev {Clip-level repeated-measures analysis of the coverage$\times $stride grid. Values are partial $\eta ^2$ (mean$\pm $std over 56 model--dataset analyses with complete per-clip grids).}\relax }{table.caption.21}{}}
+\newlabel{tab:anova@cref}{{[table][4][]4}{[1][9][]10}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces \leavevmode {\color  {revblue}Taxonomy tier boundaries (accuracy drop, pp): classes below the Low threshold lose little accuracy; classes above the High threshold are strongly affected. Computed at cov=100\%, stride=1$\to $16.}\relax }}{10}{table.caption.23}\protected@file@percent }
+\newlabel{tab:taxonomy_thresholds}{{5}{10}{\rev {Taxonomy tier boundaries (accuracy drop, pp): classes below the Low threshold lose little accuracy; classes above the High threshold are strongly affected. Computed at cov=100\%, stride=1$\to $16.}\relax }{table.caption.23}{}}
+\newlabel{tab:taxonomy_thresholds@cref}{{[table][5][]5}{[1][10][]10}}
+\@writefile{toc}{\contentsline {paragraph}{Variance inflation.}{10}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Action Sensitivity Taxonomy}{10}{subsection.1.4.4}\protected@file@percent }
+\newlabel{sec:taxonomy}{{4.4}{10}{Action Sensitivity Taxonomy}{subsection.1.4.4}{}}
+\newlabel{sec:taxonomy@cref}{{[subsection][4][4]4.4}{[1][10][]10}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Spatial Resolution and Target-Resolution Fine-Tuning}{10}{subsection.1.4.5}\protected@file@percent }
+\newlabel{sec:results_spatial}{{4.5}{10}{Spatial Resolution and Target-Resolution Fine-Tuning}{subsection.1.4.5}{}}
+\newlabel{sec:results_spatial@cref}{{[subsection][5][4]4.5}{[1][10][]10}}
+\@writefile{toc}{\contentsline {paragraph}{\leavevmode {\color  {revblue}Input-scale sensitivity of native checkpoints.}}{10}{section*.24}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \leavevmode {\color  {revblue}Input-scale sensitivity on SSv2: source frames are pre-resized to the stated resolution and evaluated by the unchanged native checkpoint. This is an input-scale/resampling stress test, not zero-shot transfer to a new Transformer grid.} CNNs (dashed, native=112px) degrade at off-native resolutions; Transformers and VideoMamba (solid, native=224px) stay within $\pm $7pp across 96--224px. Filled markers denote each model's native training resolution.\relax }}{11}{figure.caption.25}\protected@file@percent }
+\newlabel{fig:spatial}{{6}{11}{\rev {Input-scale sensitivity on SSv2: source frames are pre-resized to the stated resolution and evaluated by the unchanged native checkpoint. This is an input-scale/resampling stress test, not zero-shot transfer to a new Transformer grid.} CNNs (dashed, native=112px) degrade at off-native resolutions; Transformers and VideoMamba (solid, native=224px) stay within $\pm $7pp across 96--224px. Filled markers denote each model's native training resolution.\relax }{figure.caption.25}{}}
+\newlabel{fig:spatial@cref}{{[figure][6][]6}{[1][11][]11}}
+\@writefile{toc}{\contentsline {paragraph}{Target-resolution fine-tuning recovers CNN performance.}{11}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Inference Latency and Deployment Budgeting}{11}{subsection.1.4.6}\protected@file@percent }
+\newlabel{sec:results_latency}{{4.6}{11}{Inference Latency and Deployment Budgeting}{subsection.1.4.6}{}}
+\newlabel{sec:results_latency@cref}{{[subsection][6][4]4.6}{[1][11][]11}}
+\citation{wang2021adafocus}
+\citation{meng2020arnet}
+\citation{ghodrati2021frameexit}
+\citation{wang2021adafocus}
+\citation{meng2020arnet}
+\citation{ghodrati2021frameexit}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces \leavevmode {\color  {revblue}Input-scale sensitivity on SSv2 under source-frame pre-resizing and unchanged native checkpoint preprocessing (no fine-tuning).} Bold = native resolution. $\Delta _\text  {max}$ = largest drop from native.\relax }}{12}{table.caption.26}\protected@file@percent }
+\newlabel{tab:spatial}{{6}{12}{\rev {Input-scale sensitivity on SSv2 under source-frame pre-resizing and unchanged native checkpoint preprocessing (no fine-tuning).} Bold = native resolution. $\Delta _\text {max}$ = largest drop from native.\relax }{table.caption.26}{}}
+\newlabel{tab:spatial@cref}{{[table][6][]6}{[1][11][]12}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Target-resolution fine-tuning: family-level mean accuracy (\%) averaged over all 8 datasets, after fine-tuning from the native-resolution checkpoint for 10 epochs at each target spatial resolution. \leavevmode {\color  {revblue}Each family is shown with (FT) and without (---) target-resolution fine-tuning, as requested, so the benefit is readable directly. \textbf  {Note} that fine-tuning at a model's \emph  {native} resolution, where there is no resolution shift to adapt to, already gains $+6$ to $+10.6$pp for 7 of 8 models: the off-native benefit should be read as $\approx $32pp of resolution adaptation plus $\approx $7pp attributable to the additional epochs alone.}\relax }}{12}{table.caption.28}\protected@file@percent }
+\newlabel{tab:p3}{{7}{12}{Target-resolution fine-tuning: family-level mean accuracy (\%) averaged over all 8 datasets, after fine-tuning from the native-resolution checkpoint for 10 epochs at each target spatial resolution. \rev {Each family is shown with (FT) and without (---) target-resolution fine-tuning, as requested, so the benefit is readable directly. \textbf {Note} that fine-tuning at a model's \emph {native} resolution, where there is no resolution shift to adapt to, already gains $+6$ to $+10.6$pp for 7 of 8 models: the off-native benefit should be read as $\approx $32pp of resolution adaptation plus $\approx $7pp attributable to the additional epochs alone.}\relax }{table.caption.28}{}}
+\newlabel{tab:p3@cref}{{[table][7][]7}{[1][11][]12}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}\leavevmode {\color  {revblue}Confidence-Cascade Illustration}}{12}{subsection.1.4.7}\protected@file@percent }
+\newlabel{sec:results_routing}{{4.7}{12}{\rev {Confidence-Cascade Illustration}}{subsection.1.4.7}{}}
+\newlabel{sec:results_routing@cref}{{[subsection][7][4]4.7}{[1][12][]12}}
+\@writefile{brf}{\backcite{wang2021adafocus}{{12}{4.7}{subsection.1.4.7}}}
+\@writefile{brf}{\backcite{meng2020arnet}{{12}{4.7}{subsection.1.4.7}}}
+\@writefile{brf}{\backcite{ghodrati2021frameexit}{{12}{4.7}{subsection.1.4.7}}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Inference latency (ms/clip, bfloat16, batch=1, RTX PRO 6000 Blackwell). VideoMamba is 4--8$\times $ slower than VideoMAE despite being an SSM.  \leavevmode {\color  {revblue}Measured on a single GPU; we no longer extrapolate to other device classes, as those factors were estimates rather than measurements.}\relax }}{13}{table.caption.29}\protected@file@percent }
+\newlabel{tab:latency}{{8}{13}{Inference latency (ms/clip, bfloat16, batch=1, RTX PRO 6000 Blackwell). VideoMamba is 4--8$\times $ slower than VideoMAE despite being an SSM. \revdel {Scale to other devices: RTX 4090 $\times $1.5, Jetson AGX Orin $\times $10, Jetson Nano $\times $50.} \rev {Measured on a single GPU; we no longer extrapolate to other device classes, as those factors were estimates rather than measurements.}\relax }{table.caption.29}{}}
+\newlabel{tab:latency@cref}{{[table][8][]8}{[1][11][]13}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \leavevmode {\color  {revblue}Maximum-probability cascade on SSv2: descriptive in-sample accuracy--frame curve as $\tau $ sweeps between 4-frame and 16-frame inference. The held-out estimate is reported in Table\nobreakspace  {}\ref  {tab:routing}.}\relax }}{13}{figure.caption.30}\protected@file@percent }
+\newlabel{fig:routing}{{7}{13}{\rev {Maximum-probability cascade on SSv2: descriptive in-sample accuracy--frame curve as $\tau $ sweeps between 4-frame and 16-frame inference. The held-out estimate is reported in Table~\ref {tab:routing}.}\revdel {Entropy routing on SSv2: accuracy vs. average frames as $\tau $ sweeps between cheap and dense inference.}\relax }{figure.caption.30}{}}
+\newlabel{fig:routing@cref}{{[figure][7][]7}{[1][12][]13}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{13}{section.1.5}\protected@file@percent }
+\newlabel{sec:discussion}{{5}{13}{Discussion}{section.1.5}{}}
+\newlabel{sec:discussion@cref}{{[section][5][]5}{[1][13][]13}}
+\@writefile{toc}{\contentsline {paragraph}{Architecture and sampling.}{13}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Spatial robustness.}{13}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Deployment implications.}{13}{section*.34}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces \leavevmode {\color  {revblue}SSv2 comparison with the cascade threshold selected on a stratified calibration half and scored on the held-out half (1000 resamples). The same-backbone comparison to FrameExit is contextual because its training and evaluation protocol is externally reported; AdaFocus/AR-Net use a different backbone.}\relax }}{14}{table.caption.31}\protected@file@percent }
+\newlabel{tab:routing}{{9}{14}{\rev {SSv2 comparison with the cascade threshold selected on a stratified calibration half and scored on the held-out half (1000 resamples). The same-backbone comparison to FrameExit is contextual because its training and evaluation protocol is externally reported; AdaFocus/AR-Net use a different backbone.}\relax }{table.caption.31}{}}
+\newlabel{tab:routing@cref}{{[table][9][]9}{[1][12][]14}}
+\@writefile{brf}{\backcite{wang2021adafocus}{{14}{9}{table.caption.31}}}
+\@writefile{brf}{\backcite{meng2020arnet}{{14}{9}{table.caption.31}}}
+\@writefile{brf}{\backcite{ghodrati2021frameexit}{{14}{9}{table.caption.31}}}
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{14}{section*.35}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Conclusion}{14}{section.1.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{6}{14}{Conclusion}{section.1.6}{}}
+\newlabel{sec:conclusion@cref}{{[section][6][]6}{[1][14][]14}}
+\bibstyle{splncs04}
+\bibdata{main}
+\bibcite{arnab2021vivit}{1}
+\bibcite{5771372}{2}
+\bibcite{bertasius2021timesformer}{3}
+\bibcite{carreira2017i3d}{4}
+\bibcite{damen2022epic}{5}
+\bibcite{dao2024mamba2}{6}
+\bibcite{fan2021mvit}{7}
+\bibcite{feichtenhofer2019slowfast}{8}
+\bibcite{ghodrati2021frameexit}{9}
+\bibcite{goyal2017ssv2}{10}
+\bibcite{gu2023mamba}{11}
+\bibcite{huang2018makes}{12}
+\bibcite{10484402}{13}
+\bibcite{kuehne2011hmdb}{14}
+\bibcite{li2024videomamba}{15}
+\bibcite{li2018diving48}{16}
+\bibcite{lin2019tsm}{17}
+\bibcite{liu2022videoswin}{18}
+\bibcite{martin2019driveact}{19}
+\bibcite{meng2020arnet}{20}
+\bibcite{schiappa2023robustness}{21}
+\bibcite{sevilla2021only}{22}
+\bibcite{shannon1949communication}{23}
+\bibcite{shao2020finegym}{24}
+\bibcite{sincan2020autsl}{25}
+\bibcite{soomro2012ucf101}{26}
+\bibcite{tong2022videomae}{27}
+\bibcite{tran2014frequency}{28}
+\bibcite{tran2015c3d}{29}
+\bibcite{tran2019video}{30}
+\bibcite{tran2018r2plus1d}{31}
+\bibcite{vanrullen2007wagon}{32}
+\bibcite{wang2023videomaev2}{33}
+\bibcite{wang2016tsn}{34}
+\bibcite{wang2018nonlocal}{35}
+\bibcite{wang2021adafocus}{36}
+\bibcite{wu2019adaframe}{37}
+\bibcite{zhang2019antialiased}{38}
+\gdef \@abspage@last{16}

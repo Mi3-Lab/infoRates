@@ -49,6 +49,9 @@ def main() -> int:
     chk("pairs with unpadded subset = 21", 21, len(p), 0)
 
     c = pd.read_csv(R / "convergence_curves.csv")
+    c_reported = c[c.resolution.isin([48, 96, 112, 160, 224])]
+    chk("convergence logs at five reported resolutions = 503", 503,
+        len(c_reported), 0)
     lo = c[c.resolution == 48]
     chk("48px still improving 52.8%", 52.8,
         round(100 * lo.still_improving.mean(), 1), 0.1)
